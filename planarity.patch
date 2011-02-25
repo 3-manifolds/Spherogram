@@ -1,0 +1,107 @@
+diff -rcpN c/appconst.h c.new/appconst.h
+*** c/appconst.h	2011-02-14 07:08:53.000000000 -0600
+--- c.new/appconst.h	2011-02-14 07:12:11.000000000 -0600
+*************** extern int debugNOTOK();
+*** 94,105 ****
+  /* Array indices are used as pointers, and NIL means bad pointer */
+  
+  // This definition is used with 1-based array indexing
+! #define NIL			0
+! #define NIL_CHAR	0x00
+  
+  // This definition is used in combination with 0-based array indexing
+! //#define NIL		-1
+! //#define NIL_CHAR	0xFF
+  
+  /* Defines fopen strings for reading and writing text files on PC and UNIX */
+  
+--- 94,105 ----
+  /* Array indices are used as pointers, and NIL means bad pointer */
+  
+  // This definition is used with 1-based array indexing
+! //#define NIL			0
+! //#define NIL_CHAR	0x00
+  
+  // This definition is used in combination with 0-based array indexing
+! #define NIL		-1
+! #define NIL_CHAR	0xFF
+  
+  /* Defines fopen strings for reading and writing text files on PC and UNIX */
+  
+diff -rcpN c/graphColorVertices.c c.new/graphColorVertices.c
+*** c/graphColorVertices.c	2011-02-14 07:08:53.000000000 -0600
+--- c.new/graphColorVertices.c	2011-02-14 07:11:13.000000000 -0600
+*************** extern int COLORVERTICES_ID;
+*** 50,56 ****
+  #include "graph.h"
+  
+  #include <string.h>
+! #include <malloc.h>
+  #include <stdio.h>
+  
+  extern void _ClearVertexVisitedFlags(graphP theGraph, int);
+--- 50,56 ----
+  #include "graph.h"
+  
+  #include <string.h>
+! #include <stdlib.h>
+  #include <stdio.h>
+  
+  extern void _ClearVertexVisitedFlags(graphP theGraph, int);
+diff -rcpN c/graphDrawPlanar.c c.new/graphDrawPlanar.c
+*** c/graphDrawPlanar.c	2011-02-14 07:08:53.000000000 -0600
+--- c.new/graphDrawPlanar.c	2011-02-14 07:11:13.000000000 -0600
+*************** extern int DRAWPLANAR_ID;
+*** 50,56 ****
+  #include "graph.h"
+  
+  #include <string.h>
+! #include <malloc.h>
+  #include <stdio.h>
+  
+  extern void _ClearVisitedFlags(graphP theGraph);
+--- 50,56 ----
+  #include "graph.h"
+  
+  #include <string.h>
+! #include <stdlib.h>
+  #include <stdio.h>
+  
+  extern void _ClearVisitedFlags(graphP theGraph);
+diff -rcpN c/nauty/nauty.h c.new/nauty/nauty.h
+*** c/nauty/nauty.h	2011-02-14 07:08:52.000000000 -0600
+--- c.new/nauty/nauty.h	2011-02-14 07:11:13.000000000 -0600
+***************
+*** 16,22 ****
+  #define SYS_VAXBSD     0   /* older BSD unix 4.2 on a VAX */
+  #define SYS_CRAY       0   /* Cray UNIX, portable or standard C */
+  #define SYS_APOLLO     0   /* DOMAIN C on Apollo */
+! #define SYS_BSDUNIX    0   /* other BSD unix (cc or gcc compilers) */
+  #define SYS_UNIX       0   /* miscellaneous non-BSD unix, including A/UX */
+  #define SYS_ALPHA      0   /* Alpha UNIX */
+  #define SYS_VAXVMS     0   /* VAX11C or GCC on a VAX under VMS */
+--- 16,22 ----
+  #define SYS_VAXBSD     0   /* older BSD unix 4.2 on a VAX */
+  #define SYS_CRAY       0   /* Cray UNIX, portable or standard C */
+  #define SYS_APOLLO     0   /* DOMAIN C on Apollo */
+! #define SYS_BSDUNIX    1   /* other BSD unix (cc or gcc compilers) */
+  #define SYS_UNIX       0   /* miscellaneous non-BSD unix, including A/UX */
+  #define SYS_ALPHA      0   /* Alpha UNIX */
+  #define SYS_VAXVMS     0   /* VAX11C or GCC on a VAX under VMS */
+***************
+*** 27,33 ****
+  #define SYS_AMIGALC    0   /* Lattice C on a Commodore Amiga */
+  #define SYS_AMIGAAZT   0   /* Aztec C on a Commodore Amiga */
+  #define SYS_PCMS4      0   /* Microsoft C 4.0 on IBM PC */
+! #define SYS_PCMS5      1   /* Microsoft C 5.1 or Quick C 2.5 on IBM PC */
+  #define SYS_PCTURBO    0   /* Turbo C on IBM PC */
+  #define SYS_IBMC       0   /* IBM C Set/2 under OS/2 */
+  #define SYS_MISC       0   /* anything else */
+--- 27,33 ----
+  #define SYS_AMIGALC    0   /* Lattice C on a Commodore Amiga */
+  #define SYS_AMIGAAZT   0   /* Aztec C on a Commodore Amiga */
+  #define SYS_PCMS4      0   /* Microsoft C 4.0 on IBM PC */
+! #define SYS_PCMS5      0   /* Microsoft C 5.1 or Quick C 2.5 on IBM PC */
+  #define SYS_PCTURBO    0   /* Turbo C on IBM PC */
+  #define SYS_IBMC       0   /* IBM C Set/2 under OS/2 */
+  #define SYS_MISC       0   /* anything else */
