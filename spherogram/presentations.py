@@ -94,6 +94,7 @@ class Presentation:
         self.alphabet = alphabet
         self.relators = []
         self.generators = set()
+        self.level_transforms = None
         if not isinstance(relator_list, list):
             raise ValueError, 'Please provide a list of relators.'
         for r in relator_list:
@@ -162,7 +163,8 @@ class Presentation:
             if not reducers:
                 if not levels:
                     print 'No level transformations.'
-                return levels
+                self.level_transforms = levels
+                return
             reduction, a, cut_set = reducers[0]
             self.whitehead_move(a, cut_set)
         print self.relators

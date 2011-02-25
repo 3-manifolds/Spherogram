@@ -57,6 +57,34 @@ class DirectedEdge(Edge):
     def __repr__(self):
         return '%s --> %s'%tuple(self.ends)
 
+class EdgesBFO:
+    """
+    Iterator for non-loop edges of a graph in the complement of
+    a forbidden set, ordered by distance from the source.
+    
+    Yields triples (e, v, f) where e and f are edges containing v
+    and e is the parent of f with respect to the depth-first ordering.
+    """
+    def __init__(self, graph, source, forbidden=set()):
+        self.graph = graph
+        self.initial = initial = graph.incident(source) - forbidden
+        self.seen = forbidden | initial
+        self.fifo = deque([ (None, source, e) for e in initial ])
+
+    def __iter__(self):
+        return self
+    
+    def next(self):
+        if self.fifo:
+            parent, vertex, child = self.fifo.popleft()
+            neighbors = self.graph.incident(child(vertex)) - self.seen
+            self.seen |= neighbors
+            self.fifo.extend([(child, child(vertex), neighbor)
+                              for neighbor in neighbors])
+            return parent, vertex, child
+        else:
+            raise StopIteration
+
 class Graph:
     """
     A set of vertices and a set of edges joining pairs of vertices.
@@ -107,25 +135,6 @@ class Graph:
             if e(vertex) == vertex:
                 valence += 1
         return valence
-    
-    def edges_bfo(self, source, forbidden=set()):
-        """
-        Generator of embedded edges of the graph that are not in the
-        forbidden set, ordered by distance from the source.
-
-        Yields triples (e, v, f) where e and f are edges containing v
-        and e is the parent of f with respect to the depth-first ordering.
-        """
-        initial = self.incident(source) - forbidden
-        seen = forbidden | initial
-        fifo = deque([ (None, source, e) for e in initial ])
-        while fifo:
-            parent, vertex, child = fifo.popleft()
-            neighbors = self.incident(child(vertex)) - seen
-            seen |= neighbors
-            fifo.extend([(child, child(vertex), neighbor)
-                         for neighbor in neighbors])
-            yield parent, vertex, child
 
     def min_cut(self, source, sink, capacity=None):
         """
@@ -148,7 +157,7 @@ class Graph:
         while True:
             # Try to find a new path from source to sink
             parents, cut_set, failed = {}, set([source]), True
-            for parent, vertex, child in self.edges_bfo(source, full_edges):
+            for parent, vertex, child in EdgesBFO(self, source, full_edges):
                  parents[child] = (parent, vertex)
                  cut_set.add(child(vertex))
                  if child(vertex) == sink:
