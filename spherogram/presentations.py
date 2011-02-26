@@ -94,7 +94,6 @@ class Presentation:
         self.alphabet = alphabet
         self.relators = []
         self.generators = set()
-        self.level_transforms = None
         if not isinstance(relator_list, list):
             raise ValueError, 'Please provide a list of relators.'
         for r in relator_list:
@@ -128,10 +127,8 @@ class Presentation:
             valence = self.whitehead.valence(x)
             if cut_size < valence:
                 reducers.append( (cut_size - valence, x, cut_set) )
-            if cut_size == valence and len(cut_set) > 1:
-                levels.append( (x, cut_set) )
         reducers.sort(key=lambda x: x[0])
-        return reducers, levels
+        return reducers
 
     def whitehead_move(self, a, cut_set):
         """
@@ -154,18 +151,15 @@ class Presentation:
 
     def shorten(self):
         """
-        Apply Whitehead moves to reduce total length while possible.
-        Return a set of level transformations.
+        Apply Whitehead moves to maximally reduce total length,
+        until the minimal length is reached.
         """
+        print self.relators
         while True:
-            print self.relators
-            reducers, levels = self.find_reducers()
+            reducers = self.find_reducers()
             if not reducers:
-                if not levels:
-                    print 'No level transformations.'
-                self.level_transforms = levels
                 return
             reduction, a, cut_set = reducers[0]
             self.whitehead_move(a, cut_set)
-        print self.relators
+            print self.relators
         
