@@ -241,16 +241,21 @@ class Graph:
 
     def merge(self, V1, V2):
         """
-        Merge two vertices and remove all edges between them.
-        The vertex objects must support the __or__ method
-        (e.g. all vertices might be frozensets).
-        The two vertices V1 and V2 are replaced by V1|V2.
+        Merge two vertices and remove all edges between them.  The
+        vertices must support the __or__ method (e.g. all vertices
+        might be frozensets).  The two vertices V1 and V2 are replaced
+        by V1|V2.
+
         >>> G = Graph([(0,1),(1,2),(2,0)]).mergeable()
         >>> F = lambda x: frozenset([x])
         >>> G.merge(F(1),F(2))
         >>> G
-        V: frozenset([1, 2]), frozenset([0])
-        E: frozenset([0]) --- frozenset([1, 2]), frozenset([1, 2]) --- frozenset([0])
+        Vertices:
+          frozenset([1, 2])
+          frozenset([0])
+        Edges:
+          frozenset([1, 2]) --- frozenset([0])
+          frozenset([0]) --- frozenset([1, 2])
         """
         new_vertex = V1|V2
         if new_vertex in self.vertices:
