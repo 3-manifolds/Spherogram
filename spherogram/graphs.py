@@ -102,9 +102,9 @@ class Graph:
             self.add_vertex(vertex)
 
     def __repr__(self):
-        vertices = 'V: ' + ', '.join([str(v) for v in self.vertices])
-        edges = 'E: ' + ', '.join([str(e) for e in self.edges])
-        return '%s\n%s'%(vertices, edges)
+        V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
+        E = 'Edges:\n  ' + '\n  '.join([str(e) for e in self.edges])
+        return '%s\n%s'%(V,E)
 
     def __getitem__(self, vertex):
         """
@@ -239,27 +239,46 @@ class Graph:
         """
         return planar(self)
 
-    def merge(self, V1, V2, join):
+    def merge(self, V1, V2):
         """
         Merge two vertices and remove all edges between them.
-        The argument "join" must be a function that returns a
-        new vertex from two old vertices.  (For example, if
-        the vertices are frozensets, join could return their union.)
-        The two vertices are replaced by their join.
+        The vertex objects must support the __or__ method
+        (e.g. all vertices might be frozensets).
+        The two vertices V1 and V2 are replaced by V1|V2.
+        >>> G = Graph([(0,1),(1,2),(2,0)]).mergeable()
+        >>> F = lambda x: frozenset([x])
+        >>> G.merge(F(1),F(2))
+        >>> G
+        V: frozenset([1, 2]), frozenset([0])
+        E: frozenset([0]) --- frozenset([1, 2]), frozenset([1, 2]) --- frozenset([0])
         """
+        new_vertex = V1|V2
+        if new_vertex in self.vertices:
+            raise ValueError, 'Merged vertex already exists!'
         self.edges -= set([e for e in self.edges if V1 in e and V2 in e])
-        old_vertices = (V1, V2)
-        new_vertex = join(V1,V2)
-        self.vertices.add(new_vertex)
-        for e in [e for e in self.edges if V1 in e or V2 in e]:
-            if e.ends[0] in old_vertices:
-                self.edges.add( self.Edge(new_vertex, e.ends[1]) )
-            if e.ends[1] in new_vertex:
-                self.edges.add( self.Edge(e.ends[0], new_vertex) )
-            self.edges.remove(e)
         self.vertices.remove(V1)
         self.vertices.remove(V2)
+        old_vertices = (V1, V2)
+        self.vertices.add(new_vertex)
+        for edge in [e for e in self.edges if V1 in e or V2 in e]:
+            self.edges.remove(edge)
+            x, y = edge
+            if x in old_vertices:
+                self.edges.add( self.Edge(new_vertex, y) )
+            if y in old_vertices:
+                self.edges.add( self.Edge(x, new_vertex) )
 
+    def mergeable(self):
+        """
+        Return a new graph whose vertices are singleton frozensets,
+        each containing a vertex of this graph, and with edges
+        corresponding to those of this graph.  The new graph
+        will support merging vertices.
+        """
+        V = [frozenset([v]) for v in self.vertices]
+        E = [self.Edge(frozenset([x]), frozenset([y])) for x, y in self.edges]
+        return self.__class__(E,V)
+        
 class ReducedGraph(Graph):
     """
     A graph with at most one edge between any two vertices,
