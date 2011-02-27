@@ -238,7 +238,28 @@ class Graph:
         Return the planarity.
         """
         return planar(self)
-    
+
+    def merge(self, V1, V2, join):
+        """
+        Merge two vertices and remove all edges between them.
+        The argument "join" must be a function that returns a
+        new vertex from two old vertices.  (For example, if
+        the vertices are frozensets, join could return their union.)
+        The two vertices are replaced by their join.
+        """
+        self.edges -= set([e for e in self.edges if V1 in e and V2 in e])
+        old_vertices = (V1, V2)
+        new_vertex = join(V1,V2)
+        self.vertices.add(new_vertex)
+        for e in [e for e in self.edges if V1 in e or V2 in e]:
+            if e.ends[0] in old_vertices:
+                self.edges.add( self.Edge(new_vertex, e.ends[1]) )
+            if e.ends[1] in new_vertex:
+                self.edges.add( self.Edge(e.ends[0], new_vertex) )
+            self.edges.remove(e)
+        self.vertices.remove(V1)
+        self.vertices.remove(V2)
+
 class ReducedGraph(Graph):
     """
     A graph with at most one edge between any two vertices,
@@ -294,7 +315,7 @@ class Digraph(Graph):
         Return the vertex sets of the strongly connected components.
         """
         print 'Not written'
-        
+
 class FatGraph(Graph):
 
     def __init__(self, pairs, singles=[]):
