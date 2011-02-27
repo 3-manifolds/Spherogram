@@ -77,10 +77,10 @@ class EdgesBFO:
     def next(self):
         if self.fifo:
             parent, vertex, child = self.fifo.popleft()
-            neighbors = self.graph.incident(child(vertex)) - self.seen
-            self.seen |= neighbors
-            self.fifo.extend([(child, child(vertex), neighbor)
-                              for neighbor in neighbors])
+            new_edges = self.graph.incident(child(vertex)) - self.seen
+            self.seen |= new_edges
+            self.fifo.extend([(child, child(vertex), edge)
+                              for edge in new_edges])
             return parent, vertex, child
         else:
             raise StopIteration
@@ -136,12 +136,53 @@ class Graph:
                 valence += 1
         return valence
 
-    def min_cut(self, source, sink, capacity=None):
+    def components(self, deleted_vertices=[]):
         """
-        Find a minimal cut which separates source from sink.
+        Return the vertex sets of the connected components of the
+        graph obtained by removing the deleted_vertices and any edges
+        incident to them.
 
-        Returns the cut set of vertices on the source side, and the
-        set of edges that cross the cut.
+        >>> G = Graph([(0,1),(1,2),(2,0),(2,3),(3,4),(4,2)])
+        >>> G.components()
+        [set([0, 1, 2, 3, 4])]
+        >>> G.components(deleted_vertices=[2])
+        [set([3, 4]), set([0, 1])]
+        >>> G.components(deleted_vertices=[0])
+        [set([1, 2, 3, 4])]
+        """
+        forbidden = set()
+        for vertex in deleted_vertices:
+            forbidden |= self.incident(vertex)
+        vertices, result = list(self.vertices - set(deleted_vertices)), []
+        while vertices:
+            component, start = set(), vertices.pop()
+            component.add(start)
+            for parent, vertex, child in EdgesBFO(self, start, forbidden):
+                new_vertex = child(vertex)
+                component.add(new_vertex)
+                if new_vertex in vertices:
+                    vertices.remove(new_vertex)
+            result.append(component)
+        return result
+
+    def is_connected(self, deleted_vertices=[]):
+        """
+        Determine whether the graph obtained by removing the
+        deleted_vertices and incident edges is connected.
+
+        >>> G = Graph([(0,1),(1,2),(2,0),(2,3),(3,4),(4,2)])
+        >>> G.is_connected(deleted_vertices=[2])
+        False
+        """
+        return len(self.components(deleted_vertices)) <= 1
+
+    def one_min_cut(self, source, sink, capacity=None):
+        """
+        Find one minimal cut which separates source from sink.
+
+        Returns the cut set of vertices on the source side, the
+        set of edges that cross the cut, and a maximal family of
+        edge-disjoint paths from source to sink.
         """
         if sink == source:
             return None
@@ -154,44 +195,48 @@ class Graph:
         for vertex in self.vertices:
             children[vertex] = set()
         cut_set = set()
+        path_list = []
         while True:
             # Try to find a new path from source to sink
-            parents, cut_set, failed = {}, set([source]), True
+            parents, cut_set, reached_sink = {}, set([source]), False
             for parent, vertex, child in EdgesBFO(self, source, full_edges):
                  parents[child] = (parent, vertex)
                  cut_set.add(child(vertex))
                  if child(vertex) == sink:
-                     failed = False
+                     reached_sink = True
                      break
-            # If we fail, we have visited every vertex reachable
-            # from the source, thereby providing the cut set.
-            if failed:
+            # If we did not get to the sink, we visited every vertex
+            # reachable from the source, thereby providing the cut
+            # set.
+            if not reached_sink:
                 break
-            # On success, adjust the flow, record the children, and go on.
+            # If we got to the sink, do the bookkeeping and continue.
             path = []
-            flow = residual[child]
+            weight = residual[child]
             while True:
-                path.insert(0, child)
+                path.insert(0, (vertex, child))
                 children[vertex].add(child)
                 if vertex == source:
                     break
                 child = parent
                 parent, vertex = parents[child]
-                flow = min(flow, residual[child])
-            for edge in path:
-                residual[edge] -= flow
+                weight = min(weight, residual[child])
+            for vertex, edge in path:
+                residual[edge] -= weight
                 if residual[edge] == 0:
                     full_edges.add(edge)
-            #print path
-        #print cut_set
+        path_list.append( (weight, path) )
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
             cut_edges |= set([edge for edge in children[vertex]
                               if edge(vertex) not in cut_set])
-        return cut_set, cut_edges
+        return {'set': cut_set, 'edges': cut_edges, 'paths': path_list}
 
     def is_planar(self):
+        """
+        Return the planarity.
+        """
         return planar(self)
     
 class ReducedGraph(Graph):
@@ -228,11 +273,11 @@ class ReducedGraph(Graph):
                 valence += self.multiplicities[e]
         return valence
 
-    def min_cut(self, source, sink):
-        cut_set, cut_edges = Graph.min_cut(self, source, sink,
-                                           self.multiplicities.copy())
-        cut_size = sum([self.multiplicities[e] for e in cut_edges])
-        return cut_set, cut_edges, cut_size
+    def one_min_cut(self, source, sink):
+        cut = Graph.one_min_cut(self, source, sink,
+                            self.multiplicities.copy())
+        cut['size'] = sum([ self.multiplicities[e] for e in cut['edges'] ])
+        return cut
         
 class Digraph(Graph):
     edge_class = DirectedEdge
@@ -244,6 +289,12 @@ class Digraph(Graph):
         return set([ e for e in self.edges
                      if e.tail() == vertex and e.head() != vertex ])
 
+    def components(self):
+        """
+        Return the vertex sets of the strongly connected components.
+        """
+        print 'Not written'
+        
 class FatGraph(Graph):
 
     def __init__(self, pairs, singles=[]):

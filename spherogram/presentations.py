@@ -123,10 +123,11 @@ class Presentation:
         reducers = []
         levels = []
         for x in self.generators:
-            cut_set, cut_edges, cut_size = self.whitehead.min_cut(x, -x)
+            cut = self.whitehead.one_min_cut(x, -x)
             valence = self.whitehead.valence(x)
-            if cut_size < valence:
-                reducers.append( (cut_size - valence, x, cut_set) )
+            length_change = cut['size'] - valence
+            if length_change < 0:
+                reducers.append( (length_change, x, cut['set']) )
         reducers.sort(key=lambda x: x[0])
         return reducers
 
@@ -151,8 +152,24 @@ class Presentation:
 
     def shorten(self):
         """
-        Apply Whitehead moves to maximally reduce total length,
-        until the minimal length is reached.
+        Apply maximally reducing Whitehead moves until the minimal
+        length is reached.
+
+        >>> P = Presentation(['AAAAABBAACCC', 'AAABBBCCCCC', 'AABDCCBD'])
+        >>> P.whitehead.is_planar()
+        False
+        >>> P.shorten()
+        [AAAAABBAACCC, AAABBBCCCCC, AABDCCBD]
+        [AAAAABBAACCC, AAABBBCCCCC, AADCCD]
+        >>> P.whitehead.is_planar()
+        True
+        >>> P = Presentation(['xyyxyyxy', 'xyy'])
+        >>> P.shorten()
+        [xyyxyyxy, xyy]
+        [xyxyx, xy]
+        [xyy, y]
+        [xy, y]
+        [x, y]
         """
         print self.relators
         while True:
