@@ -323,7 +323,41 @@ class ReducedGraph(Graph):
                             self.multiplicities.copy())
         cut['size'] = sum([ self.multiplicities[e] for e in cut['edges'] ])
         return cut
-        
+
+class StrongConnector:
+    def __init__(self, digraph):
+        self.graph = digraph
+        self.seen = []
+        self.pending = []
+        self.first = {}
+        self.components = []
+        for vertex in self.graph.vertices:
+            if vertex not in self.seen:
+                self.search(vertex)
+                
+    def search(self, vertex):
+        self.first[vertex] = len(self.seen)
+        self.seen.append(vertex)
+        self.pending.append(vertex)
+        for edge in self.graph.incident(vertex):
+            child = edge(vertex)
+            if child not in self.seen:
+                self.search(child)
+                self.first[vertex] = min(self.first[vertex],
+                                          self.first[child])
+            elif child in self.pending:
+                self.first[vertex] = min(self.first[vertex],
+                                          self.seen.index(child))
+        if self.first[vertex] == self.seen.index(vertex):
+            component = set()
+            while True:
+                child = self.pending.pop()
+                component.add(child)
+                if child == vertex:
+                    break
+            print len(self.pending)
+            self.components.append(component)
+
 class Digraph(Graph):
     edge_class = DirectedEdge
 
@@ -338,7 +372,7 @@ class Digraph(Graph):
         """
         Return the vertex sets of the strongly connected components.
         """
-        print 'Not written'
+        return StrongConnector(self).components
 
 class FatGraph(Graph):
 
