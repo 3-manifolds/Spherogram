@@ -2,11 +2,13 @@
 Python implementation of graphs, reduced graphs, directed graphs, fat
 graphs (graphs with ordered adjacency lists) and fat directed graphs.
 
-Vertices are arbitrary python objects.  To instantiate a graph,
-provide a list of edges, as pairs of vertices, and an optional list of
-additional vertices, which may be isolated.  Vertices are saved as a
-set, so redundancies in the vertex list will be ignored.  Edges are
-saved as a list, so multiple edges are allowed.
+Vertices are arbitrary hashable python objects. Graph methods must
+not change vertices.
+
+To instantiate a graph, provide a list of edges, as pairs of vertices,
+and an optional list of additional vertices, which may be isolated.
+Vertices are saved as a set, so redundancies in the vertex list will
+be ignored.  Edges are saved as a list, so multiple edges are allowed.
 
 If G is a graph and v a vertex of G then G[v] is a list of vertices
 adjacent to v.
@@ -110,7 +112,7 @@ class Graph:
         """
         Return a list of adjacent vertices.
         """
-        return [e(vertex) for e in self.edges if vertex in e]
+        return [e(vertex) for e in self.incident(vertex)]
 
     def add_edge(self, x, y):
         edge = self.Edge(x,y)
@@ -211,10 +213,10 @@ class Graph:
             if not reached_sink:
                 break
             # If we got to the sink, do the bookkeeping and continue.
-            path = []
+            path = deque()
             weight = residual[child]
             while True:
-                path.insert(0, (vertex, child))
+                path.appendleft( (vertex, child) )
                 children[vertex].add(child)
                 if vertex == source:
                     break
@@ -324,40 +326,6 @@ class ReducedGraph(Graph):
         cut['size'] = sum([ self.multiplicities[e] for e in cut['edges'] ])
         return cut
 
-class StrongConnector:
-    def __init__(self, digraph):
-        self.graph = digraph
-        self.seen = []
-        self.pending = []
-        self.first = {}
-        self.components = []
-        for vertex in self.graph.vertices:
-            if vertex not in self.seen:
-                self.search(vertex)
-                
-    def search(self, vertex):
-        self.first[vertex] = len(self.seen)
-        self.seen.append(vertex)
-        self.pending.append(vertex)
-        for edge in self.graph.incident(vertex):
-            child = edge(vertex)
-            if child not in self.seen:
-                self.search(child)
-                self.first[vertex] = min(self.first[vertex],
-                                          self.first[child])
-            elif child in self.pending:
-                self.first[vertex] = min(self.first[vertex],
-                                          self.seen.index(child))
-        if self.first[vertex] == self.seen.index(vertex):
-            component = set()
-            while True:
-                child = self.pending.pop()
-                component.add(child)
-                if child == vertex:
-                    break
-            print len(self.pending)
-            self.components.append(component)
-
 class Digraph(Graph):
     edge_class = DirectedEdge
 
@@ -371,8 +339,79 @@ class Digraph(Graph):
     def components(self):
         """
         Return the vertex sets of the strongly connected components.
+
+        >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(3,1)])
+        >>> G.components()
+        [frozenset([1, 2, 3]), frozenset([0])]
+        >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(1,3)])
+        >>> G.components()
+        [frozenset([3]), frozenset([2]), frozenset([1]), frozenset([0])]
         """
         return StrongConnector(self).components
+
+    def component_digraph(self):
+        """
+        Return a digraph whose vertices are the strong components of
+        this digraph.  Two components are joined by an edge if this
+        digraph has an edge from one component to the other.
+
+        >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(3,1)])
+        >>> G.component_digraph()
+        Vertices:
+          frozenset([1, 2, 3])
+          frozenset([0])
+        Edges:
+          frozenset([0]) --> frozenset([1, 2, 3])
+        """
+        big_vertices = self.components()
+        which_component = {}
+        for big_vertex in big_vertices:
+            for vertex in big_vertex:
+                which_component[vertex] = big_vertex
+        big_edges = set()
+        for tail, head in self.edges:
+            big_tail= which_component[tail]
+            big_head = which_component[head]
+            if big_head != big_tail:
+                big_edges.add( (big_tail, big_head) )
+        return Digraph(big_edges, big_vertices)
+        
+class StrongConnector:
+    """
+    Finds strong components of a digraph using Tarjan's algorithm;
+    see http://en.wikipedia.org/wiki/
+    Tarjan%27s_strongly_connected_components_algorithm
+    """
+    def __init__(self, digraph):
+        self.digraph = digraph
+        self.seen = []
+        self.unclassified = []
+        self.upreach = {}
+        self.components = []
+        for vertex in self.digraph.vertices:
+            if vertex not in self.seen:
+                self.search(vertex)
+                
+    def search(self, vertex):
+        self.upreach[vertex] = len(self.seen)
+        self.seen.append(vertex)
+        self.unclassified.append(vertex)
+        for child in self.digraph[vertex]:
+            if child not in self.seen:
+                self.search(child)
+                self.upreach[vertex] = min(self.upreach[child],
+                                           self.upreach[vertex])
+            elif child in self.unclassified:
+                self.upreach[vertex] = min(self.seen.index(child),
+                                           self.upreach[vertex])
+        if self.upreach[vertex] == self.seen.index(vertex):
+            component = []
+            while True:
+                child = self.unclassified.pop()
+                component.append(child)
+                if child == vertex:
+                    break
+            self.components.append(frozenset(component))
 
 class FatGraph(Graph):
 
