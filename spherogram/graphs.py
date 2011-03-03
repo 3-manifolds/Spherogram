@@ -386,25 +386,25 @@ class StrongConnector:
         self.digraph = digraph
         self.seen = []
         self.unclassified = []
-        self.upreach = {}
+        self.root = {}
         self.components = []
         for vertex in self.digraph.vertices:
             if vertex not in self.seen:
                 self.search(vertex)
                 
     def search(self, vertex):
-        self.upreach[vertex] = len(self.seen)
+        self.root[vertex] = len(self.seen)
         self.seen.append(vertex)
         self.unclassified.append(vertex)
         for child in self.digraph[vertex]:
             if child not in self.seen:
                 self.search(child)
-                self.upreach[vertex] = min(self.upreach[child],
-                                           self.upreach[vertex])
+                self.root[vertex] = min(self.root[child],
+                                        self.root[vertex])
             elif child in self.unclassified:
-                self.upreach[vertex] = min(self.seen.index(child),
-                                           self.upreach[vertex])
-        if self.upreach[vertex] == self.seen.index(vertex):
+                self.root[vertex] = min(self.seen.index(child),
+                                        self.root[vertex])
+        if self.root[vertex] == self.seen.index(vertex):
             component = []
             while True:
                 child = self.unclassified.pop()
