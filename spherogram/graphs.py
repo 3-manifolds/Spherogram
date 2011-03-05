@@ -349,32 +349,22 @@ class Digraph(Graph):
         """
         return StrongConnector(self).components
 
-    def component_digraph(self):
+    def component_DAG(self):
         """
-        Return a digraph whose vertices are the strong components of
-        this digraph.  Two components are joined by an edge if this
-        digraph has an edge from one component to the other.
+        Return the acyclic digraph whose vertices are the strong
+        components of this digraph.  Two components are joined by an
+        edge if this digraph has an edge from one component to the
+        other.
 
         >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(3,1)])
-        >>> G.component_digraph()
+        >>> G.component_DAG()
         Vertices:
           frozenset([1, 2, 3])
           frozenset([0])
         Edges:
           frozenset([0]) --> frozenset([1, 2, 3])
         """
-        big_vertices = self.components()
-        which_component = {}
-        for big_vertex in big_vertices:
-            for vertex in big_vertex:
-                which_component[vertex] = big_vertex
-        big_edges = set()
-        for tail, head in self.edges:
-            big_tail= which_component[tail]
-            big_head = which_component[head]
-            if big_head != big_tail:
-                big_edges.add( (big_tail, big_head) )
-        return Digraph(big_edges, big_vertices)
+        return StrongConnector(self).DAG()
         
 class StrongConnector:
     """
@@ -386,8 +376,9 @@ class StrongConnector:
         self.digraph = digraph
         self.seen = []
         self.unclassified = []
-        self.root = {}
         self.components = []
+        self.root = {}
+        self.which_component = {}
         for vertex in self.digraph.vertices:
             if vertex not in self.seen:
                 self.search(vertex)
@@ -411,7 +402,25 @@ class StrongConnector:
                 component.append(child)
                 if child == vertex:
                     break
-            self.components.append(frozenset(component))
+            component = frozenset(component)
+            self.components.append(component)
+            for child in component:
+                self.which_component[child] = component
+
+    def DAG(self):
+        """
+        Return the acyclic directed graph whose vertices are the
+        strong components of the underlying digraph.  There is an edge
+        joining two components if and only if there is an edge of the
+        underlying digraph having an endpoint in each component.
+        """
+        edges = set()
+        for tail, head in self.digraph.edges:
+            dag_tail= self.which_component[tail]
+            dag_head = self.which_component[head]
+            if dag_head != dag_tail:
+                edges.add( (dag_tail, dag_head) )
+        return Digraph(edges, self.components)
 
 class FatGraph(Graph):
 
