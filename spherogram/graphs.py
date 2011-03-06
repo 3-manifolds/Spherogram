@@ -183,8 +183,9 @@ class Graph:
         Find one minimal cut which separates source from sink.
 
         Returns the cut set of vertices on the source side, the
-        set of edges that cross the cut, and a maximal family of
-        edge-disjoint paths from source to sink.
+        set of edges that cross the cut, a maximal family of
+        weighted edge-disjoint paths from source to sink, and
+        the set of edges with non-zero residual.
         """
         if sink == source:
             return None
@@ -227,13 +228,15 @@ class Graph:
                 residual[edge] -= weight
                 if residual[edge] == 0:
                     full_edges.add(edge)
-        path_list.append( (weight, path) )
+            path_list.append( (weight, path) )
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
             cut_edges |= set([edge for edge in children[vertex]
                               if edge(vertex) not in cut_set])
-        return {'set': cut_set, 'edges': cut_edges, 'paths': path_list}
+        unsaturated = [ e for e in self.edges if residual[e] > 0 ]
+        return {'set': cut_set, 'edges': cut_edges, 'paths': path_list,
+                'unsaturated': unsaturated}
 
     def is_planar(self):
         """
@@ -379,6 +382,7 @@ class StrongConnector:
         self.components = []
         self.root = {}
         self.which_component = {}
+        self.links = set()
         for vertex in self.digraph.vertices:
             if vertex not in self.seen:
                 self.search(vertex)
@@ -395,6 +399,8 @@ class StrongConnector:
             elif child in self.unclassified:
                 self.root[vertex] = min(self.seen.index(child),
                                         self.root[vertex])
+            else:
+                self.links.add((vertex, child))
         if self.root[vertex] == self.seen.index(vertex):
             component = []
             while True:
@@ -402,6 +408,8 @@ class StrongConnector:
                 component.append(child)
                 if child == vertex:
                     break
+            if self.unclassified:
+                self.links.add((self.unclassified[-1], vertex))
             component = frozenset(component)
             self.components.append(component)
             for child in component:
@@ -413,15 +421,94 @@ class StrongConnector:
         strong components of the underlying digraph.  There is an edge
         joining two components if and only if there is an edge of the
         underlying digraph having an endpoint in each component.
+        Using self.links, rather than self.digraph.edges, is a slight
+        optimization.
         """
         edges = set()
-        for tail, head in self.digraph.edges:
+        for tail, head in self.links:
             dag_tail= self.which_component[tail]
             dag_head = self.which_component[head]
             if dag_head != dag_tail:
                 edges.add( (dag_tail, dag_head) )
         return Digraph(edges, self.components)
 
+class Poset(set):
+    """
+    A partially ordered set, generated from an acyclic directed graph.
+    Instantiate with a Digraph.  A ValueError exception is raised if the
+    Digraph contains a cycle.
+    """
+    def __init__(self, digraph):
+        self.digraph = Digraph(digraph.edges, digraph.vertices)
+        self.elements = self.digraph.vertices
+        self.larger = {}
+        self.smaller = {}
+        for vertex in self:
+            self.larger[vertex] = set()
+            self.smaller[vertex] = set()
+        seen = []
+        for vertex in self:
+            if vertex not in seen:
+                self.search(vertex, seen)
+
+    def __iter__(self):
+        return self.elements.__iter__()
+
+    def __len__(self):
+        return len(self.elements)
+    
+    def search(self, vertex, seen):
+        seen.append(vertex)
+        for child in self.digraph[vertex]:
+            if child in self.smaller[vertex]:
+                raise ValueError, 'Digraph is not acyclic.'
+            self.smaller[child].add(vertex)
+            self.smaller[child] |= self.smaller[vertex]
+            self.search(child, seen)
+            self.larger[vertex].add(child)
+            self.larger[vertex] |= self.larger[child]
+
+    def compare(self, x, y):
+        if x == y:
+            return 0
+        elif x in self.smaller[y]:
+            return 1
+        elif y in self.smaller[x]:
+            return -1
+        else:
+            return None
+
+    def incomparable(self, x):
+        """
+        Return the elements which are not comparable to x.
+        """
+        return self.elements - self.smaller[x] - self.larger[x] - set([x])
+
+    def smallest(self):
+        """
+        Return the subset of minimal elements.
+        """
+        return frozenset( [ x for x in self if not self.smaller[x] ] )
+
+    def largest(self):
+        """
+        Return the subset of maximal elements.
+        """
+        return frozenset( [ x for x in self if not self.larger[x] ] )
+
+    def closure(self, A):
+        """
+        Return the smallest set X containing A which is is closed
+        under < , i.e. such that (x in X and y < x) => y in X.
+        """
+        result = frozenset(A)
+        for a in A:
+            result |= self.smaller[a]
+        if len(result) == len(A):
+            return result
+        else:
+            return self.closure(result)
+                       
 class FatGraph(Graph):
 
     def __init__(self, pairs, singles=[]):
