@@ -1,4 +1,4 @@
-from .graphs import ReducedGraph
+from .graphs import ReducedGraph, Digraph, Poset
 
 class Alphabet():
     """
@@ -110,6 +110,9 @@ class Presentation:
         generators = ', '.join([self.alphabet[x] for x in self.generators])
         return 'generators: [%s]\nrelators: %s'%(generators, self.relators)
 
+    def __len__(self):
+        return sum( [len(W) for W in self.relators] )
+    
     def build_reduced_whitehead_graph(self):
         self.whitehead = Wh = ReducedGraph()
         for letter in self.generators:
@@ -128,8 +131,10 @@ class Presentation:
             length_change = cut['size'] - valence
             if length_change < 0:
                 reducers.append( (length_change, x, cut['set']) )
+            elif length_change == 0:
+                levels.append( (x, cut) )
         reducers.sort(key=lambda x: x[0])
-        return reducers
+        return reducers, levels
 
     def whitehead_move(self, a, cut_set):
         """
@@ -171,12 +176,69 @@ class Presentation:
         [xy, y]
         [x, y]
         """
+        starting_length = len(self)
         print self.relators
         while True:
-            reducers = self.find_reducers()
+            reducers, levels = self.find_reducers()
             if not reducers:
-                return
+                return starting_length - len(self)
             reduction, a, cut_set = reducers[0]
             self.whitehead_move(a, cut_set)
             print self.relators
-        
+
+    def find_level_transformations(self):
+        """
+        Return a list of non-trivial level transformations.
+
+        >>> P = Presentation(['AABCaBacAcbabC'])
+        >>> for x, X in P.find_level_transformations():
+        ...   P = Presentation(['AABCaBacAcbabC'])
+        ...   P.whitehead_move(x,X)
+        ...   print P, len(P)
+        ... 
+        generators: [a, b, c]
+        relators: [ABCaaBcAAcbabC] 14
+        generators: [a, b, c]
+        relators: [AABCBaaccbabCA] 14
+        generators: [a, b, c]
+        relators: [ABCaBaaccbbACA] 14
+        generators: [a, b, c]
+        relators: [AACaBacBAcabbC] 14
+        generators: [a, b, c]
+        relators: [AABaBcacAbaCbC] 14
+        """
+
+#        For each generator x we find a minimal (x,x^-1)-cut.  We then
+#        construct a digraph D from all of the saturated edges of the
+#        associated maximal flow, using their flow directions.  (Both
+#        directions may occur, giving rise to cycles of length 2.)  For
+#        each edge which is not saturated by the flow, we add a cycle of
+#        length 2.  We then form the DAG of strong components of D, and
+#        its associated poset.  The level transformations returned have
+#        the form (x,X) where X is the union of all strong components
+#        in the transitive closure of a single strong component, and
+#        where neither X nor its complement has size 1.
+
+        reducers, levels = self.find_reducers()
+        result = []
+        if reducers:
+            raise ValueError, 'Presentation is not minimal.'
+        for generator, cut in levels:
+            edges = set()
+            for weight, path in cut['paths']:
+                for vertex, edge in path:
+                    edges.add( (vertex, edge(vertex)) )
+            for edge in cut['unsaturated']:
+                x, y = edge
+                edges.add( (x,y) )
+                edges.add( (y,x) )
+            D = Digraph(edges)
+            P = Poset(D.component_DAG())
+            for x in P:
+                C = P.closure([x])
+                if 1 < len(C) < len(P) - 1:
+                    cut_set = set()
+                    for x in C:
+                        cut_set |= x
+                    result.append( (generator, cut_set) )
+        return result
