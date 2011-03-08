@@ -80,6 +80,29 @@ class CyclicWord(Word):
         while len(self) > 1 and self[0] == -self[-1]:
             self.pop()
             self.pop(0)
+
+class WhiteheadMove:
+    """
+    Holds the data describing a Whitehead move.
+    """
+    def __init__(self, letter, cut_set, generators, alphabet):
+        self.letter = letter
+        self.cut_set = cut_set
+        self.generators = generators
+        self.alphabet = alphabet
+
+    def __repr__(self):
+        subs = []
+        for x in self.generators:
+            sub = '%s -> '%self.alphabet[x]
+            # Be careful with these minus signs!
+            if -x not in self.cut_set and x != self.letter:
+                sub += self.alphabet[self.letter]
+            sub += self.alphabet[x]
+            if x not in self.cut_set and x != -self.letter:
+                sub += self.alphabet[-self.letter]
+            subs.append(sub)
+        return ', '.join(subs)
             
 class Presentation:
     """
@@ -183,6 +206,7 @@ class Presentation:
             if not reducers:
                 return starting_length - len(self)
             reduction, a, cut_set = reducers[0]
+            print WhiteheadMove(a, cut_set, self.generators, self.alphabet)
             self.whitehead_move(a, cut_set)
             print self.relators
 
