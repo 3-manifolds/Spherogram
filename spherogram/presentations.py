@@ -210,18 +210,20 @@ class Presentation:
             self.whitehead_move(a, cut_set)
             print self.relators
 
-    def find_level_transformations(self):
+    def level_transformations(self):
         """
-        Return a list of non-trivial level transformations.
+        Generator for non-trivial level transformations.
 
         >>> P = Presentation(['AABCaBacAcbabC'])
-        >>> for x, X in P.find_level_transformations():
+        >>> for x, X in P.level_transformations():
         ...   P = Presentation(['AABCaBacAcbabC'])
-        ...   P.whitehead_move(x,X)
+        ...   P.whitehead_move(x, X)
         ...   print P, len(P)
         ... 
         generators: [a, b, c]
         relators: [ABCaaBcAAcbabC] 14
+        generators: [a, b, c]
+        relators: [ABCaaBacAcbbAC] 14
         generators: [a, b, c]
         relators: [AABCBaaccbabCA] 14
         generators: [a, b, c]
@@ -232,16 +234,17 @@ class Presentation:
         relators: [AABaBcacAbaCbC] 14
         """
 
-#        For each generator x we find a minimal (x,x^-1)-cut.  We then
-#        construct a digraph D from all of the saturated edges of the
-#        associated maximal flow, using their flow directions.  (Both
-#        directions may occur, giving rise to cycles of length 2.)  For
-#        each edge which is not saturated by the flow, we add a cycle of
-#        length 2.  We then form the DAG of strong components of D, and
-#        its associated poset.  The level transformations returned have
-#        the form (x,X) where X is the union of all strong components
-#        in the transitive closure of a single strong component, and
-#        where neither X nor its complement has size 1.
+#        For each generator x we find one minimal (x,x^-1)-cut.  We
+#        then construct a digraph D from all of the saturated edges of
+#        the associated maximal flow, using their flow directions.
+#        (Both directions may occur, giving rise to cycles of length
+#        2.)  For each edge which is not saturated by the flow, we add
+#        a cycle of length 2.  We then form the DAG of strong
+#        components of D, and its associated poset.  The transitively
+#        closed subsets determine all cuts, which must be level
+#        transformations.  The generator yields all level
+#        transformations of the form (x,X) where where neither X nor
+#        its complement has size 1.
 
         reducers, levels = self.find_reducers()
         result = []
@@ -258,11 +261,7 @@ class Presentation:
                 edges.add( (y,x) )
             D = Digraph(edges)
             P = Poset(D.component_DAG())
-            for x in P:
-                C = P.closure([x])
-                if 1 < len(C) < len(P) - 1:
-                    cut_set = set()
-                    for x in C:
-                        cut_set |= x
-                    result.append( (generator, cut_set) )
-        return result
+            for subset in P.closed_subsets():
+                if 1 < len(subset) < len(P)-1:
+                    yield generator, frozenset.union(*subset)
+

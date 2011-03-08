@@ -10,8 +10,20 @@ and an optional list of additional vertices, which may be isolated.
 Vertices are saved as a set, so redundancies in the vertex list will
 be ignored.  Edges are saved as a list, so multiple edges are allowed.
 
-If G is a graph and v a vertex of G then G[v] is a list of vertices
-adjacent to v.
+If G is a graph and v a vertex of G then G[v] is a list of distinct
+vertices adjacent to v.  If G is a digraph, then G[v] is the list of
+distinct heads of directed edges with tail v.
+
+When called as a function, an edge is the non-trivial involution of
+its endpoints; calling it with one endpoint returns the other one.
+
+One can iterate over edges as:
+
+for x, y in G.edges:
+  ...
+
+where x and y will be the two endpoints of the edge (tail and head
+in the case of directed edges).
 """
 
 from .planarity import planar
@@ -65,7 +77,7 @@ class EdgesBFO:
     a forbidden set, ordered by distance from the source.
     
     Yields triples (e, v, f) where e and f are edges containing v
-    and e is the parent of f with respect to the depth-first ordering.
+    and e precedes f in the depth-first ordering.
     """
     def __init__(self, graph, source, forbidden=set()):
         self.graph = graph
