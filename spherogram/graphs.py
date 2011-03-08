@@ -439,17 +439,19 @@ class Poset(set):
     Digraph contains a cycle.
     """
     def __init__(self, digraph):
-        self.digraph = Digraph(digraph.edges, digraph.vertices)
-        self.elements = self.digraph.vertices
+        self.elements = set(digraph.vertices)
         self.larger = {}
         self.smaller = {}
+        self.successors = {}
+        self.closed = set()
         for vertex in self:
             self.larger[vertex] = set()
             self.smaller[vertex] = set()
+            self.successors[vertex] = set(digraph[vertex])
         seen = []
         for vertex in self:
             if vertex not in seen:
-                self.search(vertex, seen)
+                self.search(vertex, seen, digraph)
 
     def __iter__(self):
         return self.elements.__iter__()
@@ -457,14 +459,14 @@ class Poset(set):
     def __len__(self):
         return len(self.elements)
     
-    def search(self, vertex, seen):
+    def search(self, vertex, seen, digraph):
         seen.append(vertex)
-        for child in self.digraph[vertex]:
+        for child in digraph[vertex]:
             if child in self.smaller[vertex]:
                 raise ValueError, 'Digraph is not acyclic.'
             self.smaller[child].add(vertex)
             self.smaller[child] |= self.smaller[vertex]
-            self.search(child, seen)
+            self.search(child, seen, digraph)
             self.larger[vertex].add(child)
             self.larger[vertex] |= self.larger[child]
 
@@ -508,7 +510,51 @@ class Poset(set):
             return result
         else:
             return self.closure(result)
-                       
+
+    def closed_subsets(self, start=None):
+        """
+        Generator for all transitively closed subsets.
+        """
+        if start is None:
+            if self.closed:
+                for subset in self.closed:
+                    yield subset
+                return
+            else:
+                start = self.smallest()
+        complement = self.elements - start
+        if start not in self.closed:
+            self.closed.add(start)
+            yield start
+        for element in complement:
+            print 'adding ', element
+            extended = self.closure(start | set([element]))
+            for subset in self.closed_subsets(extended):
+                yield subset
+
+    def closed_subsets(self, start=None):
+        """
+        Generator for all transitively closed subsets.  The subsets
+        are computed once, then cached for use in subsequent calls.
+        """
+        if start is None:
+            if self.closed:
+                for subset in self.closed:
+                    yield subset
+                return
+            else:
+                start = self.smallest()
+        if start not in self.closed:
+            self.closed.add(start)
+            yield start
+        children = set()
+        for element in start:
+            children.update(self.successors[element] - start)
+        for child in children:
+            extended = self.closure(start | set([child]))
+            for subset in self.closed_subsets(extended):
+                yield subset
+
 class FatGraph(Graph):
 
     def __init__(self, pairs, singles=[]):
