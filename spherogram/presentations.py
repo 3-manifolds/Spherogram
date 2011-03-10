@@ -1,4 +1,6 @@
 from .graphs import ReducedGraph, Digraph, Poset
+from collections import deque
+import operator
 
 class Alphabet():
     """
@@ -24,20 +26,23 @@ class Alphabet():
         """
         Convert a sequence of integers to a string.
         """
-        return self.separator.join([self[x] for x in int_list])
-
+        if int_list:
+            return self.separator.join([self[x] for x in int_list])
+        else:
+            return self[0]
+        
 abc = Alphabet('1',
                'abcdefghijklmnopqrstuvwxyz',
                'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
-class Word(list):
+class Word(deque):
     """
-    A word in a free group is represented as a list of non-zero
+    A word in a free group is represented as a deque of non-zero
     integers.  Inverse corresponds to negation.  The optional alphabet
     controls how these lists are displayed to the user.
     """
     def __init__(self, word, alphabet=abc):
-        list.__init__(self)
+        deque.__init__(self)
         if isinstance(word, str):
             for char in word:
                 self.append(alphabet(char))
@@ -48,14 +53,12 @@ class Word(list):
         self.cancel()
 
     def __mul__(self, other):
-        product = Word(self + other, alphabet=self.alphabet)
-        
+        product = Word(list(self) + list(other), alphabet=self.alphabet)
         product.cancel()
         return product
 
     def __invert__(self):
-        inverse = map(operator.neg, self)
-        inverse.reverse()
+        inverse = [-x for x in reversed(self)]
         return Word(inverse, alphabet=self.alphabet)
 
     def __repr__(self):
@@ -64,23 +67,29 @@ class Word(list):
     def cancel(self):
         done = False
         while not done:
-            n, done = 1, True
-            while n < len(self):
-                if self[n] == -self[n-1]:
+            done, size, n = True, len(self), 1
+            self.rotate(-1)
+            while len(self) > 0 and n < size:
+                if self[0] == -self[-1]:
                     done = False
-                    self.pop(n-1)
-                    self.pop(n-1)
+                    self.popleft()
+                    self.pop()
                 else:
-                    n += 1
+                    self.rotate(-1)
+                n += 1
 
 class CyclicWord(Word):
     
     def cancel(self):
         Word.cancel(self)
-        while len(self) > 1 and self[0] == -self[-1]:
+        while len(self) > 0 and self[0] == -self[-1]:
+            self.popleft()
             self.pop()
-            self.pop(0)
 
+    def __mul__(self):
+        raise ValueError, 'Cyclic words cannot be multiplied.')
+
+    
 class WhiteheadMove:
     """
     Holds the data describing a Whitehead move.
