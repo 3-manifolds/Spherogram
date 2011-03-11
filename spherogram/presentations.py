@@ -87,8 +87,55 @@ class CyclicWord(Word):
             self.pop()
 
     def __mul__(self):
-        raise ValueError, 'Cyclic words cannot be multiplied.')
+        raise ValueError, 'Cyclic words cannot be multiplied.'
 
+    def spun(self, start=0):
+        """
+        Generator for letters in cyclic order, starting at start.
+        """
+        N = len(self)
+        for n in xrange(start, start+N):
+            yield self[n%N]
+
+    def invert(self):
+        """
+        Invert this cyclic word in place.
+        """
+        # This is builtin, starting from python 2.7
+        for n in xrange(len(self)/2):
+            self[n], self[-1-n] = self[-1-n], self[n]
+        map(operator.neg, self)
+
+    def shuffle(self, perm_dict={}):
+        """
+        Permute generators according to the supplied dictionary.
+        Keys must be positive integers.  Values may be negative.
+        The set of keys must equal the set of values up to sign.
+        """
+        abs_image = set( map(operator.abs, perm_dict.values()) )
+        if set(perm_dict.keys()) != abs_image:
+            raise ValueError, 'Not a permutation!'
+        for n in xrange(len(self)):
+            x = self[n]
+            self[n] = perm_dict.get(x,x) if x > 0 else -perm_dict.get(-x,-x)
+            
+    def powers(self, start=0):
+        """
+        Return a list of pairs (letter, power) for the exponential
+        representation of the spun word, beginning at start.
+        """
+        result = []
+        last_letter = self[start]
+        count = 0
+        for letter in self.spun(start):
+            if letter == last_letter:
+                count += 1
+            else:
+                result.append( (last_letter, count))
+                count = 1
+                last_letter = letter
+        result.append( (last_letter, count) )
+        return result
     
 class WhiteheadMove:
     """
