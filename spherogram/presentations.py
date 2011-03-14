@@ -177,15 +177,15 @@ class CyclicWord(Word):
         """
         least = Complexity([])
         minima = []
-        for inverted in (False, True):
+        for word in (self, ~self):
+            print word
             for n in xrange(len(self)):
-                complexity, O = self.complexity(size, ordering, spin=n)
+                complexity, O = word.complexity(size, ordering, spin=n)
                 if complexity < least:
                     least = complexity
-                    minima = [ (CyclicWord(self.spun(n)), O) ]
+                    minima = [ (CyclicWord(word.spun(n)), O) ]
                 elif complexity == least:
-                    minima.append( (CyclicWord(self.spun(n)), O)  )
-            self.invert()
+                    minima.append( (CyclicWord(word.spun(n)), O)  )
         return least, minima
     
 class Complexity(list):
@@ -276,6 +276,19 @@ class Presentation:
             for n in range(-1, len(relator)-1):
                 Wh.add_edge(relator[n], -relator[n+1])
 
+    def canonize(self, ordering=[], canonical=[]):
+        least = Complexity([])
+        mins = []  # Need hashable words to use a dict     
+        for relator in self.relators:
+            complexity, minima = relator.minima(len(self.generators))
+            if complexity < least:
+                least = complexity
+                mins = [ (relator, minima) ]
+            elif complexity == least:
+                mins.append( (relator, minima) )
+        # Now recurse over subpresentations
+        return mins
+                 
     def find_reducers(self):
         reducers = []
         levels = []
