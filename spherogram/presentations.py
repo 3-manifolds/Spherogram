@@ -35,13 +35,17 @@ abc = Alphabet('1',
                'abcdefghijklmnopqrstuvwxyz',
                'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
+ABC = Alphabet('1',
+               'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+               'abcdefghijklmnopqrstuvwxyz')
+
 class Word(deque):
     """
     A word in a free group is represented as a deque of non-zero
     integers.  Inverse corresponds to negation.  The optional alphabet
     controls how these lists are displayed to the user.
     """
-    def __init__(self, word, alphabet=abc):
+    def __init__(self, word, alphabet=ABC):
         deque.__init__(self)
         if isinstance(word, str):
             for char in word:
@@ -89,6 +93,10 @@ class CyclicWord(Word):
     def __mul__(self):
         raise ValueError, 'Cyclic words cannot be multiplied.'
 
+    def __invert__(self):
+        inverse = [-x for x in reversed(self)]
+        return CyclicWord(inverse, alphabet=self.alphabet)
+    
     def spun(self, start=0):
         """
         Generator for letters in cyclic order, starting at start.
@@ -137,6 +145,73 @@ class CyclicWord(Word):
         result.append( (last_letter, count) )
         return result
     
+    def complexity(self, size, ordering=[], spin=0):
+        """
+        Returns the complexity of the word relative to an extension of
+        the ordering, and returns the extended ordering.  The
+        lexicographical complexity is a list of integers, representing
+        the ranking of each letter in the ordering.  The size is the
+        total number of generators, which may be larger than the number
+        of distinct generators that appear in the word.  If x appears
+        in the ordering with rank r, then x^-1 has rank size + r.
+        Unordered generators are added to the ordering as they are
+        encountered in the word.
+        """
+        the_ordering = list(ordering)
+        complexity = []
+        for letter in self.spun(spin):
+            if letter in the_ordering:
+                complexity.append(the_ordering.index(letter))
+            elif -letter in the_ordering:
+                complexity.append(size + the_ordering.index(-letter))
+            else:
+                complexity.append(len(the_ordering))
+                the_ordering.append(letter)
+        return Complexity(complexity), the_ordering
+                                  
+    def minima(self, size, ordering=[]):
+        """
+        Return the minimal complexity of all rotations and inverted
+        rotations, and a list of the words and orderings that realize
+        the minimal complexity.
+        """
+        least = Complexity([])
+        minima = []
+        for inverted in (False, True):
+            for n in xrange(len(self)):
+                complexity, O = self.complexity(size, ordering, spin=n)
+                if complexity < least:
+                    least = complexity
+                    minima = [ (CyclicWord(self.spun(n)), O) ]
+                elif complexity == least:
+                    minima.append( (CyclicWord(self.spun(n)), O)  )
+            self.invert()
+        return least, minima
+    
+class Complexity(list):
+    def __lt__(self, other):
+        if len(self) > len(other):
+            return True
+        else:
+            return list.__lt__(self, other)
+    def __gt__(self, other):
+        if len(self) < len(other):
+            return True
+        else:
+            return list.__gt__(self, other)
+    def __le__(self, other):
+        return not self < other
+
+    def __gt__(self, other):
+        return not self > other
+        
+    def __cmp__(self, other):
+        result = cmp(len(other), len(self))
+        if result == 0:
+            result = cmp(self, other)
+        return result
+
+        
 class WhiteheadMove:
     """
     Holds the data describing a Whitehead move.
@@ -169,7 +244,7 @@ class Presentation:
     list of objects that can be used to instantiate a CyclicWord,
     i.e. strings or lists of non-zero integers.
     """ 
-    def __init__(self, relator_list, alphabet=abc):
+    def __init__(self, relator_list, alphabet=ABC):
         self.alphabet = alphabet
         self.relators = []
         self.generators = set()
@@ -275,18 +350,18 @@ class Presentation:
         ...   P = Presentation(['AABCaBacAcbabC'])
         ...   P.whitehead_move(x, X)
         ...   print P, len(P)
-        ... 
-        generators: [a, b, c]
-        relators: [ABCaaBcAAcbabC] 14
-        generators: [a, b, c]
+        ...
+        generators: [A, B, C]
         relators: [ABCaaBacAcbbAC] 14
-        generators: [a, b, c]
-        relators: [AABCBaaccbabCA] 14
-        generators: [a, b, c]
-        relators: [ABCaBaaccbbACA] 14
-        generators: [a, b, c]
+        generators: [A, B, C]
+        relators: [ABCaaBcAAcbabC] 14
+        generators: [A, B, C]
+        relators: [AABCaBaaccbbAC] 14
+        generators: [A, B, C]
+        relators: [AAABCBaaccbabC] 14
+        generators: [A, B, C]
         relators: [AACaBacBAcabbC] 14
-        generators: [a, b, c]
+        generators: [A, B, C]
         relators: [AABaBcacAbaCbC] 14
         """
 
