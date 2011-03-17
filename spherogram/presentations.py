@@ -178,14 +178,13 @@ class CyclicWord(Word):
         least = Complexity([])
         minima = []
         for word in (self, ~self):
-            print word
             for n in xrange(len(self)):
-                complexity, O = word.complexity(size, ordering, spin=n)
+                complexity, Xordering = word.complexity(size, ordering, spin=n)
                 if complexity < least:
                     least = complexity
-                    minima = [ (CyclicWord(word.spun(n)), O) ]
+                    minima = [ (CyclicWord(word.spun(n)), Xordering) ]
                 elif complexity == least:
-                    minima.append( (CyclicWord(word.spun(n)), O)  )
+                    minima.append( (CyclicWord(word.spun(n)), Xordering)  )
         return least, minima
     
 class Complexity(list):
@@ -195,14 +194,14 @@ class Complexity(list):
         else:
             return list.__lt__(self, other)
     def __gt__(self, other):
-        if len(self) < len(other):
-            return True
+        if len(self) > len(other):
+            return False
         else:
             return list.__gt__(self, other)
     def __le__(self, other):
         return not self < other
 
-    def __gt__(self, other):
+    def __ge__(self, other):
         return not self > other
         
     def __cmp__(self, other):
@@ -275,20 +274,6 @@ class Presentation:
         for relator in self.relators:
             for n in range(-1, len(relator)-1):
                 Wh.add_edge(relator[n], -relator[n+1])
-
-    def canonize(self, ordering=[], canonical=[]):
-        least = Complexity([])
-        mins = []  # Need hashable words to use a dict     
-        for relator in self.relators:
-            complexity, minima = relator.minima(len(self.generators))
-            if complexity < least:
-                least = complexity
-                mins = [ (relator, minima) ]
-            elif complexity == least:
-                mins.append( (relator, minima) )
-        # Now recurse over subpresentations
-        return mins
-                 
     def find_reducers(self):
         reducers = []
         levels = []
@@ -409,3 +394,41 @@ class Presentation:
                 if 1 < len(subset) < len(P)-1:
                     yield generator, frozenset.union(*subset)
 
+class Canonizer:
+    def __init__(self, presentation):
+        self.presentation = presentation
+        self.least = Complexity([])
+        self.queue = deque()
+        self.num_generators = len(presentation.generators)
+        self.num_relators = len(presentation.relators)
+        self.canonize()
+    
+    def canonize(self, tested=[]):
+        for relator in self.presentation.relators:
+            print relator
+            if relator in tested:
+                continue
+            else:
+                T = tested + [relator]
+            complexity, minima = relator.minima(self.num_generators)
+            if complexity > self.least:
+                continue
+            if complexity < self.least:
+                self.least = complexity
+                self.queue = deque()
+            for minimum in minima:
+                self.queue.append( (minimum, T) )
+            print self.queue
+        # Now recurse over subpresentations
+        N = len(self.queue)
+        while True:
+            M, T = self.queue[0] 
+            if len(T) < self.num_relators:
+                self.queue.popleft()
+                break
+            N -= 1
+            self.queue.rotate(-1)
+            if N == 0:
+                return
+        self.canonize(list(T))
+                 
