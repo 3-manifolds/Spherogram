@@ -114,6 +114,15 @@ class CyclicWord(Word):
             self[n], self[-1-n] = self[-1-n], self[n]
         map(operator.neg, self)
 
+    def rewrite(self, ordering):
+        seq = []
+        for letter in self:
+            if letter in ordering:
+                seq.append(1 + ordering.index(letter))
+            else:
+                seq.append(-1 - ordering.index(-letter))
+        return CyclicWord(seq)
+                    
     def shuffle(self, perm_dict={}):
         """
         Permute generators according to the supplied dictionary.
@@ -236,27 +245,27 @@ class WhiteheadMove:
             
 class Presentation:
     """
-    A Presentation contains a list of CyclicWords as relators and
-    a list of (integer) letters as generators.  The generators are
-    implicitly defined by their appearance in some relator.  (To add a
-    free generator x, include the relation xX.)  Instantiate with a
-    list of objects that can be used to instantiate a CyclicWord,
+    A Presentation contains a list of CyclicWords as relators and a
+    list of (integer) letters as generators.  The generators are
+    implicitly defined by their appearance in some relator.  Other
+    generators can be provided in an optional list.  Instantiate with
+    a list of objects that can be used to instantiate a CyclicWord,
     i.e. strings or lists of non-zero integers.
     """ 
-    def __init__(self, relator_list, alphabet=ABC):
+    def __init__(self, relator_list, alphabet=ABC, generators=[]):
         self.alphabet = alphabet
         self.relators = []
-        self.generators = set()
+        self.generators = set(generators)
         if not isinstance(relator_list, list):
             raise ValueError, 'Please provide a list of relators.'
         for r in relator_list:
             W = CyclicWord(r, alphabet)
             if len(W) > 0:
                 self.relators.append(W)
-            if isinstance(r,str):
+            if isinstance(r, str):
                 self.generators.update([abs(alphabet(l)) for l in r])
             else:
-                self.generators.update(abs(r))
+                self.generators.update([abs(l) for l in r])
         self.build_reduced_whitehead_graph()
 
     def __repr__(self):
@@ -394,41 +403,51 @@ class Presentation:
                 if 1 < len(subset) < len(P)-1:
                     yield generator, frozenset.union(*subset)
 
-class Canonizer:
-    def __init__(self, presentation):
-        self.presentation = presentation
-        self.least = Complexity([])
-        self.queue = deque()
-        self.num_generators = len(presentation.generators)
-        self.num_relators = len(presentation.relators)
-        self.canonize()
-    
-    def canonize(self, tested=[]):
-        for relator in self.presentation.relators:
-            print relator
-            if relator in tested:
-                continue
-            else:
-                T = tested + [relator]
-            complexity, minima = relator.minima(self.num_generators)
-            if complexity > self.least:
-                continue
-            if complexity < self.least:
-                self.least = complexity
-                self.queue = deque()
-            for minimum in minima:
-                self.queue.append( (minimum, T) )
-            print self.queue
-        # Now recurse over subpresentations
-        N = len(self.queue)
+    def canonize(self):
+        queue = deque()
+        P = Presentation([], generators=self.generators)
+        queue.append(CanonizeNode(P, self.relators))
+        done = False
         while True:
-            M, T = self.queue[0] 
-            if len(T) < self.num_relators:
-                self.queue.popleft()
+            if len(queue[0].remaining) > 0:
+                left = queue.popleft()
+                for child in left.children():
+                    queue.append(child)
+            else:
                 break
-            N -= 1
-            self.queue.rotate(-1)
-            if N == 0:
-                return
-        self.canonize(list(T))
-                 
+        pres = queue[0].presentation
+        ordering = queue[0].ordering
+        generators = range(1, 1 + len(pres.generators))
+        relators = [R.rewrite(ordering) for R in pres.relators]
+        return Presentation(relators, generators=generators)
+
+class CanonizeNode:
+    def __init__(self, presentation, remaining, ordering=[]):
+        self.presentation = presentation
+        self.remaining = remaining
+        self.ordering = ordering
+
+    def __repr__(self):
+        return '%s\n%s'%(self.presentation, self.ordering)
+    
+    def children(self):
+        childlist = []
+        least = Complexity()
+        length = len(self.presentation.generators)
+        for relator in self.remaining:
+            complexity, minima = relator.minima(length, self.ordering)
+            if complexity > least:
+                continue
+            if complexity < least:
+                self.least = complexity
+                childlist = []
+            for minimum in minima:
+                word, ordering = minimum
+                relators = self.presentation.relators + [word]
+                remaining = list(self.remaining)
+                remaining.remove(relator)
+                P = Presentation(relators,
+                                 generators=self.presentation.generators)
+                childlist.append(CanonizeNode(P, remaining, ordering))
+        return childlist
+
