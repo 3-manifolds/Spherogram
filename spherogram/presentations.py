@@ -274,6 +274,10 @@ class Presentation:
 
     def __len__(self):
         return sum( [len(W) for W in self.relators] )
+
+    def __eq__(self, other):
+        return (self.relators == other.relators and
+                self.generators == other.generators)
     
     def build_reduced_whitehead_graph(self):
         self.whitehead = Wh = ReducedGraph()
@@ -404,19 +408,27 @@ class Presentation:
                 if 1 < len(subset) < len(P)-1:
                     yield generator, frozenset.union(*subset)
 
-    def level_transforms(self):
+    def level_orbit(self):
         """
         Generator for canonical presentations obtained from this one
         by length preserving Whitehead moves.
         """
-        for a, A in self.level_transformations():
-            P = Presentation(self.relators, self.generators, self.alphabet)
-            P.whitehead_move(a,A)
-            yield P.canonize()
+        queue = deque([self])
+        seen = []
+        while queue:
+            top = queue.popleft()
+            seen.append(top)
+            for a, A in top.level_transformations():
+                P = Presentation(top.relators, top.generators, top.alphabet)
+                P.whitehead_move(a,A)
+                P = P.canonize()
+                if not P in seen and not P in queue:
+                    queue.append(P)
+            yield top
     
     def canonize(self):
         queue = deque()
-        P = Presentation([], generators=self.generators)
+        P = Presentation([], self.generators)
         queue.append(CanonizeNode(P, self.relators))
         done = False
         while True:
@@ -430,7 +442,7 @@ class Presentation:
         ordering = queue[0].ordering
         generators = range(1, 1 + len(pres.generators))
         relators = [R.rewrite(ordering) for R in pres.relators]
-        return Presentation(relators, generators=generators)
+        return Presentation(relators, generators)
 
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
