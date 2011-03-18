@@ -252,7 +252,7 @@ class Presentation:
     a list of objects that can be used to instantiate a CyclicWord,
     i.e. strings or lists of non-zero integers.
     """ 
-    def __init__(self, relator_list, alphabet=ABC, generators=[]):
+    def __init__(self, relator_list, generators=[], alphabet=ABC):
         self.alphabet = alphabet
         self.relators = []
         self.generators = set(generators)
@@ -283,6 +283,7 @@ class Presentation:
         for relator in self.relators:
             for n in range(-1, len(relator)-1):
                 Wh.add_edge(relator[n], -relator[n+1])
+
     def find_reducers(self):
         reducers = []
         levels = []
@@ -403,6 +404,16 @@ class Presentation:
                 if 1 < len(subset) < len(P)-1:
                     yield generator, frozenset.union(*subset)
 
+    def level_transforms(self):
+        """
+        Generator for canonical presentations obtained from this one
+        by length preserving Whitehead moves.
+        """
+        for a, A in self.level_transformations():
+            P = Presentation(self.relators, self.generators, self.alphabet)
+            P.whitehead_move(a,A)
+            yield P.canonize()
+    
     def canonize(self):
         queue = deque()
         P = Presentation([], generators=self.generators)
