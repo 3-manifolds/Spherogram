@@ -252,13 +252,13 @@ class Presentation:
     a list of objects that can be used to instantiate a CyclicWord,
     i.e. strings or lists of non-zero integers.
     """ 
-    def __init__(self, relator_list, generators=[], alphabet=ABC):
+    def __init__(self, relators, generators=[], alphabet=ABC):
         self.alphabet = alphabet
         self.relators = []
         self.generators = set(generators)
-        if not isinstance(relator_list, list):
-            raise ValueError, 'Please provide a list of relators.'
-        for r in relator_list:
+        if isinstance(relators, str):
+            raise ValueError, 'Please provide a sequence of relators.'
+        for r in relators:
             W = CyclicWord(r, alphabet)
             if len(W) > 0:
                 self.relators.append(W)
@@ -266,7 +266,6 @@ class Presentation:
                 self.generators.update([abs(alphabet(l)) for l in r])
             else:
                 self.generators.update([abs(l) for l in r])
-        self.build_reduced_whitehead_graph()
 
     def __repr__(self):
         generators = ', '.join([self.alphabet[x] for x in self.generators])
@@ -279,21 +278,23 @@ class Presentation:
         return (self.relators == other.relators and
                 self.generators == other.generators)
     
-    def build_reduced_whitehead_graph(self):
-        self.whitehead = Wh = ReducedGraph()
+    def whitehead_graph(self):
+        Wh = ReducedGraph()
         for letter in self.generators:
             Wh.add_vertex(letter)
             Wh.add_vertex(-letter)
         for relator in self.relators:
             for n in range(-1, len(relator)-1):
                 Wh.add_edge(relator[n], -relator[n+1])
+        return Wh
 
     def find_reducers(self):
+        whitehead = self.whitehead_graph()
         reducers = []
         levels = []
         for x in self.generators:
-            cut = self.whitehead.one_min_cut(x, -x)
-            valence = self.whitehead.valence(x)
+            cut = whitehead.one_min_cut(x, -x)
+            valence = whitehead.valence(x)
             length_change = cut['size'] - valence
             if length_change < 0:
                 reducers.append( (length_change, x, cut['set']) )
@@ -304,7 +305,8 @@ class Presentation:
 
     def whitehead_move(self, a, cut_set):
         """
-        Perform a Whitehead move (T-transformation) on the presentation.
+        Return a presentation obtained by performing a Whitehead move
+        (T-transformation) on this presentation.
         """
         new_relators = []
         for relator in self.relators:
@@ -318,8 +320,8 @@ class Presentation:
                     new_relator.append(-a)
             W = CyclicWord(new_relator, self.alphabet)
             new_relators.append(W)
-        self.relators = new_relators
-        self.build_reduced_whitehead_graph()
+        return Presentation(new_relators, self.generators)
+
 
     def shorten(self):
         """
@@ -342,16 +344,17 @@ class Presentation:
         [xy, y]
         [x, y]
         """
-        starting_length = len(self)
-        print self.relators
+        result = Presentation(self.relators, self.generators)
+        starting_length = len(result)
+        print result.relators
         while True:
-            reducers, levels = self.find_reducers()
+            reducers, levels = result.find_reducers()
             if not reducers:
-                return starting_length - len(self)
+                return result
             reduction, a, cut_set = reducers[0]
             print WhiteheadMove(a, cut_set, self.generators, self.alphabet)
-            self.whitehead_move(a, cut_set)
-            print self.relators
+            result = result.whitehead_move(a, cut_set)
+            print result.relators
 
     def level_transformations(self):
         """
@@ -420,7 +423,7 @@ class Presentation:
             seen.append(top)
             for a, A in top.level_transformations():
                 P = Presentation(top.relators, top.generators, top.alphabet)
-                P.whitehead_move(a,A)
+                P = P.whitehead_move(a,A)
                 P = P.canonize()
                 if not P in seen and not P in queue:
                     queue.append(P)
