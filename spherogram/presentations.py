@@ -326,7 +326,7 @@ class Presentation:
     def shorten(self):
         """
         Apply maximally reducing Whitehead moves until the minimal
-        length is reached.
+        length is reached.  Return the resulting minimal presentation. 
 
         >>> P = Presentation(['AAAAABBAACCC', 'AAABBBCCCCC', 'AABDCCBD'])
         >>> P.whitehead.is_planar()
@@ -363,7 +363,7 @@ class Presentation:
         >>> P = Presentation(['AABCaBacAcbabC'])
         >>> for x, X in P.level_transformations():
         ...   P = Presentation(['AABCaBacAcbabC'])
-        ...   P.whitehead_move(x, X)
+        ...   P = P.whitehead_move(x, X)
         ...   print P, len(P)
         ...
         generators: [A, B, C]
@@ -395,7 +395,7 @@ class Presentation:
         reducers, levels = self.find_reducers()
         result = []
         if reducers:
-            raise ValueError, 'Presentation is not minimal.'
+             raise ValueError, 'Presentation is not minimal.'
         for generator, cut in levels:
             edges = set()
             for weight, path in cut['paths']:
@@ -413,23 +413,30 @@ class Presentation:
 
     def level_orbit(self):
         """
-        Generator for canonical presentations obtained from this one
-        by length preserving Whitehead moves.
+        Generator for all signatures of presentations obtained from
+        this one by length preserving Whitehead moves.
         """
-        queue = deque([self])
-        seen = []
+        S = self.signature()
+        queue = deque([S])
+        seen = set([S])
         while queue:
             top = queue.popleft()
-            seen.append(top)
-            for a, A in top.level_transformations():
-                P = Presentation(top.relators, top.generators, top.alphabet)
+            pres = Presentation(top)
+            for a, A in pres.level_transformations():
+                P = Presentation(pres.relators, pres.generators)
                 P = P.whitehead_move(a,A)
-                P = P.canonize()
-                if not P in seen and not P in queue:
-                    queue.append(P)
+                signature = P.signature()
+                if not signature in seen:
+                    queue.append(signature)
+                    seen.add(signature)
             yield top
-    
-    def canonize(self):
+        
+    def signature(self):
+        """
+        Return the relators of a canonized presentation as a tuple
+        of tuples.  The result is hashable, but can be used to
+        generate a canonical presentation equivalent to this one.
+        """
         queue = deque()
         P = Presentation([], self.generators)
         queue.append(CanonizeNode(P, self.relators))
@@ -443,9 +450,8 @@ class Presentation:
                 break
         pres = queue[0].presentation
         ordering = queue[0].ordering
-        generators = range(1, 1 + len(pres.generators))
-        relators = [R.rewrite(ordering) for R in pres.relators]
-        return Presentation(relators, generators)
+        relators = [tuple(R.rewrite(ordering)) for R in pres.relators]
+        return tuple(relators)
 
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
@@ -476,4 +482,3 @@ class CanonizeNode:
                                  generators=self.presentation.generators)
                 childlist.append(CanonizeNode(P, remaining, ordering))
         return childlist
-

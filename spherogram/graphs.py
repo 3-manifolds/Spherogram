@@ -244,8 +244,11 @@ class Graph:
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
-            cut_edges |= set([edge for edge in children[vertex]
-                              if edge(vertex) not in cut_set])
+            # BOOG!
+#            cut_edges |= set([edge for edge in children[vertex]
+#                              if edge(vertex) not in cut_set])
+            cut_edges |= set([edge for edge in self.edges
+                              if vertex in edge])
         unsaturated = [ e for e in self.edges if residual[e] > 0 ]
         return {'set': cut_set, 'edges': cut_edges, 'paths': path_list,
                 'unsaturated': unsaturated}
