@@ -208,13 +208,13 @@ class Complexity(list):
         else:
             return list.__gt__(self, other)
     def __le__(self, other):
-        return not self < other
+        return not self > other
 
     def __ge__(self, other):
-        return not self > other
+        return not self < other
         
     def __cmp__(self, other):
-        result = cmp(len(other), len(self))
+        result = cmp( len(other), len(self) )
         if result == 0:
             result = cmp(self, other)
         return result
@@ -426,7 +426,7 @@ class Presentation:
                 P = Presentation(pres.relators, pres.generators)
                 P = P.whitehead_move(a,A)
                 signature = P.signature()
-                if not signature in seen:
+                if signature not in seen:
                     queue.append(signature)
                     seen.add(signature)
             yield top
@@ -448,10 +448,9 @@ class Presentation:
                     queue.append(child)
             else:
                 break
-        pres = queue[0].presentation
+        relators = queue[0].presentation.relators
         ordering = queue[0].ordering
-        relators = [tuple(R.rewrite(ordering)) for R in pres.relators]
-        return tuple(relators)
+        return tuple([tuple(R.rewrite(ordering)) for R in relators])
 
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
@@ -471,7 +470,7 @@ class CanonizeNode:
             if complexity > least:
                 continue
             if complexity < least:
-                self.least = complexity
+                least = complexity
                 childlist = []
             for minimum in minima:
                 word, ordering = minimum
