@@ -198,15 +198,17 @@ class CyclicWord(Word):
     
 class Complexity(list):
     def __lt__(self, other):
-        if len(self) > len(other):
-            return True
-        else:
+        if len(self) == len(other):
             return list.__lt__(self, other)
-    def __gt__(self, other):
-        if len(self) > len(other):
-            return False
         else:
+            return len(self) > len(other)
+
+    def __gt__(self, other):
+        if len(self) == len(other):
             return list.__gt__(self, other)
+        else:
+            return len(other) > len(self)
+
     def __le__(self, other):
         return not self > other
 
@@ -411,26 +413,30 @@ class Presentation:
                 if 1 < len(subset) < len(P)-1:
                     yield generator, frozenset.union(*subset)
 
-    def level_orbit(self):
+    def level_orbit(self, verbose=False):
         """
-        Generator for all signatures of presentations obtained from
-        this one by length preserving Whitehead moves.
+        Generator for all presentations obtained from this one by
+        length preserving Whitehead moves.  If the verbose flag is
+        set, also yields the parent presentation and Whitehead move.
         """
         S = self.signature()
-        queue = deque([S])
+        queue = deque([ (None, None, self, S) ])
         seen = set([S])
         while queue:
-            top = queue.popleft()
-            pres = Presentation(top)
+            parent, move, pres, sig = queue.popleft()
             for a, A in pres.level_transformations():
                 P = Presentation(pres.relators, pres.generators)
                 P = P.whitehead_move(a,A)
                 signature = P.signature()
                 if signature not in seen:
-                    queue.append(signature)
+                    WM = WhiteheadMove(a,A, pres.generators, self.alphabet),
+                    queue.append( (pres, WM, P, signature) )
                     seen.add(signature)
-            yield top
-        
+            if verbose:
+                yield (parent, move, pres, Presentation(sig))
+            else:
+                yield Presentation(sig)
+
     def signature(self):
         """
         Return the relators of a canonized presentation as a tuple
