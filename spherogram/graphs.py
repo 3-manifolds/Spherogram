@@ -256,7 +256,7 @@ class Graph:
         Return the planarity.
         """
         return planar(self)
-
+    
     def merge(self, V1, V2):
         """
         Merge two vertices and remove all edges between them.  The
@@ -327,7 +327,10 @@ class ReducedGraph(Graph):
             self.edges.add(new_edge)
             self.multiplicities[new_edge] = multiplicity
 
-    def valence(self, vertex):
+    def multi_valence(self, vertex):
+        """
+        Return the valence of a vertex, counting edge multiplicities.
+        """
         valence = 0
         for e in self.edges:
             if vertex in e:
@@ -342,6 +345,41 @@ class ReducedGraph(Graph):
         cut['size'] = sum([ self.multiplicities[e] for e in cut['edges'] ])
         return cut
 
+    def cut_pairs(self):
+        """
+        Return a list of cut_pairs.  The graph is assumed to be
+        connected and to have no cut vertices.
+        """
+        pairs = []
+        majors = [v for v in self.vertices if self.valence(v) > 2]
+        if len(majors) == 2:
+            v, V = majors
+            if self.valence(v) == 3:
+                return []
+            edge = self.find_edge(v,V)
+            if not edge or self.multiplicities[edge] < 2:
+                return []
+            return majors
+        major_set = set(majors)
+        for n in xrange(1,len(majors)):
+            for v in majors[:n]:
+                pair = (v, majors[n])
+                components = self.components(deleted_vertices=pair)
+                if len(components) > 2:
+                    pairs.append(pair)
+                elif len(components) == 2:
+                    M0 = len(major_set & components[0])
+                    M1 = len(major_set & components[1])
+                    edge = self.find_edge(*pair)
+                    if edge:
+                        if M0 or M1:
+                            pairs.append(pair)
+                            continue
+                    else:
+                        if M0 and M1:
+                            pairs.append(pair)
+        return pairs
+    
 class Digraph(Graph):
     edge_class = DirectedEdge
 

@@ -296,7 +296,7 @@ class Presentation:
         levels = []
         for x in self.generators:
             cut = whitehead.one_min_cut(x, -x)
-            valence = whitehead.valence(x)
+            valence = whitehead.multi_valence(x)
             length_change = cut['size'] - valence
             if length_change < 0:
                 reducers.append( (length_change, x, cut['set']) )
@@ -416,8 +416,9 @@ class Presentation:
     def level_orbit(self, verbose=False):
         """
         Generator for all presentations obtained from this one by
-        length preserving Whitehead moves.  If the verbose flag is
-        set, also yields the parent presentation and Whitehead move.
+        length preserving Whitehead moves. Does a depth first search
+        of the orbit.  If the verbose flag is True, yields a tuple:
+        (parent, Whitehead move, result, canonical presentation).
         """
         S = self.signature()
         queue = deque([ (None, None, self, S) ])
@@ -461,6 +462,8 @@ class Presentation:
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
         self.presentation = presentation
+        self.generators = presentation.generators
+        self.relators = presentation.relators
         self.remaining = remaining
         self.ordering = ordering
 
@@ -470,7 +473,7 @@ class CanonizeNode:
     def children(self):
         childlist = []
         least = Complexity()
-        length = len(self.presentation.generators)
+        length = len(self.generators)
         for relator in self.remaining:
             complexity, minima = relator.minima(length, self.ordering)
             if complexity > least:
@@ -480,10 +483,9 @@ class CanonizeNode:
                 childlist = []
             for minimum in minima:
                 word, ordering = minimum
-                relators = self.presentation.relators + [word]
+                relators = self.relators + [word]
                 remaining = list(self.remaining)
                 remaining.remove(relator)
-                P = Presentation(relators,
-                                 generators=self.presentation.generators)
+                P = Presentation(relators, generators=self.generators)
                 childlist.append(CanonizeNode(P, remaining, ordering))
         return childlist
