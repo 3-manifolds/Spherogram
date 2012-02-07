@@ -1,0 +1,6 @@
+planarity-read-only/
+planarity.c
+dist/
+build/
+spherogram.egg-info/
+
