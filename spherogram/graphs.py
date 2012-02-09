@@ -403,6 +403,9 @@ class Digraph(Graph):
         """
         return StrongConnector(self).components
 
+    def is_connected(self):
+        return len(self.components()) <= 1
+
     def component_DAG(self):
         """
         Return the acyclic digraph whose vertices are the strong
