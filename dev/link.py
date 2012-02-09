@@ -2,21 +2,41 @@ from spherogram import *
 
 class Crossing:
     """
-    See crossing.pdf for the convention, which matches
-    that of KnotTheory.
+    See crossings.pdf for the conventions.  The sign of the
+    crossing can be in {0, +1, -1}.  In the first case, the
+    strands at the crossings can have any orientations.
     """
-    def __init__(self, label=None, sign=0, adjacent=None):
-        if adjacent == None:
-            adjacent = [None, None, None, None]
+    def __init__(self, label=None):
+        self.label, self.sign, self.directions = label, 0, set()
+        self.adjacent = [None, None, None, None]
+        self.strand_labels = {'over':None, 'under':None}
 
-        self.label, self.sign, self.adjacent = label, sign, adjacent
-        self.strand_labels = [None, None, None, None]
+    def make_tail(self, a):
+        b = (a, (a + 2) % 4)
+        self.directions.add(b)
+
+    def rotate_by_180(self):
+        self.adjacent = self.adjacent[2:] + self.adjacent[:2]
+        for i, (o, j) in enumerate(self.adjacent):
+            o.adjacent[j] = (self, i)
+        self.directions = set( [ (b, a) for a, b in self.directions] )
+        
+    def orient(self):
+        if (2, 0) in self.directions:
+            self.rotate_by_180()
+        self.sign = 1 if (3, 1) in self.directions else -1
         
     def __getitem__(self, i):
         return (self, i%4)
 
     def slot_is_empty(self, i):
         return self.adjacent[i % 4] == None
+
+    def entry_vertex(self, s):
+        if s == 'under':
+            return 0
+        else:
+            return 3 if self.sign == 1 else 1
     
     def __setitem__(self, i, other):
         o, j = other
@@ -32,7 +52,7 @@ class Crossing:
     def info(self):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
-        print "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent])
+        print "<%s : %s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions, self.strand_labels)
 
 class CrossingStrand(DirectedEdge):
     def __mul__(self, other):
@@ -55,30 +75,55 @@ class Link(Digraph):
         if True in [ None in c.adjacent for c in crossings]:
             raise ValueError("No loose strands allowed")
 
+        self.crossings = crossings
         Digraph.__init__(self, [], [])
+        self._orient_crossings()
+        self._build_components()
 
-        remaining = set( [ (c, i) for c in crossings for i in range(4)] )
+        if check_planarity and not self.is_planar():
+            raise ValueError("Link isn't planar")
+
+    def _orient_crossings(self):
+        remaining = set( [ (c, i) for c in self.crossings for i in range(4)] )
+        while len(remaining):
+            c, i = start = remaining.pop()
+            finished = False
+            while not finished:
+                d, j = c.adjacent[i]
+                d.make_tail(j)
+                remaining = remaining - set( [ (c, i), (d, j) ])
+                c, i = d, (j+2) % 4
+                finished = (c, i) == start
+
+        for c in self.crossings:
+            c.orient()
+
+    def _build_components(self):
+        """
+        Each component is stored as a list of *entry points*
+        to crossings.
+        """
+        remaining = set( [ (c, s) for c in self.crossings for s in ('over', 'under')] )
         components = []
         while len(remaining):
-            start = remaining.pop()
-            c, i = start
-            component = []
-            while True:
-                component.append((c, strand_from_endpoint[i]))
-                remaining.discard( (c,i) )
-                d, j = c.adjacent[i]
-                remaining.remove( (d,j) )
+            component, n = [], 0
+            c, s = remaining.pop()
+            i = c.entry_vertex(s)
+            start, finished = (c, i), False
+            while not finished:
+                component.append( (c, i) )
+                remaining.discard( (c, s) )
+                c.strand_labels[s] = (len(components), n)
+                d, i = c.adjacent[(i+2)%4]
                 self.add_edge(c, d)
-                c, i = d, (j + 2) % 4
-                if (c, i) == start:
-                    break
+                s = 'under' if i == 0 else 'over'
+                c, n = d, n+1
+                finished =  (c, i) == start
 
             components.append(component)
 
         self.link_components = components
-        if check_planarity and not self.is_planar():
-            raise ValueError("Link isn't planar")
-
+            
     def is_planar(self):
         if not self.is_connected():
             return False
@@ -94,22 +139,19 @@ class Link(Digraph):
 
     def PD_code(self, KnotTheory=False):
         components = self.link_components
-        for n, component in enumerate(components):
-            for i, (c, s) in enumerate(component):
-                c.strand_labels[s.tail()] = (n, i)
-                c.strand_labels[s.head()] = (n, i + 1)
+        comp_lens = [len(component) for component in components]
 
-        component_lens = [len(component) for component in components]
-
-        def strand_label( (n, i) ):
-            return sum(component_lens[:n]) + (i % component_lens[n]) + 1
-
+        def label( (n, i) ):
+            return sum(comp_lens[:n]) + (i % comp_lens[n]) + 1
+        def next_label( (n, i) ):
+            return label( (n, i+1) )
         PD = []
         for c in self.vertices:
-            labels = [strand_label(s) for s in c.strand_labels]
-            if c.strand_labels[0] > c.strand_labels[2]:
-                labels = labels[2:] + labels[:2]
-            PD.append(labels)
+            over, under = c.strand_labels['over'], c.strand_labels['under']
+            if c.sign == 1:
+                PD.append( [label(under), next_label(over), next_label(under), label(over)] )
+            else:
+                PD.append([label(under), label(over), next_label(under), next_label(over)])
 
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
@@ -153,4 +195,3 @@ print K.is_planar(), W.is_planar(), punct_torus().is_planar()
 print K.PD_code(True)
 print W.PD_code(True)
 print W.link_components
-
