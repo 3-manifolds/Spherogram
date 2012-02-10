@@ -1,4 +1,5 @@
-from spherogram import *
+from spherogram.graphs import Graph, Digraph, DirectedEdge
+import link_exterior
 
 class Crossing:
     """
@@ -54,21 +55,6 @@ class Crossing:
             return (a[0].label, a[1]) if a else None
         print "<%s : %s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions, self.strand_labels)
 
-class CrossingStrand(DirectedEdge):
-    def __mul__(self, other):
-        a, b = self
-        c, d = other
-        assert set([a,b,c,d]) == set([0,1,2,3])
-        return 1 if (a < b and c > d) or (a > b and c < d) else -1
-
-    def kind(self):
-        return "under" if self.tail() % 2 == 0 else "over"
-
-over_right =CrossingStrand(3, 1)
-over_left = CrossingStrand(1, 3)
-under_right = CrossingStrand(2, 0)
-under_left = CrossingStrand(0, 2)
-strand_from_endpoint = (under_right, over_right, under_left, over_left)
 
 class Link(Digraph):
     def __init__(self, crossings, check_planarity=True):
@@ -157,41 +143,11 @@ class Link(Digraph):
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         return PD
 
+Link.exterior = link_exterior.link_to_complement
 
-def figure8():
-    a, b, c, d = [Crossing(x) for x in 'abcd']
-    a[0] = c[1]
-    a[1] = d[0]
-    a[2] = b[1]
-    a[3] = b[0]
-    b[2] = d[3]
-    b[3] = c[2]
-    c[3] = d[2]
-    c[0] = d[1]
-    return Link([a,b,c,d])
 
-def punct_torus():
-    a = Crossing('a')
-    a[0] = a[2]
-    a[1] = a[3]
-    return Link([a], check_planarity=False)
 
-def whitehead():
-    a, b, c, d, e =  crossings = [Crossing(x) for x in 'abcde']
-    a[0] = b[3]
-    a[1] = d[0]
-    a[2] = d[3]
-    a[3] = c[0]
-    b[0] = c[3]
-    b[1] = e[2]
-    b[2] = e[1]
-    c[1] = d[2]
-    c[2] = e[3]
-    d[1] = e[0]
-    return Link(crossings)
 
-K, W, T = figure8(), whitehead(), punct_torus()
-print K.is_planar(), W.is_planar(), punct_torus().is_planar()
-print K.PD_code(True)
-print W.PD_code(True)
-print W.link_components
+
+
+
