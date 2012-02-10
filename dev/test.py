@@ -1,4 +1,5 @@
 from link import *
+from tangles import *
 
 def figure8():
     a, b, c, d = [Crossing(x) for x in 'abcd']
@@ -37,3 +38,6 @@ print K.is_planar(), W.is_planar(), punct_torus().is_planar()
 print K.PD_code(True)
 print W.PD_code(True)
 print K.exterior().volume(), W.exterior().volume()
+
+print OneTangle().numerator_closure().exterior().fundamental_group()
+

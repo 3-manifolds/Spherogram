@@ -56,7 +56,10 @@ class Edge:
         return '%s --- %s'%tuple(self.ends)
 
     def __iter__(self):
-        return self.ends.__iter__() 
+        return self.ends.__iter__()
+
+    def is_loop(self):
+        return self.ends[0] == self.ends[1]
         
 class DirectedEdge(Edge):
     """
@@ -139,7 +142,7 @@ class Graph:
         Return the set of non-loops incident to the vertex.
         """
         return set([ e for e in self.edges
-                     if vertex in e and e(vertex) != vertex ])
+                     if vertex in e and not e.is_loop() ])
 
     def valence(self, vertex):
         valence = 0
