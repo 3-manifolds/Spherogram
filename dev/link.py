@@ -16,12 +16,25 @@ class Crossing:
         b = (a, (a + 2) % 4)
         self.directions.add(b)
 
-    def rotate_by_180(self):
-        self.adjacent = self.adjacent[2:] + self.adjacent[:2]
+    def rotate(self, s):
+        """
+        Rotate the incoming connections by 90*s degrees anticlockwise.  
+        """
+        self.adjacent = self.adjacent[s:] + self.adjacent[:s]
         for i, (o, j) in enumerate(self.adjacent):
             o.adjacent[j] = (self, i)
-        self.directions = set( [ (b, a) for a, b in self.directions] )
+
+        rotate = lambda v : (v + s) % 4
+        self.directions = set( [ (rotate(a), rotate(b)) for a, b in self.directions] )
+
+    def rotate_by_90(self):
+        "Effectively switches the crossing"
+        self.rotate(1)
         
+    def rotate_by_180(self):
+        "Effective reverses directions of the strands"
+        self.rotate(2)
+
     def orient(self):
         if (2, 0) in self.directions:
             self.rotate_by_180()
@@ -41,8 +54,6 @@ class Crossing:
     
     def __setitem__(self, i, other):
         o, j = other
-        if not (self.slot_is_empty(i) and o.slot_is_empty(j)):
-            raise ValueError('Gluing two strands in the same place')
         self.adjacent[i % 4] = other
         other[0].adjacent[other[1]] = (self, i)
         
@@ -55,13 +66,51 @@ class Crossing:
             return (a[0].label, a[1]) if a else None
         print "<%s : %s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions, self.strand_labels)
 
+class Strand:
+    """
+    When constructing links, it's convenient to have strands as well
+    as crossings.  These are stripped by the Link class when it
+    pieces things together.  
+    """
+    def __init__(self, label=None):
+        self.label = label
+        self.adjacent = [None, None]
+
+    def fuse(self):
+        """
+        Joins the incoming and outgoing strands and removes
+        self from the picture.
+        """
+        (a, i), (b,j) = self.adjacent
+        a.adjacent[i] = (b, j)
+        b.adjacent[j] = (a, i)
+
+    def __getitem__(self, i):
+        return (self, i%2)
+
+    def __setitem__(self, i, other):
+        o, j = other
+        self.adjacent[i % 2] = other
+        other[0].adjacent[other[1]] = (self, i)
+
+    def __repr__(self):
+        return self.label
+
+    def info(self):
+        def format_adjacent(a):
+            return (a[0].label, a[1]) if a else None
+        print "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent])
+    
 
 class Link(Digraph):
     def __init__(self, crossings, check_planarity=True):
         if True in [ None in c.adjacent for c in crossings]:
             raise ValueError("No loose strands allowed")
 
-        self.crossings = crossings
+        # Fuse the strands.  If there any components made up
+        # only of strands, these thrown out here.
+        [s.fuse() for s in crossings if isinstance(s, Strand)]
+        self.crossings = [c for c in crossings if not isinstance(s, Strand)]
         Digraph.__init__(self, [], [])
         self._orient_crossings()
         self._build_components()
@@ -69,7 +118,13 @@ class Link(Digraph):
         if check_planarity and not self.is_planar():
             raise ValueError("Link isn't planar")
 
+    def all_crossings_oriented(self):
+        return len([c for c in self.crossings if c.sign == 0]) == 0
+    
     def _orient_crossings(self):
+        if self.all_crossings_oriented():
+            return
+        
         remaining = set( [ (c, i) for c in self.crossings for i in range(4)] )
         while len(remaining):
             c, i = start = remaining.pop()
@@ -144,10 +199,4 @@ class Link(Digraph):
         return PD
 
 Link.exterior = link_exterior.link_to_complement
-
-
-
-
-
-
 
