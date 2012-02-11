@@ -3,4 +3,8 @@ planarity.c
 dist/
 build/
 spherogram.egg-info/
+.DS_Store
+
+syntax: glob
+*.pyc
 

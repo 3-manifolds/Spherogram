@@ -64,14 +64,16 @@ class Tangle:
         a, b, c, d = self.adjacent
         join_strands(a, d)
         join_strands(b, c)
-        return link.Link(self.crossings)
+        T = self.copy()
+        return link.Link(T.crossings)
 
     def denominator_closure(self):
         "The bridge picture closure"
         a, b, c, d = self.adjacent
         join_strands(a, b)
         join_strands(c, d)
-        return link.Link(self.crossings)
+        T = self.copy()
+        return link.Link(T.crossings)
 
     def __repr__(self):
         return "<Tangle: %s>" % self.label
@@ -96,17 +98,19 @@ class OneTangle(Tangle):
         c = link.Crossing('one')
         Tangle.__init__(self, [c], [(c, (i+1) % 4) for i in range(4)])
     
-def integer_tangle(n):
-    if n == 0:
-        return ZeroTangle()
-    if n > 0:
-        T = OneTangle()
-        for i in range(n - 1):
-            T += OneTangle()
-        return T
-    if n < 0:
-        return -integer_tangle(-n)
+class IntegerTangle(Tangle):
+    def __init__(self, n):
+        if n == 0:
+            T = ZeroTangle()
+        if n > 0:
+            T = OneTangle()
+            for i in range(n - 1):
+                T += OneTangle()
+        if n < 0:
+            T = -IntegerTangle(-n)
 
+        Tangle.__init__(self, T.crossings, T.adjacent)
+    
 def continued_fraction_expansion(a, b):
     """
     The continued fraction expansion of a/b. 
@@ -120,15 +124,11 @@ def continued_fraction_expansion(a, b):
         return [q] + continued_fraction_expansion(r, b)[1:]
     return [q] + continued_fraction_expansion(b, r)
 
-def rational_tangle(a, b):
-    T = InfinityTangle()
-    for p in reversed(continued_fraction_expansion(a,b)):
-        T = integer_tangle(p) + T.invert()
-    return T
-
-
-T = rational_tangle(1, 1)
-#L = T.numerator_closure()
-#L.exterior().volume()
-
-
+class RationalTangle(Tangle):
+    def __init__(self, a, b):
+        self.fraction = (a,b)
+        self.partial_quotients = pqs = continued_fraction_expansion(a,b)
+        T = InfinityTangle()
+        for p in reversed(pqs):
+            T = IntegerTangle(p) + T.invert()
+        Tangle.__init__(self, T.crossings, T.adjacent)
