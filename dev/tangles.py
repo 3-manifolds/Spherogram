@@ -8,14 +8,14 @@ Note:  Tangles are all mutable, operations are typically in place,
 and there's currently no way to copy one.  
 """
 
-from link import Crossing, Link, Strand
+import link, copy
 
 def join_strands( (a,i), (b,j) ):
     a.adjacent[i] = (b,j)
     b.adjacent[j] = (a,i)
     
 class Tangle:
-    def __init__(self, crossings=None, entry_points=None):
+    def __init__(self, crossings=None, entry_points=None, label=None):
         if crossings == None:
             crossings = []
 
@@ -24,65 +24,76 @@ class Tangle:
         if entry_points:
             for i, e in enumerate(entry_points):
                 join_strands( (self, i), e)
+        self.label = label
         
     def __add__(self, other):
         "Join with self to right of other"
-        S, O = self.adjacent, other.adjacent
-        join_strands( O[3], S[0] )
-        join_strands( O[2], S[1] )
-        return Tangle(self.crossings + other.crossings, [O[0], O[1], S[2], S[3]])
+        A, B = self.copy(), other.copy()        
+        a, b = A.adjacent, B.adjacent
+        join_strands( b[3], a[0] )
+        join_strands( b[2], a[1] )
+        return Tangle(A.crossings + B.crossings, [b[0], b[1], a[2], a[3]])
 
     def __mul__(self, other):
         "Join with self *above* other"
-        S, O = self.adjacent, other.adjacent
-        join_strands( O[1], S[0] )
-        join_strands( O[2], S[3] )
-        return Tangle(self.crossings + other.crossings, [O[0], S[1], S[2], O[3]])
+        A, B = self.copy(), other.copy()
+        a, b = A.adjacent, B.adjacent
+        join_strands( b[1], a[0] )
+        join_strands( b[2], a[3] )
+        return Tangle(A.crossings + B.crossings, [b[0], a[1], a[2], b[3]])
 
     def __neg__(self):
         "Mirror image of self"
-        [c.rotate_by_90() for c in self.crossings if not isinstance(c, Strand)]
-        return self
+        T = self.copy()
+        [c.rotate_by_90() for c in T.crossings if not isinstance(c, link.Strand)]
+        return T
 
+    def copy(self):
+        return copy.deepcopy(self)
+    
     def invert(self):
         "Rotate anticlockwise by 90 and take the mirror image"
-        self.adjacent = self.adjacent[1:] + self.adjacent[:1]
-        for i, (o, j) in enumerate(self.adjacent):
-            o.adjacent[j] = (self, i)
-        return -self
+        T = self.copy()
+        T.adjacent = T.adjacent[1:] + T.adjacent[:1]
+        for i, (o, j) in enumerate(T.adjacent):
+            o.adjacent[j] = (T, i)
+        return -T
 
     def numerator_closure(self):
         "The bridge picture closure"
         a, b, c, d = self.adjacent
         join_strands(a, d)
         join_strands(b, c)
-        return Link(self.crossings)
+        return link.Link(self.crossings)
 
     def denominator_closure(self):
         "The bridge picture closure"
         a, b, c, d = self.adjacent
         join_strands(a, b)
         join_strands(c, d)
-        return Link(self.crossings)
+        return link.Link(self.crossings)
+
+    def __repr__(self):
+        return "<Tangle: %s>" % self.label
 
 class ZeroTangle(Tangle):
     def __init__(self):
-        bot, top = Strand('B'), Strand('T')
+        bot, top = link.Strand('B'), link.Strand('T')
         Tangle.__init__(self, [bot, top], [ (bot, 0), (top, 0), (top, 1), (bot, 1) ] )
 
 class InfinityTangle(Tangle):
     def __init__(self):
-        left, right = Strand('L'), Strand('R')
+        left, right = link.Strand('L'), link.Strand('R')
         Tangle.__init__(self, [left, right],  [ (right, 0), (right, 1), (left, 1), (left, 0) ] )
 
 class MinusOneTangle(Tangle):
     def __init__(self):
-        c = Crossing('-one')
+        c = link.Crossing('-one')
         Tangle.__init__(self, [c], [(c,i) for i in range(4)])
 
 class OneTangle(Tangle):
     def __init__(self):
-        c = Crossing('one')
+        c = link.Crossing('one')
         Tangle.__init__(self, [c], [(c, (i+1) % 4) for i in range(4)])
     
 def integer_tangle(n):
@@ -116,5 +127,8 @@ def rational_tangle(a, b):
     return T
 
 
+T = rational_tangle(1, 1)
+#L = T.numerator_closure()
+#L.exterior().volume()
 
 
