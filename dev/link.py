@@ -1,5 +1,5 @@
 from spherogram.graphs import Graph, Digraph, DirectedEdge
-import link_exterior
+import link_exterior, copy
 
 class Crossing:
     """
@@ -20,11 +20,14 @@ class Crossing:
         """
         Rotate the incoming connections by 90*s degrees anticlockwise.  
         """
+        rotate = lambda v : (v + s) % 4
         self.adjacent = self.adjacent[s:] + self.adjacent[:s]
         for i, (o, j) in enumerate(self.adjacent):
-            o.adjacent[j] = (self, i)
+            if o != self:
+                o.adjacent[j] = (self, i)
+            else:
+                self.adjacent[i] = (self, rotate(j))
 
-        rotate = lambda v : (v + s) % 4
         self.directions = set( [ (rotate(a), rotate(b)) for a, b in self.directions] )
 
     def rotate_by_90(self):
@@ -110,7 +113,7 @@ class Link(Digraph):
         # Fuse the strands.  If there any components made up
         # only of strands, these thrown out here.
         [s.fuse() for s in crossings if isinstance(s, Strand)]
-        self.crossings = [c for c in crossings if not isinstance(s, Strand)]
+        self.crossings = [c for c in crossings if not isinstance(c, Strand)]
         Digraph.__init__(self, [], [])
         self._orient_crossings()
         self._build_components()
@@ -164,7 +167,10 @@ class Link(Digraph):
             components.append(component)
 
         self.link_components = components
-            
+
+    def copy(self):
+        return copy.deepcopy(self)
+    
     def is_planar(self):
         if not self.is_connected():
             return False
@@ -199,4 +205,3 @@ class Link(Digraph):
         return PD
 
 Link.exterior = link_exterior.link_to_complement
-

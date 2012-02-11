@@ -39,5 +39,5 @@ print K.PD_code(True)
 print W.PD_code(True)
 print K.exterior().volume(), W.exterior().volume()
 
-print OneTangle().numerator_closure().exterior().fundamental_group()
+
 
