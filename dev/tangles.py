@@ -68,7 +68,7 @@ class Tangle:
         return link.Link(T.crossings)
 
     def denominator_closure(self):
-        "The bridge picture closure"
+        "The braid closure picture"
         a, b, c, d = self.adjacent
         join_strands(a, b)
         join_strands(c, d)
