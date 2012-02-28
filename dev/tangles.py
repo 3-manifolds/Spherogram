@@ -4,8 +4,6 @@ Rational tangles, following
 Classifying and Applying Rational Knots and Rational Tangles
 http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 
-Note:  Tangles are all mutable, operations are typically in place,
-and there's currently no way to copy one.  
 """
 
 import link, copy
@@ -132,3 +130,14 @@ class RationalTangle(Tangle):
         for p in reversed(pqs):
             T = IntegerTangle(p) + T.invert()
         Tangle.__init__(self, T.crossings, T.adjacent)
+
+
+def knot(fractions):
+    if len(fractions) == 1:
+        return RationalTangle(*fractions[0]).denominator_closure()
+    else:
+        A, B, C = [RationalTangle(*f) for f in fractions]
+        T = A + B + C
+        return T.numerator_closure()
+
+K = knot([(1,2), (1,2), (-1,2)])

@@ -1,5 +1,5 @@
 from spherogram.graphs import Graph, Digraph, DirectedEdge
-import link_exterior, copy
+import link_exterior, copy, string
 
 class Crossing:
     """
@@ -10,7 +10,8 @@ class Crossing:
     def __init__(self, label=None):
         self.label, self.sign, self.directions = label, 0, set()
         self.adjacent = [None, None, None, None]
-        self.strand_labels = {'over':None, 'under':None}
+        self.strand_labels = [None, None, None, None]
+        self.strand_components = [None, None, None, None]
 
     def make_tail(self, a):
         b = (a, (a + 2) % 4)
@@ -42,19 +43,14 @@ class Crossing:
         if (2, 0) in self.directions:
             self.rotate_by_180()
         self.sign = 1 if (3, 1) in self.directions else -1
-        
+
     def __getitem__(self, i):
         return (self, i%4)
 
-    def slot_is_empty(self, i):
-        return self.adjacent[i % 4] == None
+    def entry_points(self):
+        verts = [0,1] if self.sign == -1 else [0, 3]
+        return [CrossingEntryPoint(self, v) for v in verts]
 
-    def entry_vertex(self, s):
-        if s == 'under':
-            return 0
-        else:
-            return 3 if self.sign == 1 else 1
-    
     def __setitem__(self, i, other):
         o, j = other
         self.adjacent[i % 4] = other
@@ -67,7 +63,78 @@ class Crossing:
     def info(self):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
-        print "<%s : %s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions, self.strand_labels)
+        print "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions)
+
+    def DT_info(self):
+        labels = self.strand_labels
+        over = labels[3]+1 if self.sign == 1 else labels[1] + 1
+        under = labels[0]+1
+        return (under, -over) if over % 2 == 0 else (over, under)
+
+    def peer_info(self):
+        labels = self.strand_labels
+        SW = labels[0] if self.sign == 1 else labels[1] 
+        NW = labels[3] if self.sign == 1 else labels[0]
+        if SW % 2 == 0:
+            ans = SW, (-NW, -self.sign)
+        else:
+            ans = NW, (SW, self.sign)
+
+        return ans
+
+
+
+
+class CrossingEntryPoint:
+    """
+    One of the two entry points of an oriented crossing
+    """
+    def __init__(self, crossing, entry_point):
+        self.crossing, self.entry_point = crossing, entry_point
+
+    def _tuple(self):
+        return (self.crossing, self.entry_point)
+
+    def __eq__(self, other):
+        return self._tuple() == other._tuple()
+
+    def __hash__(self):
+        return hash(self._tuple())
+    
+    def next(self):
+        c, e = self.crossing, self.entry_point
+        return CrossingEntryPoint(*c.adjacent[ (e + 2) % 4])
+
+    def other(self):
+        return [o for o in self.crossing.entry_points() if o != self][0]
+
+    def component(self):
+        ans = [self]
+        while True:
+            next = ans[-1].next()
+            if next == self:
+                break
+            else:
+                ans.append(next)
+
+        return ans
+
+    def label_crossing(self, comp, labels):
+        c, e = self.crossing, self.entry_point
+        f = (e + 2) % 4
+        c.strand_labels[e], c.strand_components[e] = labels[self], comp
+        c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
+        
+
+class LinkComponents(list):
+    def add(self, c):
+        component = c.component()
+        self.append(component)
+        return component
+
+class Labels(dict):
+    def add(self, x):
+        self[x] = len(self)
 
 class Strand:
     """
@@ -104,6 +171,12 @@ class Strand:
             return (a[0].label, a[1]) if a else None
         print "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent])
     
+def enumerate_lists(lists, n=0, filter=lambda x:True):
+    ans = []
+    for L in lists:
+        ans.append([n + i for i, x in enumerate(L) if filter(n+i)])
+        n += len(L)
+    return ans
 
 class Link(Digraph):
     def __init__(self, crossings, check_planarity=True):
@@ -114,6 +187,7 @@ class Link(Digraph):
         # only of strands, these thrown out here.
         [s.fuse() for s in crossings if isinstance(s, Strand)]
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
+        self._crossing_entries = set()
         Digraph.__init__(self, [], [])
         self._orient_crossings()
         self._build_components()
@@ -142,31 +216,45 @@ class Link(Digraph):
         for c in self.crossings:
             c.orient()
 
+    def crossing_entries(self):
+        return sum([C.entry_points() for C in self.crossings], [])
+        
     def _build_components(self):
         """
         Each component is stored as a list of *entry points*
-        to crossings.
+        to crossings.  The labeling of the entry points
+        (equivalently oriented edges) is compatible with
+        the DT convention that each crossing has both
+        an odd and and even incoming strand. 
         """
-        remaining = set( [ (c, s) for c in self.crossings for s in ('over', 'under')] )
-        components = []
+        remaining, components = set( self.crossing_entries() ), LinkComponents()
+        labels = Labels()
         while len(remaining):
-            component, n = [], 0
-            c, s = remaining.pop()
-            i = c.entry_vertex(s)
-            start, finished = (c, i), False
-            while not finished:
-                component.append( (c, i) )
-                remaining.discard( (c, s) )
-                c.strand_labels[s] = (len(components), n)
-                d, i = c.adjacent[(i+2)%4]
-                self.add_edge(c, d)
-                s = 'under' if i == 0 else 'over'
-                c, n = d, n+1
-                finished =  (c, i) == start
+            if len(components) == 0:
+                d = remaining.pop()
+            else:
+                for c in sum(components, []):
+                    d = c.other()
+                    if d in remaining:
+                        if labels[c]  % 2 == 0:
+                            d = d.next()
+                        break
 
-            components.append(component)
+            component = components.add(d)
+            for c in component:
+                labels.add( c )
+            for c in component:
+                c.label_crossing(len(components) - 1, labels)
+            remaining = remaining - set(component)
+
+        # Build the underlying graph
+        for component in components:
+            for c in component:
+                self.add_edge(c.crossing, c.next().crossing)
 
         self.link_components = components
+        self.labels = labels
+        
 
     def copy(self):
         return copy.deepcopy(self)
@@ -184,24 +272,40 @@ class Link(Digraph):
         euler = len(self.vertices) - len(self.edges) + len(G.components())
         return euler == 2
 
-    def PD_code(self, KnotTheory=False):
-        components = self.link_components
-        comp_lens = [len(component) for component in components]
+    def __len__(self):
+        return len(self.vertices)
 
-        def label( (n, i) ):
-            return sum(comp_lens[:n]) + (i % comp_lens[n]) + 1
-        def next_label( (n, i) ):
-            return label( (n, i+1) )
+    def PD_code(self, KnotTheory=False):
         PD = []
         for c in self.vertices:
-            over, under = c.strand_labels['over'], c.strand_labels['under']
-            if c.sign == 1:
-                PD.append( [label(under), next_label(over), next_label(under), label(over)] )
-            else:
-                PD.append([label(under), label(over), next_label(under), next_label(over)])
+            PD.append( c.strand_labels[:])
 
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         return PD
+
+    def DT_code(self, DT_alpha=False):
+        DT_dict = dict( [ c.DT_info() for c in self.vertices] )
+        odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
+        DT = [ [DT_dict[x] for x in component] for component in odd_labels]
+
+        if DT_alpha:
+            if len(self) > 52:
+                raise ValueError("Too many crossing for alphabetic DT code")
+            DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
+            init_data = [len(self), len(DT)] +  [len(c) for c in DT]
+            DT = ''.join([DT_alphabet[x] for x in init_data] + [DT_alphabet[x>>1] for x in sum(DT, [])])
+            DT = "DT[" + DT + "]"
+
+        return DT
+
+    def peer_code(self):
+        peer = dict( [ c.peer_info() for c in self.vertices] )
+        even_labels = enumerate_lists(self.link_components, n=0, filter=lambda x:x%2==0)
+        ans = '[' + ','.join([repr([peer[c][0] for c in comp])[1:-1].replace(',', '') for comp in even_labels])
+        ans += '] / ' + ' '.join([ ['_', '+', '-'][peer[c][1]] for c in sum(even_labels, [])])
+        return ans
+        
+
 
 Link.exterior = link_exterior.link_to_complement
