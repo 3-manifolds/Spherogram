@@ -1,14 +1,13 @@
+from sage.all import *
 import sys
-sys.path.append('/Users/dunfield/work/SnapPy/dev')
 sys.path.append('/Users/dunfield/work/python')
-import snappy, ntools, census, lookup, nsagetools
+import snappy, ntools, nsagetools, nsnappytools
 from tangles import RationalTangle
-
 knots = ntools.DataInFile('montesinos_knots')
 
 def count_hyperbolic():   # ANS: 167
     knot_exteriors = [snappy.Manifold(K[0]) for K in knots]
-    return len([M for M in knot_exteriors if census.appears_hyperbolic(M)])
+    return len([M for M in knot_exteriors if nsnappytools.appears_hyperbolic(M)])
 
 def knot(fractions):
     if len(fractions) == 1:
@@ -19,10 +18,12 @@ def knot(fractions):
         return T.numerator_closure()
 
 def test_knot( (K, fractions) ):
-    M = knot(fractions).exterior()
-    if census.appears_hyperbolic(M):
-        N = lookup.LinkExteriorDB.identify(M)
-        assert N.name() == K
+    L = knot(fractions)
+    M0, M1 = L.exterior(), snappy.Manifold(L.DT_code(True))
+    if nsnappytools.appears_hyperbolic(M0):
+        N0 = snappy.LinkExteriors.identify(M0)
+        N1 = snappy.LinkExteriors.identify(M1)
+        assert N0.name() == K and N1.name() == K
         return 1
     return 0 
 
@@ -30,7 +31,7 @@ def first_test():
     total = 0
     for K in knots:
         total += test_knot(K)
-    assert totat == 167
+    assert total == 167
 
 mathematica.execute('<<KnotTheory`')
 mathematica.execute('Off[KnotTheory::loading]')
@@ -53,4 +54,5 @@ def second_test():
         L = knot(fractions)
         assert alex_match(L)
 
-# first_test()
+first_test()
+second_test()

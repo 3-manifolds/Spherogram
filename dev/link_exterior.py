@@ -12,11 +12,11 @@ class KLPCrossing():
         self.adjacent = adjacent = 4*[None]
         self.index = c._KLP_index
         if c.sign == 1:
-            strands, self.sign = ['over','under'], 'R'
+            strands, self.sign = [3, 0], 'R'
         else:
-            strands, self.sign = ['under','over'], 'L'
+            strands, self.sign = [0,1], 'L'
             
-        components = [ c.strand_labels[s][0] for s in strands]
+        components = [ c.strand_components[s] for s in strands]
         self.Xcomponent, self.Ycomponent = components
         self.strand, self.neighbor = {}, {}
         for v in range(4):
