@@ -124,20 +124,15 @@ def continued_fraction_expansion(a, b):
 
 class RationalTangle(Tangle):
     def __init__(self, a, b):
+        if b < 0:
+            a, b = -a, -b
         self.fraction = (a,b)
-        self.partial_quotients = pqs = continued_fraction_expansion(a,b)
+        self.partial_quotients = pqs = continued_fraction_expansion(abs(a),b)
         T = InfinityTangle()
         for p in reversed(pqs):
             T = IntegerTangle(p) + T.invert()
+        if a < 0:
+            T = -T
         Tangle.__init__(self, T.crossings, T.adjacent)
 
 
-def knot(fractions):
-    if len(fractions) == 1:
-        return RationalTangle(*fractions[0]).denominator_closure()
-    else:
-        A, B, C = [RationalTangle(*f) for f in fractions]
-        T = A + B + C
-        return T.numerator_closure()
-
-K = knot([(1,2), (1,2), (-1,2)])
