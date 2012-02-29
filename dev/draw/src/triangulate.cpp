@@ -373,17 +373,20 @@ if (draw_control::DEBUG >= draw_control::SUMMARY)
 
 	/* create a matrix to record the neighbours of each vertex, that is 
 	   those other vertices to which it is connected by an edge of the 
-	   triangulation.  Type 1 and type 2 vertices are connected to at 
-	   most eight neighbours, type 3 vertices are connected to at most
-	   the length of the longest turning cycle that does not bound the
-	   infinite region, and type 4 vertices are connected to exactly 
-	   five neighbours.  Given that the turning cycle bounding the 
-	   infinte region is of maximal length we therefore have the maximum 
-	   number of neighbours being max(8,length of turning cycle
-	   bounding the infinite region).  We allow an additional column (0) 
-	   to record the number of neighbours.
+	   triangulation.  Type 1 vertices are connected to at most five 
+	   neighbours, type 2 to at most eight, type 3 vertices are connected
+	   to at most the length of the longest turning cycle, and type 4 
+	   vertices are connected to exactly five neighbours.  We therefore 
+	   have the maximum number of neighbours being 
+	   max(8,length of longest turning cycle).  We allow an additional 
+	   column (0) to record the number of neighbours.
 	*/
-	int max_neighbours = max(8,cycle[infinite_region][0]);	
+	int max_neighbours = 8;
+	for ( int i=0; i< num_cycles; i++)
+	{
+		if (max_neighbours < cycle[i][0])
+			max_neighbours = cycle[i][0];
+	}
 
 if (draw_control::DEBUG >= draw_control::SUMMARY)
     debug << "triangulate: max_neighbours = " << max_neighbours << endl;
@@ -396,10 +399,9 @@ if (draw_control::DEBUG >= draw_control::SUMMARY)
        
     */
     matrix<int> type_4_vertex_corresponding_to_type_1_vertex(num_crossings,2);
-    
+   
     for (int i=num_type_123_vertices; i< num_vertices; i++)
     {
-		
 		neighbour[i][0] = 5; //type 4 vertices always have exactly five neighbours
 
 		if (i==num_type_123_vertices)
@@ -438,7 +440,7 @@ if (draw_control::DEBUG >= draw_control::SUMMARY)
 		else
 			neighbour[i][5] = num_type_123_vertices;
 	}
-    
+   
 if (draw_control::DEBUG >= draw_control::SUMMARY)
 {
     debug << "triangulate: type_4_vertex_corresponding_to_type_1_vertex: " << endl;
@@ -864,6 +866,7 @@ if (draw_control::DEBUG >= draw_control::DETAIL)
 		neighbour[vertex][0] = nbr-1;
 	}
 	
+
 	/* Finally the type 3 vertices, whose neighbours we enumerate anti-clockwise around
 	   the vertex noting the mid-point vertex for each edge in the corresponding 
 	   region's turning cycle.  Enumerating anti-clockwise means that for a right turning
@@ -905,9 +908,11 @@ if (draw_control::DEBUG >= draw_control::DETAIL)
 		
 		if (vertex)
 		{
+
+
 if (draw_control::DEBUG >= draw_control::DETAIL)
     debug << "triangulate: vertex " << vertex << endl;
-    
+   
 			int nbr = 1; // index into neighbour
 
 			for (int j=cycle[i][0]; j>= 1; j--)
@@ -918,10 +923,12 @@ if (draw_control::DEBUG >= draw_control::DETAIL)
     debug << "triangulate: edge " << edge << endl;
 
 				neighbour[vertex][nbr++] = type_2_vertex[edge];						
+
 			}			
 			
 			/* set the number of neighbours */
 			neighbour[vertex][0] = nbr-1;
+
 		}
 	}
 	
