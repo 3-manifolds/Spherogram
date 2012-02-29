@@ -6,7 +6,8 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 
 """
 
-import link, copy
+from . import links
+import copy
 
 def join_strands( (a,i), (b,j) ):
     a.adjacent[i] = (b,j)
@@ -43,7 +44,7 @@ class Tangle:
     def __neg__(self):
         "Mirror image of self"
         T = self.copy()
-        [c.rotate_by_90() for c in T.crossings if not isinstance(c, link.Strand)]
+        [c.rotate_by_90() for c in T.crossings if not isinstance(c, links.Strand)]
         return T
 
     def copy(self):
@@ -63,7 +64,7 @@ class Tangle:
         join_strands(a, d)
         join_strands(b, c)
         T = self.copy()
-        return link.Link(T.crossings)
+        return links.Link(T.crossings)
 
     def denominator_closure(self):
         "The braid closure picture"
@@ -71,29 +72,29 @@ class Tangle:
         join_strands(a, b)
         join_strands(c, d)
         T = self.copy()
-        return link.Link(T.crossings)
+        return links.Link(T.crossings)
 
     def __repr__(self):
         return "<Tangle: %s>" % self.label
 
 class ZeroTangle(Tangle):
     def __init__(self):
-        bot, top = link.Strand('B'), link.Strand('T')
+        bot, top = links.Strand('B'), links.Strand('T')
         Tangle.__init__(self, [bot, top], [ (bot, 0), (top, 0), (top, 1), (bot, 1) ] )
 
 class InfinityTangle(Tangle):
     def __init__(self):
-        left, right = link.Strand('L'), link.Strand('R')
+        left, right = links.Strand('L'), links.Strand('R')
         Tangle.__init__(self, [left, right],  [ (right, 0), (right, 1), (left, 1), (left, 0) ] )
 
 class MinusOneTangle(Tangle):
     def __init__(self):
-        c = link.Crossing('-one')
+        c = links.Crossing('-one')
         Tangle.__init__(self, [c], [(c,i) for i in range(4)])
 
 class OneTangle(Tangle):
     def __init__(self):
-        c = link.Crossing('one')
+        c = links.Crossing('one')
         Tangle.__init__(self, [c], [(c, (i+1) % 4) for i in range(4)])
     
 class IntegerTangle(Tangle):

@@ -1,5 +1,5 @@
-from link import *
-from tangles import *
+from __future__ import print_function
+from spherogram.links import *
 
 def figure8():
     a, b, c, d = [Crossing(x) for x in 'abcd']
@@ -33,11 +33,15 @@ def whitehead():
     d[1] = e[0]
     return Link(crossings)
 
-K, W, T = figure8(), whitehead(), punct_torus()
-print K.is_planar(), W.is_planar(), punct_torus().is_planar()
-print K.PD_code(True)
-print W.PD_code(True)
-print K.exterior().volume(), W.exterior().volume()
+def basic_test():
+    K, W, T = figure8(), whitehead(), punct_torus()
+    print( K.is_planar(), W.is_planar(), punct_torus().is_planar() )
+    print( K.PD_code(True) )
+    print( K.DT_code(True) , K.peer_code())
+    print( W.PD_code(True) )
+    print( W.DT_code(True) , K.peer_code())
+    print( K.exterior().volume(), W.exterior().volume() )
 
 
-
+if __name__ == '__main__':
+    basic_test()
