@@ -9,7 +9,7 @@ See the file "crossings.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.  
 """
 from .. import graphs
-import  copy, string
+import  copy, string, os, sys, re
 
 class Crossing:
     """
@@ -386,3 +386,24 @@ except ImportError:
 
 Link.exterior = link_to_complement
 
+# ---- Drawing the link --------
+
+from . import draw
+import tempfile 
+
+def save_link_pdf(self, filename):
+    """
+    Requires Bartholomew's "draw programme",
+    MetaPost, and the Ghostscript based "epstopdf". 
+    """
+    file = open(filename, 'wb')
+    file.write(draw.link_pdf(self.peer_code()))
+    file.close()
+
+def show(self):
+    file = tempfile.NamedTemporaryFile(delete=False)
+    file.write(draw.link_pdf(self.peer_code()))
+    file.close()
+    os.system('open ' + file.name)
+
+Link.save_link_pdf, Link.show = save_link_pdf, show
