@@ -73,18 +73,4 @@ def test3():
         os.system('open /tmp/knots/10_8.pdf')
         raw_input('hit any key')
 
-def hopf():
-    poss = [ (3, 1), (1, 3) ]
-    signs = [ (1, 1), (-1, 1), (1, -1), (-1,-1)]
-    comma = [' ', ', ']
-    for p in poss:
-        for s in signs:
-            for c in comma:
-                a, b = p[0]*s[0], p[1]*s[1]
-                pc = '[%d' % a + c + '%d' %b + ']/# #'
-                try:
-                    link_pdf(pc)
-                    print pc, "GOOD"
-                except ValueError:
-                    print pc, "bad"
 

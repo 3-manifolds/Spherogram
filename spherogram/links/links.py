@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Links are made from Crossings.  The general model is that of
 a PD diagram as described in 
@@ -72,7 +73,7 @@ class Crossing:
     def info(self):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
-        print "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions)
+        print( "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions) )
 
     def DT_info(self):
         labels = self.strand_labels
@@ -92,9 +93,18 @@ class Crossing:
         return ans
 
 
-
-
-class CrossingEntryPoint:
+class TotallyOrderedObject:   # Backport of the @total_ordering decorator
+    "Give __eq__ and __lt__ fills in the rest"
+    def __le__(self, other):
+        return self < other or self == other
+    def __ne__(self, other):
+        return not self == other
+    def __gt__(self, other):
+        return other < self
+    def __ge__(self, other):
+        return other <= self
+        
+class CrossingEntryPoint(TotallyOrderedObject):
     """
     One of the two entry points of an oriented crossing
     """
@@ -104,6 +114,9 @@ class CrossingEntryPoint:
     def _tuple(self):
         return (self.crossing, self.entry_point)
 
+    def __lt__(self, other):
+        return self._tuple() < other._tuple()
+    
     def __eq__(self, other):
         return self._tuple() == other._tuple()
 
@@ -133,6 +146,9 @@ class CrossingEntryPoint:
         f = (e + 2) % 4
         c.strand_labels[e], c.strand_components[e] = labels[self], comp
         c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
+
+    def __repr__(self):
+        return "<CEP %s, %s>" % (self.crossing, self.entry_point)
         
 
 class LinkComponents(list):
@@ -178,7 +194,7 @@ class Strand:
     def info(self):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
-        print "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent])
+        print( "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent]) )
     
 def enumerate_lists(lists, n=0, filter=lambda x:True):
     ans = []
@@ -369,3 +385,4 @@ except ImportError:
             
 
 Link.exterior = link_to_complement
+
