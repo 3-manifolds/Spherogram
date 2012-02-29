@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Plotting pictures of links via Andrew Bartholomew's "Draw programme"
 http://www.layer8.co.uk/maths/draw/index.htm
@@ -5,17 +6,6 @@ http://www.layer8.co.uk/maths/draw/index.htm
 
 import os, sys, re, tempfile, subprocess
 from subprocess import PIPE
-from tangles import RationalTangle
-
-
-def knot(fractions):
-    if len(fractions) == 1:
-        return RationalTangle(*fractions[0]).denominator_closure()
-    else:
-        A, B, C = [RationalTangle(*f) for f in fractions]
-        T = A + B + C
-        return T.numerator_closure()
-
 
 def create_file_with_contents(file_name, data):
     file = open(file_name, 'w')
@@ -45,32 +35,21 @@ def link_pdf(peer_code):
     return data
 
 def test():
-    import ntools
-    knots = ntools.DataInFile('montesinos_knots')
-    for K, d in knots:
-        L = knot(d)
-        pc = L.peer_code()
+    import spherogram.links.test
+    knots = spherogram.links.test.some_knots()
+    tmp_dir = tempfile.mkdtemp()
+    files = []
+    for name, K in knots:
+        pc = K.peer_code()
         try:
-            open('/tmp/knots/' + K + '.pdf', 'wb').write( link_pdf(pc) )
+            filename = tmp_dir + os.sep + name + '.pdf'
+            open(filename, 'wb').write( link_pdf(pc) )
+            files.append(filename)
         except ValueError:
-            print K, d, pc
+            print("Problem with:",  name, pc)
 
-def test2():
-    for i in range(10):
-        L = knot([(8,23)])
-        pc = L.peer_code()
-        try:
-            open('/tmp/knots/' + '8_23' + '.pdf', 'wb').write( link_pdf(pc) )
-        except ValueError:
-            print pc
+    os.system("open -a Preview.app " + tmp_dir + "/*.pdf")
 
-def test3():
-    for i in range(10):
-        L = knot([(6,29)])
-        pc = L.peer_code()
-        print pc
-        open('/tmp/knots/' + '10_8' + '.pdf', 'wb').write( link_pdf(pc) )
-        os.system('open /tmp/knots/10_8.pdf')
-        raw_input('hit any key')
-
+if __name__ == '__main__':
+    test()
 
