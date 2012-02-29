@@ -1,5 +1,14 @@
-from spherogram.graphs import Graph, Digraph, DirectedEdge
-import link_exterior, copy, string
+"""
+Links are made from Crossings.  The general model is that of
+a PD diagram as described in 
+
+  http://katlas.org/wiki/Planar_Diagrams
+
+See the file "crossings.pdf" for the conventions, and the file
+"test.py" for some examples of creating links.  
+"""
+from .. import graphs
+import  copy, string
 
 class Crossing:
     """
@@ -178,7 +187,7 @@ def enumerate_lists(lists, n=0, filter=lambda x:True):
         n += len(L)
     return ans
 
-class Link(Digraph):
+class Link(graphs.Digraph):
     def __init__(self, crossings, check_planarity=True):
         if True in [ None in c.adjacent for c in crossings]:
             raise ValueError("No loose strands allowed")
@@ -188,7 +197,7 @@ class Link(Digraph):
         [s.fuse() for s in crossings if isinstance(s, Strand)]
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
         self._crossing_entries = set()
-        Digraph.__init__(self, [], [])
+        graphs.Digraph.__init__(self, [], [])
         self._orient_crossings()
         self._build_components()
 
@@ -263,7 +272,7 @@ class Link(Digraph):
         if not self.is_connected():
             return False
         
-        G = Graph()
+        G = graphs.Graph()
         for c in self.vertices:
             for g in (0.5, 1.5, 2.5, 3.5):  # corners of complementary regions at c
                 d, j = c.adjacent[ int(g+0.5) % 4 ]
