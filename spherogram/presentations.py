@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .graphs import ReducedGraph, Digraph, Poset
 from collections import deque
 import operator
@@ -91,7 +92,7 @@ class CyclicWord(Word):
             self.pop()
 
     def __mul__(self):
-        raise ValueError, 'Cyclic words cannot be multiplied.'
+        raise ValueError('Cyclic words cannot be multiplied.')
 
     def __invert__(self):
         inverse = [-x for x in reversed(self)]
@@ -131,7 +132,7 @@ class CyclicWord(Word):
         """
         abs_image = set( map(operator.abs, perm_dict.values()) )
         if set(perm_dict.keys()) != abs_image:
-            raise ValueError, 'Not a permutation!'
+            raise ValueError('Not a permutation!')
         for n in xrange(len(self)):
             x = self[n]
             self[n] = perm_dict.get(x,x) if x > 0 else -perm_dict.get(-x,-x)
@@ -259,7 +260,7 @@ class Presentation:
         self.relators = []
         self.generators = set(generators)
         if isinstance(relators, str):
-            raise ValueError, 'Please provide a sequence of relators.'
+            raise ValueError('Please provide a sequence of relators.')
         for r in relators:
             W = CyclicWord(r, alphabet)
             if len(W) > 0:
@@ -348,15 +349,15 @@ class Presentation:
         """
         result = Presentation(self.relators, self.generators)
         starting_length = len(result)
-        print result.relators
+        print(result.relators)
         while True:
             reducers, levels = result.find_reducers()
             if not reducers:
                 return result
             reduction, a, cut_set = reducers[0]
-            print WhiteheadMove(a, cut_set, self.generators, self.alphabet)
+            print(WhiteheadMove(a, cut_set, self.generators, self.alphabet))
             result = result.whitehead_move(a, cut_set)
-            print result.relators
+            print(result.relators)
 
     def level_transformations(self):
         """
@@ -397,7 +398,7 @@ class Presentation:
         reducers, levels = self.find_reducers()
         result = []
         if reducers:
-             raise ValueError, 'Presentation is not minimal.'
+             raise ValueError('Presentation is not minimal.')
         for generator, cut in levels:
             edges = set()
             for weight, path in cut['paths']:

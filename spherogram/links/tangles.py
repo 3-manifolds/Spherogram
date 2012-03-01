@@ -9,7 +9,8 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 from . import links
 import copy
 
-def join_strands( (a,i), (b,j) ):
+def join_strands(x, y):
+    (a,i), (b,j) = x, y
     a.adjacent[i] = (b,j)
     b.adjacent[j] = (a,i)
     

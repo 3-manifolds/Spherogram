@@ -56,7 +56,7 @@ def knot(fractions):
         return T.numerator_closure()
 
 def some_knots():
-    import hyperbolic_montesinos 
+    from . import hyperbolic_montesinos 
     return [ (K, knot(fractions)) for K, fractions in hyperbolic_montesinos.knots] 
 
 def exterior_test():
@@ -67,7 +67,6 @@ def exterior_test():
 
     print(figure8().exterior().volume(), whitehead().exterior().volume())
 
-    from hyperbolic_montesinos import knots
     for name, K in some_knots():
         M0, M1 = K.exterior(), snappy.Manifold(K.DT_code(True))
         N0 = snappy.LinkExteriors.identify(M0)
