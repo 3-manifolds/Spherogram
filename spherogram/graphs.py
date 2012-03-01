@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Python implementation of graphs, reduced graphs, directed graphs, fat
 graphs (graphs with ordered adjacency lists) and fat directed graphs.
@@ -50,7 +51,7 @@ class Edge:
         try:
             return [v for v in self if v != end].pop()
         except IndexError:
-            raise ValueError, 'Vertex is not an endpoint'
+            raise ValueError('Vertex is not an endpoint')
 
     def __repr__(self):
         return '%s --- %s'%tuple(self.ends)
@@ -91,7 +92,7 @@ class EdgesBFO:
     def __iter__(self):
         return self
     
-    def next(self):
+    def __next__(self):
         if self.fifo:
             parent, vertex, child = self.fifo.popleft()
             new_edges = self.graph.incident(child(vertex)) - self.seen
@@ -101,6 +102,9 @@ class EdgesBFO:
             return parent, vertex, child
         else:
             raise StopIteration
+
+    def next(self):  #For Python 2 compatibility
+        return self.__next__()
 
 class Graph:
     """
@@ -280,7 +284,7 @@ class Graph:
         """
         new_vertex = V1|V2
         if new_vertex in self.vertices:
-            raise ValueError, 'Merged vertex already exists!'
+            raise ValueError('Merged vertex already exists!')
         self.edges -= set([e for e in self.edges if V1 in e and V2 in e])
         self.vertices.remove(V1)
         self.vertices.remove(V2)
@@ -520,7 +524,7 @@ class Poset(set):
         seen.append(vertex)
         for child in digraph[vertex]:
             if child in self.smaller[vertex]:
-                raise ValueError, 'Digraph is not acyclic.'
+                raise ValueError('Digraph is not acyclic.')
             self.smaller[child].add(vertex)
             self.smaller[child] |= self.smaller[vertex]
             self.search(child, seen, digraph)
@@ -584,7 +588,7 @@ class Poset(set):
             self.closed.add(start)
             yield start
         for element in complement:
-            print 'adding ', element
+            print( 'adding ', element)
             extended = self.closure(start | set([element]))
             for subset in self.closed_subsets(extended):
                 yield subset
