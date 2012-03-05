@@ -28,7 +28,7 @@ def link_pdf(peer_code):
     if len(ans):
         raise ValueError('draw failed: ' + ans + 'for ' + peer_code)
     run_silent('mpost', 'link.mps')
-    run_silent('epstopdf', 'link.1')
+    run_silent('sh', 'epstopdf', 'link.1')
     data = open('link.pdf', 'rb').read()
     os.system('rm -rf ' + tmp_dir)
     os.chdir(curr_dir)
