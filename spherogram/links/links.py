@@ -5,7 +5,7 @@ a PD diagram as described in
 
   http://katlas.org/wiki/Planar_Diagrams
 
-See the file "crossings.pdf" for the conventions, and the file
+See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.  
 """
 from .. import graphs
