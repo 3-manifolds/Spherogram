@@ -56,26 +56,27 @@ planarity_dir = ['planarity-read-only/c']
 planarity_extra_objects = glob.glob('planarity-read-only/c/*.o')
 
 Planarity = Extension(
-    name = "spherogram.planarity",
-    sources = ["planarity.pyx"], 
+    name = 'spherogram.planarity',
+    sources = ['planarity.pyx'], 
     include_dirs = planarity_dir, 
     extra_objects = planarity_extra_objects,
 )
 
-setup( name = "spherogram",
+setup( name = 'spherogram',
 #       version = version,
        zip_safe = False,
        install_requires = [],
        dependency_links = [],
-       packages = ["spherogram", "spherogram.links"],
+       packages = ['spherogram', 'spherogram.links'],
+       package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = [Planarity],
        cmdclass =  {'build_ext': build_ext},
        entry_points = {},
-       author = "Marc Culler and Nathan Dunfield and John Berge",
-       author_email = "culler@math.uic.edu, nmd@illinois.edu",
-       description = "Spherical diagrams for 3-manifold topology",
-       license = "GPL",
-       keywords = "graphs, presentations",
-       url = "",
+       author = 'Marc Culler and Nathan Dunfield and John Berge',
+       author_email = 'culler@math.uic.edu, nmd@illinois.edu',
+       description = 'Spherical diagrams for 3-manifold topology',
+       license = 'GPL',
+       keywords = 'graphs, presentations',
+       url = '',
        )
 
