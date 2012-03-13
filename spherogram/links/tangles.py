@@ -125,7 +125,7 @@ def continued_fraction_expansion(a, b):
     return [q] + continued_fraction_expansion(b, r)
 
 class RationalTangle(Tangle):
-    def __init__(self, a, b):
+    def __init__(self, a, b=1):
         if b < 0:
             a, b = -a, -b
         self.fraction = (a,b)
