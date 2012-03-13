@@ -1,5 +1,5 @@
 from .links import Crossing, Strand, Link
-from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle
+from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle, IdentityBraid
 import os, sys
 
 def pdf_docs():
@@ -13,4 +13,4 @@ def pdf_docs():
         command = 'xdg-open'
     os.system(command + ' ' + file)
 
-__all__ = ['Crossing', 'Strand', 'Link', 'Tangle', 'RationalTangle', 'ZeroTangle', 'InfinityTangle', 'pdf_docs']
+__all__ = ['Crossing', 'Strand', 'Link', 'Tangle', 'RationalTangle', 'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'pdf_docs']

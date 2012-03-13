@@ -15,32 +15,45 @@ def join_strands(x, y):
     b.adjacent[j] = (a,i)
     
 class Tangle:
-    def __init__(self, crossings=None, entry_points=None, label=None):
+    def __init__(self, n=2, crossings=None, entry_points=None, label=None):
+        """
+        A tangle is a rectangular block of crossings, with n strands
+        coming into the top and bottom.
+
+        These are strands are numbered 0 to n-1 on the bottom,
+        and n to 2*n - 1 on the top, both from left to right.  
+        """
         if crossings == None:
             crossings = []
 
         self.crossings = crossings
-        self.adjacent = [None, None, None, None]
+        self.n = n
+        self.adjacent = (2*n)*[None]
         if entry_points:
             for i, e in enumerate(entry_points):
                 join_strands( (self, i), e)
         self.label = label
         
     def __add__(self, other):
-        "Join with self to right of other"
-        A, B = self.copy(), other.copy()        
+        "Put self to right of other and fuse inside strands"
+        A, B = self.copy(), other.copy()
+        n, m = A.n, B.n
         a, b = A.adjacent, B.adjacent
-        join_strands( b[3], a[0] )
-        join_strands( b[2], a[1] )
-        return Tangle(A.crossings + B.crossings, [b[0], b[1], a[2], a[3]])
+        join_strands( a[n-1], b[0] )
+        join_strands( a[2*n - 1], b[m] )
+        entry_points = a[:n-1] + b[1:m] + a[n:2*n-1] + b[m+1:]
+        return Tangle(n + m - 2, A.crossings + B.crossings, entry_points)
 
     def __mul__(self, other):
-        "Join with self *above* other"
+        "Join with self *above* other, as with braid multiplication"
+        if self.n != other.n:
+            raise ValueError("Tangles must have the same number of strands to multiply them")
         A, B = self.copy(), other.copy()
         a, b = A.adjacent, B.adjacent
-        join_strands( b[1], a[0] )
-        join_strands( b[2], a[3] )
-        return Tangle(A.crossings + B.crossings, [b[0], a[1], a[2], b[3]])
+        n = A.n
+        for i in range(n):
+            join_strands(a[n+i], b[i])
+        return Tangle(n, A.crossings + B.crossings, a[:n] + b[n:])
 
     def __neg__(self):
         "Mirror image of self"
@@ -48,55 +61,68 @@ class Tangle:
         [c.rotate_by_90() for c in T.crossings if not isinstance(c, links.Strand)]
         return T
 
+    def __or__(self, other):
+        "Put self to right if other, no fusing of strands"
+        A, B = self.copy(), other.copy()
+        n, m = A.n, B.n
+        a, b = A.adjacent, B.adjacent
+        entry_points = a[:n] + b[:m] + a[n:] + b[m:]
+        return Tangle(n + m, A.crossings + B.crossings, entry_points)
+
     def copy(self):
         return copy.deepcopy(self)
     
     def invert(self):
         "Rotate anticlockwise by 90 and take the mirror image"
+        if self.n != 2:
+            raise ValueError("Only n=2 tangles can be inverted")
         T = self.copy()
-        T.adjacent = T.adjacent[1:] + T.adjacent[:1]
+        T.adjacent = [T.adjacent[2], T.adjacent[0], T.adjacent[3], T.adjacent[1]]
         for i, (o, j) in enumerate(T.adjacent):
             o.adjacent[j] = (T, i)
         return -T
 
     def numerator_closure(self):
         "The bridge picture closure"
-        a, b, c, d = self.adjacent
-        join_strands(a, d)
-        join_strands(b, c)
+        if self.n % 2 != 0:
+            raise ValueError("To do bridge closure, n must be even")
         T = self.copy()
+        for i in range(0, 2*self.n, 2):
+            join_strands(T.adjacent[i], T.adjacent[i + 1])
         return links.Link(T.crossings)
 
     def denominator_closure(self):
         "The braid closure picture"
-        a, b, c, d = self.adjacent
-        join_strands(a, b)
-        join_strands(c, d)
         T = self.copy()
+        for i in range(0, self.n):
+            join_strands(T.adjacent[i], T.adjacent[i + self.n])
         return links.Link(T.crossings)
 
     def __repr__(self):
         return "<Tangle: %s>" % self.label
 
+Tangle.bridge_closure = Tangle.numerator_closure
+Tangle.braid_closure = Tangle.denominator_closure
+
 class ZeroTangle(Tangle):
     def __init__(self):
         bot, top = links.Strand('B'), links.Strand('T')
-        Tangle.__init__(self, [bot, top], [ (bot, 0), (top, 0), (top, 1), (bot, 1) ] )
+        Tangle.__init__(self, 2, [bot, top], [ (bot, 0), (bot, 1), (top, 0), (top, 1) ] )
 
 class InfinityTangle(Tangle):
     def __init__(self):
         left, right = links.Strand('L'), links.Strand('R')
-        Tangle.__init__(self, [left, right],  [ (right, 0), (right, 1), (left, 1), (left, 0) ] )
+        Tangle.__init__(self, 2, [left, right],  [ (left, 0), (right, 0), (left, 1), (right, 1) ] )
 
 class MinusOneTangle(Tangle):
     def __init__(self):
         c = links.Crossing('-one')
-        Tangle.__init__(self, [c], [(c,i) for i in range(4)])
+        Tangle.__init__(self, 2, [c], [(c,3), (c, 0), (c, 2), (c, 1)])
 
 class OneTangle(Tangle):
     def __init__(self):
         c = links.Crossing('one')
-        Tangle.__init__(self, [c], [(c, (i+1) % 4) for i in range(4)])
+        Tangle.__init__(self, 2, [c], [(c,0), (c, 1), (c, 3), (c, 2)])
     
 class IntegerTangle(Tangle):
     def __init__(self, n):
@@ -109,7 +135,7 @@ class IntegerTangle(Tangle):
         if n < 0:
             T = -IntegerTangle(-n)
 
-        Tangle.__init__(self, T.crossings, T.adjacent)
+        Tangle.__init__(self, 2, T.crossings, T.adjacent)
     
 def continued_fraction_expansion(a, b):
     """
@@ -135,6 +161,19 @@ class RationalTangle(Tangle):
             T = IntegerTangle(p) + T.invert()
         if a < 0:
             T = -T
-        Tangle.__init__(self, T.crossings, T.adjacent)
+        Tangle.__init__(self, 2, T.crossings, T.adjacent)
 
+#----------------------------------------------------
+#
+# Basic braids
+#
+#----------------------------------------------------
 
+class IdentityBraid(Tangle):
+    def __init__(self, n):
+        strands = [links.Strand() for i in range(n)]
+        entry_points = [ (s, 0) for s in strands] + [(s,1) for s in strands]
+        Tangle.__init__(self, n, strands, entry_points)
+        
+            
+            

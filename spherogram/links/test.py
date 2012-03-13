@@ -1,6 +1,6 @@
 from __future__ import print_function
 from . import links, tangles
-Crossing, Link, RationalTangle = links.Crossing, links.Link, tangles.RationalTangle
+Crossing, Link, RationalTangle, IdentityBraid = links.Crossing, links.Link, tangles.RationalTangle, tangles.IdentityBraid
 import os, sys, re
 
 #----- Some basic tests, constructing links by hand -------
@@ -45,6 +45,7 @@ def basic_test():
     print( W.PD_code(True) )
     print( W.DT_code(True) , K.peer_code())
 
+
 # ----- checking the SnapPy link exterior code ------------
 
 def knot(fractions):
@@ -66,6 +67,11 @@ def exterior_test():
         print("SnapPy not installed, skipping link exterior test.")
 
     print(figure8().exterior().volume(), whitehead().exterior().volume())
+
+    C, Id = RationalTangle(1), IdentityBraid(1)
+    x = C | Id
+    y = Id | (-C)
+    print((x*y*x*y).denominator_closure().exterior().volume())
 
     for name, K in some_knots():
         M0, M1 = K.exterior(), snappy.Manifold(K.DT_code(True))
