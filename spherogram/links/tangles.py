@@ -13,6 +13,10 @@ def join_strands(x, y):
     (a,i), (b,j) = x, y
     a.adjacent[i] = (b,j)
     b.adjacent[j] = (a,i)
+
+def rotate_list(L, s):
+    n = len(L)
+    return [ L[(i + s) % n] for i in range(n) ]
     
 class Tangle:
     def __init__(self, n=2, crossings=None, entry_points=None, label=None):
@@ -71,16 +75,24 @@ class Tangle:
 
     def copy(self):
         return copy.deepcopy(self)
-    
+
+    def rotate(self, s):
+        "Rotate anticlockwise by s*90 degrees"
+        if self.n != 2:
+            raise ValueError("Only n=2 tangles can be rotated")
+        anticlockwise = [0, 1, 3, 2]
+        rotate = dict(zip(anticlockwise, rotate_list(anticlockwise, s)))
+        T = self.copy()
+        T.adjacent = [T.adjacent[rotate[i]] for i in range(4)]
+        for i, (o, j) in enumerate(T.adjacent):
+            o.adjacent[j] = (T, i)
+        return T
+        
     def invert(self):
         "Rotate anticlockwise by 90 and take the mirror image"
         if self.n != 2:
             raise ValueError("Only n=2 tangles can be inverted")
-        T = self.copy()
-        T.adjacent = [T.adjacent[2], T.adjacent[0], T.adjacent[3], T.adjacent[1]]
-        for i, (o, j) in enumerate(T.adjacent):
-            o.adjacent[j] = (T, i)
-        return -T
+        return -self.rotate(1)
 
     def numerator_closure(self):
         "The bridge picture closure"
