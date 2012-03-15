@@ -300,10 +300,10 @@ class Link(graphs.Digraph):
     def __len__(self):
         return len(self.vertices)
 
-    def PD_code(self, KnotTheory=False):
+    def PD_code(self, KnotTheory=False, min_strand_index=0):
         PD = []
         for c in self.vertices:
-            PD.append( c.strand_labels[:])
+            PD.append( [s + min_strand_index for s in c.strand_labels[:]])
 
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
