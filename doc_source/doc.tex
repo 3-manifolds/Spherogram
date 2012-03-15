@@ -19,17 +19,39 @@
 }{\end{xyoverpic}
 \end{center}}
 
+\setlength{\parindent}{0pt}
+
 \begin{document}
 \section{Conventions for crossings}
 
 \includegraphics[scale=0.6]{pics/crossings}
 
-\pagebreak
-
 \section{Conventions for tangles}
 
-Follows \url{http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
-}
+A tangle $T$ is a rectangular piece of a projection with $2n$ incoming
+strands, where these strands are numbered as shown.
+
+\begin{cxyoverpic}{(216,144)}{scale=1.0}{pics/tangle}
+    ,(107,72)*{T}
+    ,(39,14)*++!U{0}
+    ,(64,13)*++!U{1}
+    ,(84,13)*++!U{2}
+    ,(156,13)*++!U{n-2}
+    ,(179,13)*++!UL{n-1}
+    ,(39,130)*++!DR{n}
+    ,(62,131)*++!D{n+1}
+    ,(155,132)*++!D{2n - 2}
+    ,(178,132)*++!DL{2n - 1}
+\end{cxyoverpic}
+
+
+Conventions for operations and rational tangles follow
+
+ \url{http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf}
+
+and are shown on the next page.
+
+\pagebreak
 
 \begin{cxyoverpic}{(432,576)}{scale=1.0}{pics/tangles}
     ,(74,439)*{T + S}
@@ -38,8 +60,9 @@ Follows \url{http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
     ,(273,500)*{\mbox{\scriptsize mirror}}
     ,(270,445)*{-T}
     ,(354,440)*{\displaystyle\frac{1}{T}}
-    ,(126,282)*{\mbox{\normalsize Numerator closure}}
-    ,(287,282)*{\mbox{\normalsize Denominator closure}}
+    ,(81,285)*{T \, \big\vert \, S}
+    ,(231,282)*{\mbox{\normalsize Numerator closure}}
+    ,(352,282)*{\mbox{\normalsize Denominator closure}}
     ,(20,235)*+!L{\mbox{\textbf{Basic rational tangles}}}
     ,(71,164)*{-2}
     ,(145,164)*{-1}
@@ -52,6 +75,8 @@ Follows \url{http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
     ,(280,77)*{\displaystyle\frac{1}{1}}
     ,(364,74)*{\displaystyle\frac{1}{2}}
 \end{cxyoverpic}
+
+
 
 
 \end{document}
