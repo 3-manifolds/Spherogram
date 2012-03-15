@@ -74,23 +74,23 @@ T</tspan>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M366.823 69.0785 C366.826 63.5428 371.052 59.0226 375.345 56.4466" fill="none" stroke-linecap="round" opacity="1"/>
 </g>
 <g opacity="1">
-<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M107.391 214.176 L147.189 214.176 C148.785 214.176 150.079 215.47 150.079 217.066L150.079 256.864 C150.079 258.461 148.785 259.754 147.189 259.754L107.391 259.754 C105.795 259.754 104.501 258.461 104.501 256.864L104.501 217.066 C104.501 215.47 105.795 214.176 107.391 214.176Z" fill="none" stroke-linecap="round" opacity="1"/>
-<text fill="#000000" transform="matrix(1.44501 0 0 1.44501 119.032 221.338)" opacity="1">
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M210.219 211.642 L250.017 211.642 C251.613 211.642 252.907 212.936 252.907 214.532L252.907 254.33 C252.907 255.927 251.613 257.22 250.017 257.22L210.219 257.22 C208.622 257.22 207.329 255.927 207.329 254.33L207.329 214.532 C207.329 212.936 208.622 211.642 210.219 211.642Z" fill="none" stroke-linecap="round" opacity="1"/>
+<text fill="#000000" transform="matrix(1.44501 0 0 1.44501 221.86 218.804)" opacity="1">
 <tspan y="17" font-size="18" font-family="'Helvetica'" x="0">
 T</tspan>
 </text>
 </g>
 <g opacity="1">
-<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M267.653 215.58 L307.451 215.58 C309.047 215.58 310.341 216.874 310.341 218.47L310.341 258.268 C310.341 259.864 309.047 261.158 307.451 261.158L267.653 261.158 C266.057 261.158 264.763 259.864 264.763 258.268L264.763 218.47 C264.763 216.874 266.057 215.58 267.653 215.58Z" fill="none" stroke-linecap="round" opacity="1"/>
-<text fill="#000000" transform="matrix(1.44501 0 0 1.44501 279.295 222.741)" opacity="1">
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M331.82 213.886 L371.618 213.886 C373.214 213.886 374.508 215.18 374.508 216.776L374.508 256.575 C374.508 258.171 373.214 259.465 371.618 259.465L331.82 259.465 C330.224 259.465 328.93 258.171 328.93 256.575L328.93 216.776 C328.93 215.18 330.224 213.886 331.82 213.886Z" fill="none" stroke-linecap="round" opacity="1"/>
+<text fill="#000000" transform="matrix(1.44501 0 0 1.44501 343.462 221.047)" opacity="1">
 <tspan y="17" font-size="18" font-family="'Helvetica'" x="0">
 T</tspan>
 </text>
 </g>
-<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M110.036 214.009 C110.286 193.971 141.954 192.512 144.578 213.502" fill="none" stroke-linecap="round" opacity="1"/>
-<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M110.782 260.235 C111.031 280.273 142.699 281.731 145.323 260.742" fill="none" stroke-linecap="round" opacity="1"/>
-<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M271.031 215.007 C269.504 205.848 259.519 201.129 252.267 206.871C238.53 217.746 236.116 250.614 249.101 263.593C256.681 271.168 269.234 273.852 271.454 261.501" fill="none" stroke-linecap="round" opacity="1"/>
-<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M303.881 215.162 C305.407 206.002 315.392 201.284 322.645 207.025C336.382 217.9 336.134 246.541 325.81 263.747C320.297 272.937 305.678 274.007 303.457 261.656" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M212.864 211.475 C213.114 191.437 244.782 189.978 247.406 210.968" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M213.61 257.701 C213.859 277.739 245.527 279.197 248.151 258.208" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M335.198 213.314 C333.671 204.154 323.686 199.436 316.434 205.177C302.697 216.052 300.283 248.92 313.268 261.899C320.848 269.475 333.401 272.159 335.621 259.807" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M368.048 213.468 C369.574 204.309 379.559 199.59 386.812 205.332C400.549 216.207 400.301 244.847 389.977 262.054C384.464 271.243 369.845 272.313 367.624 259.962" fill="none" stroke-linecap="round" opacity="1"/>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M190.12 366.703 C196.303 378.194 221.472 377.782 227.902 367.066" fill="none" stroke-linecap="round" opacity="1"/>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M189.63 398.842 C196.126 389.889 219.8 389.855 226.849 398.667" fill="none" stroke-linecap="round" opacity="1"/>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M227.433 449.515 C215.943 455.699 216.355 480.868 227.071 487.298" fill="none" stroke-linecap="round" opacity="1"/>
@@ -123,5 +123,27 @@ T</tspan>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M80.6203 376.418 C66.8532 368.969 59.6437 389.562 47.8278 389.031" fill="none" stroke-linecap="round" opacity="1"/>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M87.7895 383.853 C93.4983 390.757 94.1501 390.71 99.7382 391.952" fill="none" stroke-linecap="round" opacity="1"/>
 <path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M60.9456 375.241 C59.1779 369.782 53.8479 366.326 48.8652 364.333" fill="none" stroke-linecap="round" opacity="1"/>
+<g opacity="1">
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M53.0339 215.461 L80.5757 215.461 C81.6803 215.461 82.5757 216.357 82.5757 217.461L82.5757 245.003 C82.5757 246.108 81.6803 247.003 80.5757 247.003L53.0339 247.003 C51.9294 247.003 51.0339 246.108 51.0339 245.003L51.0339 217.461 C51.0339 216.357 51.9294 215.461 53.0339 215.461Z" fill="none" stroke-linecap="round" opacity="1"/>
+<text fill="#000000" transform="matrix(1 0 0 1 61.0904 220.417)" opacity="1">
+<tspan y="17" font-size="18" font-family="'Helvetica'" x="0">
+T</tspan>
+</text>
+</g>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M85.38 215.524 L112.922 215.524 C114.026 215.524 114.922 216.419 114.922 217.524L114.922 245.066 C114.922 246.17 114.026 247.066 112.922 247.066L85.38 247.066 C84.2754 247.066 83.38 246.17 83.38 245.066L83.38 217.524 C83.38 216.419 84.2754 215.524 85.38 215.524Z" fill="none" stroke-linecap="round" opacity="1"/>
+<text fill="#000000" transform="matrix(1 0 0 1 92.7903 220.464)" opacity="1">
+<tspan y="17" font-size="18" font-family="'Helvetica'" x="0">
+S</tspan>
+</text>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M109.77 247.831 C110.37 255.318 119.589 266.299 121.472 268.479" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M56.4451 247.359 C55.8456 254.846 46.6263 265.827 44.7436 268.007" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M109.77 247.831 C110.37 255.318 119.589 266.299 121.472 268.479" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M110.043 215.07 C110.643 207.583 119.862 196.602 121.745 194.422" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M56.7184 214.598 C56.1189 207.111 46.8996 196.13 45.0169 193.95" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M110.043 215.07 C110.643 207.583 119.862 196.602 121.745 194.422" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M74.8935 214.527 C74.4928 208.159 74.5897 200.71 72.4548 195.017" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M91.2267 215.101 C91.7083 208.019 92.5718 200.727 94.0958 193.869" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M76.334 247.365 C76.5565 254.366 74.5859 261.746 72.119 267.913" fill="none" stroke-linecap="round" opacity="1"/>
+<path stroke-linejoin="round" stroke-width="2" stroke="#000000" d="M90.5598 247.277 C89.6748 254.347 92.6887 260.849 94.4235 267.21" fill="none" stroke-linecap="round" opacity="1"/>
 </g>
 </svg>
