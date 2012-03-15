@@ -68,7 +68,7 @@ class Crossing:
         
 
     def __repr__(self):
-        return self.label
+        return "%s" % self.label
 
     def info(self):
         def format_adjacent(a):
@@ -189,7 +189,7 @@ class Strand:
         other[0].adjacent[other[1]] = (self, i)
 
     def __repr__(self):
-        return self.label
+        return "%s" % self.label
 
     def info(self):
         def format_adjacent(a):
