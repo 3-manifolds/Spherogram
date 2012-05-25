@@ -52,22 +52,26 @@ from pkg_resources import load_entry_point
 
 # The planarity extension
 
-planarity_dir = ['planarity-read-only/c']
-planarity_extra_objects = glob.glob('planarity-read-only/c/*.o')
+planarity_dir = ['planarity_src/planarity-read-only/c']
+planarity_extra_objects = glob.glob('planarity_src/planarity-read-only/c/*.o')
+
+if len(planarity_extra_objects) == 0:
+    print("NOTE: Need to run 'build_planarity.sh' script in 'planarity_src' before this module can be built.")
+    sys.exit()
 
 Planarity = Extension(
     name = 'spherogram.planarity',
-    sources = ['planarity.pyx'], 
+    sources = ['planarity_src/planarity.pyx'], 
     include_dirs = planarity_dir, 
     extra_objects = planarity_extra_objects,
 )
 
 setup( name = 'spherogram',
-#       version = version,
        zip_safe = False,
        install_requires = [],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links'],
+       package_dir = {'spherogram' : 'spherogram_src'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = [Planarity],
        cmdclass =  {'build_ext': build_ext},
