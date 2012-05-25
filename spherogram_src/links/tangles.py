@@ -164,6 +164,8 @@ def continued_fraction_expansion(a, b):
 
 class RationalTangle(Tangle):
     def __init__(self, a, b=1):
+        if b == 1 and hasattr(a, 'numerator') and hasattr(a, 'denominator'):
+            a, b = a.numerator(), a.denominator()
         if b < 0:
             a, b = -a, -b
         self.fraction = (a,b)

@@ -11,7 +11,7 @@ G.add_edge('c', 0)
 G.add_edge('c', 'c')
 
 def convert(G):
-    S = Graph(loops=True, multiedges=True)
+    S = Graph(multiedges=True)
     S.add_vertices(G.vertices)
     for e in G.edges:
         S.add_edge(e.ends[0], e.ends[1], repr(e))
