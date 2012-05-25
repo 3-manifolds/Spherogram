@@ -32,6 +32,7 @@ try:
     _within_sage = True
 except ImportError:
     from .planarity import planar
+    _within_sage = False
     
 from collections import deque
 import operator

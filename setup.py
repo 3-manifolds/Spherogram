@@ -52,19 +52,27 @@ from pkg_resources import load_entry_point
 
 # The planarity extension
 
-planarity_dir = ['planarity_src/planarity-read-only/c']
-planarity_extra_objects = glob.glob('planarity_src/planarity-read-only/c/*.o')
+try:
+    import sage.all
+    ext_modules = []
+except ImportError:    
+    planarity_dir = ['planarity_src/planarity-read-only/c']
+    planarity_extra_objects = glob.glob('planarity_src/planarity-read-only/c/*.o')
 
-if len(planarity_extra_objects) == 0:
-    print("NOTE: Need to run 'build_planarity.sh' script in 'planarity_src' before this module can be built.")
-    sys.exit()
+    if len(planarity_extra_objects) == 0:
+        print("NOTE: Need to run 'build_planarity.sh' script in 'planarity_src' before this module can be built.")
+        sys.exit()
 
-Planarity = Extension(
-    name = 'spherogram.planarity',
-    sources = ['planarity_src/planarity.pyx'], 
-    include_dirs = planarity_dir, 
-    extra_objects = planarity_extra_objects,
-)
+    Planarity = Extension(
+        name = 'spherogram.planarity',
+        sources = ['planarity_src/planarity.pyx'], 
+        include_dirs = planarity_dir, 
+        extra_objects = planarity_extra_objects,
+        )
+
+    ext_modules = [Planarity]
+
+# Main module 
 
 setup( name = 'spherogram',
        zip_safe = False,
@@ -73,7 +81,7 @@ setup( name = 'spherogram',
        packages = ['spherogram', 'spherogram.links'],
        package_dir = {'spherogram' : 'spherogram_src'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
-       ext_modules = [Planarity],
+       ext_modules = ext_modules,
        cmdclass =  {'build_ext': build_ext},
        entry_points = {},
        author = 'Marc Culler and Nathan Dunfield and John Berge',
