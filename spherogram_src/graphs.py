@@ -27,7 +27,12 @@ where x and y will be the two endpoints of the edge (tail and head
 in the case of directed edges).
 """
 
-from .planarity import planar
+try:
+    import sage.graphs.graph
+    _within_sage = True
+except ImportError:
+    from .planarity import planar
+    
 from collections import deque
 import operator
 
@@ -262,6 +267,9 @@ class Graph:
         """
         Return the planarity.
         """
+        if _within_sage:
+            S = self.sage()
+            return S.is_planar()
         return planar(self)
     
     def merge(self, V1, V2):
@@ -308,7 +316,7 @@ class Graph:
         V = [frozenset([v]) for v in self.vertices]
         E = [self.Edge(frozenset([x]), frozenset([y])) for x, y in self.edges]
         return self.__class__(E,V)
-        
+
 class ReducedGraph(Graph):
     """
     A graph with at most one edge between any two vertices,
@@ -633,3 +641,23 @@ class FatGraph(Graph):
 
 class FatDigraph(FatGraph):
     edge_class = DirectedEdge
+
+
+if _within_sage:
+    def _to_sage(self):
+        S = sage.graphs.graph.Graph(loops=True, multiedges=True)
+        S.add_vertices(self.vertices)
+        for e in self.edges:
+            S.add_edge(e.ends[0], e.ends[1], repr(e))
+        return S
+    Graph.sage = _to_sage
+
+    def _to_sage_digraph(self):
+        S = sage.graphs.graph.DiGraph(loops=True, multiedges=True)
+        S.add_vertices(self.vertices)
+        for e in self.edges:
+            S.add_edge(e.ends[0], e.ends[1], repr(e))
+        return S
+    Digraph.sage = _to_sage_digraph
+
+
