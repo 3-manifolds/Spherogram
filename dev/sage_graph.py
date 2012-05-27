@@ -1,3 +1,8 @@
+try:
+    from sage.all import *
+except ImportError:
+    pass
+    
 import spherogram
 
 G = spherogram.Graph()
@@ -17,4 +22,8 @@ def convert(G):
         S.add_edge(e.ends[0], e.ends[1], repr(e))
     return S
 
-#print G.is_planar()
+#print G
+R = G.reduced()
+#print R
+print G.is_planar()
+print R.embedding()
