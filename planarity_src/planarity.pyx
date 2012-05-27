@@ -34,7 +34,7 @@ cdef extern from "planarity-read-only/c/graph.h":
     
 def planar(fatgraph):
     if len(fatgraph.edges) == 0:
-        return True
+        return True, None
     cdef graphP theGraph
     cdef int status
 
@@ -46,17 +46,18 @@ def planar(fatgraph):
     for edge in fatgraph.edges:
         start, end = edge.ends
         m, n = vertices.index(start), vertices.index(end)
-        status = gp_AddEdge(theGraph, m, 0, n, 0)
-        if status == NOTOK:
-            raise RuntimeError("gp_AddEdge status is not ok.")
-        elif status == NONEMBEDDABLE:
-            return False
+        if m != n:    # remove loops
+            status = gp_AddEdge(theGraph, m, 0, n, 0)
+            if status == NOTOK:
+                raise RuntimeError("gp_AddEdge status is not ok.")
+            elif status == NONEMBEDDABLE:
+                return False, None
     status = gp_Embed(theGraph, EMBEDFLAGS_PLANAR)
     gp_SortVertices(theGraph)
     if status == NOTOK:
         raise RuntimeError("not ok.")
     if status == NONEMBEDDABLE:
-        return False
+        return False, None
     embedding = {}
     for i from 0 <= i < theGraph.N:
         adjacency_list = []
@@ -66,6 +67,5 @@ def planar(fatgraph):
             adjacency_list.append(vertices[theGraph.E[j].neighbor])
             j = theGraph.E[j].link[0] # the next edge
         embedding[vertices[i]] = adjacency_list
-    fatgraph.embedding = embedding
     gp_Free(&theGraph)
-    return True
+    return True, embedding

@@ -264,14 +264,14 @@ class Graph:
         return {'set': cut_set, 'edges': cut_edges, 'paths': path_list,
                 'unsaturated': unsaturated}
 
+    def reduced(self):
+        R = ReducedGraph()
+        for e in self.edges:
+            R.add_edge(e.ends[0], e.ends[1])
+        return R
+
     def is_planar(self):
-        """
-        Return the planarity.
-        """
-        if _within_sage:
-            S = self.sage()
-            return S.is_planar()
-        return planar(self)
+        return self.reduced().is_planar()
     
     def merge(self, V1, V2):
         """
@@ -355,6 +355,39 @@ class ReducedGraph(Graph):
                 valence += self.multiplicities[e]
         return valence
 
+    def is_planar(self):
+        """
+        Return the planarity.
+        """
+
+        verts_with_loops = set()
+        non_loop_edges = set()
+        for e in self.edges:
+            v, w = e.ends
+            if v != w:
+                non_loop_edges.add( (v, w) )
+            else:
+                verts_with_loops.add(v)
+
+        sans_loops = ReducedGraph(non_loop_edges)
+        if _within_sage:
+            S = sans_loops.sage(loops=False, multiedges=False)
+            is_planar = S.is_planar(set_embedding=True)
+            embedding = S.get_embedding()
+        else:
+            is_planar, embedding = planar(sans_loops)
+
+        if is_planar:
+            for v in verts_with_loops:
+                embedding[v].append(v)
+            self._embedding = embedding
+
+        return is_planar
+
+    def embedding(self):
+        if self.is_planar():
+            return self._embedding
+
     def one_min_cut(self, source, sink):
         cut = Graph.one_min_cut(self, source, sink,
                             self.multiplicities.copy())
@@ -395,6 +428,11 @@ class ReducedGraph(Graph):
                         if M0 and M1:
                             pairs.append(pair)
         return pairs
+
+    def __repr__(self):
+        V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
+        E = 'Edges:\n  ' + '\n  '.join(["%s, %d" % (e, self.multiplicities[e]) for e in self.edges])
+        return '%s\n%s'%(V,E)
     
 class Digraph(Graph):
     edge_class = DirectedEdge
@@ -645,8 +683,8 @@ class FatDigraph(FatGraph):
 
 
 if _within_sage:
-    def _to_sage(self):
-        S = sage.graphs.graph.Graph(loops=True, multiedges=True)
+    def _to_sage(self, loops=True, multiedges=True):
+        S = sage.graphs.graph.Graph(loops=loops, multiedges=multiedges)
         S.add_vertices(self.vertices)
         for e in self.edges:
             S.add_edge(e.ends[0], e.ends[1], repr(e))
