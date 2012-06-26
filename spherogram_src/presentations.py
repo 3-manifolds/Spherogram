@@ -83,6 +83,23 @@ class Word(deque):
                     self.rotate(-1)
                 n += 1
 
+    def syllables(self):
+        if len(self) == 0:
+            return []
+        ans, curr = [], None
+        for x in self:
+            g = self.alphabet[abs(x)]
+            e = 1 if x > 0 else -1
+            if g == curr:
+                count += e
+            else:
+                if curr != None:
+                    ans.append( (curr, count) )
+                curr, count = g, e
+
+        ans.append( (curr, count) )
+        return ans
+
 class CyclicWord(Word):
     
     def cancel(self):
@@ -349,15 +366,16 @@ class Presentation:
         """
         result = Presentation(self.relators, self.generators)
         starting_length = len(result)
-        print(result.relators)
+        #print(result.relators)
         while True:
             reducers, levels = result.find_reducers()
             if not reducers:
                 return result
             reduction, a, cut_set = reducers[0]
-            print(WhiteheadMove(a, cut_set, self.generators, self.alphabet))
+            w = WhiteheadMove(a, cut_set, self.generators, self.alphabet)
+            #print(w)
             result = result.whitehead_move(a, cut_set)
-            print(result.relators)
+            #print(result.relators)
 
     def level_transformations(self):
         """
