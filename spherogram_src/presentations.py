@@ -88,7 +88,7 @@ class Word(deque):
             return []
         ans, curr = [], None
         for x in self:
-            g = self.alphabet[abs(x)]
+            g = abs(x)
             e = 1 if x > 0 else -1
             if g == curr:
                 count += e
