@@ -476,7 +476,8 @@ class Presentation:
                 break
         relators = queue[0].presentation.relators
         ordering = queue[0].ordering
-        return tuple([tuple(R.rewrite(ordering)) for R in relators]), tuple(self.generators)
+        generators = tuple( range(1, len(self.generators) + 1 ) )
+        return tuple([tuple(R.rewrite(ordering)) for R in relators]), generators
 
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
