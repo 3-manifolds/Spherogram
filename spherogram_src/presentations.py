@@ -453,9 +453,9 @@ class Presentation:
                     queue.append( (pres, WM, P, signature) )
                     seen.add(signature)
             if verbose:
-                yield (parent, move, pres, Presentation(sig))
+                yield (parent, move, pres, Presentation(*sig))
             else:
-                yield Presentation(sig)
+                yield Presentation(*sig)
 
     def signature(self):
         """
@@ -476,7 +476,7 @@ class Presentation:
                 break
         relators = queue[0].presentation.relators
         ordering = queue[0].ordering
-        return tuple([tuple(R.rewrite(ordering)) for R in relators])
+        return tuple([tuple(R.rewrite(ordering)) for R in relators]), tuple(self.generators)
 
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
