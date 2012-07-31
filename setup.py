@@ -6,7 +6,7 @@ from Cython.Distutils import build_ext
 # The planarity extension
 
 try:
-    import sage.all
+    import sage.libs
     ext_modules = []
 except ImportError:    
     planarity_dir = ['planarity_src/planarity-read-only/c']
