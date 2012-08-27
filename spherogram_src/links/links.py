@@ -6,10 +6,12 @@ a PD diagram as described in
   http://katlas.org/wiki/Planar_Diagrams
 
 See the file "doc.pdf" for the conventions, and the file
-"test.py" for some examples of creating links.  
+"test.py" for some examples of creating links.
+
 """
 from .. import graphs
-import  copy, string, os, sys, re
+import  string, os, sys, re
+import cPickle as pickle
 
 class Crossing:
     """
@@ -282,7 +284,7 @@ class Link(graphs.Digraph):
         
 
     def copy(self):
-        return copy.deepcopy(self)
+        return pickle.loads(pickle.dumps(self))
     
     def is_planar(self):
         if not self.is_connected():
