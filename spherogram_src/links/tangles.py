@@ -7,7 +7,7 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 """
 
 from . import links
-import copy
+import cPickle as pickle
 
 def join_strands(x, y):
     (a,i), (b,j) = x, y
@@ -74,7 +74,7 @@ class Tangle:
         return Tangle(n + m, A.crossings + B.crossings, entry_points)
 
     def copy(self):
-        return copy.deepcopy(self)
+        return pickle.loads(pickle.dumps(self))
 
     def rotate(self, s):
         "Rotate anticlockwise by s*90 degrees"

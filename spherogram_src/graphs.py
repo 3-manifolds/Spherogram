@@ -28,6 +28,7 @@ in the case of directed edges).
 """
 
 try:
+    import sage.all
     import sage.graphs.graph
     _within_sage = True
 except ImportError:
