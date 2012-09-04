@@ -36,7 +36,7 @@ try:
     import sage.graphs.graph
     _within_sage = True
 except ImportError:
-###    from .planarity import planar
+    from .planarity import planar
     from spherogram.planarity import planar
     _within_sage = False
     
@@ -63,6 +63,9 @@ class BaseEdge(tuple):
         else:
             raise ValueError('Vertex is not an endpoint')
 
+    def incident_to(self):
+        return list(self)
+    
     def is_loop(self):
         return self[0] == self[1]
     
@@ -105,6 +108,9 @@ class DirectedEdge(BaseEdge):
     def __eq__(self, other):
         return self is other
 
+    def incident_to(self):
+        return [self.tail]
+    
     @property
     def head(self):
         return self[1]
@@ -113,7 +119,7 @@ class DirectedEdge(BaseEdge):
     def tail(self):
         return self[0]
 
-class DirectedMultiEdge(BaseEdge):
+class DirectedMultiEdge(DirectedEdge):
     """
     A DirectedEdge with multiplicity.  DirectedMultiEdges are equal if
     they have the same head and tail.  The multiplicity is initialized to 1.
@@ -125,13 +131,8 @@ class DirectedMultiEdge(BaseEdge):
     def __repr__(self):
         return '%s --%d-> %s'%(self[0], self.multiplicity, self[1])
 
-    @property
-    def head(self):
-        return self[1]
-
-    @property
-    def tail(self):
-        return self[0]
+    def __eq__(self, other):
+        return tuple(self) == tuple(other)
 
 class FatEdge(Edge):
     """
@@ -152,8 +153,7 @@ class FatEdge(Edge):
         return '%s[%d] -%s- %s[%d]'%(self[0], self.slots[0],
                                      'x' if self.twisted else '-',
                                      self[1], self.slots[1])
-                                     
-                                    
+
     def slot(self, vertex):
         try:
             return self.slots[self.index(vertex)]
@@ -201,6 +201,7 @@ class Graph:
     def __init__(self, pairs=[], singles=[]):
         self.vertices = set()
         self.edges = set()
+        self.incidence_dict = {}
         self.Edge = self.__class__.edge_class
         for pair in pairs:
             self.add_edge(*pair)
@@ -232,6 +233,11 @@ class Graph:
         edge = self.Edge(*args)
         self.edges.add(edge)
         self.vertices.update(edge)
+        for v in edge.incident_to():
+            try:
+                self.incidence_dict[v].append(edge)
+            except KeyError:
+                self.incidence_dict[v] = [edge]
 
     def add_vertex(self, hashable):
         self.vertices.add(hashable)
