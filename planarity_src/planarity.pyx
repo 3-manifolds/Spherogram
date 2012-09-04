@@ -44,7 +44,7 @@ def planar(fatgraph):
         raise RuntimeError("gp_InitGraph status is not ok.")
     vertices = list(fatgraph.vertices)
     for edge in fatgraph.edges:
-        start, end = edge.ends
+        start, end = edge
         m, n = vertices.index(start), vertices.index(end)
         if m != n:    # remove loops
             status = gp_AddEdge(theGraph, m, 0, n, 0)

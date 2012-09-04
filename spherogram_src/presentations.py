@@ -349,20 +349,18 @@ class Presentation:
         length is reached.  Return the resulting minimal presentation. 
 
         >>> P = Presentation(['AAAAABBAACCC', 'AAABBBCCCCC', 'AABDCCBD'])
-        >>> P.whitehead.is_planar()
+        >>> P.whitehead_graph().is_planar()
         False
-        >>> P.shorten()
-        [AAAAABBAACCC, AAABBBCCCCC, AABDCCBD]
-        [AAAAABBAACCC, AAABBBCCCCC, AADCCD]
-        >>> P.whitehead.is_planar()
+        >>> S = P.shorten()
+        >>> print(S)
+        generators: [A, B, C, D]
+        relators: [AAAAABBAACCC, AAABBBCCCCC, AADCCD]
+        >>> S.whitehead_graph().is_planar()
         True
         >>> P = Presentation(['xyyxyyxy', 'xyy'])
         >>> P.shorten()
-        [xyyxyyxy, xyy]
-        [xyxyx, xy]
-        [xyy, y]
-        [xy, y]
-        [x, y]
+        generators: [X, Y]
+        relators: [x, y]
         """
         result = Presentation(self.relators, self.generators)
         starting_length = len(result)
@@ -376,6 +374,7 @@ class Presentation:
             #print(w)
             result = result.whitehead_move(a, cut_set)
             #print(result.relators)
+        return result
 
     def level_transformations(self):
         """
@@ -385,7 +384,7 @@ class Presentation:
         >>> for x, X in P.level_transformations():
         ...   P = Presentation(['AABCaBacAcbabC'])
         ...   P = P.whitehead_move(x, X)
-        ...   print P, len(P)
+        ...   print(P, len(P))
         ...
         generators: [A, B, C]
         relators: [ABCaaBacAcbbAC] 14

@@ -15,6 +15,10 @@ If G is a graph and v a vertex of G then G[v] is a list of distinct
 vertices adjacent to v.  If G is a digraph, then G[v] is the list of
 distinct heads of directed edges with tail v.
 
+For most graphs G, G(v) returns the set of edges incident to G.
+In the case of a FatGraph, the return value is the ordered list
+of incident edges.  (Loops will appear twice).
+
 When called as a function, an edge is the non-trivial involution of
 its endpoints; calling it with one endpoint returns the other one.
 
@@ -32,55 +36,129 @@ try:
     import sage.graphs.graph
     _within_sage = True
 except ImportError:
-    from .planarity import planar
+###    from .planarity import planar
+    from spherogram.planarity import planar
     _within_sage = False
     
 from collections import deque
 import operator
 
-class Edge:
+class BaseEdge(tuple):
     """
-    A basic edge.
+    Base class for edges: a 2-tuple of vertices with extra methods.
+    Calling a BaseEdge with one if its vertices returns the other one.
     """
-    def __init__(self, object1, object2):
-        self.ends = [object1, object2]
 
-    def __contains__(self, object):
-        """
-        The endpoints of an edge are "in" the edge.
-        """
-        return object in self.ends
-    
+    def __new__(cls, x, y):
+        return tuple.__new__(cls, (x,y))
+        
     def __call__(self, end):
         """
         Calling an edge with one endpoint returns the other one.
         """
-        try:
-            return [v for v in self if v != end].pop()
-        except IndexError:
+        if end == self[0]:
+            return self[1]
+        elif end == self[1]:
+            return self[0]
+        else:
             raise ValueError('Vertex is not an endpoint')
 
-    def __repr__(self):
-        return '%s --- %s'%tuple(self.ends)
-
-    def __iter__(self):
-        return self.ends.__iter__()
-
     def is_loop(self):
-        return self.ends[0] == self.ends[1]
-        
-class DirectedEdge(Edge):
+        return self[0] == self[1]
+    
+class Edge(BaseEdge):
     """
-    An edge with a head and a tail.
+    An undirected edge.  We allow multiple Edges between the same
+    vertices, so the __eq__ operator is overloaded.
     """
-    def head(self):
-        return self.ends[1]
-
-    def tail(self):
-        return self.ends[0]
 
     def __repr__(self):
-        return '%s --> %s'%tuple(self.ends)
+        return '%s --- %s'%self
+        
+    def __eq__(self, other):
+        return self is other
+
+class MultiEdge(BaseEdge):
+    """
+    An undirected edge.  MultiEdges are equal if they have the
+    same vertices.  The multiplicity is initialized to 1.
+    """
+
+    def __init__(self, x, y):
+        self.multiplicity = 1
+        
+    def __repr__(self):
+        return '%s --%d-- %s'%(self[0], self.multiplicity, self[1])
+
+    def __eq__(self, other):
+        return set(self) == set(other)
+
+class DirectedEdge(BaseEdge):
+    """
+    An Edge with a tail and a head.  The two vertices can be accessed as
+    E.tail and E.head
+    """
+    
+    def __repr__(self):
+        return '%s --> %s'%self
+
+    def __eq__(self, other):
+        return self is other
+
+    @property
+    def head(self):
+        return self[1]
+
+    @property
+    def tail(self):
+        return self[0]
+
+class DirectedMultiEdge(BaseEdge):
+    """
+    A DirectedEdge with multiplicity.  DirectedMultiEdges are equal if
+    they have the same head and tail.  The multiplicity is initialized to 1.
+    """
+
+    def __init__(self, v, w):
+        self.multiplicity = 1
+        
+    def __repr__(self):
+        return '%s --%d-> %s'%(self[0], self.multiplicity, self[1])
+
+    @property
+    def head(self):
+        return self[1]
+
+    @property
+    def tail(self):
+        return self[0]
+
+class FatEdge(Edge):
+    """
+    An Edge that knows its place among the edges incident to each
+    of its vertices.  Initialize with two pairs (v,n) and (w,m) meaning
+    that this edge joins v to w and has index n at v and m at w.
+    The parity of the optional integer argument twists determines
+    whether the edge is twisted or not.
+    """
+    def __new__(cls, x, y, twists=0):
+        return tuple.__new__(cls, (x[0],y[0]))
+
+    def __init__(self, x, y, twists=0):
+        self.slots = (x[1],y[1])
+        self.twisted = True if twists%2 != 0 else False
+
+    def __repr__(self):
+        return '%s[%d] -%s- %s[%d]'%(self[0], self.slots[0],
+                                     'x' if self.twisted else '-',
+                                     self[1], self.slots[1])
+                                     
+                                    
+    def slot(self, vertex):
+        try:
+            return self.slots[self.index(vertex)]
+        except ValueError:
+            raise ValueError('Vertex is not an end of this edge.')
 
 class EdgesBFO:
     """
@@ -124,24 +202,34 @@ class Graph:
         self.vertices = set()
         self.edges = set()
         self.Edge = self.__class__.edge_class
-        for x, y in pairs:
-            self.add_edge(x,y)
+        for pair in pairs:
+            self.add_edge(*pair)
         for vertex in singles:
             self.add_vertex(vertex)
+        self._validate()
 
+    def _validate(self):
+        pass
+    
     def __repr__(self):
         V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
         E = 'Edges:\n  ' + '\n  '.join([str(e) for e in self.edges])
         return '%s\n%s'%(V,E)
 
+    def __call__(self, vertex):
+        """
+        Return the set of incident edges.
+        """
+        return set([e for e in self.edges if v in e])
+            
     def __getitem__(self, vertex):
         """
         Return a list of adjacent vertices.
         """
         return [e(vertex) for e in self.incident(vertex)]
 
-    def add_edge(self, x, y):
-        edge = self.Edge(x,y)
+    def add_edge(self, *args):
+        edge = self.Edge(*args)
         self.edges.add(edge)
         self.vertices.update(edge)
 
@@ -156,11 +244,12 @@ class Graph:
                      if vertex in e and not e.is_loop() ])
 
     def valence(self, vertex):
+        """
+        Return the valence of a vertex.
+        """
         valence = 0
         for e in self.edges:
             if vertex in e:
-                valence += 1
-            if e(vertex) == vertex:
                 valence += 1
         return valence
 
@@ -268,7 +357,7 @@ class Graph:
     def reduced(self):
         R = ReducedGraph()
         for e in self.edges:
-            R.add_edge(e.ends[0], e.ends[1])
+            R.add_edge(*e)
         return R
 
     def is_planar(self):
@@ -324,25 +413,26 @@ class ReducedGraph(Graph):
     A graph with at most one edge between any two vertices,
     but having edges with multiplicities.
     """
+    edge_class = MultiEdge
+    
     def __init__(self, pairs=[], singles=[]):
-        self.multiplicities = {}
+        self.Edge = self.__class__.edge_class
         Graph.__init__(self, pairs, singles) 
 
     def find_edge(self, vertex1, vertex2):
-        vertices = set([vertex1, vertex2])
+        pair = (vertex1, vertex2)
         for edge in self.edges:
-            if set(edge.ends) == vertices:
+            if edge == pair:
                 return edge
 
-    def add_edge(self, x, y, multiplicity=1):
+    def add_edge(self, x, y):
         edge = self.find_edge(x, y)
         if edge:
-            self.multiplicities[edge] += multiplicity
+            edge.multiplicity += 1
         else:
-            new_edge = self.Edge(x,y)
+            new_edge = self.Edge(x, y)
             self.vertices.update([x,y])
             self.edges.add(new_edge)
-            self.multiplicities[new_edge] = multiplicity
 
     def multi_valence(self, vertex):
         """
@@ -351,9 +441,7 @@ class ReducedGraph(Graph):
         valence = 0
         for e in self.edges:
             if vertex in e:
-                valence += self.multiplicities[e]
-            if e(vertex) == vertex:
-                valence += self.multiplicities[e]
+                valence += e.multiplicity
         return valence
 
     def is_planar(self):
@@ -364,7 +452,7 @@ class ReducedGraph(Graph):
         verts_with_loops = set()
         non_loop_edges = set()
         for e in self.edges:
-            v, w = e.ends
+            v, w = e
             if v != w:
                 non_loop_edges.add( (v, w) )
             else:
@@ -390,9 +478,9 @@ class ReducedGraph(Graph):
             return self._embedding
 
     def one_min_cut(self, source, sink):
-        cut = Graph.one_min_cut(self, source, sink,
-                            self.multiplicities.copy())
-        cut['size'] = sum([ self.multiplicities[e] for e in cut['edges'] ])
+        capacity = dict([(e, e.multiplicity) for e in self.edges])
+        cut = Graph.one_min_cut(self, source, sink, capacity)
+        cut['size'] = sum([e.multiplicity for e in cut['edges'] ])
         return cut
 
     def cut_pairs(self):
@@ -407,7 +495,7 @@ class ReducedGraph(Graph):
             if self.valence(v) == 3:
                 return []
             edge = self.find_edge(v,V)
-            if not edge or self.multiplicities[edge] < 2:
+            if not edge or edge.multiplicity < 2:
                 return []
             return majors
         major_set = set(majors)
@@ -430,11 +518,72 @@ class ReducedGraph(Graph):
                             pairs.append(pair)
         return pairs
 
-    def __repr__(self):
-        V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
-        E = 'Edges:\n  ' + '\n  '.join(["%s, %d" % (e, self.multiplicities[e]) for e in self.edges])
-        return '%s\n%s'%(V,E)
-    
+class CyclicList(list):
+    def succ(self, x):
+        return self[(self.index(x)+1)%len(self)]
+    def pred(self, x):
+        return self[(self.index(x)-1)%len(self)]
+
+class FatGraph(Graph):
+    """
+    A FatGraph is a Graph which maintains a CyclicList of incident
+    edges for each vertex.  The edges are FatEdges, which come in two
+    flavors: twisted and untwisted.  Since the incident edges are in
+    particulary cyclically ordered, a FatGraph has a canonical
+    embedding as a spine of a surface with boundary.  However, a
+    CyclicList has a first element.  This extra data, namely a choice
+    of distinguished edge for each vertex, is used to give a canonical
+    mapping from FatGraphs to link or tangle diagrams.
+
+    A FatGraph should be initialized with a sequence of either double
+    pairs ((v,n), (w,m)) or triples ((v,n), (w,m), T).  These indicate
+    that there is an edge from v to w which has index n at v and m at
+    w.  If T is supplied then the parity of T determines the twist.
+    """
+    edge_class = FatEdge
+
+    def __call__(self, vertex):
+        result = [e for e in self.edges if vertex in e]
+        result.sort(key=lambda e : e.slot(vertex))
+        return CyclicList(result)
+
+    def _validate(self):
+        for v in self.vertices:
+            slots = [e.slot(v) for e in self(v)]
+            assert slots == range(len(slots))
+                                   
+    def boundary_cycles(self):
+        left  = [(e[0], e, 'L') for e in self.edges]
+        right = [(e[0], e, 'R') for e in self.edges]
+        sides = left + right
+        cycles = []
+        while sides:
+            cycle = []
+            v, e, s = start = sides.pop()
+            #print('start:', start)
+            while True:
+                cycle.append(e)
+                # cross the edge
+                v = e(v)
+                if (
+                    ( e.twisted and s=='L') or
+                    ( not e.twisted and (s=='L')==(v==e[0]) )
+                    ): # go counter-clockwise
+                    e = self(v).succ(e)
+                    s = 'R' if e.twisted or v == e[0] else 'L'
+                else: # go clockwise
+                    e = self(v).pred(e)
+                    s = 'L' if e.twisted or v == e[0] else 'R'
+                if (e[0],e,s) == start:
+                    cycles.append(cycle)
+                    break
+                #print('next', (e[0],e,s))
+                sides.remove( (e[0],e,s) )
+        return cycles
+
+    def filled_euler(self):
+        return len(self.vertices) - len(self.edges) + len(self.boundary_cycles())
+
 class Digraph(Graph):
     edge_class = DirectedEdge
 
@@ -443,7 +592,7 @@ class Digraph(Graph):
         Return the set of non-loops which begin at the vertex.
         """
         return set([ e for e in self.edges
-                     if e.tail() == vertex and e.head() != vertex ])
+                     if e.tail == vertex and e.head != vertex ])
 
     def components(self):
         """
@@ -481,8 +630,7 @@ class Digraph(Graph):
 class StrongConnector:
     """
     Finds strong components of a digraph using Tarjan's algorithm;
-    see http://en.wikipedia.org/wiki/
-    Tarjan%27s_strongly_connected_components_algorithm
+    see http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
     """
     def __init__(self, digraph):
         self.digraph = digraph
@@ -526,7 +674,7 @@ class StrongConnector:
 
     def DAG(self):
         """
-        Return the acyclic directed graph whose vertices are the
+        Return the directed acyclic graph whose vertices are the
         strong components of the underlying digraph.  There is an edge
         joining two components if and only if there is an edge of the
         underlying digraph having an endpoint in each component.
@@ -543,7 +691,7 @@ class StrongConnector:
 
 class Poset(set):
     """
-    A partially ordered set, generated from an acyclic directed graph.
+    A partially ordered set, generated from a directed acyclic graph.
     Instantiate with a Digraph.  A ValueError exception is raised if the
     Digraph contains a cycle.
     """
@@ -663,32 +811,14 @@ class Poset(set):
             extended = self.closure(start | set([child]))
             for subset in self.closed_subsets(extended):
                 yield subset
-
-class FatGraph(Graph):
-
-    def __init__(self, pairs, singles=[]):
-        Graph.__init__(self, pairs, singles)
-        self.adjacent = {}
-        for v in self.vertices:
-            self.adjacent[v] = [e(v) for e in self.edges if v in e]
-
-    def __getitem__(self, vertex):
-        return self.adjacent[vertex]
-
-    def __repr__(self):
-        return '\n'.join(['%s: %s'%(v, self.adjacent[v])
-                          for v in self.vertices])
-
-class FatDigraph(FatGraph):
-    edge_class = DirectedEdge
-
-
+    
 if _within_sage:
     def _to_sage(self, loops=True, multiedges=True):
         S = sage.graphs.graph.Graph(loops=loops, multiedges=multiedges)
         S.add_vertices(self.vertices)
         for e in self.edges:
-            S.add_edge(e.ends[0], e.ends[1], repr(e))
+            v, w = e
+            S.add_edge(v, w, repr(e))
         return S
     Graph.sage = _to_sage
 
@@ -696,8 +826,7 @@ if _within_sage:
         S = sage.graphs.graph.DiGraph(loops=True, multiedges=True)
         S.add_vertices(self.vertices)
         for e in self.edges:
-            S.add_edge(e.ends[0], e.ends[1], repr(e))
+            v, w = e
+            S.add_edge(v, w, repr(e))
         return S
     Digraph.sage = _to_sage_digraph
-
-
