@@ -69,6 +69,14 @@ class Word(deque):
     def __repr__(self):
         return self.alphabet.spell(self)
 
+    def __pow__(self, exponent):
+        if exponent < 0:
+            inverse = self.__invert__()
+            return inverse**(-exponent)
+        product = Word(exponent*list(self), alphabet=self.alphabet)
+        product.cancel()
+        return product
+
     def cancel(self):
         done = False
         while not done:
@@ -99,6 +107,15 @@ class Word(deque):
 
         ans.append( (curr, count) )
         return ans
+
+    def verbose_string(self, separator=' * '):
+        ans = []
+        alpha = self.alphabet
+        for g, e in self.syllables():
+            part = alpha[g] if e == 1 else alpha[g] + '^' + repr(e)
+            ans.append(part)
+        return separator.join(ans)
+        
 
 class CyclicWord(Word):
     
@@ -478,6 +495,13 @@ class Presentation:
         ordering = queue[0].ordering
         generators = tuple( range(1, len(self.generators) + 1 ) )
         return tuple([tuple(R.rewrite(ordering)) for R in relators]), generators
+
+    def magma_string(self):
+        gens = sorted([self.alphabet[g] for g in self.generators])
+        ans = 'Group<' + ', '.join(gens) + ' | '
+        ans += ', '.join([R.verbose_string() for R in self.relators])
+        return ans + '>'
+                          
 
 class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
