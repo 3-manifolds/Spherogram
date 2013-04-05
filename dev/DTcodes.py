@@ -92,3 +92,19 @@ class DTcode:
 
     def flip(self, vertex):
         self.fat_graph.reorder(vertex, (0,3,2,1))
+
+    def dumb(self):
+        """
+        Here is a dumb algorithm for finding the correct signs
+        on the crossings: Go through all vertices and see if flipping
+        the vertex increases the filled euler characteristic.
+        """
+        euler = self.fat_graph.filled_euler()
+        for n in range(self.size):
+            self.flip(self[2*n])
+            new_euler = self.fat_graph.filled_euler()
+            if new_euler > euler:
+                euler = new_euler
+                print euler
+            else:
+                self.flip(self[2*n])
