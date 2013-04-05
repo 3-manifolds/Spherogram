@@ -7,15 +7,25 @@ def sign(x):
 # a fat graph, which may not be a planar surface.  There are only
 # two possible orderings of edges at each vertex, since we know which
 # pairs of edges are opposites.  Thus the process of finding the
-# projection consists of reversing the orderings of some vertices until
-# we get a planar surface.
+# projection consists of reversing the orderings of some vertices
+# to get a planar surface.
 #
 # Each crossing in the diagram is traversed twice in building the DT
-# code.  Our convention is to label the four edges at the crossing by
-# 0, 1, 2, 3 so that the first component to pass through the vertex
-# enters at 0 and leaves at 2, and the second component enters at 1 and
-# leaves at 3.
-        
+# code.  Our convention is to initially label the four edges at the
+# crossing by 0, 1, 2, 3 so that the first component to pass through
+# the vertex enters at 0 and leaves at 2, and the second component
+# enters at 1 and leaves at 3.
+#
+#        2
+#        ^
+#        |
+#        |
+# 3 <--------- 1 second         Initial vertex orientation 
+#        |
+#        |
+#        0
+#      first
+
 class DTvertex:
     """
     A vertex of the 4-valent graph which is described by a DT code.
@@ -44,9 +54,8 @@ class DTvertex:
 
 class DTcode:
     """
-    Represents the DTcode of a link projection.
-    Instantiate either from a list of tuples or
-    an alphabetical code.
+    Represents a DTcode of a link projection.  Instantiate either from
+    a list of tuples or an alphabetical code.
     """
     def __init__(self, code):
         if isinstance(code,str):
@@ -70,14 +79,14 @@ class DTcode:
         V = self[1]
         for component in code:
             last_odd += 2*len(component)
-            # Walk around a component, adding edges.
+            # Walk around the component, adding edges.
             while N <= last_odd:
                 W = self[N + 1]
                 self.fat_graph.add_edge((V, V.exit(N)),
                                         (W, W.enter(N+1)))
                 N += 1
                 V = W
-            # Close it up and go to the next one.
+            # Close this component up and go to the next one.
             S = self[start]
             self.fat_graph.add_edge((V, V.exit(N)),
                                     (S, S.enter(start)))
@@ -86,7 +95,7 @@ class DTcode:
 
     def __getitem__(self, n):
         """
-        We can lookup a vertex by either label
+        We can look up a vertex by either of its labels
         """
         return self.lookup[n]
 
@@ -98,6 +107,7 @@ class DTcode:
         Here is a dumb algorithm for finding the correct signs
         on the crossings: Go through all vertices and see if flipping
         the vertex increases the filled euler characteristic.
+        It doesn't work.
         """
         euler = self.fat_graph.filled_euler()
         for n in range(self.size):
