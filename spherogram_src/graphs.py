@@ -566,7 +566,7 @@ class FatGraph(Graph):
             assert slots == range(len(slots))
 
     def reorder(self, vertex, cyclist):
-        for e, n in zip(self[vertex], cyclist):
+        for e, n in zip(self(vertex), cyclist):
             e.set_slot(vertex, n)
 
     def boundary_cycles(self):
