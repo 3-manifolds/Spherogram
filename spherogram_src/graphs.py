@@ -146,7 +146,7 @@ class FatEdge(Edge):
         return tuple.__new__(cls, (x[0],y[0]))
 
     def __init__(self, x, y, twists=0):
-        self.slots = (x[1],y[1])
+        self.slots = [x[1],y[1]]
         self.twisted = True if twists%2 != 0 else False
 
     def __repr__(self):
@@ -159,6 +159,13 @@ class FatEdge(Edge):
             return self.slots[self.index(vertex)]
         except ValueError:
             raise ValueError('Vertex is not an end of this edge.')
+
+    def set_slot(self, vertex, n):
+        try:
+            self.slots[self.index(vertex)] = n
+        except ValueError:
+            raise ValueError('Vertex is not an end of this edge.')
+
 
 class EdgesBFO:
     """
@@ -557,7 +564,11 @@ class FatGraph(Graph):
         for v in self.vertices:
             slots = [e.slot(v) for e in self(v)]
             assert slots == range(len(slots))
-                                   
+
+    def reorder(self, vertex, cyclist):
+        for e, n in zip(self[vertex], cyclist):
+            e.set_slot(vertex, n)
+
     def boundary_cycles(self):
         left  = [(e[0], e, 'L') for e in self.edges]
         right = [(e[0], e, 'R') for e in self.edges]
