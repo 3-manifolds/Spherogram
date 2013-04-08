@@ -532,6 +532,8 @@ class ReducedGraph(Graph):
         return pairs
 
 class CyclicList(list):
+    def __getitem__(self, n):
+        return list.__getitem__(self, n%len(self))
     def succ(self, x):
         return self[(self.index(x)+1)%len(self)]
     def pred(self, x):
