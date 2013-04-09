@@ -16,7 +16,6 @@ def sign(x):
 # component passes through the vertex it enters at South and leaves at
 # North; the second time it enters at East and leaves at West.
 #
-#
 #        N
 #        ^
 #        |
@@ -26,6 +25,13 @@ def sign(x):
 #        |
 #        S
 #      first
+#
+# This determines an embedding of each crossing into the oriented
+# plane, which may not agree with the embedding in the knot diagram.
+# We will preserve this embedding of the vertices; to adjust crossings
+# for which the embeddings disagree we will reconnect edges, by
+# reconnecting a pair of edges entering at opposite sides of the
+# crossing.
 
 South, East, North, West = 0, 1, 2, 3
 
@@ -100,15 +106,15 @@ class DTFatGraph(FatGraph):
             raise ValueError('Vertex is not an endpoint.')
         return DTPath(edge, self, forward)
 
-    def _outside_edges(self, edge, side):
+    def _outside_slots(self, edge, side):
         """
         Assume that the marked subFatGraph has been embedded in the
         plane.  This generator starts at a marked FatEdge and walks
         around one of its adjacent boundary curves (left=-1, right=1),
-        yielding all of the (v,e) pairs where e is an unmarked edge
-        adjacent to v that, if directed away from v, would point into the
-        disk bounded by that curve if the embedding were extended to
-        the entire FatGraph.
+        yielding all of the pair (v, s) s is a slot of the vertex v
+        lying on the boundary curve.  To extend the embedding over
+        an arc from the marked graph to itself the ending slots of
+        the arc must lie on the same boundary curve.
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
@@ -120,7 +126,7 @@ class DTFatGraph(FatGraph):
                 slot += side
                 interior_edge = self(vertex)[slot]
                 if not interior_edge.marked:
-                    yield vertex, interior_edge
+                    yield vertex, slot%4  # slot needs to be 0,1,2,3
                 else:
                     break
             if edge == interior_edge:
@@ -131,11 +137,11 @@ class DTFatGraph(FatGraph):
             if vertex == first_vertex:
                 break
 
-    def left_edges(self, edge):
-        return self._outside_edges(edge, side=-1)
+    def left_slots(self, edge):
+        return self._outside_slots(edge, side=-1)
 
-    def right_edges(self, edge):
-        return self._outside_edges(edge, side=1)
+    def right_slots(self, edge):
+        return self._outside_slots(edge, side=1)
 
     def unmarked_edges(self, vertex):
         return [e for e in self(vertex) if not e.marked]
@@ -146,14 +152,19 @@ class DTFatGraph(FatGraph):
     def clear(self):
         for e in self.edges:
             e.marked = False
-
-    def flip(self, vertex, fixed=0):
-        if fixed == 0 or fixed == 2:
-            self.reorder(vertex, (0,3,2,1))
-        elif fixed == 1 or fixed == 3:
+ 
+    def flip(self, vertex, slot):
+        um = self.num_unmarked_edges(vertex)
+        if um == 1:
+            raise ValueError(
+                'flipping %s with 1 unmarked edge.'%vertex
+                )
+        if slot == 0 or slot == 2:
             self.reorder(vertex, (2,1,0,3))
+        elif slot == 1 or slot == 3:
+            self.reorder(vertex, (0,3,2,1))
         else:
-            raise ValueError('Invalid fixed direction.')
+            raise ValueError('Invalid slot.')
 
 class DTcode:
     """
@@ -274,7 +285,9 @@ class DTcode:
         print vertices
         print edges
         self.mark(edges)
-        # and so on ...
+        while True:
+            if not self.embed_arc():
+                break
 
     def get_incomplete_vertex(self):
         """
@@ -289,55 +302,74 @@ class DTcode:
         for v in G.vertices:
             if G.num_unmarked_edges(v) == 2:
                 return v
-        raise RuntimeError('No more vertices.')
+        return None
 
-    def flip_test(self, v, w, edge):
+    def do_flips(self, v, v_edge, w, w_edge):
         """
-        Decide whether v needs to be flipped in order to add an arc from
-        v to w starting with the edge.  If so, flip it.  If no such arc
-        can be added, raise an exception.
+        Decide whether v and/or w needs to be flipped in order to add
+        an arc from v to w starting with the v_edge and ending with
+        the w_edge.  If flips are needed, make them.  If the embedding
+        cannot be extended raise an exception.
         """
         G = self.fat_graph
-        # from the given edge, go ccw to a marked edge
-        slot = G(v).index(edge)
+        vslot = G(v).index(v_edge)
+        wslot = G(w).index(w_edge)
+        # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
-            ccw_edge = G(v)[slot+k]
+            ccw_edge = G(v)[vslot+k]
             if ccw_edge.marked:
                 break
         if not ccw_edge.marked:
             raise ValueError('Invalid marking')
-        print 'check', ccw_edge
-        print 'right', list(G.right_edges(ccw_edge))
-        print 'left', list(G.left_edges(ccw_edge))
-        test_right = (v, edge) in G.right_edges(ccw_edge)
-        test_left = (v, edge) in G.left_edges(ccw_edge)
-        print 'left:', test_left, 'right:', test_right
-        if not test_left and not test_right:
-            raise RuntimeError('DT code is not realizable')
-        print G.num_unmarked_edges(v), 'unmarked edges'
-        if ( ( v == ccw_edge[0] and not test_right )
-             or
-             ( v == ccw_edge[1] and not test_left )
-             ): 
-            if G.num_unmarked_edges(v) == 2:
-                print 'flipping %s'%v
-                G.flip(v)
-            elif G.num_unmarked_edges(w) == 2:
-                print 'flipping %s'%w
-                G.flip(w)
+        if v == ccw_edge[0]: # the ccw_edge points out of v
+            slot_bdry = G.right_slots(ccw_edge)
+        else: # the ccw_edge points into v
+            slot_bdry = G.left_slots(ccw_edge)
+        slots = [slot for vertex, slot in slot_bdry if vertex == w]
+        if wslot in slots:
+            return
+        elif slots:
+            print 'flipping', w
+            G.flip(w, wslot)
+            return
+        if v == ccw_edge[0]: # the ccw_edge points out of v
+            other_bdry = G.left_slots(ccw_edge)
+        else: # the ccw_edge points into v
+            other_bdry = G.right_slots(ccw_edge)
+        slots = [slot for vertex, slot in other_bdry if vertex == w]
+        if slots:
+            print 'flipping', v
+            G.flip(v, vslot)
+            if wslot in slots:
+                return
             else:
-                raise RuntimeError('DT code is not realizable')
+                print 'flipping', w
+                G.flip(w, wslot)
+                return
+        print 'ccw_edge', ccw_edge
+        raise RuntimeError('DT code is not realizable')
 
     def embed_arc(self):
         G = self.fat_graph
         # find a vertex with unmarked edges, preferably only 1
         v = self.get_incomplete_vertex()
-        print 'working on %s'%v
+        if v is None:
+            return False
+        print 'arc from %s'%v,
         # find an arc from v to the marked subgraph
         arc_edges, last_vertex = self.find_arc(v)
+        print 'to %s'%last_vertex
         print arc_edges
-        print last_vertex
-        # decide if one of v or w needs to be flipped
-        self.flip_test(v, last_vertex, arc_edges[0])
+        # We need to try from both ends of the arc.  We may not
+        # be able to flip one end, or one end might not see the
+        # other ends's slots.
+        try:
+            self.do_flips(v, arc_edges[0], last_vertex, arc_edges[-1])
+        except RuntimeError:
+            print 'RuntimeError: trying the other way'
+            self.do_flips(last_vertex, arc_edges[-1], v, arc_edges[0])
+        except ValueError:
+            print 'ValueError: trying the other way'
+            self.do_flips(last_vertex, arc_edges[-1], v, arc_edges[0])
         self.mark(arc_edges)
-        
+        return True
