@@ -105,29 +105,30 @@ class DTFatGraph(FatGraph):
         Assume that the marked subFatGraph has been embedded in the
         plane.  This generator starts at a marked FatEdge and walks
         around one of its adjacent boundary curves (left=-1, right=1),
-        yielding all of the unmarked edges that would point into the
+        yielding all of the (v,e) pairs where e is an unmarked edge
+        adjacent to v that, if directed away from v, would point into the
         disk bounded by that curve if the embedding were extended to
         the entire FatGraph.
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
-        first_vertex = next_vertex = edge[1] 
+        first_vertex = vertex = edge[1] 
         while True:
-            end = 0 if edge[0] == next_vertex else 1
+            end = 0 if edge[0] == vertex else 1
             slot = edge.slots[end]
             for k in range(3):
                 slot += side
-                interior_edge = self(next_vertex)[slot]
+                interior_edge = self(vertex)[slot]
                 if not interior_edge.marked:
-                    yield interior_edge
+                    yield vertex, interior_edge
                 else:
                     break
             if edge == interior_edge:
                 raise ValueError('Dead end in marked subgraph.')
             else:
                 edge = interior_edge
-                next_vertex = edge(next_vertex)
-            if next_vertex == first_vertex:
+                vertex = edge(vertex)
+            if vertex == first_vertex:
                 break
 
     def left_edges(self, edge):
@@ -212,15 +213,15 @@ class DTcode:
         vertices = [first_edge[0]]
         seen = set(vertices)
         for edge in self.fat_graph.path(first_edge[0], first_edge):
-            next_vertex = edge[1]
-            if next_vertex in seen:
+            vertex = edge[1]
+            if vertex in seen:
                 edges.append(edge)
                 break
             else:
-                seen.add(next_vertex)
-                vertices.append(next_vertex)
+                seen.add(vertex)
+                vertices.append(vertex)
                 edges.append(edge)
-        n = vertices.index(next_vertex)
+        n = vertices.index(vertex)
         edges = edges[n:]
         vertices = vertices[n:]
         return vertices, edges
@@ -305,20 +306,27 @@ class DTcode:
                 break
         if not ccw_edge.marked:
             raise ValueError('Invalid marking')
-        test_right = edge in G.right_edges(ccw_edge)
-        test_left = edge in G.left_edges(ccw_edge)
+        print 'check', ccw_edge
+        print 'right', list(G.right_edges(ccw_edge))
+        print 'left', list(G.left_edges(ccw_edge))
+        test_right = (v, edge) in G.right_edges(ccw_edge)
+        test_left = (v, edge) in G.left_edges(ccw_edge)
         print 'left:', test_left, 'right:', test_right
         if not test_left and not test_right:
             raise RuntimeError('DT code is not realizable')
-        print G.num_unmarked_edges(v)
+        print G.num_unmarked_edges(v), 'unmarked edges'
         if ( ( v == ccw_edge[0] and not test_right )
              or
              ( v == ccw_edge[1] and not test_left )
              ): 
-            if G.num_unmarked_edges(v) == 1:
+            if G.num_unmarked_edges(v) == 2:
+                print 'flipping %s'%v
+                G.flip(v)
+            elif G.num_unmarked_edges(w) == 2:
+                print 'flipping %s'%w
+                G.flip(w)
+            else:
                 raise RuntimeError('DT code is not realizable')
-            print 'flipping %s'%v
-            G.flip(v)
 
     def embed_arc(self):
         G = self.fat_graph
@@ -329,8 +337,7 @@ class DTcode:
         arc_edges, last_vertex = self.find_arc(v)
         print arc_edges
         print last_vertex
-        # decide if v needs to be flipped
+        # decide if one of v or w needs to be flipped
         self.flip_test(v, last_vertex, arc_edges[0])
-        self.flip_test(last_vertex, v, arc_edges[-1])
         self.mark(arc_edges)
         
