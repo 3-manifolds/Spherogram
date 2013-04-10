@@ -1,4 +1,6 @@
+from snappy import *
 from spherogram import FatGraph, FatEdge
+from spherogram.links import Link, Crossing
 
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
@@ -122,6 +124,12 @@ class DTFatGraph(FatGraph):
         edgelist = [e.PD_index() for e in self(vertex)]
         n = edgelist.index(vertex.first_under())
         return edgelist[n:] + edgelist[:n]
+
+    def sign(self, vertex):
+        flipped = bool(len([e for e in self(vertex) 
+                       if e[1] == vertex and e.slots[1] in (2,3)])%2)
+        even_first = bool(vertex._first%2 == 0)
+        return -1 if (flipped ^ vertex._even_over ^ even_first) else 1
 
     def push(self, vertex, slot):
         self.stack.append( [vertex, slot,
@@ -286,6 +294,17 @@ class DTcodec:
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         return PD
+
+    def link(self):
+        G = self.fat_graph
+        crossings = [Crossing(v) for v in G.vertices]
+        c_dict = dict([(c.label, c) for c in crossings])
+        for e in G.edges:
+            c_dict[e[0]][e.slots[0]] = c_dict[e[1]][e.slots[1]]
+        for c in crossings:
+            c.sign = G.sign(c.label)
+        print crossings
+        return Link(crossings)
 
     def find_circle(self, first_edge):
         """
@@ -464,5 +483,3 @@ class DTcodec:
             self.do_flips(v, e_v, last_vertex, e_last)
         self.mark(arc_edges)
         return True
-
-
