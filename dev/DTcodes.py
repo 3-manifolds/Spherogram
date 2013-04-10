@@ -3,7 +3,7 @@ from spherogram import FatGraph, FatEdge
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
 
-# To construct a knot projection from a DT code we first construct
+# To reconstruct a knot projection from a DT code we first construct
 # a fat graph, which may not be a planar surface.  There are only
 # two possible orderings of edges at each vertex, since we know which
 # pairs of edges are opposites.  The process of finding the
@@ -30,7 +30,7 @@ def sign(x):
 # This determines an embedding of each crossing into the oriented
 # plane, which may not extend to an embedding of the knot diagram.  In
 # constructing the planar embedding of the diagram we preserve this
-# embedding# of the vertices, but adjust the fat graph by
+# embedding of the vertices, but adjust the fat graph by
 # interchanging the attaching points of a pair of edges entering at
 # opposite sides of the crossing.
 
@@ -44,7 +44,7 @@ class DTvertex:
     A vertex of the 4-valent graph which is described by a DT code.
     Instantiate with an even-odd pair, in either order.
     """
-    # In keeping with the Spherogram graphs philosophy, vertices are
+    # In keeping with the Spherogram graph philosophy, vertices are
     # immutable.  All information is stored in the edges
 
     def __init__(self, pair, overcrossing=1):
@@ -58,12 +58,18 @@ class DTvertex:
     def enter(self, N):
         if N == self._first: return South
         elif N == self._second: return East
-        else: raise ValueError('%d is not a label of this vertex'%N)
+        else: raise ValueError('%d is not a label of %s'%(N,self))
 
     def exit(self, N):
         if N == self._first: return North
         elif N == self._second: return West
-        else: raise ValueError('%d is not a label of this vertex'%N)
+        else: raise ValueError('%d is not a label of %s'%(N,self))
+
+    def first_under(self):
+        if self._even_over:
+            return self._first-1 if self._first%2 == 1 else self._second-1
+        else:
+            return self._first-1 if self._first%2 == 0 else self._second-1
 
 class DTPath:
     """
@@ -98,8 +104,47 @@ class DTFatEdge(FatEdge):
         FatEdge.__init__(self, x, y, twists)
         self.marked = False
 
+    def PD_index(self):
+        v = self[0]
+        if self.slot(v)%2 == 0:
+            return v._first
+        else:
+            return v._second
+
 class DTFatGraph(FatGraph):
     edge_class = DTFatEdge
+
+    def __init__(self, pairs=[], singles=[]):
+        FatGraph.__init__(self, pairs, singles)
+        self.stack = []
+
+    def PD_list(self, vertex):
+        edgelist = [e.PD_index() for e in self(vertex)]
+        n = edgelist.index(vertex.first_under())
+        return edgelist[n:] + edgelist[:n]
+
+    def push(self, vertex, slot):
+        self.stack.append( [vertex, slot,
+                            [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
+                              for e in self.edges if e.marked],
+                            [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
+                              for e in self.edges if not e.marked]
+                            ]
+                           )
+
+    def pop(self):
+        self.edges = set()
+        vertex, slot, marked, unmarked = self.stack.pop()
+        for x, y in marked:
+            self.add_edge(x,y)
+        for edge in self.edges:
+            edge.marked = True
+        for x, y in unmarked:
+            self.add_edge(x,y)
+        return vertex, slot
+
+    def clear_stack(self):
+        self.stack = []
 
     def path(self, vertex, edge):
         """
@@ -111,7 +156,7 @@ class DTFatGraph(FatGraph):
         forward = True if vertex == edge[0] else False
         return DTPath(edge, self, forward)
 
-    def _outside_slots(self, edge, side):
+    def _boundary_slots(self, edge, side):
         """
         Assume that the marked subFatGraph has been embedded in the
         plane.  This generator starts at a marked FatEdge and walks
@@ -143,15 +188,15 @@ class DTFatGraph(FatGraph):
                 break
 
     def left_slots(self, edge):
-        return self._outside_slots(edge, side=-1)
+        return self._boundary_slots(edge, side=-1)
 
     def right_slots(self, edge):
-        return self._outside_slots(edge, side=1)
+        return self._boundary_slots(edge, side=1)
 
     def unmarked_edges(self, vertex):
         return [e for e in self(vertex) if not e.marked]
 
-    def num_unmarked_edges(self, vertex):
+    def num_unmarked(self, vertex):
         return len([e for e in self(vertex) if not e.marked])
 
     def clear(self):
@@ -163,66 +208,84 @@ class DTFatGraph(FatGraph):
         Move the edge at this slot to the opposite slot, and
         move the edge in the opposite slot to this slot.
         """
-        um = self.num_unmarked_edges(vertex)
-        print 'Flipping %s[%s]'%(vertex, slot)
+        um = self.num_unmarked(vertex)
+        #print 'Flipping %s[%s]'%(vertex, slot)
         if um == 1:
-            msg = 'Trying to flip %s which has only 1 unmarked edge.'%vertex
-            print msg
+            msg = 'Cannot flip %s. It has only 1 unmarked edge.'%vertex
+            #print msg
             raise FlippingError(msg)
         if slot == 0 or slot == 2:
             self.reorder(vertex, (2,1,0,3))
         elif slot == 1 or slot == 3:
             self.reorder(vertex, (0,3,2,1))
         else:
-            raise ValueError('Invalid slot.')
+            raise ValueError('Invalid slot index.')
 
-class DTcode:
+# This assumes that the diagram is connected; that there are
+# no loops, and that each component meets the previous ones.
+
+class DTcodec:
     """
-    Represents a DTcode of a link projection.  Instantiate either from
-    a list of tuples or an alphabetical code.
+    Codec for DT codes of a link projection.  If instantiated with
+    a DT code, as a list of tuples or an alphabetical code, it decodes
+    the input as a knot projection.  If instantiated with a knot
+    projection it encodes the projection as a DT code.
     """
-    def __init__(self, code):
-        if isinstance(code,str):
+    def __init__(self, input=None):
+        if isinstance(input, str):
+            self.decode(self.convert_alpha(input))
+        if isinstance(input, list):
+            self.decode(input)
+        #encoding is not implemented yet.
+
+    def decode(self, code):
+        if isinstance(code, (str, bytes)):
             code = self.convert_alpha(code)
-        # Here we unpack the numerical code
         overcrossings = [sign(x) for comp in code for x in comp]
         evens = [abs(x) for comp in code for x in comp]
         self.size = size = 2*len(evens)
         pairs = zip(range(1, size, 2), evens)
-        # Build a lookup table for vertices.
+        # Build a lookup table for the vertices.
         # (DT codes are 1-based; we just waste the 0 entry.) 
         self.lookup = lookup = [None for n in range(1+size)]
         for pair, overcrossing in zip(pairs, overcrossings):
-            m, n = pair
             V = DTvertex(pair, overcrossing)
+            m, n = pair
             lookup[m] = lookup[n] = V
         # Now build the fatgraph determined by the DT code.
         self.fat_graph = DTFatGraph()
         N = start = 1
         last_odd = -1
-        V = self[1]
         for component in code:
             last_odd += 2*len(component)
+            V = self[N]
             # Walk around this component, adding edges.
             while N <= last_odd:
                 W = self[N + 1]
-                self.fat_graph.add_edge((V, V.exit(N)),
-                                        (W, W.enter(N+1)))
+                self.fat_graph.add_edge( (V, V.exit(N)),
+                                         (W, W.enter(N+1)) )
                 N += 1
                 V = W
             # Close up this component and go to the next one.
             S = self[start]
             self.fat_graph.add_edge( (V, V.exit(N)),
                                      (S, S.enter(start)) )
-            N += 1
-            V = W
-            start = N
+            start = N = N+1
+        # Now find the planar embedding
+        self.embed()
 
     def __getitem__(self, n):
         """
         A DTcode can look up a vertex by either of its labels.
         """
         return self.lookup[n]
+
+    def PD_code(self, KnotTheory=False):
+        G = self.fat_graph
+        PD = [ G.PD_list(self[N]) for N in range(1,self.size/2)]
+        if KnotTheory:
+            PD = "PD" + repr(PD).replace('[', 'X[')[1:]
+        return PD
 
     def find_circle(self, first_edge):
         """
@@ -248,6 +311,23 @@ class DTcode:
         vertices = vertices[n:]
         return vertices, edges
 
+    def get_incomplete_vertex(self):
+        """
+        Return a vertex with some marked and some unmarked edges.
+        We prefer to have only one unmarked edge.
+        """
+        # This could be done with table lookups.
+        G = self.fat_graph
+        vertices = [v for v in G.vertices if 0 < G.num_unmarked(v) < 4]
+        vertices.sort( key=G.num_unmarked )
+        try:
+            v = vertices.pop(0)
+            #if G.num_unmarked(v) > 1:
+                #print 'No vertices with only 1 unmarked edge!'
+            return v
+        except IndexError:
+            return None
+
     def find_unmarked_arc(self, vertex):
         """
         Starting at this vertex, find an unmarked edge and follow its
@@ -267,7 +347,7 @@ class DTcode:
         for edge in G.path(vertex, unmarked[0]):
             edges.append(edge)
             vertex = edge(vertex)
-            if G.num_unmarked_edges(vertex) < 4:
+            if G.num_unmarked(vertex) < 4:
                 break
             if vertex in seen:
                 n = vertices.index(vertex)
@@ -285,36 +365,25 @@ class DTcode:
 
     def embed(self, edge=None):
         """
-        Run the Dowker-Thistlethwaite algorithm to flip crossings
-        in the FatGraph until it becomes planar.
+        Try to flip crossings in the FatGraph until it becomes planar.
         """
         G = self.fat_graph
         if edge is None: # just pick one
             for edge in G.edges: break
         vertices, edges = self.find_circle(edge)
-        print 'circle'
-        print vertices
-        print edges
+        #print 'circle'
+        #print vertices
+        #print edges
         self.mark(edges)
         while True:
-            if not self.embed_arc():
-                break
-
-    def get_incomplete_vertex(self):
-        """
-        Return an incomplete vertex, preferably with only one unmarked edge. 
-        """
-        # This could be a table lookup.
-        G = self.fat_graph
-        # try to find a vertex with 1 unmarked edge
-        for v in G.vertices:
-            if G.num_unmarked_edges(v) == 1:
-                return v
-        print 'No vertices with only 1 unmarked edge!'
-        for v in G.vertices:
-            if G.num_unmarked_edges(v) == 2:
-                return v
-        return None
+            try:
+                if not self.embed_arc():
+                    break
+            except FlippingError:
+                #print 'popping'
+                vertex, slot = G.pop()
+                G.flip(vertex, slot)
+        self.fat_graph.clear_stack()
 
     def do_flips(self, v, v_edge, w, w_edge):
         """
@@ -326,6 +395,7 @@ class DTcode:
         G = self.fat_graph
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
+        not_canonical = ( G.num_unmarked(v) == G.num_unmarked(w) == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
             ccw_edge = G(v)[vslot+k]
@@ -342,6 +412,9 @@ class DTcode:
         if wslot in slots:
             return
         elif slots:
+            if not_canonical:
+                #print 'pushing %s[%d]'%(v, vslot)
+                G.push(v, vslot)
             G.flip(w, wslot)
             return
         # if that fails, look for w on the other side
@@ -351,8 +424,12 @@ class DTcode:
             other_bdry = G.right_slots(ccw_edge)
         slots = [slot for vertex, slot in other_bdry if vertex == w]
         if slots:
+            done = wslot in slots
+            if done and not_canonical:
+                #print 'pushing %s[%d]'%(w, wslot)
+                G.push(w, wslot)
             G.flip(v, vslot)
-            if wslot in slots:
+            if done:
                 return
             else:
                 G.flip(w, wslot)
@@ -366,8 +443,8 @@ class DTcode:
         if v is None:
             return False
         arc_edges, last_vertex = self.find_unmarked_arc(v)
-        print 'Arc from %s to %s.'%(v,last_vertex)
-        print arc_edges
+        #print 'Arc from %s to %s.'%(v,last_vertex)
+        #print arc_edges
         # We may need to try from both ends of the arc.  We may not be
         # able to flip one end because it only has 1 unmarked
         # edge. But sometimes one end can not see the other end's
@@ -379,10 +456,13 @@ class DTcode:
         #  |______|______|   
         #
         # Since v is more likely to have 3 marked edges, try it second.
+        e_v, e_last = arc_edges[0], arc_edges[-1]
         try:
-            self.do_flips(last_vertex, arc_edges[-1], v, arc_edges[0])
+            self.do_flips(last_vertex, e_last, v, e_v)
         except FlippingError:
-            print 'Trying the other end'
-            self.do_flips(v, arc_edges[0], last_vertex, arc_edges[-1])
+            #print 'Trying the other end'
+            self.do_flips(v, e_v, last_vertex, e_last)
         self.mark(arc_edges)
         return True
+
+
