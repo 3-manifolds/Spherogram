@@ -46,7 +46,7 @@ class DTvertex:
     A vertex of the 4-valent graph which is described by a DT code.
     Instantiate with an even-odd pair, in either order.
     """
-    # In keeping with the Spherogram graph philosophy, vertices are
+    # In keeping with the philosphy of Spherogram.graphs, vertices are
     # immutable.  All information is stored in the edges
 
     def __init__(self, pair, overcrossing=1):
@@ -57,12 +57,12 @@ class DTvertex:
     def __repr__(self):
         return str((self._first, self._second))
 
-    def enter(self, N):
+    def entry_slot(self, N):
         if N == self._first: return South
         elif N == self._second: return East
         else: raise ValueError('%d is not a label of %s'%(N,self))
 
-    def exit(self, N):
+    def exit_slot(self, N):
         if N == self._first: return North
         elif N == self._second: return West
         else: raise ValueError('%d is not a label of %s'%(N,self))
@@ -273,14 +273,14 @@ class DTcodec:
             # Walk around this component, adding edges.
             while N <= last_odd:
                 W = self[N + 1]
-                self.fat_graph.add_edge( (V, V.exit(N)),
-                                         (W, W.enter(N+1)) )
+                self.fat_graph.add_edge( (V, V.exit_slot(N)),
+                                         (W, W.entry_slot(N+1)) )
                 N += 1
                 V = W
             # Close up this component and go to the next one.
             S = self[start]
-            self.fat_graph.add_edge( (V, V.exit(N)),
-                                     (S, S.enter(start)) )
+            self.fat_graph.add_edge( (V, V.exit_slot(N)),
+                                     (S, S.entry_slot(start)) )
             start = N = N+1
         # Now find the planar embedding
         self.embed()
@@ -403,7 +403,7 @@ class DTcodec:
         Try to flip crossings in the FatGraph until it becomes planar.
         """
         G = self.fat_graph
-        if edge is None: # just pick one
+        if edge is None: # OK.  Just pick one at random.
             for edge in G.edges: break
         vertices, edges = self.find_circle(edge)
         #print 'circle'
@@ -430,7 +430,7 @@ class DTcodec:
         G = self.fat_graph
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
-        not_canonical = ( G.num_unmarked(v) == G.num_unmarked(w) == 2 )
+        not_unique = ( G.num_unmarked(v) == G.num_unmarked(w) == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
             ccw_edge = G(v)[vslot+k]
@@ -447,7 +447,7 @@ class DTcodec:
         if wslot in slots:
             return
         elif slots:
-            if not_canonical:
+            if not_unique:
                 #print 'pushing %s[%d]'%(v, vslot)
                 G.push(v, vslot)
             G.flip(w, wslot)
@@ -460,7 +460,7 @@ class DTcodec:
         slots = [slot for vertex, slot in other_bdry if vertex == w]
         if slots:
             done = wslot in slots
-            if done and not_canonical:
+            if done and not_unique:
                 #print 'pushing %s[%d]'%(w, wslot)
                 G.push(w, wslot)
             G.flip(v, vslot)
