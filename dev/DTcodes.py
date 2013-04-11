@@ -73,6 +73,9 @@ class DTvertex:
         else:
             return self._first-1 if self._first%2 == 0 else self._second-1
 
+    def upper_pair(self):
+        return (0,2) if bool(self._first%2) ^ self._even_over else (1,3)
+    
 class DTPath:
     """
     An iterator which starts at a FatEdge and walks around the
@@ -290,21 +293,34 @@ class DTcodec:
 
     def PD_code(self, KnotTheory=False):
         G = self.fat_graph
-        PD = [ G.PD_list(self[N]) for N in range(1,self.size/2)]
+        PD = [ G.PD_list(v) for v in G.vertices ]
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         return PD
 
     def link(self):
         G = self.fat_graph
-        crossings = [Crossing(v) for v in G.vertices]
-        c_dict = dict([(c.label, c) for c in crossings])
-        for e in G.edges:
-            c_dict[e[0]][e.slots[0]] = c_dict[e[1]][e.slots[1]]
-        for c in crossings:
-            c.sign = G.sign(c.label)
-        print crossings
-        return Link(crossings)
+        crossing_dict = {}
+        for v in G.vertices:
+            c = Crossing(v._first)
+            c.make_tail(0)
+            if G.sign(v) == 1:
+                c.make_tail(3)
+            else:
+                c.make_tail(1)
+            c.orient()
+            crossing_dict[v] = c
+        for edge in G.edges:
+            if edge.slots[0] in edge[0].upper_pair():
+                a = 1 if G.sign(edge[0]) == 1 else 3
+            else:
+                a = 2
+            if edge.slots[1] in edge[1].upper_pair():
+                b = 3 if G.sign(edge[1]) == 1 else 1
+            else:
+                b = 0
+            crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
+        return Link(crossing_dict.values())
 
     def find_circle(self, first_edge):
         """
