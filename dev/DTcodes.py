@@ -1,9 +1,26 @@
 from snappy import *
 from spherogram import FatGraph, FatEdge
 from spherogram.links import Link, Crossing
+import string
 
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
+
+def char_to_int(x):
+    sign = -1 if x.isupper() else 1
+    return sign*(string.ascii_letters.index(x.lower())+1)
+
+def string_to_ints(s):
+    return [char_to_int(x) for x in s]
+
+def partition_list(L, parts):
+    assert sum(parts) == len(L)
+    ans = []
+    k = 0
+    for p in parts:
+        ans.append(L[k:k+p])
+        k += p
+    return ans
 
 # To reconstruct a knot projection from a DT code we first construct
 # a fat graph, which may not be a planar surface.  There are only
@@ -249,6 +266,14 @@ class DTcodec:
             self.decode(input)
         #encoding is not implemented yet.
 
+    def convert_alpha(self, code):
+        code = string_to_ints(code)
+        num_crossings, components = code[:2]
+        comp_lengths = code[2:2+components]
+        crossings = [2*x for x in code[2+components:]]
+        assert len(crossings) == num_crossings
+        return partition_list(crossings, comp_lengths)
+        
     def decode(self, code):
         if isinstance(code, (str, bytes)):
             code = self.convert_alpha(code)
