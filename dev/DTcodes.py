@@ -184,15 +184,80 @@ class DTFatGraph(FatGraph):
         forward = True if vertex == edge[0] else False
         return DTPath(edge, self, forward)
 
+    def marked_arc(self, vertex):
+        """
+        Given a vertex with marked valence 2, find the maximal marked
+        arc containing the vertex for which all interior edges have
+        marked valence 2.  If the marked subgraph is a circle, or a
+        dead end is reached, raise RuntimeError.  Return a list of
+        edges in the arc and a set containing the interior vertices of
+        the arc.
+        """
+        left_path, right_path, vertices = [], [], set()
+        vertices.add(vertex)
+        try:
+            left, right = [e for e in self(vertex) if e.marked]
+        except ValueError:
+            raise RuntimeError('Vertex must have two marked edges.')
+        for edge, path in (left, left_path), (right, right_path):
+            V = vertex
+            while True:
+                path.append(edge)
+                V = edge(V)
+                if V == vertex:
+                    raise RuntimeError('Marked graph is a circle')
+                edges = [e for e in self(V) if e.marked and e != edge]
+                if len(edges) == 0:
+                    raise RuntimeError('Marked graph has a dead end')
+                if len(edges) > 1:
+                    break
+                else:
+                    vertices.add(V)
+                    edge = edges.pop()
+        left_path.reverse()
+        return left_path + right_path, vertices
+                
+    def bridge(self, vertex, vertex_set):
+        """
+        Starting from the vertex, which must be an element of the
+        given set, find a minimal path of unmarked edges joining the
+        vertex to a vertex of the marked subgraph which lies in the
+        complement of the set.  This uses a depth-first search, and
+        raises IndexError on failure.
+
+        Suppose the marked subgraph has no vertices with 3 marked
+        edges and has a unique planar embedding.  Take the set to be
+        the set of interior vertices of a maximal marked arc.  Then
+        adding a bridge produces a new graph with a unique planar
+        embedding.
+        """
+        assert vertex in vertex_set
+        seen = set()
+        edge_path, vertex_path = [], [vertex]
+        while True:
+            edges = [e for e in self(vertex) if
+                     not e.marked and e not in seen]
+            try:
+                new_edge = edges.pop()
+                edge_path.append(new_edge)
+                seen.add(new_edge)
+                vertex = new_edge(vertex)
+                if ( vertex not in vertex_set and
+                     self.num_unmarked(vertex) > 0 ):
+                    return edge_path
+            except IndexError:
+                edge_path.pop()
+                vertex_path.pop()
+
     def _boundary_slots(self, edge, side):
         """
         Assume that the marked subFatGraph has been embedded in the
         plane.  This generator starts at a marked FatEdge and walks
         around one of its adjacent boundary curves (left=-1, right=1),
         yielding all of the pairs (v, s) where s is a slot of the
-        vertex v which lies on the specified boundary curve.  To
+        vertex v which lies on the specified boundary curve.  (To
         extend the embedding over an unmarked arc, the ending slots of
-        both ends of the arc must lie on the same boundary curve.
+        both ends of the arc must lie on the same boundary curve.)
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
@@ -220,9 +285,6 @@ class DTFatGraph(FatGraph):
 
     def right_slots(self, edge):
         return self._boundary_slots(edge, side=1)
-
-    def unmarked_edges(self, vertex):
-        return [e for e in self(vertex) if not e.marked]
 
     def num_unmarked(self, vertex):
         return len([e for e in self(vertex) if not e.marked])
@@ -308,7 +370,7 @@ class DTcodec:
                                      (S, S.entry_slot(start)) )
             start = N = N+1
         # Now find the planar embedding
-        self.embed()
+        #self.embed()
 
     def __getitem__(self, n):
         """
@@ -396,7 +458,7 @@ class DTcodec:
         of edges traversed by the embedded arc.
         """
         G = self.fat_graph
-        unmarked = G.unmarked_edges(vertex)
+        unmarked = [e for e in G(vertex) if not e.marked]
         if len(unmarked) == 0:
             raise ValueError('Vertex must have unmarked edges.')
         if len(unmarked) == 4:
