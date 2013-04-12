@@ -152,6 +152,7 @@ class DTFatGraph(FatGraph):
         return -1 if (flipped ^ vertex._even_over ^ even_first) else 1
 
     def push(self, vertex, slot):
+        print 'pushing %s[%s]'%(vertex, slot)
         self.stack.append( [vertex, slot,
                             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
                               for e in self.edges if e.marked],
@@ -169,6 +170,8 @@ class DTFatGraph(FatGraph):
             edge.marked = True
         for x, y in unmarked:
             self.add_edge(x,y)
+        print 'popped %s[%s]'%(vertex, slot)
+        print 'stack size: %d'%len(self.stack)
         return vertex, slot
 
     def clear_stack(self):
@@ -255,7 +258,8 @@ class DTFatGraph(FatGraph):
         plane.  This generator starts at a marked FatEdge and walks
         around one of its adjacent boundary curves (left=-1, right=1),
         yielding all of the pairs (v, s) where s is a slot of the
-        vertex v which lies on the specified boundary curve.  (To
+        vertex v which lies on the specified boundary curve, or
+        (v, None) if none of the slots at v lie on the curve.  (To
         extend the embedding over an unmarked arc, the ending slots of
         both ends of the arc must lie on the same boundary curve.)
         """
@@ -273,8 +277,10 @@ class DTFatGraph(FatGraph):
                     yield vertex, slot%4  
                 else:
                     break
+            if k == 0:
+                yield (vertex, None)
             if edge == interior_edge:
-                raise ValueError('Found a dead end in the marked subgraph.')
+                raise ValueError('Marked subgraph has a dead end.')
             edge = interior_edge
             vertex = edge(vertex)
             if vertex == first_vertex:
@@ -286,8 +292,8 @@ class DTFatGraph(FatGraph):
     def right_slots(self, edge):
         return self._boundary_slots(edge, side=1)
 
-    def num_unmarked(self, vertex):
-        return len([e for e in self(vertex) if not e.marked])
+    def marked_valence(self, vertex):
+        return len([e for e in self(vertex) if e.marked])
 
     def clear(self):
         for e in self.edges:
@@ -298,10 +304,10 @@ class DTFatGraph(FatGraph):
         Move the edge at this slot to the opposite slot, and
         move the edge in the opposite slot to this slot.
         """
-        um = self.num_unmarked(vertex)
+        mv = self.marked_valence(vertex)
         #print 'Flipping %s[%s]'%(vertex, slot)
-        if um == 1:
-            msg = 'Cannot flip %s. It has only 1 unmarked edge.'%vertex
+        if mv >= 3:
+            msg = 'Cannot flip %s with marked valence %d.'%(vertex,mv)
             #print msg
             raise FlippingError(msg)
         if slot == 0 or slot == 2:
@@ -440,12 +446,12 @@ class DTcodec:
         """
         # This could be done with table lookups.
         G = self.fat_graph
-        vertices = [v for v in G.vertices if 0 < G.num_unmarked(v) < 4]
-        vertices.sort( key=G.num_unmarked )
+        vertices = [v for v in G.vertices if 0 < G.marked_valence(v) < 4]
+        vertices.sort( key=lambda v : -G.marked_valence(v) )
         try:
             v = vertices.pop(0)
-            #if G.num_unmarked(v) > 1:
-                #print 'No vertices with only 1 unmarked edge!'
+            #if G.marked_valence(v) < 3:
+                #print 'No vertices with 3 marked edges!'
             return v
         except IndexError:
             return None
@@ -469,7 +475,7 @@ class DTcodec:
         for edge in G.path(vertex, unmarked[0]):
             edges.append(edge)
             vertex = edge(vertex)
-            if G.num_unmarked(vertex) < 4:
+            if G.marked_valence(vertex) > 0:
                 break
             if vertex in seen:
                 n = vertices.index(vertex)
@@ -517,7 +523,7 @@ class DTcodec:
         G = self.fat_graph
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
-        not_unique = ( G.num_unmarked(v) == G.num_unmarked(w) == 2 )
+        not_unique = ( G.marked_valence(v) == G.marked_valence(w) == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
             ccw_edge = G(v)[vslot+k]
@@ -531,11 +537,17 @@ class DTcodec:
         else:                # the ccw_edge points into v
             slot_bdry = G.left_slots(ccw_edge)
         slots = [slot for vertex, slot in slot_bdry if vertex == w]
-        if wslot in slots:
+        if wslot in slots: # found it
+# BROKEN -- leads to an infinite loop
+#            if not_unique:  # We might need to flip one or the other
+#                            # But we need to avoid this infinite loop.
+#                if G.stack and G.stack[-1][0] == v:
+#                    G.push(w, wslot)
+#                else:
+#                    G.push(v, vslot)
             return
-        elif slots:
+        elif slots: # w is on the curve, but the slot is not.  Flip w.
             if not_unique:
-                #print 'pushing %s[%d]'%(v, vslot)
                 G.push(v, vslot)
             G.flip(w, wslot)
             return
@@ -548,7 +560,6 @@ class DTcodec:
         if slots:
             done = wslot in slots
             if done and not_unique:
-                #print 'pushing %s[%d]'%(w, wslot)
                 G.push(w, wslot)
             G.flip(v, vslot)
             if done:
