@@ -144,6 +144,7 @@ class DTFatGraph(FatGraph):
     def __init__(self, pairs=[], singles=[]):
         FatGraph.__init__(self, pairs, singles)
         self.stack = []
+        self.pushed = False
 
     def PD_list(self, vertex):
         edgelist = [e.PD_index() for e in self(vertex)]
@@ -156,9 +157,14 @@ class DTFatGraph(FatGraph):
         even_first = bool(vertex._first%2 == 0)
         return -1 if (flipped ^ vertex._even_over ^ even_first) else 1
 
-    def push(self, vertex, slot):
-        print 'pushing %s[%s]'%(vertex, slot)
-        self.stack.append( [vertex, slot,
+    def push(self, flips):
+        # Ignore the first push -- the first arc always is ambiguous
+        # but the choice is irrelevant, up to reflecting the plane.
+        if not self.pushed:
+            self.pushed = True
+            return
+        #print 'pushing %s'%flips
+        self.stack.append( [flips,
                             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
                               for e in self.edges if e.marked],
                             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
@@ -168,19 +174,20 @@ class DTFatGraph(FatGraph):
 
     def pop(self):
         self.edges = set()
-        vertex, slot, marked, unmarked = self.stack.pop()
+        flips, marked, unmarked = self.stack.pop()
         for x, y in marked:
             self.add_edge(x,y)
         for edge in self.edges:
             edge.marked = True
         for x, y in unmarked:
             self.add_edge(x,y)
-        print 'popped %s[%s]'%(vertex, slot)
-        print 'stack size: %d'%len(self.stack)
-        return vertex, slot
+        #print 'popped %s[%s]'%(vertex, flips)
+        #print 'stack size: %d'%len(self.stack)
+        return flips
 
     def clear_stack(self):
         self.stack = []
+        self.pushed = False
 
     def path(self, vertex, edge):
         """
@@ -224,33 +231,74 @@ class DTFatGraph(FatGraph):
         left_path.reverse()
         return left_path + right_path
                 
+    def find_unmarked_arc(self, vertex):
+        """
+        Starting at this vertex, find an unmarked edge and follow its
+        component until we run into a vertex with at least one marked
+        edge.  Remove loops to get an embedded arc. Return the list
+        of edges traversed by the embedded arc.
+        """
+        valence = self.marked_valence(vertex)
+        if valence == 4:
+            raise ValueError('Vertex must have unmarked edges.')
+        if valence == 0:
+            raise ValueError('Vertex must lie in the subgraph.')
+        edges = []
+        vertices = []
+        seen = set()
+        for first_edge in self(vertex):
+            if not first_edge.marked:
+                break
+        for edge in self.path(vertex, first_edge):
+            edges.append(edge)
+            vertex = edge(vertex)
+            if self.marked_valence(vertex) > 0:
+                break
+            if vertex in seen:
+                n = vertices.index(vertex)
+                edges = edges[:n+1]
+                vertices = vertices[:n+1]
+                seen = set(vertices)
+            else:
+                vertices.append(vertex)
+                seen.add(vertex)
+        return edges, vertex
+
     def bridge(self, marked_arc):
         """
-        Try to find a minimal embedded path of unmarked edges joining
-        a vertex in the given arc to a vertex of the marked subgraph
-        which lies in the complement of the set.  This uses a
-        depth-first search, and raises IndexError on failure.
+        Try to find an embedded path of unmarked edges joining a
+        vertex in the given arc to a vertex of the marked subgraph
+        which lies in the complement of the interior of the arc.  This
+        uses a depth-first search, and raises ValueError on failure.
         Returns a triple (first vertex, last vertex, edge path).
 
-        Suppose the marked subgraph has no vertices with 3 marked
-        edges and has a unique planar embedding.  Take the set to be
-        the set of interior vertices of a maximal marked arc.  Then
-        adding a bridge from that arc to its complement produces a new
-        graph with a unique planar embedding.
+        Suppose the marked subgraph has no vertices with marked
+        valence 3 and has a unique planar embedding.  Choose a maximal
+        arc with all interior vertices having marked valence 2. Then
+        adding a bridge from that arc produces a new graph with a
+        unique planar embedding.
 
         In the case where the diagram is prime, a bridge will exist
-        for *some* vertex on the maximal marked arc.  But, e.g. in the
-        case where the arc snakes through a twist region it will only
-        succeed for the two extremal vertices in the arc.
+        for *some* vertex on the arc.  But, e.g. in the case where the
+        arc snakes through a twist region, it will only exist for the
+        two extremal vertices in the arc.
         """
-        vertex_list = [e[1] for e in marked_arc[:-1]]
+        # Find the interior vertices on the arc.
+        e0, e1 = marked_arc[:2]
+        v = e0[0] if e0[1] in e1 else e0[1]
+        vertex_list = []
+        for edge in marked_arc[:-1]:
+            v = edge(v)
+            vertex_list.append(v)
+        #print 'bridge:', marked_arc
+        #print 'avoiding:', vertex_list
         for start_vertex in vertex_list:
             # the vertex_set gets expanded to include vertices visited
             # by the bridge path.
             vertex = start_vertex
             vertex_set = set(vertex_list)
-            edge_path, vertex_path = [], []
-            seen_edges = set()
+            vertex_set.add(start_vertex)
+            edge_path, vertex_path, seen_edges = [], [], set()
             while True:
                 edges = [e for e in self(vertex) if
                          not e.marked 
@@ -275,7 +323,6 @@ class DTFatGraph(FatGraph):
                     except IndexError:
                         vertex = start_vertex
         raise ValueError('Could not find a bridge.')
-
 
     def _boundary_slots(self, edge, side):
         """
@@ -326,22 +373,24 @@ class DTFatGraph(FatGraph):
  
     def flip(self, vertex, slot):
         """
-        Move the edge at this slot to the opposite slot, and
+        Either an East-West or North-South flip, depending on the
+        slot.  Move the edge at this slot to the opposite slot, and
         move the edge in the opposite slot to this slot.
         """
+        #print 'flipping %s[%s]'%(vertex, slot)
         mv = self.marked_valence(vertex)
         if mv >= 3:
             msg = 'Cannot flip %s with marked valence %d.'%(vertex,mv)
             raise FlippingError(msg)
-        if slot == 0 or slot == 2:
-            self.reorder(vertex, (2,1,0,3))
-        elif slot == 1 or slot == 3:
-            self.reorder(vertex, (0,3,2,1))
+        if slot == South or slot == North:
+            self.reorder(vertex, (North, East, South, West))
+        elif slot == East or slot == West:
+            self.reorder(vertex, (South, West, North, East))
         else:
             raise ValueError('Invalid slot index.')
 
-# This assumes that the diagram is connected; that there are
-# no loops, and that each component meets the previous ones.
+# This assumes that the diagram is connected; that it has
+# no loops, and that each component meets the next one.
 
 class DTcodec:
     """
@@ -438,6 +487,36 @@ class DTcodec:
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
         return Link(crossing_dict.values())
 
+    def mark(self, edgelist):
+        for edge in edgelist:
+            edge.marked = True
+
+    def embed(self, edge=None):
+        """
+        Try to flip crossings in the FatGraph until it becomes planar.
+        """
+        G = self.fat_graph
+        if edge is None: # OK. No problem. Just pick one at random.
+            for edge in G.edges: break
+        # Find a circle and embed it.
+        vertices, circle_edges = self.find_circle(edge)
+        self.mark(circle_edges)
+        #print 'circle', circle_edges
+        # Add one arc, to get a theta graph.
+        first, last, arc_edges = G.bridge(circle_edges[:2])
+        #print 'first_arc', arc_edges
+        self.do_flips(first, arc_edges[0], last, arc_edges[-1])
+        self.mark(arc_edges)
+        # Keep adding arcs until the whole graph is embedded.
+        while self.embed_arc():
+                pass
+#        except EmbeddingError:
+#                flips = G.pop()
+#                for vertex, slot in flips:
+#                    G.flip(vertex, slot)
+        # Clean up.
+        self.fat_graph.clear_stack()
+
     def find_circle(self, first_edge):
         """
         Follow a component, starting at the given (directed) edge,
@@ -465,7 +544,7 @@ class DTcodec:
     def get_incomplete_vertex(self):
         """
         Return a vertex with some marked and some unmarked edges.
-        We prefer to have only one unmarked edge.
+        If there are any, return a vertex with marked valence 3.
         """
         # This could be done with table lookups.
         G = self.fat_graph
@@ -477,81 +556,6 @@ class DTcodec:
         except IndexError:
             return None
 
-    def find_bridge(self, vertex):
-        """
-        Starting at this vertex of marked valence 2, try to 
-        find an arc of unmarked edges which terminates at a vertex which does
-        not lie on the maximal arc of the marked subgraph containing
-        the starting vertex.
-        Return the edges in the arc and the terminal vertex.
-        """
-        G = self.fat_graph
-        edges = G.marked_arc(vertex)
-        return G.bridge(edges)
-
-    def find_unmarked_arc(self, vertex):
-        """
-        Starting at this vertex, find an unmarked edge and follow its
-        component until it hits a vertex with at least one marked
-        edge.  Remove loops to get an embedded arc. Return the list
-        of edges traversed by the embedded arc.
-        """
-        G = self.fat_graph
-        unmarked = [e for e in G(vertex) if not e.marked]
-        if len(unmarked) == 0:
-            raise ValueError('Vertex must have unmarked edges.')
-        if len(unmarked) == 4:
-            raise ValueError('Vertex must lie in the subgraph.')
-        edges = []
-        vertices = []
-        seen = set()
-        for edge in G.path(vertex, unmarked[0]):
-            edges.append(edge)
-            vertex = edge(vertex)
-            if G.marked_valence(vertex) > 0:
-                break
-            if vertex in seen:
-                n = vertices.index(vertex)
-                edges = edges[:n+1]
-                vertices = vertices[:n+1]
-                seen = set(vertices)
-            else:
-                vertices.append(vertex)
-                seen.add(vertex)
-        return edges, vertex
-
-    def mark(self, edgelist):
-        for edge in edgelist:
-            edge.marked = True
-
-    def embed(self, edge=None):
-        """
-        Try to flip crossings in the FatGraph until it becomes planar.
-        """
-        G = self.fat_graph
-        if edge is None: # OK.  Just pick one at random.
-            for edge in G.edges: break
-        vertices, edges = self.find_circle(edge)
-        #print 'circle:', edges
-        self.mark(edges)
-        v = self.get_incomplete_vertex()
-        edges, last_vertex = self.find_unmarked_arc(v)
-        #print 'first arc:', edges
-        e_v, e_last = edges[0], edges[-1]
-        self.do_flips(last_vertex, e_last, v, e_v)
-        self.mark(edges)
-        while True:
-            if not self.embed_arc():
-                break
-#            try:
-#                if not self.embed_arc():
-#                    break
-#            except FlippingError:
-                #print 'popping'
-#                vertex, slot = G.pop()
-#                G.flip(vertex, slot)
-        self.fat_graph.clear_stack()
-
     def do_flips(self, v, v_edge, w, w_edge):
         """
         Decide whether v and/or w needs to be flipped in order to add
@@ -559,10 +563,10 @@ class DTcodec:
         the w_edge.  If flips are needed, make them.  If the embedding
         cannot be extended raise an exception.
         """
-        #print 'do_flips', v, v_edge, w, w_edge
         G = self.fat_graph
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
+        #print 'do_flips: %s[%s] %s[%s]'%(v, vslot, w, wslot) 
         not_unique = ( G.marked_valence(v) == G.marked_valence(w) == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
@@ -571,13 +575,10 @@ class DTcodec:
                 break
         if not ccw_edge.marked:
             raise ValueError('Invalid marking')
-        #print 'ccw_edge', ccw_edge
-        #print 'v:', v, vslot, 'w:', w, wslot
-        # Which slots appear in the two boundary curves:
+        # Here are the slots and vertices in the two boundary curves:
         left_slots = set(G.left_slots(ccw_edge))
         right_slots = set(G.right_slots(ccw_edge))
         v_valence, w_valence = G.marked_valence(v), G.marked_valence(w)
-        #print 'valences for v and w:', v_valence, w_valence
         if (v, vslot) in left_slots:
             v_slot_side, v_other_side = left_slots, right_slots
         else:
@@ -588,15 +589,16 @@ class DTcodec:
             raise EmbeddingError('Embedding does not extend.')
         if (w, wslot) in v_slot_side:
             if v_valence == w_valence == 2:
-                #print 'Ambiguous flip -- push v, w'
-                pass
+                # This is an ambiguous situation.  We could either do
+                # nothing or flip both vertices.  push our
+                # state with instructions to flip both vertices if we
+                # pop.
+                G.push([(v, vslot), (w, wslot)])
             return
         if w_valence != 2:
-            #print 'cannot flip w'
             G.flip(v, vslot)
             return
         elif v_valence != 2:
-            #print 'cannot flip v'
             G.flip(w, wslot)
             return
         # At this point we know that flips are needed *and* that both
@@ -606,66 +608,39 @@ class DTcodec:
             return
         if w_on_slot_side and w_on_other_side:
             # This is an ambiguous situation.  We know w does not have
-            # a slot on the v slot side so we could leave v and flip
-            # w.  We should push that option and then drop into the
-            # next case.
-            #print 'Ambiguous flip -- push w'
-            pass
+            # a slot on the v slot side.  We are are about to flip v.
+            # But we could leave v alone and flip w instead.  We
+            # push our state with instructions to flip w if we
+            # pop.
+            G.push([(w, wslot)])
         G.flip(v, vslot)
         if not (w, wslot) in v_other_side:
             G.flip(w, wslot)
 
-#        if w_on_other_side:
-#            G.flip(v, vslot)
-#        if not (w, wslot) in v_other_side:
-#            G.flip(w, wslot)
-
-#        flip_w = flip_v = False
-#        if not w_on_slot_side:
-#            print 'w is not visited by the v slot side'
-#            flip_v = True
-#        else:
-#            print 'w is visited by the v slot side'
-#            flip_w = True
-#        if w_on_other_side:
-#  This is another ambiguous case
-#            print 'w is visited by the non-slot side'
-#            flip_v = True
-#            flip_w = True
-#        print 'flip_v, flip_w:', flip_v, flip_w
-#        assert(w_on_slot_side or w_on_other_side)
-#        assert(flip_w)
-#        assert(flip_v == w_on_other_side)
-#        if flip_w:
-#            G.flip(w, wslot)
-#        G.flip(w, wslot) #
-#        if flip_v:
-#            G.flip(v, vslot)
-#        if not flip_v and not flip_w:
-#            # We couldn't find w in either side  :^(
-#            raise EmbeddingError('Could not find any flips to do.')
-
     def embed_arc(self):
         G = self.fat_graph
-        # get a vertex, preferably with 3 marked edges.
         v = self.get_incomplete_vertex()
         if v is None:
             return False
         if G.marked_valence(v) == 2:
-            # This should work the first time for reduced diagrams
-            # We should deal with a case where this fails
-            for v in [x for x in G.vertices if G.marked_valence(x) == 2]:
-                try:
-                    first, last, arc_edges = self.find_bridge(v)
-                    break
-                except ValueError:
-                    print 'Failed to find a bridge.'
-                    continue
+        # This should work for any vertex if the diagram is reduced.
+            try:
+                first, last, arc_edges = G.bridge(G.marked_arc(v))
+            except ValueError:
+                print 'Failed to find a bridge on the first try.'
+                for v in [x for x in G.vertices if G.marked_valence(v) == 2]:
+                    try:
+                        first, last, arc_edges = G.bridge(G.marked_arc(v))
+                        break
+                    except ValueError:
+                        print 'Failed to find a bridge again.'
+                        continue
+            #print 'adding bridge', arc_edges
             self.do_flips(first, arc_edges[0], last, arc_edges[-1])
-
         else:
-            arc_edges, last_vertex = self.find_unmarked_arc(v)
-            # Since v has 3 marked edges, put w first.
+            arc_edges, last_vertex = G.find_unmarked_arc(v)
+            #print 'adding arc', arc_edges
+            # Since v has 3 marked edges, we put it second here.
             self.do_flips(last_vertex, arc_edges[-1], v, arc_edges[0])
         self.mark(arc_edges)
         return True
