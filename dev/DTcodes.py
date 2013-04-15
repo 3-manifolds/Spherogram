@@ -191,8 +191,9 @@ class DTFatGraph(FatGraph):
 
     def path(self, vertex, edge):
         """
-        Iterates through the edges of a component, starting at the
-        given edge, in the direction determined by the vertex.
+        Return an iteratator which iterates through the edges of a
+        component, starting at the given edge, in the direction
+        determined by the vertex.
         """
         if not vertex in edge:
             raise ValueError('That vertex is not an endpoint of the edge.')
@@ -204,7 +205,7 @@ class DTFatGraph(FatGraph):
         Given a vertex with marked valence 2, find the maximal marked
         arc containing the vertex for which all interior edges have
         marked valence 2.  If the marked subgraph is a circle, or a
-        dead end is reached, raise RuntimeError.  Return a list of
+        dead end is reached, raise ValueError.  Return a list of
         edges in the arc.
         """
         left_path, right_path, vertices = [], [], set()
@@ -219,10 +220,10 @@ class DTFatGraph(FatGraph):
                 path.append(edge)
                 V = edge(V)
                 if V == vertex:
-                    raise RuntimeError('Marked graph is a circle')
+                    raise ValueError('Marked graph is a circle')
                 edges = [e for e in self(V) if e.marked and e != edge]
                 if len(edges) == 0:
-                    raise RuntimeError('Marked graph has a dead end at %s.'%V)
+                    raise ValueError('Marked graph has a dead end at %s.'%V)
                 if len(edges) > 1:
                     break
                 else:
@@ -231,7 +232,7 @@ class DTFatGraph(FatGraph):
         left_path.reverse()
         return left_path + right_path
                 
-    def find_unmarked_arc(self, vertex):
+    def unmarked_arc(self, vertex):
         """
         Starting at this vertex, find an unmarked edge and follow its
         component until we run into a vertex with at least one marked
@@ -243,9 +244,7 @@ class DTFatGraph(FatGraph):
             raise ValueError('Vertex must have unmarked edges.')
         if valence == 0:
             raise ValueError('Vertex must lie in the subgraph.')
-        edges = []
-        vertices = []
-        seen = set()
+        edges, vertices, seen = [], [], set()
         for first_edge in self(vertex):
             if not first_edge.marked:
                 break
@@ -254,6 +253,7 @@ class DTFatGraph(FatGraph):
             vertex = edge(vertex)
             if self.marked_valence(vertex) > 0:
                 break
+            # Remove loops as they appear
             if vertex in seen:
                 n = vertices.index(vertex)
                 edges = edges[:n+1]
@@ -297,7 +297,6 @@ class DTFatGraph(FatGraph):
             # by the bridge path.
             vertex = start_vertex
             vertex_set = set(vertex_list)
-            vertex_set.add(start_vertex)
             edge_path, vertex_path, seen_edges = [], [], set()
             while True:
                 edges = [e for e in self(vertex) if
@@ -456,37 +455,6 @@ class DTcodec:
         """
         return self.lookup[n]
 
-    def PD_code(self, KnotTheory=False):
-        G = self.fat_graph
-        PD = [ G.PD_list(v) for v in G.vertices ]
-        if KnotTheory:
-            PD = "PD" + repr(PD).replace('[', 'X[')[1:]
-        return PD
-
-    def link(self):
-        G = self.fat_graph
-        crossing_dict = {}
-        for v in G.vertices:
-            c = Crossing(v._first)
-            c.make_tail(0)
-            if G.sign(v) == 1:
-                c.make_tail(3)
-            else:
-                c.make_tail(1)
-            c.orient()
-            crossing_dict[v] = c
-        for edge in G.edges:
-            if edge.slots[0] in edge[0].upper_pair():
-                a = 1 if G.sign(edge[0]) == 1 else 3
-            else:
-                a = 2
-            if edge.slots[1] in edge[1].upper_pair():
-                b = 3 if G.sign(edge[1]) == 1 else 1
-            else:
-                b = 0
-            crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
-        return Link(crossing_dict.values())
-
     def mark(self, edgelist):
         for edge in edgelist:
             edge.marked = True
@@ -503,17 +471,20 @@ class DTcodec:
         self.mark(circle_edges)
         #print 'circle', circle_edges
         # Add one arc, to get a theta graph.
+        # The first arc needs to be bridge!
         first, last, arc_edges = G.bridge(circle_edges[:2])
         #print 'first_arc', arc_edges
         self.do_flips(first, arc_edges[0], last, arc_edges[-1])
         self.mark(arc_edges)
         # Keep adding arcs until the whole graph is embedded.
-        while self.embed_arc():
-                pass
-#        except EmbeddingError:
-#                flips = G.pop()
-#                for vertex, slot in flips:
-#                    G.flip(vertex, slot)
+        while True:
+            try:
+                if not self.embed_arc():
+                    break
+            except EmbeddingError:
+                flips = G.pop()
+                for vertex, slot in flips:
+                    G.flip(vertex, slot)
         # Clean up.
         self.fat_graph.clear_stack()
 
@@ -638,9 +609,41 @@ class DTcodec:
             #print 'adding bridge', arc_edges
             self.do_flips(first, arc_edges[0], last, arc_edges[-1])
         else:
-            arc_edges, last_vertex = G.find_unmarked_arc(v)
+            arc_edges, last_vertex = G.unmarked_arc(v)
             #print 'adding arc', arc_edges
             # Since v has 3 marked edges, we put it second here.
             self.do_flips(last_vertex, arc_edges[-1], v, arc_edges[0])
         self.mark(arc_edges)
         return True
+
+    def PD_code(self, KnotTheory=False):
+        G = self.fat_graph
+        PD = [ G.PD_list(v) for v in G.vertices ]
+        if KnotTheory:
+            PD = "PD" + repr(PD).replace('[', 'X[')[1:]
+        return PD
+
+    def link(self):
+        G = self.fat_graph
+        crossing_dict = {}
+        for v in G.vertices:
+            c = Crossing(v._first)
+            c.make_tail(0)
+            if G.sign(v) == 1:
+                c.make_tail(3)
+            else:
+                c.make_tail(1)
+            c.orient()
+            crossing_dict[v] = c
+        for edge in G.edges:
+            if edge.slots[0] in edge[0].upper_pair():
+                a = 1 if G.sign(edge[0]) == 1 else 3
+            else:
+                a = 2
+            if edge.slots[1] in edge[1].upper_pair():
+                b = 3 if G.sign(edge[1]) == 1 else 1
+            else:
+                b = 0
+            crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
+        return Link(crossing_dict.values())
+
