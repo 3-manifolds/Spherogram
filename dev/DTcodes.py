@@ -561,9 +561,8 @@ class DTcodec:
         if (w, wslot) in v_slot_side:
             if v_valence == w_valence == 2:
                 # This is an ambiguous situation.  We could either do
-                # nothing or flip both vertices.  push our
-                # state with instructions to flip both vertices if we
-                # pop.
+                # nothing or flip both vertices.  Push our state with
+                # instructions to flip both vertices if we pop.
                 G.push([(v, vslot), (w, wslot)])
             return
         if w_valence != 2:
