@@ -372,7 +372,12 @@ class DTFatGraph(FatGraph):
         return self._boundary_slots(edge, side=1)
 
     def marked_valence(self, vertex):
-        return len([e for e in self(vertex) if e.marked])
+        # Replaces slower: return len([e for e in self(vertex) if e.marked])
+        valence = 0
+        for e in self.incidence_dict[vertex]:
+            if e.marked:
+                valence += 1
+        return valence
 
     def clear(self):
         for e in self.edges:
@@ -457,14 +462,21 @@ class DTcodec(object):
         return self.lookup[n]
 
     def mark(self, edgelist):
+        G = self.fat_graph
+        vertices = set()
         for edge in edgelist:
             edge.marked = True
+            vertices.update(edge)
+        for v in vertices:
+            self.marked_valences[v] = G.marked_valence(v)
 
     def embed(self, edge=None):
         """
         Try to flip crossings in the FatGraph until it becomes planar.
         """
         G = self.fat_graph
+        # Add the marked_valence cache
+        self.marked_valences = dict([ (v,0) for v in G.vertices])
         if edge is None: # OK. No problem. Just pick one at random.
             for edge in G.edges: break
         # Find a circle and embed it.
@@ -520,8 +532,8 @@ class DTcodec(object):
         """
         # This could be done with table lookups.
         G = self.fat_graph
-        vertices = [v for v in G.vertices if 0 < G.marked_valence(v) < 4]
-        vertices.sort( key=lambda v : -G.marked_valence(v) )
+        vertices = [v for v in G.vertices if 0 < self.marked_valences[v] < 4]
+        vertices.sort( key=lambda v : -self.marked_valences[v] )
         try:
             v = vertices.pop(0)
             return v
@@ -539,7 +551,7 @@ class DTcodec(object):
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
         #print 'do_flips: %s[%s] %s[%s]'%(v, vslot, w, wslot) 
-        not_unique = ( G.marked_valence(v) == G.marked_valence(w) == 2 )
+        not_unique = ( self.marked_valences[v] == self.marked_valences[w] == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
             ccw_edge = G(v)[vslot+k]
@@ -550,7 +562,7 @@ class DTcodec(object):
         # Here are the slots and vertices in the two boundary curves:
         left_slots = set(G.left_slots(ccw_edge))
         right_slots = set(G.right_slots(ccw_edge))
-        v_valence, w_valence = G.marked_valence(v), G.marked_valence(w)
+        v_valence, w_valence = self.marked_valences[v], self.marked_valences[w]
         if (v, vslot) in left_slots:
             v_slot_side, v_other_side = left_slots, right_slots
         else:
@@ -593,13 +605,13 @@ class DTcodec(object):
         v = self.get_incomplete_vertex()
         if v is None:
             return False
-        if G.marked_valence(v) == 2:
+        if self.marked_valences[v] == 2:
         # This should work for any vertex if the diagram is prime.
             try:
                 first, last, arc_edges = G.bridge(G.marked_arc(v))
             except ValueError:
                 print 'Failed to find a bridge on the first try.'
-                for v in [x for x in G.vertices if G.marked_valence(v) == 2]:
+                for v in [x for x in G.vertices if self.marked_valences[v] == 2]:
                     try:
                         first, last, arc_edges = G.bridge(G.marked_arc(v))
                         break
@@ -646,4 +658,5 @@ class DTcodec(object):
                 b = 0
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
         return Link(crossing_dict.values(), check_planarity=False)
+
 
