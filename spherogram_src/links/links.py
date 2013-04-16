@@ -13,7 +13,7 @@ from .. import graphs
 import  string, os, sys, re
 import cPickle as pickle
 
-class Crossing:
+class Crossing(object):
     """
     See crossings.pdf for the conventions.  The sign of the
     crossing can be in {0, +1, -1}.  In the first case, the
@@ -95,7 +95,7 @@ class Crossing:
         return ans
 
 
-class TotallyOrderedObject:   # Backport of the @total_ordering decorator
+class TotallyOrderedObject(object):   # Backport of the @total_ordering decorator
     "Give __eq__ and __lt__ fills in the rest"
     def __le__(self, other):
         return self < other or self == other
@@ -163,7 +163,7 @@ class Labels(dict):
     def add(self, x):
         self[x] = len(self)
 
-class Strand:
+class Strand(object):
     """
     When constructing links, it's convenient to have strands as well
     as crossings.  These are stripped by the Link class when it
@@ -340,7 +340,7 @@ def vertex_to_KLP(c, v):
     i = v if c.sign == 1 else (v - 1) % 4
     return ['Ybackward', 'Xforward', 'Yforward', 'Xbackward'][i]
 
-class KLPCrossing():
+class KLPCrossing(object):
     """
     SnapPea uses a convention where the orientation
     of the strands is fixed in the master picture but

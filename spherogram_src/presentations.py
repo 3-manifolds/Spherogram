@@ -3,7 +3,7 @@ from .graphs import ReducedGraph, Digraph, Poset
 from collections import deque
 import operator
 
-class Alphabet():
+class Alphabet(object):
     """
     An Alphabet translates between integers and strings.
     Call as a function to go from string to integer; use getitem
@@ -257,7 +257,7 @@ class Complexity(list):
         return result
 
         
-class WhiteheadMove:
+class WhiteheadMove(object):
     """
     Holds the data describing a Whitehead move.
     """
@@ -280,7 +280,7 @@ class WhiteheadMove:
             subs.append(sub)
         return ', '.join(subs)
             
-class Presentation:
+class Presentation(object):
     """
     A Presentation contains a list of CyclicWords as relators and a
     list of (integer) letters as generators.  The generators are
@@ -502,7 +502,7 @@ class Presentation:
         return ans + '>'
                           
 
-class CanonizeNode:
+class CanonizeNode(object):
     def __init__(self, presentation, remaining, ordering=[]):
         self.presentation = presentation
         self.generators = presentation.generators
