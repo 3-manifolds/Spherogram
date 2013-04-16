@@ -2,6 +2,7 @@ from snappy import *
 from spherogram import FatGraph, FatEdge
 from spherogram.links import Link, Crossing
 import string
+from collections import namedtuple
 
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
@@ -62,7 +63,8 @@ class FlippingError(Exception):
 class EmbeddingError(Exception):
     pass
 
-class DTvertex:
+
+class DTvertex(tuple):
     """
     A vertex of the 4-valent graph which is described by a DT code.
     Instantiate with an even-odd pair, in either order.
@@ -72,33 +74,34 @@ class DTvertex:
     # do whatever it wants with them, but in this implementation
     # it never changes vertices either.
 
-    def __init__(self, pair, overcrossing=1):
-        self._first = min(pair)
-        self._second = max(pair)
-        self._even_over = True if overcrossing == -1 else False
-
+    def __new__(self, pair, overcrossing=1):
+        even_over = True if overcrossing == -1 else False
+        return tuple.__new__(self, (min(pair), max(pair), even_over))
+            
     def __repr__(self):
-        return str((self._first, self._second))
+        return str((self[0], self[1]))
 
     def entry_slot(self, N):
-        if N == self._first: return South
-        elif N == self._second: return East
+        if N == self[0]: return South
+        elif N == self[1]: return East
         else: raise ValueError('%d is not a label of %s'%(N,self))
 
     def exit_slot(self, N):
-        if N == self._first: return North
-        elif N == self._second: return West
+        if N == self[0]: return North
+        elif N == self[1]: return West
         else: raise ValueError('%d is not a label of %s'%(N,self))
 
     def first_under(self):
-        if self._even_over:
-            return self._first-1 if self._first%2 == 1 else self._second-1
+        first, second, even_over = self
+        if even_over:
+            return first-1 if first%2 == 1 else second-1
         else:
-            return self._first-1 if self._first%2 == 0 else self._second-1
+            return first-1 if first%2 == 0 else second-1
 
     def upper_pair(self):
-        return (0,2) if bool(self._first%2) ^ self._even_over else (1,3)
-    
+        first, second, even_over = self
+        return (0,2) if bool(first%2) ^ even_over else (1,3)
+
 class DTPath:
     """
     An iterator which starts at a FatEdge and walks around the
@@ -135,9 +138,9 @@ class DTFatEdge(FatEdge):
     def PD_index(self):
         v = self[0]
         if self.slot(v)%2 == 0:
-            return v._first
+            return v[0]
         else:
-            return v._second
+            return v[1]
 
 class DTFatGraph(FatGraph):
     edge_class = DTFatEdge
@@ -155,8 +158,8 @@ class DTFatGraph(FatGraph):
     def sign(self, vertex):
         flipped = bool(len([e for e in self(vertex) 
                        if e[1] == vertex and e.slots[1] in (2,3)])%2)
-        even_first = bool(vertex._first%2 == 0)
-        return -1 if (flipped ^ vertex._even_over ^ even_first) else 1
+        even_first = bool(vertex[0] %2 == 0)
+        return -1 if (flipped ^ vertex[2] ^ even_first) else 1
 
     def push(self, flips):
         # Ignore the first push -- the first arc always is ambiguous
@@ -627,7 +630,7 @@ class DTcodec:
         G = self.fat_graph
         crossing_dict = {}
         for v in G.vertices:
-            c = Crossing(v._first)
+            c = Crossing(v[0])
             c.make_tail(0)
             if G.sign(v) == 1:
                 c.make_tail(3)
@@ -645,5 +648,5 @@ class DTcodec:
             else:
                 b = 0
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
-        return Link(crossing_dict.values())
+        return Link(crossing_dict.values(), check_planarity=False)
 
