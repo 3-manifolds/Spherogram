@@ -560,17 +560,19 @@ class FatGraph(Graph):
         return self.incidence_dict[vertex]
 
     def add_edge(self, *args):
+        incidences = self.incidence_dict
         edge = self.Edge(*args)
         self.edges.add(edge)
         self.vertices.update(edge)
         for v in edge:
-# the values of incidence_dict should be objects that keep
-# themselves sorted.
-            try:
-                self.incidence_dict[v].append(edge)
-            except KeyError:
-                self.incidence_dict[v] = CyclicList([edge])
-            self.incidence_dict[v].sort(key=lambda e : e.slot(v))
+            # the values of incidence_dict should be objects that keep
+            # themselves sorted.
+            if incidences.has_key(v):
+                incidences[v].append(edge)
+                incidences[v].sort(key=lambda e : e.slot(v))
+            else:
+                incidences[v] = CyclicList([edge])
+
 
     def _validate(self):
         for v in self.vertices:
