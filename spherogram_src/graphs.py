@@ -228,7 +228,7 @@ class Graph:
         """
         Return the set of incident edges.
         """
-        return set([e for e in self.edges if v in e])
+        return self.incidence_dict[v]
             
     def __getitem__(self, vertex):
         """
@@ -253,18 +253,14 @@ class Graph:
         """
         Return the set of non-loops incident to the vertex.
         """
-        return set([ e for e in self.edges
-                     if vertex in e and not e.is_loop() ])
+        return set([ e for e in self.incidence_dict[vertex]
+                     if not e.is_loop() ])
 
     def valence(self, vertex):
         """
         Return the valence of a vertex.
         """
-        valence = 0
-        for e in self.edges:
-            if vertex in e:
-                valence += 1
-        return valence
+        return len(self.incidence_dict[v])
 
     def components(self, deleted_vertices=[]):
         """
@@ -446,14 +442,18 @@ class ReducedGraph(Graph):
             new_edge = self.Edge(x, y)
             self.vertices.update([x,y])
             self.edges.add(new_edge)
+            for v in edge.incident_to():
+                try:
+                    self.incidence_dict[v].append(edge)
+                except KeyError:
+                    self.incidence_dict[v] = [edge]
 
     def multi_valence(self, vertex):
         """
         Return the valence of a vertex, counting edge multiplicities.
         """
         valence = 0
-        for e in self.edges:
-            if vertex in e:
+        for e in self.incidence_dict[v]:
                 valence += e.multiplicity
         return valence
 
@@ -558,9 +558,20 @@ class FatGraph(Graph):
     edge_class = FatEdge
 
     def __call__(self, vertex):
-        result = [e for e in self.edges if vertex in e]
-        result.sort(key=lambda e : e.slot(vertex))
-        return CyclicList(result)
+        return CyclicList(self.incidence_dict[vertex])
+
+    def add_edge(self, *args):
+        edge = self.Edge(*args)
+        self.edges.add(edge)
+        self.vertices.update(edge)
+        for v in edge:
+# the values of incidence_dict should be objects that keep
+# themselves sorted.
+            try:
+                self.incidence_dict[v].append(edge)
+            except KeyError:
+                self.incidence_dict[v] = [edge]
+            self.incidence_dict[v].sort(key=lambda e : e.slot(v))
 
     def _validate(self):
         for v in self.vertices:
@@ -570,6 +581,7 @@ class FatGraph(Graph):
     def reorder(self, vertex, cyclist):
         for e, n in zip(self(vertex), cyclist):
             e.set_slot(vertex, n)
+        self.incidence_dict[vertex].sort(key=lambda e : e.slot(vertex))
 
     def boundary_cycles(self):
         left  = [(e[0], e, 'L') for e in self.edges]
