@@ -54,6 +54,10 @@ def partition_list(L, parts):
 # planar embedding of the vertices, but we may adjust the fat graph by
 # interchanging the attaching points of a pair of edges entering at
 # opposite sides of the crossing.
+#
+# In fact, interchanging either pair of opposite connections is
+# equivalent to interchanging the other pair.  So in practice we
+# only interchange the North-South pair.
 
 South, East, North, West = 0, 1, 2, 3
 
@@ -374,23 +378,16 @@ class DTFatGraph(FatGraph):
         for e in self.edges:
             e.marked = False
  
-    def flip(self, vertex, slot):
+    def flip(self, vertex):
         """
-        Either an East-West or North-South flip, depending on the
-        slot.  Move the edge at this slot to the opposite slot, and
-        move the edge in the opposite slot to this slot.
+        Move the edge at the North slot to the South slot, and
+        move the edge in the South  slot to the North slot.
         """
-        #print 'flipping %s[%s]'%(vertex, slot)
-        mv = self.marked_valence(vertex)
-        if mv >= 3:
+        #print 'flipping %s'%vertex
+        if self.marked_valence(vertex) >= 3:
             msg = 'Cannot flip %s with marked valence %d.'%(vertex,mv)
             raise FlippingError(msg)
-        if slot == South or slot == North:
-            self.reorder(vertex, (North, East, South, West))
-        elif slot == East or slot == West:
-            self.reorder(vertex, (South, West, North, East))
-        else:
-            raise ValueError('Invalid slot index.')
+        self.reorder(vertex, (North, East, South, West))
 
 # This assumes that the diagram is connected; that it has
 # no loops, and that each component meets the next one.
@@ -487,8 +484,8 @@ class DTcodec(object):
                     break
             except EmbeddingError:
                 flips = G.pop()
-                for vertex, slot in flips:
-                    G.flip(vertex, slot)
+                for vertex in flips:
+                    G.flip(vertex)
         # Clean up.
         self.fat_graph.clear_stack()
 
@@ -567,18 +564,18 @@ class DTcodec(object):
                 # This is an ambiguous situation.  We could either do
                 # nothing or flip both vertices.  Push our state with
                 # instructions to flip both vertices if we pop.
-                G.push([(v, vslot), (w, wslot)])
+                G.push( [v,w] )
             return
         if w_valence != 2:
-            G.flip(v, vslot)
+            G.flip(v)
             return
         elif v_valence != 2:
-            G.flip(w, wslot)
+            G.flip(w)
             return
         # At this point we know that flips are needed *and* that both
         # vertices have marked valence 2.
         if w_on_slot_side and not w_on_other_side:
-            G.flip(w, wslot)
+            G.flip(w)
             return
         if w_on_slot_side and w_on_other_side:
             # This is an ambiguous situation.  We know w does not have
@@ -586,10 +583,10 @@ class DTcodec(object):
             # But we could leave v alone and flip w instead.  We
             # push our state with instructions to flip w if we
             # pop.
-            G.push([(w, wslot)])
-        G.flip(v, vslot)
+            G.push([w])
+        G.flip(v)
         if not (w, wslot) in v_other_side:
-            G.flip(w, wslot)
+            G.flip(w)
 
     def embed_arc(self):
         G = self.fat_graph
