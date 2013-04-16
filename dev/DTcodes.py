@@ -102,7 +102,7 @@ class DTvertex(tuple):
         first, second, even_over = self
         return (0,2) if bool(first%2) ^ even_over else (1,3)
 
-class DTPath:
+class DTPath(object):
     """
     An iterator which starts at a FatEdge and walks around the
     link component containing that edge.  A DTPath raises
@@ -395,7 +395,7 @@ class DTFatGraph(FatGraph):
 # This assumes that the diagram is connected; that it has
 # no loops, and that each component meets the next one.
 
-class DTcodec:
+class DTcodec(object):
     """
     Codec for DT codes of a link projection.  If instantiated with
     a DT code, as a list of tuples or an alphabetical code, it decodes

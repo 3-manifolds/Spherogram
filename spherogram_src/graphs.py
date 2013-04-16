@@ -167,7 +167,7 @@ class FatEdge(Edge):
             raise ValueError('Vertex is not an end of this edge.')
 
 
-class EdgesBFO:
+class EdgesBFO(object):
     """
     Iterator for non-loop edges of a graph in the complement of
     a forbidden set, ordered by distance from the source.
@@ -198,7 +198,7 @@ class EdgesBFO:
     def next(self):  #For Python 2 compatibility
         return self.__next__()
 
-class Graph:
+class Graph(object):
     """
     A set of vertices and a set of edges joining pairs of vertices.
     Vertices are arbitrary hashable objects.
@@ -656,7 +656,7 @@ class Digraph(Graph):
         """
         return StrongConnector(self).DAG()
         
-class StrongConnector:
+class StrongConnector(object):
     """
     Finds strong components of a digraph using Tarjan's algorithm;
     see http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
