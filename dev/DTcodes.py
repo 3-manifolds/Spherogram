@@ -27,7 +27,7 @@ def partition_list(L, parts):
 # a fat graph, which may not be a planar surface.  There are only
 # two possible orderings of edges at each vertex, since we know which
 # pairs of edges are opposites.  The process of finding the
-# projection consists of reversing the orderings of some vertices
+# projection consists of changing the orderings of some vertices
 # to get a planar surface.
 #
 # Each crossing in the diagram is traversed twice in building the DT
@@ -47,10 +47,10 @@ def partition_list(L, parts):
 #        S
 #      first
 #
-# This determines an embedding of each crossing into the oriented
+# This determines some embedding of each crossing into the oriented
 # plane, which may not extend to an embedding of the knot diagram.  In
 # constructing the planar embedding of the diagram we preserve this
-# embedding of the vertices, but adjust the fat graph by
+# planar embedding of the vertices, but we may adjust the fat graph by
 # interchanging the attaching points of a pair of edges entering at
 # opposite sides of the crossing.
 
@@ -67,9 +67,10 @@ class DTvertex:
     A vertex of the 4-valent graph which is described by a DT code.
     Instantiate with an even-odd pair, in either order.
     """
-    # In keeping with the philosphy of Spherogram.graphs, vertices
-    # should never be changed by graph methods.  They are owned by
-    # the DTcodec.
+    # In keeping with the philosophy of Spherogram.graphs, vertices
+    # should never be changed by graph methods.  The DTcodec can
+    # do whatever it wants with them, but in this implementation
+    # it never changes vertices either.
 
     def __init__(self, pair, overcrossing=1):
         self._first = min(pair)
@@ -243,7 +244,7 @@ class DTFatGraph(FatGraph):
         if valence == 4:
             raise ValueError('Vertex must have unmarked edges.')
         if valence == 0:
-            raise ValueError('Vertex must lie in the subgraph.')
+            raise ValueError('Vertex must be in the marked subgraph.')
         edges, vertices, seen = [], [], set()
         for first_edge in self(vertex):
             if not first_edge.marked:
@@ -593,7 +594,7 @@ class DTcodec:
         if v is None:
             return False
         if G.marked_valence(v) == 2:
-        # This should work for any vertex if the diagram is reduced.
+        # This should work for any vertex if the diagram is prime.
             try:
                 first, last, arc_edges = G.bridge(G.marked_arc(v))
             except ValueError:
