@@ -253,8 +253,7 @@ class Graph:
         """
         Return the set of non-loops incident to the vertex.
         """
-        return set([ e for e in self.incidence_dict[vertex]
-                     if not e.is_loop() ])
+        return {e for e in self.incidence_dict[vertex] if not e.is_loop()}
 
     def valence(self, vertex):
         """
@@ -279,7 +278,7 @@ class Graph:
         forbidden = set()
         for vertex in deleted_vertices:
             forbidden |= self.incident(vertex)
-        vertices, result = list(self.vertices - set(deleted_vertices)), []
+        vertices, result = self.vertices - set(deleted_vertices), []
         while vertices:
             component, start = set(), vertices.pop()
             component.add(start)
@@ -622,8 +621,7 @@ class Digraph(Graph):
         """
         Return the set of non-loops which begin at the vertex.
         """
-        return set([ e for e in self.edges
-                     if e.tail == vertex and e.head != vertex ])
+        return {e for e in self.incidence_dict[vertex] if e.tail == vertex and e.head != vertex}
 
     def components(self):
         """
