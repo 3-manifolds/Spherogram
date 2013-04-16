@@ -56,9 +56,9 @@ class BaseEdge(tuple):
         """
         Calling an edge with one endpoint returns the other one.
         """
-        if end == self[0]:
+        if end is self[0]:
             return self[1]
-        elif end == self[1]:
+        elif end is self[1]:
             return self[0]
         else:
             raise ValueError('Vertex is not an endpoint')
@@ -253,7 +253,7 @@ class Graph(object):
         """
         Return the set of non-loops incident to the vertex.
         """
-        return {e for e in self.incidence_dict[vertex] if not e.is_loop()}
+        return dict([e for e in self.incidence_dict[vertex] if not e.is_loop()])
 
     def valence(self, vertex):
         """
@@ -557,7 +557,7 @@ class FatGraph(Graph):
     edge_class = FatEdge
 
     def __call__(self, vertex):
-        return CyclicList(self.incidence_dict[vertex])
+        return self.incidence_dict[vertex]
 
     def add_edge(self, *args):
         edge = self.Edge(*args)
@@ -569,7 +569,7 @@ class FatGraph(Graph):
             try:
                 self.incidence_dict[v].append(edge)
             except KeyError:
-                self.incidence_dict[v] = [edge]
+                self.incidence_dict[v] = CyclicList([edge])
             self.incidence_dict[v].sort(key=lambda e : e.slot(v))
 
     def _validate(self):
@@ -621,7 +621,8 @@ class Digraph(Graph):
         """
         Return the set of non-loops which begin at the vertex.
         """
-        return {e for e in self.incidence_dict[vertex] if e.tail == vertex and e.head != vertex}
+        return dict([e for e in self.incidence_dict[vertex]
+                     if e.tail == vertex and e.head != vertex])
 
     def components(self):
         """
