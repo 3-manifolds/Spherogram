@@ -253,7 +253,7 @@ class Graph(object):
         """
         Return the set of non-loops incident to the vertex.
         """
-        return dict([e for e in self.incidence_dict[vertex] if not e.is_loop()])
+        return dict(e for e in self.incidence_dict[vertex] if not e.is_loop())
 
     def valence(self, vertex):
         """
@@ -490,7 +490,7 @@ class ReducedGraph(Graph):
             return self._embedding
 
     def one_min_cut(self, source, sink):
-        capacity = dict([(e, e.multiplicity) for e in self.edges])
+        capacity = dict((e, e.multiplicity) for e in self.edges)
         cut = Graph.one_min_cut(self, source, sink, capacity)
         cut['size'] = sum([e.multiplicity for e in cut['edges'] ])
         return cut
@@ -623,8 +623,8 @@ class Digraph(Graph):
         """
         Return the set of non-loops which begin at the vertex.
         """
-        return dict([e for e in self.incidence_dict[vertex]
-                     if e.tail == vertex and e.head != vertex])
+        return dict(e for e in self.incidence_dict[vertex]
+                     if e.tail == vertex and e.head != vertex)
 
     def components(self):
         """
