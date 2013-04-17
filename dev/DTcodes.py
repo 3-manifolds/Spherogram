@@ -1,8 +1,6 @@
 from snappy import *
-from spherogram import FatGraph, FatEdge
-from spherogram.links import Link, Crossing
+from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
 import string
-from collections import namedtuple
 
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
@@ -151,19 +149,34 @@ class DTFatGraph(FatGraph):
 
     def __init__(self, pairs=[], singles=[]):
         FatGraph.__init__(self, pairs, singles)
+        self.marked_valences = dict( (v,0) for v in self.vertices )
         self.stack = []
         self.pushed = False
 
-    def PD_list(self, vertex):
-        edgelist = [e.PD_index() for e in self(vertex)]
-        n = edgelist.index(vertex.first_under())
-        return edgelist[n:] + edgelist[:n]
+    def add_edge(self, x, y):
+        FatGraph.add_edge(self, x, y)
+        self.marked_valences[x[0]] = 0
+        self.marked_valences[y[0]] = 0
 
-    def sign(self, vertex):
-        flipped = bool(len([e for e in self(vertex) 
-                       if e[1] == vertex and e.slots[1] in (2,3)])%2)
-        even_first = bool(vertex[0] %2 == 0)
-        return -1 if (flipped ^ vertex[2] ^ even_first) else 1
+    def mark(self, edgelist):
+        vertices = set()
+        for edge in edgelist:
+            edge.marked = True
+            vertices.update(edge)
+        for v in vertices:
+            self.marked_valences[v] = self.marked_valence(v)
+
+    def marked_valence(self, vertex):
+        valence = 0
+        for e in self.incidence_dict[vertex]:
+            if e.marked:
+                valence += 1
+        return valence
+
+    def clear(self):
+        for e in self.edges:
+            e.marked = False
+        self.marked_valences = dict( (v,0) for v in self.vertices )
 
     def push(self, flips):
         # Ignore the first push -- the first arc always is ambiguous
@@ -344,9 +357,10 @@ class DTFatGraph(FatGraph):
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
+        result = set()
         first_vertex = vertex = edge[1] 
         while True:
-            end = 0 if edge[0] == vertex else 1
+            end = 0 if edge[0] is vertex else 1
             slot = edge.slots[end]
             for k in range(3):
                 slot += side
@@ -358,44 +372,53 @@ class DTFatGraph(FatGraph):
                     break
             if k == 0:
                 yield (vertex, None)
-            if edge == interior_edge:
+            if edge is interior_edge:
                 raise ValueError('Marked subgraph has a dead end.')
             edge = interior_edge
             vertex = edge(vertex)
-            if vertex == first_vertex:
+            if vertex is first_vertex:
                 break
 
     def left_slots(self, edge):
-        return self._boundary_slots(edge, side=-1)
+        """
+        Return the (vertex, slot) pairs on the left boundary curve.
+        """
+        return set(self._boundary_slots(edge, side=-1))
 
     def right_slots(self, edge):
-        return self._boundary_slots(edge, side=1)
-
-    def marked_valence(self, vertex):
-        # Replaces slower: return len([e for e in self(vertex) if e.marked])
-        valence = 0
-        for e in self.incidence_dict[vertex]:
-            if e.marked:
-                valence += 1
-        return valence
-
-    def clear(self):
-        for e in self.edges:
-            e.marked = False
- 
+        """
+        Return the (vertex, slot) pairs on the right boundary curve.
+        """
+        return set(self._boundary_slots(edge, side=1))
+        
     def flip(self, vertex):
         """
         Move the edge at the North slot to the South slot, and
         move the edge in the South  slot to the North slot.
         """
         #print 'flipping %s'%vertex
-        if self.marked_valence(vertex) >= 3:
-            msg = 'Cannot flip %s with marked valence %d.'%(vertex,mv)
+        if self.marked_valences[vertex] > 2:
+            msg = 'Cannot flip %s with marked valence %d.'%(
+                vertex, self.marked_valences[vertex])
             raise FlippingError(msg)
         self.reorder(vertex, (North, East, South, West))
 
-# This assumes that the diagram is connected; that it has
-# no loops, and that each component meets the next one.
+    def PD_list(self, vertex):
+        edgelist = [e.PD_index() for e in self(vertex)]
+        n = edgelist.index(vertex.first_under())
+        return edgelist[n:] + edgelist[:n]
+
+    def flipped(self, vertex):
+        return bool(len([e for e in self(vertex) 
+                         if e[1] is vertex and e.slots[1] in (2,3)])%2)
+
+    def sign(self, vertex):
+        flipped = self.flipped(vertex)
+        even_first = bool(vertex[0] %2 == 0)
+        return -1 if (flipped ^ vertex[2] ^ even_first) else 1
+
+# This assumes that the diagram has no loops, and that each component
+# meets the next one (so in particular the diagram is connected.
 
 class DTcodec(object):
     """
@@ -405,9 +428,7 @@ class DTcodec(object):
     projection it encodes the projection as a DT code.
     """
     def __init__(self, input=None):
-        if isinstance(input, str):
-            self.decode(self.convert_alpha(input))
-        if isinstance(input, list):
+        if isinstance(input, (str, bytes, list, SignedDT)):
             self.decode(input)
         #encoding is not implemented yet.
 
@@ -419,9 +440,15 @@ class DTcodec(object):
         assert len(crossings) == num_crossings
         return partition_list(crossings, comp_lengths)
         
-    def decode(self, code):
-        if isinstance(code, (str, bytes)):
-            code = self.convert_alpha(code)
+    def decode(self, input):
+        flips = None
+        if isinstance(input, SignedDT):
+            flips = input.flips
+            self.code = code = input.dt
+        elif isinstance(input, (str, bytes)):
+            self.code = code = self.convert_alpha(input)
+        else:
+            self.code = code = input
         overcrossings = [sign(x) for comp in code for x in comp]
         evens = [abs(x) for comp in code for x in comp]
         self.size = size = 2*len(evens)
@@ -453,7 +480,14 @@ class DTcodec(object):
                                      (S, S.entry_slot(start)) )
             start = N = N+1
         # Now find the planar embedding
-        self.embed()
+        if not flips:
+            self.embed()
+        else:
+            G = self.fat_graph
+            labels = [abs(N) for component in code for N in component]
+            for label, flip in zip(labels, flips):
+                if flip:
+                    G.flip(self[label])
 
     def __getitem__(self, n):
         """
@@ -461,34 +495,24 @@ class DTcodec(object):
         """
         return self.lookup[n]
 
-    def mark(self, edgelist):
-        G = self.fat_graph
-        vertices = set()
-        for edge in edgelist:
-            edge.marked = True
-            vertices.update(edge)
-        for v in vertices:
-            self.marked_valences[v] = G.marked_valence(v)
-
     def embed(self, edge=None):
         """
         Try to flip crossings in the FatGraph until it becomes planar.
         """
         G = self.fat_graph
         # Add the marked_valence cache
-        self.marked_valences = dict([ (v,0) for v in G.vertices])
         if edge is None: # OK. No problem. Just pick one at random.
             for edge in G.edges: break
         # Find a circle and embed it.
         vertices, circle_edges = self.find_circle(edge)
-        self.mark(circle_edges)
+        G.mark(circle_edges)
         #print 'circle', circle_edges
         # Add one arc, to get a theta graph.
         # The first arc needs to be bridge!
         first, last, arc_edges = G.bridge(circle_edges[:2])
         #print 'first_arc', arc_edges
         self.do_flips(first, arc_edges[0], last, arc_edges[-1])
-        self.mark(arc_edges)
+        G.mark(arc_edges)
         # Keep adding arcs until the whole graph is embedded.
         while True:
             try:
@@ -530,13 +554,11 @@ class DTcodec(object):
         Return a vertex with some marked and some unmarked edges.
         If there are any, return a vertex with marked valence 3.
         """
-        # This could be done with table lookups.
         G = self.fat_graph
-        vertices = [v for v in G.vertices if 0 < self.marked_valences[v] < 4]
-        vertices.sort( key=lambda v : -self.marked_valences[v] )
+        vertices = [v for v in G.vertices if 0 < G.marked_valences[v] < 4]
+        vertices.sort( key=lambda v : G.marked_valences[v] )
         try:
-            v = vertices.pop(0)
-            return v
+            return vertices.pop()
         except IndexError:
             return None
 
@@ -551,7 +573,7 @@ class DTcodec(object):
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
         #print 'do_flips: %s[%s] %s[%s]'%(v, vslot, w, wslot) 
-        not_unique = ( self.marked_valences[v] == self.marked_valences[w] == 2 )
+        not_unique = ( G.marked_valences[v] == G.marked_valences[w] == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):
             ccw_edge = G(v)[vslot+k]
@@ -560,9 +582,9 @@ class DTcodec(object):
         if not ccw_edge.marked:
             raise ValueError('Invalid marking')
         # Here are the slots and vertices in the two boundary curves:
-        left_slots = set(G.left_slots(ccw_edge))
-        right_slots = set(G.right_slots(ccw_edge))
-        v_valence, w_valence = self.marked_valences[v], self.marked_valences[w]
+        left_slots = G.left_slots(ccw_edge)
+        right_slots = G.right_slots(ccw_edge)
+        v_valence, w_valence = G.marked_valences[v], G.marked_valences[w]
         if (v, vslot) in left_slots:
             v_slot_side, v_other_side = left_slots, right_slots
         else:
@@ -605,13 +627,13 @@ class DTcodec(object):
         v = self.get_incomplete_vertex()
         if v is None:
             return False
-        if self.marked_valences[v] == 2:
+        if G.marked_valences[v] == 2:
         # This should work for any vertex if the diagram is prime.
             try:
                 first, last, arc_edges = G.bridge(G.marked_arc(v))
             except ValueError:
                 print 'Failed to find a bridge on the first try.'
-                for v in [x for x in G.vertices if self.marked_valences[v] == 2]:
+                for v in [x for x in G.vertices if G.marked_valences[v] == 2]:
                     try:
                         first, last, arc_edges = G.bridge(G.marked_arc(v))
                         break
@@ -625,7 +647,7 @@ class DTcodec(object):
             #print 'adding arc', arc_edges
             # Since v has 3 marked edges, we put it second here.
             self.do_flips(last_vertex, arc_edges[-1], v, arc_edges[0])
-        self.mark(arc_edges)
+        G.mark(arc_edges)
         return True
 
     def PD_code(self, KnotTheory=False):
@@ -659,4 +681,59 @@ class DTcodec(object):
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
         return Link(crossing_dict.values(), check_planarity=False)
 
+    def signed_DT(self):
+        G = self.fat_graph
+        labels = [abs(N) for component in self.code for N in component]
+        flips = [G.flipped(self[N]) for N in labels]
+        return SignedDT(self.code, flips)
 
+class SignedDT:
+    """
+    A DT code with extra information indicating for each crossing
+    whether it should be flipped from the standard SENW crossing
+    to obtain a planar embedding.  This information is encoded
+    in a byte sequence as follows:
+      bits 0-4: abs(label)/2 - 1  (can handle up to 32 crossings)
+         bit 5: set when the sign of the dt label is negative
+         bit 6: set when the crossing should be flipped
+         bit 7: set when this label is the last label in its
+                component
+    NOTE: A signed DT code can be distinguished from an alphabetical
+    DT code by the property that bit 7 of the last byte is always set
+    in a signed DT code.
+
+    Instantiate a SignedDT with a dt code and a sequence of boolean
+    values, one for each successive label in the DT code, indicating
+    whether the crossing with that label needs to be flipped.
+    """
+    def __init__(self, dt, flips):
+        self.dt = dt
+        self.flips = flips
+        code_bytes = []
+        flipper = flips.__iter__()
+        for component in dt:
+            for label in component:
+                byte = abs(label)
+                byte = (byte>>1) - 1
+                if label < 0:
+                    byte |= 1<<5
+                if flipper.next():
+                    byte |= 1<<6
+                code_bytes.append(byte)
+            code_bytes[-1] |= 1<<7
+        self.bytes = ''.join(chr(b) for b in code_bytes)
+
+    def __call__(self):
+        return self.bytes
+
+    def __len__(self):
+        return len(self.bytes)
+
+    def __repr__(self):
+        return 'DT%s with flips %s'%(self.dt, self.flips)
+
+    def hex(self):
+        """
+        Return the hex encoding of the byte string.
+        """
+        return''.join(['%.2x'%ord(byte) for byte in self.bytes])
