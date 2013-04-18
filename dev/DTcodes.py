@@ -6,8 +6,10 @@ def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
 
 def char_to_int(x):
-    sign = -1 if x.isupper() else 1
-    return sign*(string.ascii_letters.index(x.lower())+1)
+    n = ord(x)
+    if 96 < n < 123: return n - 96
+    if 64 < n < 91:  return 64 - n  
+    raise ValueError('Not an ascii letter.')
 
 def string_to_ints(s):
     return [char_to_int(x) for x in s]
@@ -46,12 +48,12 @@ def partition_list(L, parts):
 #        S
 #      first
 #
-# This determines some embedding of each crossing into the oriented
-# plane, which may not extend to an embedding of the knot diagram.  In
-# constructing the planar embedding of the diagram we preserve this
-# planar embedding of the vertices, but we may adjust the fat graph by
-# interchanging the attaching points of a pair of edges entering at
-# opposite sides of the crossing.
+# This arbitrary choice determines some embedding of each crossing
+# into the oriented plane.  During the process of constructing a
+# planar embedding of the diagram we preserve this planar embedding of
+# the vertices, but we may adjust the fat graph by interchanging the
+# attaching points of a pair of edges attached at opposite sides of
+# the crossing.
 #
 # In fact, interchanging either pair of opposite connections is
 # equivalent to interchanging the other pair.  So in practice we
@@ -138,6 +140,12 @@ class DTFatEdge(FatEdge):
         self.marked = False
 
     def PD_index(self):
+        """
+        The labelling of vertices when building a DT code also
+        determines a labelling of the edges, which is needed
+        for generating a PD description of the diagram.
+        This method returns the edge label.
+        """
         v = self[0]
         if self.slot(v)%2 == 0:
             return v[0]
@@ -154,11 +162,16 @@ class DTFatGraph(FatGraph):
         self.pushed = False
 
     def add_edge(self, x, y):
+        # Adds keys to the marked_valences dict as vertices are added.
+        # This will cause trouble if edges are added while edges are marked!
         FatGraph.add_edge(self, x, y)
         self.marked_valences[x[0]] = 0
         self.marked_valences[y[0]] = 0
 
     def mark(self, edgelist):
+        """
+        Mark all edges in the list.
+        """
         vertices = set()
         for edge in edgelist:
             edge.marked = True
@@ -167,6 +180,9 @@ class DTFatGraph(FatGraph):
             self.marked_valences[v] = self.marked_valence(v)
 
     def marked_valence(self, vertex):
+        """
+        Compute the marked valence of a vertex.
+        """
         valence = 0
         for e in self.incidence_dict[vertex]:
             if e.marked:
@@ -174,11 +190,18 @@ class DTFatGraph(FatGraph):
         return valence
 
     def clear(self):
+        """
+        Remove all edge markings.
+        """
         for e in self.edges:
             e.marked = False
         self.marked_valences = dict( (v,0) for v in self.vertices )
 
     def push(self, flips):
+        """
+        Save the state of this DTFatGraph before doing the flips.
+        The flips will be done by the pop.
+        """
         # Ignore the first push -- the first arc always is ambiguous
         # but the choice is irrelevant, up to reflecting the plane.
         if not self.pushed:
@@ -194,6 +217,9 @@ class DTFatGraph(FatGraph):
                            )
 
     def pop(self):
+        """
+        Restore the state of this DTFatGraph and perform the saved flips.
+        """
         self.edges = set()
         flips, marked, unmarked = self.stack.pop()
         for x, y in marked:
@@ -207,6 +233,9 @@ class DTFatGraph(FatGraph):
         return flips
 
     def clear_stack(self):
+        """
+        Reset the state stack.
+        """
         self.stack = []
         self.pushed = False
 
@@ -353,7 +382,8 @@ class DTFatGraph(FatGraph):
         vertex v which lies on the specified boundary curve, or
         (v, None) if none of the slots at v lie on the curve.  (To
         extend the embedding over an unmarked arc, the ending slots of
-        both ends of the arc must lie on the same boundary curve.)
+        both ends of the arc must lie on the same boundary curve.
+        Flipping may be needed to arrange this.)
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
@@ -404,15 +434,26 @@ class DTFatGraph(FatGraph):
         self.reorder(vertex, (North, East, South, West))
 
     def PD_list(self, vertex):
+        """
+        Return the PD labels of the incident edges in order, starting
+        with the incoming undercrossing as required for PD codes.
+        """
         edgelist = [e.PD_index() for e in self(vertex)]
         n = edgelist.index(vertex.first_under())
         return edgelist[n:] + edgelist[:n]
 
     def flipped(self, vertex):
+        """
+        Has this vertex been flipped?
+        """
         return bool(len([e for e in self(vertex) 
                          if e[1] is vertex and e.slots[1] in (2,3)])%2)
 
     def sign(self, vertex):
+        """
+        The sign of the crossing corresponding to this vertex.
+        See the documentation for Spherogram.link.
+        """
         flipped = self.flipped(vertex)
         even_first = bool(vertex[0] %2 == 0)
         return -1 if (flipped ^ vertex[2] ^ even_first) else 1
