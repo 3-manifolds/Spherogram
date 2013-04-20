@@ -22,7 +22,6 @@ def partition_list(L, parts):
         ans.append(L[k:k+p])
         k += p
     return ans
-        
 
 # To reconstruct a knot projection from a DT code we first construct
 # a fat graph, which may not be a planar surface.  There are only
@@ -208,13 +207,14 @@ class DTFatGraph(FatGraph):
             self.pushed = True
             return
         #print 'pushing %s'%flips
-        self.stack.append( [flips,
-                            [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
-                              for e in self.edges if e.marked],
-                            [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
-                              for e in self.edges if not e.marked]
-                            ]
-                           )
+        self.stack.append( 
+            [flips,
+             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
+               for e in self.edges if e.marked],
+             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
+               for e in self.edges if not e.marked]
+             ]
+            )
 
     def pop(self):
         """
@@ -223,11 +223,11 @@ class DTFatGraph(FatGraph):
         self.edges = set()
         flips, marked, unmarked = self.stack.pop()
         for x, y in marked:
-            self.add_edge(x,y)
+            self.add_edge(x, y)
         for edge in self.edges:
             edge.marked = True
         for x, y in unmarked:
-            self.add_edge(x,y)
+            self.add_edge(x, y)
         #print 'popped %s[%s]'%(vertex, flips)
         #print 'stack size: %d'%len(self.stack)
         return flips
@@ -463,33 +463,39 @@ class DTFatGraph(FatGraph):
 
 class DTcodec(object):
     """
-    Codec for DT codes of a link projection.  If instantiated with
-    a DT code, as a list of tuples or an alphabetical code, it decodes
-    the input as a knot projection.  If instantiated with a knot
-    projection it encodes the projection as a DT code.
+    Codec for DT codes of a link projection.
     """
-    def __init__(self, input=None):
-        if isinstance(input, (str, bytes, list, SignedDT)):
-            self.decode(input)
-        #encoding is not implemented yet.
 
-    def convert_alpha(self, code):
-        code = string_to_ints(code)
-        num_crossings, components = code[:2]
-        comp_lengths = code[2:2+components]
-        crossings = [2*x for x in code[2+components:]]
-        assert len(crossings) == num_crossings
-        return partition_list(crossings, comp_lengths)
-        
-    def decode(self, input):
-        flips = None
-        if isinstance(input, SignedDT):
-            flips = input.flips
-            self.code = code = input.dt
+    def __init__(self, input, flips=None):
+        if isinstance(input, (bytes, str, list)):
+            self.decode(input, flips)
+
+    def __getitem__(self, n):
+        """
+        A DTcodec can look up a vertex by either of its labels.
+        """
+        return self.lookup[n]
+
+    def decode(self, dt, flips=None):
+        """
+        Accepts input of the following types:
+        1) a dt code in either numeric or alphabetical form and a sequence
+        of boolean values, one for each successive label in the DT code,
+        indicating whether the crossing with that label needs to be
+        flipped.
+        2) a DT code with flips set to None.  In this case the flips are
+        computed.
+        3) a bytes object containing a compact signed DT code.
+
+        Constructs the planar FatGraph from the input data.
+        """
+        self.flips = flips
+        if isinstance(input, bytes) and ord(bytes[-1]) & 1<<7:
+            self.code, self.flips = self.unpack_signed_DT(dt)
         elif isinstance(input, (str, bytes)):
-            self.code = code = self.convert_alpha(input)
+            self.code = code = self.convert_alpha(dt)
         else:
-            self.code = code = input
+            self.code = code = dt
         overcrossings = [sign(x) for comp in code for x in comp]
         evens = [abs(x) for comp in code for x in comp]
         self.size = size = 2*len(evens)
@@ -502,40 +508,57 @@ class DTcodec(object):
             m, n = pair
             lookup[m] = lookup[n] = V
         # Now build the fatgraph determined by the DT code.
-        self.fat_graph = DTFatGraph()
+        self.fat_graph = G = DTFatGraph()
         N = start = 1
         last_odd = -1
-        for component in code:
+        for c, component in enumerate(code):
             last_odd += 2*len(component)
             V = self[N]
             # Walk around this component, adding edges.
             while N <= last_odd:
                 W = self[N + 1]
-                self.fat_graph.add_edge( (V, V.exit_slot(N)),
-                                         (W, W.entry_slot(N+1)) )
+                G.add_edge( (V, V.exit_slot(N)),
+                            (W, W.entry_slot(N+1)) )
                 N += 1
                 V = W
             # Close up this component and go to the next one.
             S = self[start]
-            self.fat_graph.add_edge( (V, V.exit_slot(N)),
-                                     (S, S.entry_slot(start)) )
+            G.add_edge( (V, V.exit_slot(N)),
+                        (S, S.entry_slot(start)) )
             start = N = N+1
-        # Now find the planar embedding
-        if not flips:
+        # Now build the planar embedding
+        labels = [abs(N) for component in code for N in component]
+        if self.flips is None:
             self.embed()
+            self.flips = [G.flipped(self[N]) for N in labels]
         else:
-            G = self.fat_graph
-            labels = [abs(N) for component in code for N in component]
-            for label, flip in zip(labels, flips):
+            for label, flip in zip(labels, self.flips):
                 if flip:
                     G.flip(self[label])
 
-    def __getitem__(self, n):
-        """
-        A DTcode can look up a vertex by either of its labels.
-        """
-        return self.lookup[n]
+    def unpack_signed_DT(self, signed_dt):
+        dt = []
+        component = []
+        flips = []
+        for byte in signed_dt:
+            flips.append(byte & 1<<6)
+            label = byte & 0x1f
+            if byte & 1<<5:
+                label = -label
+            component.append(label)
+            if byte & 1<<7:
+                dt.append(tuple(component))
+                component = []
+        return dt, flips
 
+    def convert_alpha(self, code):
+        code = string_to_ints(code)
+        num_crossings, components = code[:2]
+        comp_lengths = code[2:2+components]
+        crossings = [x<<1 for x in code[2+components:]]
+        assert len(crossings) == num_crossings
+        return partition_list(crossings, comp_lengths)
+        
     def embed(self, edge=None):
         """
         Try to flip crossings in the FatGraph until it becomes planar.
@@ -691,7 +714,31 @@ class DTcodec(object):
         G.mark(arc_edges)
         return True
 
-    def PD_code(self, KnotTheory=False):
+    def signed_DT(self):
+        """
+        Return a byte sequence containing the signed DT code.
+        """
+        code_bytes = []
+        flipper = self.flips.__iter__()
+        for component in self.code:
+            for label in component:
+                byte = abs(label)
+                byte = (byte>>1) - 1
+                if label < 0:
+                    byte |= 1<<5
+                if flipper.next():
+                    byte |= 1<<6
+                code_bytes.append(byte)
+            code_bytes[-1] |= 1<<7
+        return''.join(chr(b) for b in code_bytes)
+
+    def hex_signed_DT(self):
+        """
+        Return the hex encoding of the signed DT byte sequence.
+        """
+        return''.join(['%.2x'%ord(byte) for byte in self.signed_DT()])
+
+    def PD(self, KnotTheory=False):
         G = self.fat_graph
         PD = [ G.PD_list(v) for v in G.vertices ]
         if KnotTheory:
@@ -722,59 +769,40 @@ class DTcodec(object):
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
         return Link(crossing_dict.values(), check_planarity=False)
 
-    def signed_DT(self):
-        G = self.fat_graph
-        labels = [abs(N) for component in self.code for N in component]
-        flips = [G.flipped(self[N]) for N in labels]
-        return SignedDT(self.code, flips)
-
-class SignedDT:
+class KLPCrossing(object):
     """
-    A DT code with extra information indicating for each crossing
-    whether it should be flipped from the standard SENW crossing
-    to obtain a planar embedding.  This information is encoded
-    in a byte sequence as follows:
-      bits 0-4: abs(label)/2 - 1  (can handle up to 32 crossings)
-         bit 5: set when the sign of the dt label is negative
-         bit 6: set when the crossing should be flipped
-         bit 7: set when this label is the last label in its
-                component
-    NOTE: A signed DT code can be distinguished from an alphabetical
-    DT code by the property that bit 7 of the last byte is always set
-    in a signed DT code.
-
-    Instantiate a SignedDT with a dt code and a sequence of boolean
-    values, one for each successive label in the DT code, indicating
-    whether the crossing with that label needs to be flipped.
+    SnapPea uses a convention where the orientation
+    of the strands is fixed in the master picture but
+    which strand is on top varies.
     """
-    def __init__(self, dt, flips):
-        self.dt = dt
-        self.flips = flips
-        code_bytes = []
-        flipper = flips.__iter__()
-        for component in dt:
-            for label in component:
-                byte = abs(label)
-                byte = (byte>>1) - 1
-                if label < 0:
-                    byte |= 1<<5
-                if flipper.next():
-                    byte |= 1<<6
-                code_bytes.append(byte)
-            code_bytes[-1] |= 1<<7
-        self.bytes = ''.join(chr(b) for b in code_bytes)
+    KLP_directions = {0:'Ybackward', 1:'Xforward',
+                      2:'Yforward', 3:'Xbackward'}
 
-    def __call__(self):
-        return self.bytes
+    def __init__(self, vertex, fat_graph):
+        G = fat_graph
+        self.index = vertex[0]
+        self.sign = 'R' if G.sign(vertex) == 1 else 'L'
+        # G needs to compute components of edges.
+        self.Xcomponent = G.component(v)[0]
+        self.Xcomponent = G.component(v)[1]
+        self.strand, self.neighbor = {}, {}
+        for e in G[vertex]:
+            self.neighbor[self.KLP(v,e)] = e(vertex)[0]
+            self.strand[self.KLP(v,e)] = self.KLP(e(v),v)[:1]
 
-    def __len__(self):
-        return len(self.bytes)
+    def __getitem__(self, index):
+        if index.find('_') == -1:
+            return getattr(self, index)
+        vertex, info_type = index.split('_')
+        return getattr(self, info_type)[vertex]
 
-    def __repr__(self):
-        return 'DT%s with flips %s'%(self.dt, self.flips)
+    def KLP(self, v, e):
+        i = v if self.fat_graph.sign(v) == 1 else (v - 1) % 4
+        return self.KLP_directions[i]
 
-    def hex(self):
-        """
-        Return the hex encoding of the byte string.
-        """
-        return''.join(['%.2x'%ord(byte) for byte in self.bytes])
+
+def python_KLP(L):
+    vertices = list(L.vertices)
+    for i, v in enumerate(vertices):
+        v._KLP_index = i
+    return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]
