@@ -750,19 +750,18 @@ class DTcodec(object):
         if v is None:
             return False
         if G.marked_valences[v] == 2:
-        # This should work for any vertex if the diagram is prime.
+            # This should work for any vertex if the diagram is prime.
             try:
                 first, last, arc_edges = G.bridge(G.marked_arc(v))
+                #print 'adding bridge', arc_edges
             except ValueError:
-                print 'Failed to find a bridge on the first try.'
-                for v in [x for x in G.vertices if G.marked_valences[v] == 2]:
-                    try:
-                        first, last, arc_edges = G.bridge(G.marked_arc(v))
-                        break
-                    except ValueError:
-                        print 'Failed to find a bridge again.'
-                        continue
-            #print 'adding bridge', arc_edges
+                # If we can't find a bridge it means that the diagram
+                # has a separating pair of edges.  We just take any
+                # arc we can get, and see if we can find our way by
+                # pushing and popping.
+                #print 'Diagram is not prime!'
+                arc_edges, last = G.unmarked_arc(v)
+                first = v
             self.do_flips(first, arc_edges[0], last, arc_edges[-1])
         else:
             arc_edges, last_vertex = G.unmarked_arc(v)
