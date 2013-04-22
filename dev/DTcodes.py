@@ -600,10 +600,10 @@ class DTcodec(object):
         for char in signed_dt:
             byte = ord(char)
             flips.append(bool(byte & 1<<6))
-            label = byte & 0x1f
+            label = (1 + byte & 0x1f)<<1
             if byte & 1<<5:
                 label = -label
-            component.append((1+label)<<1)
+            component.append(label)
             if byte & 1<<7:
                 dt.append(tuple(component))
                 component = []
