@@ -1,4 +1,5 @@
 from snappy import *
+from snappy.SnapPy import triangulate_link_complement_from_data
 from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
 import string
 
@@ -80,7 +81,7 @@ class DTvertex(tuple):
     def __new__(self, pair, overcrossing=1):
         even_over = True if overcrossing == -1 else False
         return tuple.__new__(self, (min(pair), max(pair), even_over))
-            
+
     def __repr__(self):
         return str((self[0], self[1]))
 
@@ -132,11 +133,12 @@ class DTPath(object):
 
 class DTFatEdge(FatEdge):
     """
-    A fat edge which can be marked.
+    A fat edge which can be marked and belongs to a link component.
     """
-    def __init__(self, x, y, twists=0):
+    def __init__(self, x, y, twists=0, component=0):
         FatEdge.__init__(self, x, y, twists)
         self.marked = False
+        self.component = component
 
     def PD_index(self):
         """
@@ -163,9 +165,10 @@ class DTFatGraph(FatGraph):
     def add_edge(self, x, y):
         # Adds keys to the marked_valences dict as vertices are added.
         # This will cause trouble if edges are added while edges are marked!
-        FatGraph.add_edge(self, x, y)
+        edge = FatGraph.add_edge(self, x, y)
         self.marked_valences[x[0]] = 0
         self.marked_valences[y[0]] = 0
+        return edge
 
     def mark(self, edgelist):
         """
@@ -209,9 +212,9 @@ class DTFatGraph(FatGraph):
         #print 'pushing %s'%flips
         self.stack.append( 
             [flips,
-             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
+             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]), e.component )
                for e in self.edges if e.marked],
-             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]) )
+             [ ( (e[0], e.slots[0]), (e[1], e.slots[1]), e.component )
                for e in self.edges if not e.marked]
              ]
             )
@@ -222,12 +225,13 @@ class DTFatGraph(FatGraph):
         """
         self.edges = set()
         flips, marked, unmarked = self.stack.pop()
-        for x, y in marked:
-            self.add_edge(x, y)
-        for edge in self.edges:
+        for x, y, component in marked:
+            edge = self.add_edge(x, y)
+            edge.component = component
             edge.marked = True
-        for x, y in unmarked:
-            self.add_edge(x, y)
+        for x, y, component in unmarked:
+            edge = self.add_edge(x, y)
+            edge.component = component
         #print 'popped %s[%s]'%(vertex, flips)
         #print 'stack size: %d'%len(self.stack)
         return flips
@@ -458,6 +462,56 @@ class DTFatGraph(FatGraph):
         even_first = bool(vertex[0] %2 == 0)
         return -1 if (flipped ^ vertex[2] ^ even_first) else 1
 
+    def KLP_strand(self, vertex, edge):
+        """
+        Return the SnapPea KLP strand name for the given edge at the
+        end opposite to the vertex.
+        """
+        W = edge(vertex)
+        slot = edge.slot(W)
+        return 'X' if (slot==0 or slot==2) ^ self.flipped(W) else 'Y'
+    
+    def KLP_dict(self, vertex, indices):
+        """
+        Return a dict describing this vertex and its neighbors
+        in KLP terminology.  The translation from our convention is
+        as follows:
+                  Y                    Y
+                  3                    0
+                  ^                    ^
+                  |                    |
+           0 -----+----> 2 X     1 ----+---> 3 X   
+                  |                    |
+                  |                    |
+                  1                    2
+              not flipped           flipped
+        The indices argument is a dict that assigns an integer
+        index to each vertex of the graph.
+        """
+        KLP = {}
+        flipped = self.flipped(vertex)
+        edges = self(vertex)
+        neighbors = self[vertex]
+        strands = [self.KLP_strand(vertex, edge) for edge in edges]
+        ids = [ indices[v] for v in neighbors ]
+        
+        KLP['sign'] = 'R' if self.sign(vertex) == 1 else 'L'
+        slot = 1 if flipped else 0
+        KLP['Xbackward_neighbor'] = ids[slot]
+        KLP['Xbackward_strand'] = strands[slot]
+        slot = 3 if flipped else 2
+        KLP['Xforward_neighbor']  = ids[slot]
+        KLP['Xforward_strand'] = strands[slot]
+        KLP['Xcomponent'] = edges[slot].component
+        slot = 2 if flipped else 1
+        KLP['Ybackward_neighbor'] = ids[slot]
+        KLP['Ybackward_strand'] = strands[slot]
+        slot = 0 if flipped else 3
+        KLP['Yforward_neighbor'] = ids[slot]
+        KLP['Yforward_strand'] = strands[slot]
+        KLP['Ycomponent'] = edges[slot].component
+        return KLP
+
 # This assumes that the diagram has no loops, and that each component
 # meets the next one (so in particular the diagram is connected.
 
@@ -517,14 +571,16 @@ class DTcodec(object):
             # Walk around this component, adding edges.
             while N <= last_odd:
                 W = self[N + 1]
-                G.add_edge( (V, V.exit_slot(N)),
-                            (W, W.entry_slot(N+1)) )
+                edge = G.add_edge( (V, V.exit_slot(N)),
+                                   (W, W.entry_slot(N+1)) )
+                edge.component = c
                 N += 1
                 V = W
             # Close up this component and go to the next one.
             S = self[start]
-            G.add_edge( (V, V.exit_slot(N)),
-                        (S, S.entry_slot(start)) )
+            edge = G.add_edge( (V, V.exit_slot(N)),
+                               (S, S.entry_slot(start)) )
+            edge.component = c
             start = N = N+1
         # Now build the planar embedding
         labels = [abs(N) for component in code for N in component]
@@ -769,40 +825,21 @@ class DTcodec(object):
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
         return Link(crossing_dict.values(), check_planarity=False)
 
-class KLPCrossing(object):
-    """
-    SnapPea uses a convention where the orientation
-    of the strands is fixed in the master picture but
-    which strand is on top varies.
-    """
-    KLP_directions = {0:'Ybackward', 1:'Xforward',
-                      2:'Yforward', 3:'Xbackward'}
+    def KLPProjection(self):
+        """
+        Constructs a python simulation of a SnapPea KLPProjection
+        (Kernel Link Projection) structure.  See DTFatGraph.KLP_dict
+        and Jeff Weeks' SnapPea file link_projection.h for
+        definitions.  Here the KLPCrossings are modeled by
+        dictionaries.
+        """
+        G = self.fat_graph
+        vertices = list(G.vertices)
+        num_crossings = len(vertices)
+        num_components = len(self.code)
+        KLP_indices = dict( (v,n) for n, v in enumerate(vertices))
+        KLP_crossings = [G.KLP_dict(v, KLP_indices) for v in vertices]
+        return len(G.vertices), 0, len(self.code), KLP_crossings
 
-    def __init__(self, vertex, fat_graph):
-        G = fat_graph
-        self.index = vertex[0]
-        self.sign = 'R' if G.sign(vertex) == 1 else 'L'
-        # G needs to compute components of edges.
-        self.Xcomponent = G.component(v)[0]
-        self.Xcomponent = G.component(v)[1]
-        self.strand, self.neighbor = {}, {}
-        for e in G[vertex]:
-            self.neighbor[self.KLP(v,e)] = e(vertex)[0]
-            self.strand[self.KLP(v,e)] = self.KLP(e(v),v)[:1]
-
-    def __getitem__(self, index):
-        if index.find('_') == -1:
-            return getattr(self, index)
-        vertex, info_type = index.split('_')
-        return getattr(self, info_type)[vertex]
-
-    def KLP(self, v, e):
-        i = v if self.fat_graph.sign(v) == 1 else (v - 1) % 4
-        return self.KLP_directions[i]
-
-
-def python_KLP(L):
-    vertices = list(L.vertices)
-    for i, v in enumerate(vertices):
-        v._KLP_index = i
-    return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]
+    def exterior(self):
+        return triangulate_link_complement_from_data(self.KLPProjection())

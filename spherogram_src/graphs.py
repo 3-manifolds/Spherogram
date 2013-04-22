@@ -201,7 +201,8 @@ class EdgesBFO(object):
 class Graph(object):
     """
     A set of vertices and a set of edges joining pairs of vertices.
-    Vertices are arbitrary hashable objects.
+    Vertices are arbitrary hashable objects and should not be
+    modified by Graph methods.
     """
     edge_class = Edge
 
@@ -234,7 +235,7 @@ class Graph(object):
         """
         Return a list of adjacent vertices.
         """
-        return [e(vertex) for e in self.incident(vertex)]
+        return [e(vertex) for e in self.incidence_dict[vertex]]
 
     def add_edge(self, *args):
         edge = self.Edge(*args)
@@ -245,6 +246,7 @@ class Graph(object):
                 self.incidence_dict[v].append(edge)
             except KeyError:
                 self.incidence_dict[v] = [edge]
+        return edge
 
     def add_vertex(self, hashable):
         self.vertices.add(hashable)
@@ -438,14 +440,15 @@ class ReducedGraph(Graph):
         if edge:
             edge.multiplicity += 1
         else:
-            new_edge = self.Edge(x, y)
+            edge = self.Edge(x, y)
             self.vertices.update([x,y])
-            self.edges.add(new_edge)
+            self.edges.add(edge)
             for v in edge.incident_to():
                 try:
                     self.incidence_dict[v].append(edge)
                 except KeyError:
                     self.incidence_dict[v] = [edge]
+        return edge
 
     def multi_valence(self, vertex):
         """
@@ -572,7 +575,7 @@ class FatGraph(Graph):
                 incidences[v].sort(key=lambda e : e.slot(v))
             else:
                 incidences[v] = CyclicList([edge])
-
+        return edge
 
     def _validate(self):
         for v in self.vertices:
