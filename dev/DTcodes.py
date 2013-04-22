@@ -544,9 +544,10 @@ class DTcodec(object):
         Constructs the planar FatGraph from the input data.
         """
         self.flips = flips
-        if isinstance(input, bytes) and ord(bytes[-1]) & 1<<7:
-            self.code, self.flips = self.unpack_signed_DT(dt)
-        elif isinstance(input, (str, bytes)):
+        if isinstance(dt, (str,bytes)) and ord(dt[-1]) & 1<<7:
+            code, self.flips = self.unpack_signed_DT(dt)
+            self.code = code
+        elif isinstance(dt, (str, bytes)):
             self.code = code = self.convert_alpha(dt)
         else:
             self.code = code = dt
@@ -596,12 +597,13 @@ class DTcodec(object):
         dt = []
         component = []
         flips = []
-        for byte in signed_dt:
-            flips.append(byte & 1<<6)
+        for char in signed_dt:
+            byte = ord(char)
+            flips.append(bool(byte & 1<<6))
             label = byte & 0x1f
             if byte & 1<<5:
                 label = -label
-            component.append(label)
+            component.append((1+label)<<1)
             if byte & 1<<7:
                 dt.append(tuple(component))
                 component = []
