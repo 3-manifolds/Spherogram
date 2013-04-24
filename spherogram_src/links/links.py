@@ -403,9 +403,14 @@ def save_link_pdf(self, filename):
     file.close()
 
 def show(self):
+    # this leaves crud in your tmp directory
     file = tempfile.NamedTemporaryFile(delete=False)
     file.write(draw.link_pdf(self.peer_code()))
     file.close()
-    os.system('open ' + file.name)
+    if sys.platform == 'darwin':
+        os.system('open ' + file.name)
+    # this is not very portable.
+    elif sys.platform == 'linux2':
+        os.system('okular ' + file.name)
 
 Link.save_link_pdf, Link.show = save_link_pdf, show
