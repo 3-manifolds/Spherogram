@@ -11,8 +11,11 @@ See the file "doc.pdf" for the conventions, and the file
 """
 from .. import graphs
 import  string, os, sys, re
-import cPickle as pickle
-
+try:
+    import cPickle as pickle
+except ImportError: # Python 3
+    import pickle
+    
 class Crossing(object):
     """
     See crossings.pdf for the conventions.  The sign of the

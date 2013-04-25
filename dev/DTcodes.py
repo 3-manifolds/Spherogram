@@ -67,7 +67,6 @@ class FlippingError(Exception):
 class EmbeddingError(Exception):
     pass
 
-
 class DTvertex(tuple):
     """
     A vertex of the 4-valent graph which is described by a DT code.
@@ -131,6 +130,8 @@ class DTPath(object):
             self.next_edge = self.first_edge
         return self.next_edge
 
+    __next__ = next
+    
 class DTFatEdge(FatEdge):
     """
     A fat edge which can be marked and belongs to a link component.
@@ -539,18 +540,29 @@ class DTcodec(object):
         flipped.
         2) a DT code with flips set to None.  In this case the flips are
         computed.
-        3) a bytes object containing a compact signed DT code.
+        3) a bytes object containing a compact signed DT code.  The
+        signed DT code may be provided as a byte string, for which
+        the last byte has bit 7 set, as produced by the signed_DT method.
+        Alternatives, it can be hex encoded as a string
+        beginning with '0x', as produced by the hex_signed_DT method.
 
-        Constructs the planar FatGraph from the input data.
+        This method constructs a planar FatGraph from its input data.
         """
         self.flips = flips
-        if isinstance(dt, (str,bytes)) and ord(dt[-1]) & 1<<7:
-            code, self.flips = self.unpack_signed_DT(dt)
-            self.code = code
-        elif isinstance(dt, (str, bytes)):
-            self.code = code = self.convert_alpha(dt)
+        if isinstance(dt, str):
+            if dt[:2] == '0x':
+                dt_bytes = [int(dt[n:n+2], 16) for n in range(2,len(dt),2)]
+                self.code, self.flips = self.unpack_signed_DT(dt_bytes)
+            elif ord(dt[-1]) & 1<<7:
+                dt_bytes = bytearray(dt)
+                self.code, self.flips = self.unpack_signed_DT(dt)
+            else:
+                self.code = self.convert_alpha(dt)
+        elif isinstance(dt, bytes):
+            self.code, self.flips = self.unpack_signed_DT(dt)
         else:
-            self.code = code = dt
+            self.code = dt
+        code = self.code
         overcrossings = [sign(x) for comp in code for x in comp]
         evens = [abs(x) for comp in code for x in comp]
         self.size = size = 2*len(evens)
@@ -597,8 +609,7 @@ class DTcodec(object):
         dt = []
         component = []
         flips = []
-        for char in signed_dt:
-            byte = ord(char)
+        for byte in bytearray(signed_dt):
             flips.append(bool(byte & 1<<6))
             label = (1 + byte & 0x1f)<<1
             if byte & 1<<5:
@@ -775,25 +786,28 @@ class DTcodec(object):
         """
         Return a byte sequence containing the signed DT code.
         """
-        code_bytes = []
-        flipper = self.flips.__iter__()
+        code_bytes = bytearray()
+        try:
+            next_flip = self.flips.__iter__().next
+        except AttributeError: # Python 3
+            next_flip = self.flips.__iter__().__next__
         for component in self.code:
             for label in component:
                 byte = abs(label)
                 byte = (byte>>1) - 1
                 if label < 0:
                     byte |= 1<<5
-                if flipper.next():
+                if next_flip():
                     byte |= 1<<6
                 code_bytes.append(byte)
             code_bytes[-1] |= 1<<7
-        return''.join(chr(b) for b in code_bytes)
+        return bytes(code_bytes)
 
     def hex_signed_DT(self):
         """
         Return the hex encoding of the signed DT byte sequence.
         """
-        return''.join(['%.2x'%ord(byte) for byte in self.signed_DT()])
+        return '0x'+''.join(['%.2x'%b for b in bytearray(self.signed_DT())])
 
     def PD(self, KnotTheory=False):
         G = self.fat_graph

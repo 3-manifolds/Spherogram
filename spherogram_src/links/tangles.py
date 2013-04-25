@@ -7,7 +7,10 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 """
 
 from . import links
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError: # Python 3
+    import pickle
 
 def join_strands(x, y):
     (a,i), (b,j) = x, y
