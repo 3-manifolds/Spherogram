@@ -63,6 +63,9 @@ class BaseEdge(tuple):
         else:
             raise ValueError('Vertex is not an endpoint')
 
+    def __hash__(self):
+        return id(self)
+    
     def incident_to(self):
         return list(self)
     
@@ -78,6 +81,9 @@ class Edge(BaseEdge):
     def __repr__(self):
         return '%s --- %s'%self
         
+    def __hash__(self):
+        return id(self)
+
     def __eq__(self, other):
         return self is other
 
@@ -93,6 +99,9 @@ class MultiEdge(BaseEdge):
     def __repr__(self):
         return '%s --%d-- %s'%(self[0], self.multiplicity, self[1])
 
+    def __hash__(self):
+        return id(self)
+
     def __eq__(self, other):
         return set(self) == set(other)
 
@@ -104,6 +113,9 @@ class DirectedEdge(BaseEdge):
     
     def __repr__(self):
         return '%s --> %s'%self
+
+    def __hash__(self):
+        return id(self)
 
     def __eq__(self, other):
         return self is other
@@ -131,6 +143,9 @@ class DirectedMultiEdge(DirectedEdge):
     def __repr__(self):
         return '%s --%d-> %s'%(self[0], self.multiplicity, self[1])
 
+    def __hash__(self):
+        return id(self)
+
     def __eq__(self, other):
         return tuple(self) == tuple(other)
 
@@ -153,6 +168,9 @@ class FatEdge(Edge):
         return '%s[%d] -%s- %s[%d]'%(self[0], self.slots[0],
                                      'x' if self.twisted else '-',
                                      self[1], self.slots[1])
+
+    def __hash__(self):
+        return id(self)
 
     def slot(self, vertex):
         try:
@@ -570,7 +588,7 @@ class FatGraph(Graph):
         for v in edge:
             # the values of incidence_dict should be objects that keep
             # themselves sorted.
-            if incidences.has_key(v):
+            if v in incidences:
                 incidences[v].append(edge)
                 incidences[v].sort(key=lambda e : e.slot(v))
             else:
