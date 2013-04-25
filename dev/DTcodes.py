@@ -67,7 +67,6 @@ class FlippingError(Exception):
 class EmbeddingError(Exception):
     pass
 
-
 class DTvertex(tuple):
     """
     A vertex of the 4-valent graph which is described by a DT code.
@@ -539,18 +538,27 @@ class DTcodec(object):
         flipped.
         2) a DT code with flips set to None.  In this case the flips are
         computed.
-        3) a bytes object containing a compact signed DT code.
+        3) a bytes object containing a compact signed DT code.  The
+        signed DT code may be provided as a byte string, for which
+        the last byte has bit 7 set, as produced by the signed_DT method.
+        Alternatives, it can be hex encoded as a string
+        beginning with '0x', as produced by the hex_signed_DT method.
 
-        Constructs the planar FatGraph from the input data.
+        This method constructs a planar FatGraph from its input data.
         """
         self.flips = flips
-        if isinstance(dt, (str,bytes)) and ord(dt[-1]) & 1<<7:
-            code, self.flips = self.unpack_signed_DT(dt)
-            self.code = code
-        elif isinstance(dt, (str, bytes)):
-            self.code = code = self.convert_alpha(dt)
+        if isinstance(dt, (str,bytes)):
+            if dt[:2] == '0x':
+                dt_bytes = ''.join(chr( int(dt[n:n+2], 16) )
+                                   for n in range(2,len(dt),2) )
+                self.code, self.flips = self.unpack_signed_DT(dt_bytes)
+            elif ord(dt[-1]) & 1<<7:
+                self.code, self.flips = self.unpack_signed_DT(dt)
+            else:
+                self.code = self.convert_alpha(dt)
         else:
-            self.code = code = dt
+            self.code = dt
+        code = self.code
         overcrossings = [sign(x) for comp in code for x in comp]
         evens = [abs(x) for comp in code for x in comp]
         self.size = size = 2*len(evens)
@@ -793,7 +801,7 @@ class DTcodec(object):
         """
         Return the hex encoding of the signed DT byte sequence.
         """
-        return''.join(['%.2x'%ord(byte) for byte in self.signed_DT()])
+        return '0x'+''.join(['%.2x'%ord(byte) for byte in self.signed_DT()])
 
     def PD(self, KnotTheory=False):
         G = self.fat_graph
