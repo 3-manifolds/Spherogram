@@ -130,6 +130,8 @@ class DTPath(object):
             self.next_edge = self.first_edge
         return self.next_edge
 
+    __next__ = next
+    
 class DTFatEdge(FatEdge):
     """
     A fat edge which can be marked and belongs to a link component.
@@ -547,15 +549,17 @@ class DTcodec(object):
         This method constructs a planar FatGraph from its input data.
         """
         self.flips = flips
-        if isinstance(dt, (str,bytes)):
+        if isinstance(dt, str):
             if dt[:2] == '0x':
-                dt_bytes = ''.join(chr( int(dt[n:n+2], 16) )
-                                   for n in range(2,len(dt),2) )
+                dt_bytes = [int(dt[n:n+2], 16) for n in range(2,len(dt),2)]
                 self.code, self.flips = self.unpack_signed_DT(dt_bytes)
             elif ord(dt[-1]) & 1<<7:
+                dt_bytes = bytearray(dt)
                 self.code, self.flips = self.unpack_signed_DT(dt)
             else:
                 self.code = self.convert_alpha(dt)
+        elif isinstance(dt, bytes):
+            self.code, self.flips = self.unpack_signed_DT(dt)
         else:
             self.code = dt
         code = self.code
@@ -605,8 +609,7 @@ class DTcodec(object):
         dt = []
         component = []
         flips = []
-        for char in signed_dt:
-            byte = ord(char)
+        for byte in bytearray(signed_dt):
             flips.append(bool(byte & 1<<6))
             label = (1 + byte & 0x1f)<<1
             if byte & 1<<5:
@@ -783,25 +786,28 @@ class DTcodec(object):
         """
         Return a byte sequence containing the signed DT code.
         """
-        code_bytes = []
-        flipper = self.flips.__iter__()
+        code_bytes = bytearray()
+        try:
+            next_flip = self.flips.__iter__().next
+        except AttributeError: # Python 3
+            next_flip = self.flips.__iter__().__next__
         for component in self.code:
             for label in component:
                 byte = abs(label)
                 byte = (byte>>1) - 1
                 if label < 0:
                     byte |= 1<<5
-                if flipper.next():
+                if next_flip():
                     byte |= 1<<6
                 code_bytes.append(byte)
             code_bytes[-1] |= 1<<7
-        return''.join(chr(b) for b in code_bytes)
+        return bytes(code_bytes)
 
     def hex_signed_DT(self):
         """
         Return the hex encoding of the signed DT byte sequence.
         """
-        return '0x'+''.join(['%.2x'%ord(byte) for byte in self.signed_DT()])
+        return '0x'+''.join(['%.2x'%b for b in bytearray(self.signed_DT())])
 
     def PD(self, KnotTheory=False):
         G = self.fat_graph
