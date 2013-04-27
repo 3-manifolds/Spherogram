@@ -537,7 +537,8 @@ class DTcodec(object):
         1) a dt code in either numeric or alphabetical form and a sequence
         of boolean values, one for each successive label in the DT code,
         indicating whether the crossing with that label needs to be
-        flipped.
+        flipped.  Alphabetical DT codes can also specify signs by appending
+        a period followed by a sequence of 0's and 1's.
         2) a DT code with flips set to None.  In this case the flips are
         computed.
         3) a bytes object containing a compact signed DT code.  The
@@ -557,7 +558,10 @@ class DTcodec(object):
                 dt_bytes = bytearray(dt)
                 self.code, self.flips = self.unpack_signed_DT(dt)
             else:
-                self.code = self.convert_alpha(dt)
+                parts = dt.split('.')
+                self.code = self.convert_alpha(parts[0])
+                if len(parts) > 1:
+                    self.flips = [False if d == '0' else True for d in parts[1]]
         elif isinstance(dt, bytes):
             self.code, self.flips = self.unpack_signed_DT(dt)
         else:
