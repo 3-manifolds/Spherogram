@@ -2,9 +2,10 @@ from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
 import string
 
 try:
-    from snappy.SnapPy import triangulate_link_complement_from_data
+    import snappy
+    link_exterior = snappy.SnapPy.triangulate_link_complement_from_data
 except ImportError:
-    def triangulate_link_complement_from_data(*args):
+    def link_exterior(*args):
         raise RuntimeError("SnapPy doesn't seem to be available")
 
 def sign(x):
@@ -865,4 +866,4 @@ class DTcodec(object):
         return len(G.vertices), 0, len(self.code), KLP_crossings
 
     def exterior(self):
-        return triangulate_link_complement_from_data(self.KLPProjection())
+        return link_exterior(self.KLPProjection())
