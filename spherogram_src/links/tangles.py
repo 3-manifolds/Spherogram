@@ -104,14 +104,14 @@ class Tangle(object):
         T = self.copy()
         for i in range(0, 2*self.n, 2):
             join_strands(T.adjacent[i], T.adjacent[i + 1])
-        return links.Link(T.crossings)
+        return links.Link(T.crossings, check_planarity=False)
 
     def denominator_closure(self):
         "The braid closure picture"
         T = self.copy()
         for i in range(0, self.n):
             join_strands(T.adjacent[i], T.adjacent[i + self.n])
-        return links.Link(T.crossings)
+        return links.Link(T.crossings, check_planarity=False)
 
     def __repr__(self):
         return "<Tangle: %s>" % self.label
