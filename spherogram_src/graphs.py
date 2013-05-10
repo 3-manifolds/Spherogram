@@ -46,7 +46,7 @@ import operator
 class BaseEdge(tuple):
     """
     Base class for edges: a 2-tuple of vertices with extra methods.
-    Calling a BaseEdge with one if its vertices returns the other one.
+    Calling a BaseEdge with one of its vertices returns the other one.
     """
 
     def __new__(cls, x, y):
@@ -66,11 +66,11 @@ class BaseEdge(tuple):
     def __hash__(self):
         return id(self)
     
-    def incident_to(self):
+    def inciden_to(self):
         return list(self)
     
     def is_loop(self):
-        return self[0] == self[1]
+        return self[0] is self[1]
     
 class Edge(BaseEdge):
     """
@@ -120,9 +120,6 @@ class DirectedEdge(BaseEdge):
     def __eq__(self, other):
         return self is other
 
-    def incident_to(self):
-        return [self.tail]
-    
     @property
     def head(self):
         return self[1]
@@ -259,7 +256,7 @@ class Graph(object):
         edge = self.Edge(*args)
         self.edges.add(edge)
         self.vertices.update(edge)
-        for v in edge.incident_to():
+        for v in edge:
             try:
                 self.incidence_dict[v].append(edge)
             except KeyError:
@@ -273,7 +270,7 @@ class Graph(object):
         """
         Return the set of non-loops incident to the vertex.
         """
-        return dict(e for e in self.incidence_dict[vertex] if not e.is_loop())
+        return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
 
     def valence(self, vertex):
         """
@@ -461,7 +458,7 @@ class ReducedGraph(Graph):
             edge = self.Edge(x, y)
             self.vertices.update([x,y])
             self.edges.add(edge)
-            for v in edge.incident_to():
+            for v in edge:
                 try:
                     self.incidence_dict[v].append(edge)
                 except KeyError:
@@ -644,8 +641,8 @@ class Digraph(Graph):
         """
         Return the set of non-loops which begin at the vertex.
         """
-        return dict(e for e in self.incidence_dict[vertex]
-                     if e.tail == vertex and e.head != vertex)
+        return set(e for e in self.incidence_dict[vertex]
+                     if e.tail is vertex and not e.head is vertex)
 
     def components(self):
         """

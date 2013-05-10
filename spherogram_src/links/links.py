@@ -336,6 +336,11 @@ class Link(graphs.Digraph):
         ans += '] / ' + ' '.join([ ['_', '+', '-'][peer[c][1]] for c in sum(even_labels, [])])
         return ans
         
+    def KLPProjection(self):
+        return python_KLP(self)
+
+    def exterior(L):
+        raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
 # ---- building the link exterior if SnapPy is present --------
 
@@ -375,21 +380,7 @@ def python_KLP(L):
     vertices = list(L.vertices)
     for i, v in enumerate(vertices):
         v._KLP_index = i
-
     return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]
-
-try:
-    import snappy
-    def link_to_complement(L):
-        P = python_KLP(L)
-        return snappy.SnapPy.triangulate_link_complement_from_data(P)
-
-except ImportError:
-    def link_to_complement(L):
-        raise RuntimeError("SnapPy doesn't seem to be available")
-            
-
-Link.exterior = link_to_complement
 
 # ---- Drawing the link --------
 
