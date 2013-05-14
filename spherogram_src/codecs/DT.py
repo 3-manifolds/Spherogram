@@ -22,6 +22,8 @@ def partition_list(L, parts):
         k += p
     return ans
 
+DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
+
 # To reconstruct a knot projection from a DT code we first construct
 # a fat graph, which may not be a planar surface.  There are only
 # two possible orderings of edges at each vertex, since we know which
@@ -91,13 +93,6 @@ class DTvertex(tuple):
         if N == self[0]: return North
         elif N == self[1]: return West
         else: raise ValueError('%d is not a label of %s'%(N,self))
-
-    def first_under(self):
-        first, second, even_over = self
-        if even_over:
-            return first-1 if first%2 == 1 else second-1
-        else:
-            return first-1 if first%2 == 0 else second-1
 
     def upper_pair(self):
         first, second, even_over = self
@@ -436,13 +431,19 @@ class DTFatGraph(FatGraph):
             raise FlippingError(msg)
         self.reorder(vertex, (North, East, South, West))
 
+    def incoming_under(self, vertex):
+        first, second, even_over = vertex
+        incoming = [e.PD_index() for e in self(vertex) if e[1] is vertex]
+        incoming.sort(key = lambda x : x%2)
+        return incoming[0] if even_over else incoming[1]
+
     def PD_list(self, vertex):
         """
         Return the PD labels of the incident edges in order, starting
         with the incoming undercrossing as required for PD codes.
         """
         edgelist = [e.PD_index() for e in self(vertex)]
-        n = edgelist.index(vertex.first_under())
+        n = edgelist.index(self.incoming_under(vertex))
         return edgelist[n:] + edgelist[:n]
 
     def flipped(self, vertex):
@@ -630,6 +631,55 @@ class DTcodec(object):
         assert len(crossings) == num_crossings
         return partition_list(crossings, comp_lengths)
         
+    def encode(self, header=True, alphabetical=True, flips=True):
+        """
+        Returns a string describing the DT code.  Options control
+        whether to include the 'DT:' header, whether to use the
+        numerical or alphabetical format, and whether to use the
+        extended form, which adds flip information for each crossing.
+
+        >>> d = DTcodec([(-6,-8,-2,-4)])
+        >>> d.encode()
+        'DT:dadCDAB.0110'
+        >>> M = Manifold(d.encode())
+        >>> M.volume()
+        2.029883212819
+        >>> d.encode(alphabetical=False)
+        'DT:[(-6,-8,-2,-4)], [0,1,1,0]'
+        >>> M = Manifold(d.encode())
+        >>> M.volume()
+        2.029883212819
+        >>> d.encode(flips=False)
+        'DT:dadCDAB'
+        >>> M = Manifold(d.encode(flips=False))
+        >>> M.volume()
+        2.029883212819
+        >>> d.encode(alphabetical=False, flips=False)
+        'DT:[(-6,-8,-2,-4)]'
+        """
+        code = self.code
+        result = 'DT:' if header else ''
+        if alphabetical:
+            chunks = [len(component) for component in code]
+            num_crossings = sum(chunks)
+            prefix_ints = [num_crossings, len(code)]
+            prefix_ints += chunks
+            code_ints = [x for component in code for x in component]
+            if num_crossings > 26:
+                raise ValueError(
+                    'Alphabetical DT codes require fewer than 26 crossings.')
+            alphacode = ''.join(tuple([DT_alphabet[n>>1] for n in code_ints]))
+            prefix = ''.join(tuple([DT_alphabet[n] for n in prefix_ints]))
+            if flips:
+                alphacode += '.' + ''.join([str(int(f)) for f in self.flips])
+            result += (prefix + alphacode)
+        else:
+            result += str(code)
+            if flips:
+                result += ',  %s'%[int(f) for f in self.flips]
+            result = result.replace(', ',',')
+        return result
+
     def embed(self, edge=None):
         """
         Try to flip crossings in the FatGraph until it becomes planar.
@@ -787,6 +837,13 @@ class DTcodec(object):
     def signed_DT(self):
         """
         Return a byte sequence containing the signed DT code.
+
+        >>> d = DTcodec([(-6,-8,-2,-4)])
+        >>> d.signed_DT()
+        '"c`\xa1'
+        >>> d2 = DTcodec(bytes('"c`\xa1'))
+        >>> d2.encode()
+        'DT:dadCDAB.0110'
         """
         code_bytes = bytearray()
         try:
@@ -808,10 +865,27 @@ class DTcodec(object):
     def hex_signed_DT(self):
         """
         Return the hex encoding of the signed DT byte sequence.
+
+        >>> d = DTcodec([(-6,-8,-2,-4)])
+        >>> d.hex_signed_DT()
+        '0x226360a1'
+        >>> d2 = DTcodec('0x226360a1')
+        >>> d2.encode()
+        'DT:dadCDAB.0110'
         """
         return '0x'+''.join(['%.2x'%b for b in bytearray(self.signed_DT())])
 
     def PD(self, KnotTheory=False):
+        """
+        Return a PD code for the projection described by this DT code,
+        as a list of lists of 4 integers.  If KnotTheory is set to
+        True, return a string that can be used as input to the Knot
+        Theory package.
+        
+        >>> d = DTcodec([(-6,-8,-2,-4)])
+        >>> d.PD()
+        [[2, 8, 3, 7], [6, 4, 7, 3], [8, 5, 1, 6], [4, 1, 5, 2]]
+        """
         G = self.fat_graph
         PD = [ G.PD_list(v) for v in G.vertices ]
         if KnotTheory:
@@ -859,4 +933,4 @@ class DTcodec(object):
         return len(G.vertices), 0, len(self.code), KLP_crossings
 
     def exterior(L):
-        raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
+        raise RuntimeError("SnapPy doesn't seem to be available.")
