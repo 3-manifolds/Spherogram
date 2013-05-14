@@ -638,14 +638,15 @@ class DTcodec(object):
         numerical or alphabetical format, and whether to use the
         extended form, which adds flip information for each crossing.
 
+        >>> from snappy import Manifold
         >>> d = DTcodec([(-6,-8,-2,-4)])
-        >>> d.encode()
-        'DT:dadCDAB.0110'
-        >>> M = Manifold(d.encode())
-        >>> M.volume()
-        2.029883212819
-        >>> d.encode(alphabetical=False)
-        'DT:[(-6,-8,-2,-4)], [0,1,1,0]'
+        >>> A = d.encode()
+        >>> A in ['DT:dadCDAB.0110', 'DT:dadCDAB.1001']
+        True
+        >>> N = d.encode(alphabetical=False)
+        >>> N in ['DT:[(-6,-8,-2,-4)], [0,1,1,0]',
+        ...  'DT:[(-6,-8,-2,-4)], [1,0,0,1]']
+        True
         >>> M = Manifold(d.encode())
         >>> M.volume()
         2.029883212819
@@ -839,11 +840,9 @@ class DTcodec(object):
         Return a byte sequence containing the signed DT code.
 
         >>> d = DTcodec([(-6,-8,-2,-4)])
-        >>> d.signed_DT()
-        '"c`\xa1'
-        >>> d2 = DTcodec(bytes('"c`\xa1'))
-        >>> d2.encode()
-        'DT:dadCDAB.0110'
+        >>> d2 = DTcodec(d.signed_DT())
+        >>> d2.code
+        [(-6, -8, -2, -4)]
         """
         code_bytes = bytearray()
         try:
@@ -867,11 +866,9 @@ class DTcodec(object):
         Return the hex encoding of the signed DT byte sequence.
 
         >>> d = DTcodec([(-6,-8,-2,-4)])
-        >>> d.hex_signed_DT()
-        '0x226360a1'
-        >>> d2 = DTcodec('0x226360a1')
-        >>> d2.encode()
-        'DT:dadCDAB.0110'
+        >>> d2 = DTcodec(d.hex_signed_DT())
+        >>> d2.code
+        [(-6, -8, -2, -4)]
         """
         return '0x'+''.join(['%.2x'%b for b in bytearray(self.signed_DT())])
 
@@ -882,7 +879,7 @@ class DTcodec(object):
         True, return a string that can be used as input to the Knot
         Theory package.
         
-        >>> d = DTcodec([(-6,-8,-2,-4)])
+        >>> d = DTcodec([(-6,-8,-2,-4)], [0,1,1,0])
         >>> d.PD()
         [[2, 8, 3, 7], [6, 4, 7, 3], [8, 5, 1, 6], [4, 1, 5, 2]]
         """
