@@ -649,12 +649,12 @@ class DTcodec(object):
         True
         >>> M = Manifold(d.encode())
         >>> M.volume()
-        2.029883212819
+        2.02988321282
         >>> d.encode(flips=False)
         'DT:dadCDAB'
         >>> M = Manifold(d.encode(flips=False))
         >>> M.volume()
-        2.029883212819
+        2.02988321282
         >>> d.encode(alphabetical=False, flips=False)
         'DT:[(-6,-8,-2,-4)]'
         """
