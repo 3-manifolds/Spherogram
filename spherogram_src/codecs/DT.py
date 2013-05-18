@@ -437,14 +437,14 @@ class DTFatGraph(FatGraph):
         incoming.sort(key = lambda x : x%2)
         return incoming[0] if even_over else incoming[1]
 
-    def PD_list(self, vertex):
+    def PD_tuple(self, vertex):
         """
         Return the PD labels of the incident edges in order, starting
         with the incoming undercrossing as required for PD codes.
         """
         edgelist = [e.PD_index() for e in self(vertex)]
         n = edgelist.index(self.incoming_under(vertex))
-        return edgelist[n:] + edgelist[:n]
+        return tuple(edgelist[n:] + edgelist[:n])
 
     def flipped(self, vertex):
         """
@@ -878,16 +878,17 @@ class DTcodec(object):
         as a list of lists of 4 integers.  If KnotTheory is set to
         True, return a string that can be used as input to the Knot
         Theory package.
-        
+       
         >>> d = DTcodec([(-6,-8,-2,-4)], [0,1,1,0])
         >>> d.PD_code()
         [[2, 8, 3, 7], [6, 4, 7, 3], [8, 5, 1, 6], [4, 1, 5, 2]]
         """
         G = self.fat_graph
-        PD = [ G.PD_list(v) for v in G.vertices ]
+        PD = [ G.PD_tuple(v) for v in G.vertices ]
         if KnotTheory:
-            PD = "PD" + repr(PD).replace('[', 'X[')[1:]
-        return PD
+            return 'PD[%s]'%', '.join(['X%s'%repr(list(t)) for t in PD])
+        else:
+            return PD
 
     def link(self):
         G = self.fat_graph
