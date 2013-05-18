@@ -308,10 +308,11 @@ class Link(graphs.Digraph):
     def PD_code(self, KnotTheory=False, min_strand_index=0):
         PD = []
         for c in self.vertices:
-            PD.append( [s + min_strand_index for s in c.strand_labels[:]])
-
+            PD.append([s + min_strand_index for s in c.strand_labels[:]])
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
+        else:
+            PD = [tuple(x) for x in PD ]
         return PD
 
     def DT_code(self, DT_alpha=False):
