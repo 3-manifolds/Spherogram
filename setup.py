@@ -45,8 +45,10 @@ class clean(Command):
 
 # Main module 
 
+version = '1.1'
+
 setup( name = 'spherogram',
-       version = '1.1',
+       version = version,
        zip_safe = False,
        install_requires = [],
        dependency_links = [],
@@ -64,3 +66,5 @@ setup( name = 'spherogram',
        url = '',
        )
 
+with open('version.txt','w') as output:
+    output.write(version)
