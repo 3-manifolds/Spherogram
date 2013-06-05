@@ -521,7 +521,7 @@ class DTcodec(object):
     """
 
     def __init__(self, input, flips=None):
-        if isinstance(input, (bytes, str, list)):
+        if isinstance(input, (bytes, str, unicode, list)):
             self.decode(input, flips)
 
     def __getitem__(self, n):
@@ -549,7 +549,7 @@ class DTcodec(object):
         This method constructs a planar FatGraph from its input data.
         """
         self.flips = flips
-        if isinstance(dt, str):
+        if isinstance(dt, (str, unicode)):
             if dt[:2] == '0x':
                 dt_bytes = [int(dt[n:n+2], 16) for n in range(2,len(dt),2)]
                 self.code, self.flips = self.unpack_signed_DT(dt_bytes)
