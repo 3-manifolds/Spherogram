@@ -649,12 +649,12 @@ class DTcodec(object):
         True
         >>> M = Manifold(d.encode())
         >>> M.volume()
-        2.02988321282
+        2.02988321
         >>> d.encode(flips=False)
         'DT:dadCDAB'
         >>> M = Manifold(d.encode(flips=False))
         >>> M.volume()
-        2.02988321282
+        2.02988321
         >>> d.encode(alphabetical=False, flips=False)
         'DT:[(-6,-8,-2,-4)]'
         """
@@ -881,7 +881,7 @@ class DTcodec(object):
        
         >>> d = DTcodec([(-6,-8,-2,-4)], [0,1,1,0])
         >>> d.PD_code()
-        [[2, 8, 3, 7], [6, 4, 7, 3], [8, 5, 1, 6], [4, 1, 5, 2]]
+        [(2, 8, 3, 7), (6, 4, 7, 3), (8, 5, 1, 6), (4, 1, 5, 2)]
         """
         G = self.fat_graph
         PD = [ G.PD_tuple(v) for v in G.vertices ]
