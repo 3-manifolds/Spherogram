@@ -80,7 +80,7 @@ class Crossing(object):
             return (a[0].label, a[1]) if a else None
         print( "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions) )
 
-    def DT_info(self):
+    def T_info(self):
         labels = self.strand_labels
         over = labels[3]+1 if self.sign == 1 else labels[1] + 1
         under = labels[0]+1
@@ -292,16 +292,43 @@ class Link(graphs.Digraph):
     def is_planar(self):
         if not self.is_connected():
             return False
-        
-        G = graphs.Graph()
-        for c in self.vertices:
-            for g in (0.5, 1.5, 2.5, 3.5):  # corners of complementary regions at c
-                d, j = c.adjacent[ int(g+0.5) % 4 ]
-                G.add_edge( (c, g), (d, j + 0.5) )
-
-        euler = len(self.vertices) - len(self.edges) + len(G.components())
+        euler = len(self.vertices) - len(self.edges) + len(self.faces())
         return euler == 2
 
+    def faces(self):
+        """
+        The faces are the complementary regions of the link diagram.
+        Each face is given as the list of edges oriented *clockwise* around
+        it; the edges are recorded by their corresponding CrossingEntryPoint.
+        Note that, the edges are viewed as unoriented so each edge will
+        appear exactly twice in the list of faces. 
+        """
+    
+        # Initially we work with *corners* of faces where (c, j)
+        # is corner of the face abutting crossing c between
+        # strand j and j + 1.  
+        
+        corners = { (c,i) for c in self.crossings for i in range(4) }
+        def next_corner( (c, i) ):
+            return c.adjacent[ (i+1) % 4 ]
+        def corner_to_CEP( (c, i) ):
+            cep = CrossingEntryPoint(c, i)
+            return cep if cep in c.entry_points() else CrossingEntryPoint(* c.adjacent[i] )
+
+        faces = []
+        while len(corners):
+            face = [corners.pop()]
+            while True:
+                next = next_corner(face[-1])
+                if next == face[0]:
+                    faces.append(face)
+                    break
+                else:
+                    corners.remove(next)
+                    face.append(next)
+
+        return [ [corner_to_CEP(corner) for corner in face] for face in faces]
+        
     def __len__(self):
         return len(self.vertices)
 
