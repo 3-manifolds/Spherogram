@@ -1,0 +1,3 @@
+Download the OGDF library from http://www.ogdf.net/ and unpack 
+into a subdirectory "ogdf_library" of this directory.  Compile 
+said library as per their instructions.

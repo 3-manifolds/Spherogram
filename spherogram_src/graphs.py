@@ -244,7 +244,7 @@ class Graph(object):
         """
         Return the set of incident edges.
         """
-        return self.incidence_dict[v]
+        return self.incidence_dict[vertex]
             
     def __getitem__(self, vertex):
         """
@@ -265,6 +265,8 @@ class Graph(object):
 
     def add_vertex(self, hashable):
         self.vertices.add(hashable)
+        if not self.incidence_dict.has_key(hashable):
+            self.incidence_dict[hashable] = []
         
     def incident(self, vertex):
         """
@@ -276,7 +278,7 @@ class Graph(object):
         """
         Return the valence of a vertex.
         """
-        return len(self.incidence_dict[v])
+        return len(self.incidence_dict[vertex])
 
     def components(self, deleted_vertices=[]):
         """
@@ -639,10 +641,23 @@ class Digraph(Graph):
 
     def incident(self, vertex):
         """
-        Return the set of non-loops which begin at the vertex.
+        Return the set of non-loops which *begin* at the vertex.
         """
         return set(e for e in self.incidence_dict[vertex]
                      if e.tail is vertex and not e.head is vertex)
+
+    def incident_to(self, vertex):
+        """
+        Return the set of non-loops which *end* at the vertex.
+        """
+        return set(e for e in self.incidence_dict[vertex]
+                     if e.head is vertex and not e.tail is vertex)
+
+    def in_valence(self, vertex):
+        return len([e for e in self.incidence_dict[vertex] if e.head is vertex])
+
+    def out_valence(self, vertex):
+        return len([e for e in self.incidence_dict[vertex] if e.tail is vertex])
 
     def components(self):
         """
