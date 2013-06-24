@@ -21,7 +21,7 @@ As all vertices (=crossings) of the underlying graph are 4-valent, things simpif
 the associated network N(P) has A_V empty and A_F has no self-loops.
 """
 
-import spherogram, snappy, collections, networkx, random, plink
+import spherogram, snappy, collections, networkx, random, plink, string
 from spherogram.links.links import CrossingStrand, CrossingEntryPoint, Strand
 
 
@@ -106,14 +106,22 @@ def _subdivide_edge(self, crossing_strand, n):
     strands[-1][1] = head.crossing[head.entry_point]
         
 spherogram.Link._subdivide_edge = _subdivide_edge
-    
+
+def kitty_corner(turns):
+    rotations = partial_sums(turns)
+    reflex_corners = [i for i, t in enumerate(turns) if t == -1]
+    for r0 in reflex_corners:
+            for r1 in reflex_corners:
+                if rotations[r1] - rotations[r0] == 2:
+                    return (r0, r1)
+
 class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):
         list.__init__(self, crossing_strands)
         self.edges = {link.CS_to_edge[c]:c for c in crossing_strands}
         self.exterior = exterior
-        self.angles =[90 for e in self] 
-
+        self.turns =[1 for e in self] 
+    
     def edge_of_intersection(self, other):
         """
         Returns edge as the pair of CrossingStrands for self and other which
@@ -136,18 +144,18 @@ class Face(CyclicList):
 
     def iterate_from(self, edge):
         i = self.index(edge)
-        return zip(self[i:] + self[:i], self.angles[i:] + self.angles[:i])
+        return zip(self[i:] + self[:i], self.turns[i:] + self.turns[:i])
 
-    def bend(self, edge, angles):
+    def bend(self, edge, turns):
         """
-        Assumes edge has already been subdivided by adding in len(angles) new
+        Assumes edge has already been subdivided by adding in len(turns) new
         vertices. 
         """
         i = self.index(edge)
-        for a in reversed(angles):
+        for t in reversed(turns):
             edge = edge.previous_corner()
             self.insert(i, edge)
-            self.angles.insert(i, a)
+            self.turns.insert(i, t)
 
     def orient_edges(self, edge, orientation):
         """
@@ -157,11 +165,17 @@ class Face(CyclicList):
         dirs = CyclicList(["left", "up", "right", "down"])
         dir = dirs.index(orientation)
         ans = dict()
-        for e, a in self.iterate_from(edge):
+        for e, t in self.iterate_from(edge):
             ans[e] = dirs[dir]
             ans[e.opposite()] = dirs[dir + 2]
-            dir = (dir + a // 90) % 4
+            dir = (dir + t) % 4
         return ans
+
+    def is_turn_regular(self):
+        if self.exterior:
+            return True
+        else:
+            return kitty_corner(self.turns) is None
     
     def __repr__(self):
         ext = '*' if self.exterior else ''
@@ -181,6 +195,11 @@ class Faces(list):
         strands = {e.crossing for e in self.edges
                       if isinstance(e.crossing, Strand)}
         self.strand_CEPs =  [CrossingEntryPoint(s, 0) for s in strands]
+        for i, c in enumerate(link.crossings):
+            c.label = i
+        for a, s in zip(string.ascii_letters, list(strands)):
+            s.label = a
+        
         
     
     def flow_networkx(faces):
@@ -221,11 +240,11 @@ class Faces(list):
                     w_b = flow[b][a]
                     A, B = self[a], self[b]
                     e_a, e_b = A.edge_of_intersection(B)
-                    angles_a = w_a*[90] + w_b*[270]
-                    angles_b = w_b*[90] + w_a*[270]
-                    self.link._subdivide_edge(e_a, len(angles_a))
-                    A.bend(e_a, angles_a)
-                    B.bend(e_b, angles_b)
+                    turns_a = w_a*[1] + w_b*[-1]
+                    turns_b = w_b*[1] + w_a*[-1]
+                    self.link._subdivide_edge(e_a, len(turns_a))
+                    A.bend(e_a, turns_a)
+                    B.bend(e_b, turns_b)
 
     def orient_edges(self):
         """
@@ -341,15 +360,8 @@ class OrthogonalFace(CyclicList):
         self.exterior = (rotation == -4)
 
     def kitty_corner(self):
-        if self.exterior:
-            return None
-        turns = self.turns
-        rotations = partial_sums(turns)
-        reflex_corners = [i for i, t in enumerate(turns) if t == -1]
-        for r0 in reflex_corners:
-            for r1 in reflex_corners:
-                if rotations[r1] - rotations[r0] == 2:
-                    return (r0, r1)
+        if not self.exterior:
+            return kitty_corner(self.turns)
 
     def is_turn_regular(self):
         return self.kitty_corner() is None
@@ -483,9 +495,13 @@ class OrthogonalRep(spherogram.Digraph):
             D.add_edge(vertex_to_chain[e.tail],
                        vertex_to_chain[e.head])
 
-        for u, v in self.saturation_edges(kind == 'horizontal'):
+        for u, v in self.saturation_edges(False):
             D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
-            
+        for u, v in self.saturation_edges(True):
+            if kind == 'vertical':
+                u, v = v, u
+                D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
+                
         D.vertex_to_chain = vertex_to_chain
         return D
 
@@ -535,13 +551,17 @@ plink.LinkEditor.load_from_spherogram = load_from_spherogram
 
 #----- testing code --------
 
+
+def link_from_manifold(manifold):
+    return spherogram.DTcodec(manifold.DT_code()).link()
+
 def random_link():
-    return spherogram.DTcodec(snappy.HTLinkExteriors.random().DT_code()).link()
+    return link_from_manifold(HTLinkExteriors.random())
 
 def check_faces(link):
     faces = link.faces()
     assert len(link.vertices) - len(link.edges) + len(faces) == 2
-    assert set(collections.Counter(sum( faces, [] )).values()) == {2}
+    assert set(collections.Counter(sum( faces, [] )).values()) == {1}
     assert link.is_planar()
 
 def test_face_method(N):
@@ -550,6 +570,25 @@ def test_face_method(N):
 
 def element(S):
     return list(S)[0]
+
+def appears_hyperbolic(M):
+    acceptable = ['all tetrahedra positively oriented',
+                  'contains negatively oriented tetrahedra']
+    return M.solution_type() in acceptable and M.volume() > 1.0 
+
+def test(manifold):
+    L = link_from_manifold(manifold)
+    M = snappy.Manifold()
+    M.LE.load_from_spherogram(L)
+    M.LE.callback()
+    if not appears_hyperbolic(M):
+        return True
+    return M.is_isometric_to(manifold)
+
+def big_test():
+    for M in snappy.HTLinkExteriors():
+            test(M)
+    
 
 unknot = spherogram.RationalTangle(1).numerator_closure()
 hopf = spherogram.RationalTangle(2).numerator_closure()
@@ -572,4 +611,19 @@ BOR = OrthogonalRep([(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)],
                     [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)])
 
 BOR2 = OrthogonalRep( [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)], [(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)])
-faces = Faces(trefoil)
+
+PDG = spherogram.Digraph([(0, 4), (3, 0), (3, 0), (1, 2), (0, 3), (1, 3), (0, 4), (0, 4), (1, 0), (4, 2), (3,0)])
+
+FOR2 = OrthogonalRep(  [(0, 8), (1, 2), (3,4), (6,5), (7, 9)], [ (0,1), (2, 3), (4, 5), (6, 7), (8, 9) ])
+FOR1 = OrthogonalRep(  [ (0,1), (2, 3), (4, 5), (6, 7), (8, 9) ], [(0, 8), (1, 2), (3,4), (6,5), (7, 9)])
+
+
+#L = link_from_manifold(snappy.Manifold('7a3'))
+L = link_from_manifold(snappy.Manifold('K6a1'))
+faces = Faces(L)
+
+def compare_turns(faces, OR):
+    shortlex = lambda x: (len(x), x)
+    return (sorted([ f.turns for f in faces ], key=shortlex), 
+            sorted([f.turns for f in OR.faces], key=shortlex))
+    
