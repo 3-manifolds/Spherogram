@@ -912,7 +912,7 @@ class DTcodec(object):
             else:
                 b = 0
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
-        return Link(crossing_dict.values(), check_planarity=False)
+        return Link(crossing_dict.values(), check_planarity=True)
 
     def KLPProjection(self):
         """
