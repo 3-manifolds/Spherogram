@@ -12,9 +12,13 @@ and
 Bridgeman et. al., Turn-Regularity and Planar Orthogonal Drawings
 ftp://ftp.cs.brown.edu/pub/techreports/99/cs99-04.pdf
 
-As all vertices (=crossings) of the underlying graph are 4-valent,
-things simpify; the associated network N(P) has A_V empty and A_F has no
-self-loops.
+A more concise summary of the algorithm is contained in 
+
+Hashemi and Tahmasbi, A better heuristic for area-compaction of orthogonal 
+representations.  http://dx.doi.org/10.1016/j.amc.2005.03.007
+
+As all vertices (=crossings) of the underlying graph are 4-valent, things simpify; 
+the associated network N(P) has A_V empty and A_F has no self-loops.
 """
 
 import spherogram, snappy, collections, networkx, random, plink
@@ -71,6 +75,12 @@ def topological_numbering(G):
 
     return numbering
 
+class CyclicList(list):
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            index = index % len(self)
+        return list.__getitem__(self, index)
+
 #----- Faces of link diagrams ------
 
 class DummyVertex:
@@ -97,7 +107,7 @@ def _subdivide_edge(self, crossing_strand, n):
         
 spherogram.Link._subdivide_edge = _subdivide_edge
     
-class Face(list):
+class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):
         list.__init__(self, crossing_strands)
         self.edges = {link.CS_to_edge[c]:c for c in crossing_strands}
@@ -144,12 +154,12 @@ class Face(list):
         Returns a dictionary of the induced directions of the edges (and their
         opposites) around the face.
         """
-        dirs = ["left", "up", "right", "down"]
+        dirs = CyclicList(["left", "up", "right", "down"])
         dir = dirs.index(orientation)
         ans = dict()
         for e, a in self.iterate_from(edge):
             ans[e] = dirs[dir]
-            ans[e.opposite()] = dirs[(dir + 2)%4]
+            ans[e.opposite()] = dirs[dir + 2]
             dir = (dir + a // 90) % 4
         return ans
     
@@ -294,8 +304,10 @@ class Faces(list):
         
 
 #----- Orhogonal representations ------
-   
-class OrthogonalFace(list):
+
+LabeledFaceVertex = collections.namedtuple('LabeledFaceVertex', ['index', 'kind', 'turn'])
+
+class OrthogonalFace(CyclicList):
     """
     A face of an OrthogonalRep oriented *clockwise* and stored as a list of
     pairs (edge, vertex) where vertex is gives the *clockwise* orientation
@@ -310,14 +322,14 @@ class OrthogonalFace(list):
             if self[0] == (edge, vertex):
                 break
             else:
-                self.append( (edge, vertex) )
+               self.append( (edge, vertex) )
                 
         self._add_turns()
         
     def _add_turns(self):
         self.turns = turns = []
         for i, (e0, v0) in enumerate(self):
-            (e1, v1) = self[(i + 1) % len(self)]
+            (e1, v1) = self[i + 1]
             if e0.kind == e1.kind:
                 turns.append(0)
             else:
@@ -341,8 +353,49 @@ class OrthogonalFace(list):
 
     def is_turn_regular(self):
         return self.kitty_corner() is None
-            
+
+    def switches(self, swap_hor_edges):
+        """
+        Returns a list of (index, source|sink, -1|1). 
+        """
+        def edge_to_endpoints(e):
+            if swap_hor_edges and e.kind == 'horizontal':
+                return e.head, e.tail
+            return e.tail, e.head 
         
+        ans = []
+        for i, (e0, v0) in enumerate(self):
+            t0, h0 = edge_to_endpoints(e0)
+            t1, h1 = edge_to_endpoints(self[i+1][0])
+            if t0 == t1 == v0:
+                ans.append( LabeledFaceVertex(i, 'source', self.turns[i]) )
+            elif h0 == h1 == v0: 
+                ans.append( LabeledFaceVertex(i, 'sink', self.turns[i]) )
+
+        # Normalize so it starts with a -1 turn, if any
+        for i, a in enumerate(ans):
+            if a.turn == -1:
+                ans = ans[i:] + ans[:i]
+                break
+        return ans
+
+    def saturation_edges(self, swap_hor_edges):
+        def saturate_face( face_info ):
+            for i in range(len(face_info) - 2):
+                x, y, z = face_info[i:i+3]
+                if x.turn == -1 and y.turn== z.turn == 1:
+                    a,b = (x, z) if  x.kind == 'sink' else (z, x)
+                    return [ (a.index, b.index)  ] + saturate_face(face_info[:i] + [LabeledFaceVertex(b.index, b.kind, 1)] + face_info[i+3:])
+            return []
+        new_edges = saturate_face(self.switches(swap_hor_edges))
+        return [ (self[a][1], self[b][1]) for a, b in new_edges]
+
+    def __repr__(self):
+        ext = '*' if self.exterior else ''
+        return list.__repr__(self) + ext
+            
+
+
 class OrthogonalRep(spherogram.Digraph):
     """
     An orthogonal representation is an equivalence class of planar
@@ -415,16 +468,24 @@ class OrthogonalRep(spherogram.Digraph):
 
         self.faces, self.dummy = regular, dummy
 
+    def saturation_edges(self, swap_hor_edges):
+        return sum( [face.saturation_edges(swap_hor_edges) for face in self.faces], [])
+        
     def DAG_from_direction(self, kind):
         H = spherogram.Digraph(
             pairs = [e for e in self.edges if e.kind == kind],
             singles = self.vertices)
+
         maximal_chains = H.components()
         vertex_to_chain = element_map(maximal_chains)
         D = spherogram.Digraph(singles=maximal_chains)
         for e in [e for e in self.edges if e.kind != kind]:
             D.add_edge(vertex_to_chain[e.tail],
                        vertex_to_chain[e.head])
+
+        for u, v in self.saturation_edges(kind == 'horizontal'):
+            D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
+            
         D.vertex_to_chain = vertex_to_chain
         return D
 
@@ -489,8 +550,7 @@ def test_face_method(N):
 
 def element(S):
     return list(S)[0]
-    
-    
+
 unknot = spherogram.RationalTangle(1).numerator_closure()
 hopf = spherogram.RationalTangle(2).numerator_closure()
 trefoil = spherogram.DTcodec([(4,6,2)]).link()
@@ -510,4 +570,6 @@ cs = CrossingStrand(element(trefoil.vertices), 0)
 
 BOR = OrthogonalRep([(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)],
                     [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)])
+
+BOR2 = OrthogonalRep( [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)], [(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)])
 faces = Faces(trefoil)
