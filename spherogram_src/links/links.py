@@ -108,10 +108,10 @@ class TotallyOrderedObject(object):   # Backport of the @total_ordering decorato
         return other < self
     def __ge__(self, other):
         return other <= self
-        
-class CrossingEntryPoint(TotallyOrderedObject):
+
+class CrossingStrand(TotallyOrderedObject):
     """
-    One of the two entry points of an oriented crossing
+    One of the four incoming strands at a crossing.
     """
     def __init__(self, crossing, entry_point):
         self.crossing, self.entry_point = crossing, entry_point
@@ -127,14 +127,46 @@ class CrossingEntryPoint(TotallyOrderedObject):
 
     def __hash__(self):
         return hash(self._tuple())
+
+    def rotate(self, s=1):
+        """
+        The CrossingStrand *counter-clockwise* from self.
+        """
+        return CrossingStrand(self.crossing, (self.entry_point + s) % len(self.crossing.adjacent))
+
+    def opposite(self):
+        """
+        The CrossingStrand at the other end of the edge from self
+        """
+        return CrossingStrand(* self.crossing.adjacent[self.entry_point] )
+
+    def next_corner(self):
+        return self.rotate().opposite()
+
+    def previous_corner(self):
+        return self.opposite().rotate(-1)
+
+    def __repr__(self):
+        return "<CS %s, %s>" % (self.crossing, self.entry_point)
     
+class CrossingEntryPoint(CrossingStrand):
+    """
+    One of the two entry points of an oriented crossing
+    """    
     def next(self):
         c, e = self.crossing, self.entry_point
-        return CrossingEntryPoint(*c.adjacent[ (e + 2) % 4])
+        s = 1 if isinstance(c, Strand) else 2
+        return CrossingEntryPoint(*c.adjacent[ (e + s) % (2*s)])
 
     def other(self):
         return [o for o in self.crossing.entry_points() if o != self][0]
 
+    def is_under_crossing(self):
+        return self.entry_point == 0
+
+    def is_over_crossing(self):
+        return self.entry_point != 0
+        
     def component(self):
         ans = [self]
         while True:
@@ -251,14 +283,13 @@ class Link(graphs.Digraph):
         
     def _build_components(self):
         """
-        Each component is stored as a list of *entry points*
-        to crossings.  The labeling of the entry points
-        (equivalently oriented edges) is compatible with
-        the DT convention that each crossing has both
-        an odd and and even incoming strand. 
+        Each component is stored as a list of *entry points* to
+        crossings.  The labeling of the entry points (equivalently
+        oriented edges) is compatible with the DT convention that each
+        crossing has both an odd and and even incoming strand.
         """
         remaining, components = set( self.crossing_entries() ), LinkComponents()
-        labels = Labels()
+        self.labels = labels = Labels()
         while len(remaining):
             if len(components) == 0:
                 d = remaining.pop()
@@ -278,13 +309,15 @@ class Link(graphs.Digraph):
             remaining = remaining - set(component)
 
         # Build the underlying graph
+        self.CS_to_edge = CS_to_edge = dict()
         for component in components:
             for c in component:
-                self.add_edge(c.crossing, c.next().crossing)
+                cs0 = CrossingStrand(c.crossing, c.entry_point)
+                cs1 = cs0.opposite()
+                e = self.add_edge(cs0.crossing, cs1.crossing)
+                CS_to_edge[cs0], CS_to_edge[cs1] = e, e
 
         self.link_components = components
-        self.labels = labels
-        
 
     def copy(self):
         return pickle.loads(pickle.dumps(self))
@@ -297,29 +330,21 @@ class Link(graphs.Digraph):
 
     def faces(self):
         """
-        The faces are the complementary regions of the link diagram.
-        Each face is given as the list of edges oriented *clockwise* around
-        it; the edges are recorded by their corresponding CrossingEntryPoint.
-        Note that, the edges are viewed as unoriented so each edge will
-        appear exactly twice in the list of faces. 
-        """
-    
-        # Initially we work with *corners* of faces where (c, j)
-        # is corner of the face abutting crossing c between
-        # strand j and j + 1.  
+        The faces are the complementary regions of the link diagram. Each face
+        is given as a list of corners of crossings as one goes around
+        *clockwise*.  These corners are recorded as CrossingStrands,
+        where CrossingStrand(c, j) denotes the corner of the face
+        abutting crossing c between strand j and j + 1.
         
-        corners = { (c,i) for c in self.crossings for i in range(4) }
-        def next_corner( (c, i) ):
-            return c.adjacent[ (i+1) % 4 ]
-        def corner_to_CEP( (c, i) ):
-            cep = CrossingEntryPoint(c, i)
-            return cep if cep in c.entry_points() else CrossingEntryPoint(* c.adjacent[i] )
-
+        Alternatively, the sequence of CrossingStrands can be regarded
+        as the *heads* of the oriented edges of the face.
+        """
+        corners = { CrossingStrand(c,i) for c in self.crossings for i in range(4) }
         faces = []
         while len(corners):
             face = [corners.pop()]
             while True:
-                next = next_corner(face[-1])
+                next = face[-1].next_corner()
                 if next == face[0]:
                     faces.append(face)
                     break
@@ -327,7 +352,7 @@ class Link(graphs.Digraph):
                     corners.remove(next)
                     face.append(next)
 
-        return [ [corner_to_CEP(corner) for corner in face] for face in faces]
+        return faces
         
     def __len__(self):
         return len(self.vertices)
