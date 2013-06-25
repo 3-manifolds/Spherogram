@@ -46,10 +46,9 @@ def appearances_dict(list_of_lists):
     return ans
 
 def partial_sums(L):
-    ans, sum = [], 0
+    ans = [0]
     for x in L:
-        sum += x
-        ans.append(sum)
+        ans.append(ans[-1] + x)
     return ans
 
 def topological_numbering(G):
@@ -111,7 +110,7 @@ def kitty_corner(turns):
     rotations = partial_sums(turns)
     reflex_corners = [i for i, t in enumerate(turns) if t == -1]
     for r0 in reflex_corners:
-            for r1 in reflex_corners:
+            for r1 in [r for r in reflex_corners if r > r0]:
                 if rotations[r1] - rotations[r0] == 2:
                     return (r0, r1)
 
@@ -273,11 +272,14 @@ class Faces(list):
         orientations = self.orientations
         spec = [[ (e.crossing, e.opposite().crossing) for e in self.edges if orientations[e] == dir] for dir in ['right', 'up']]
         ans = OrthogonalRep(*spec)
-
         face_sizes = sorted(len(F) for F in self)
         new_face_sizes = sorted(len(F) for F in ans.faces)
         assert face_sizes == new_face_sizes
         return ans
+
+    def orthogonal_spec(self):
+        orientations = self.orientations
+        return [[ (e.crossing.label, e.opposite().crossing.label) for e in self.edges if orientations[e] == dir] for dir in ['right', 'up']]
 
 
                 
@@ -384,21 +386,24 @@ class OrthogonalFace(CyclicList):
             elif h0 == h1 == v0: 
                 ans.append( LabeledFaceVertex(i, 'sink', self.turns[i]) )
 
-        # Normalize so it starts with a -1 turn, if any
-        for i, a in enumerate(ans):
-            if a.turn == -1:
-                ans = ans[i:] + ans[:i]
-                break
+
         return ans
 
     def saturation_edges(self, swap_hor_edges):
         def saturate_face( face_info ):
+            # Normalize so it starts with a -1 turn, if any
+            for i, a in enumerate(face_info):
+                if a.turn == -1:
+                    face_info = face_info[i:] + face_info[:i]
+                    break
             for i in range(len(face_info) - 2):
                 x, y, z = face_info[i:i+3]
                 if x.turn == -1 and y.turn== z.turn == 1:
                     a,b = (x, z) if  x.kind == 'sink' else (z, x)
-                    return [ (a.index, b.index)  ] + saturate_face(face_info[:i] + [LabeledFaceVertex(b.index, b.kind, 1)] + face_info[i+3:])
+                    remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
+                    return [ (a.index, b.index)  ] + saturate_face(remaining)
             return []
+        
         new_edges = saturate_face(self.switches(swap_hor_edges))
         return [ (self[a][1], self[b][1]) for a, b in new_edges]
 
@@ -406,8 +411,20 @@ class OrthogonalFace(CyclicList):
         ext = '*' if self.exterior else ''
         return list.__repr__(self) + ext
             
-
-
+def saturate_face( face_info ):
+            # Normalize so it starts with a -1 turn, if any
+            for i, a in enumerate(face_info):
+                if a.turn == -1:
+                    face_info = face_info[i:] + face_info[:i]
+                    break
+            for i in range(len(face_info) - 2):
+                x, y, z = face_info[i:i+3]
+                if x.turn == -1 and y.turn== z.turn == 1:
+                    a,b = (x, z) if  x.kind == 'sink' else (z, x)
+                    remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
+                    return [ (a.index, b.index)  ] + saturate_face(remaining)
+            return []
+        
 class OrthogonalRep(spherogram.Digraph):
     """
     An orthogonal representation is an equivalence class of planar
@@ -427,7 +444,7 @@ class OrthogonalRep(spherogram.Digraph):
             self.add_edge(a, b, 'vertical')
 
         self._build_faces()
-        self._make_turn_regular()
+        #self._make_turn_regular()
 
     def add_edge(self, a, b, kind):
         e = spherogram.Digraph.add_edge(self, a, b)
@@ -453,7 +470,8 @@ class OrthogonalRep(spherogram.Digraph):
         self.faces = []
         edge_sides = { (e, e.head) for e in self.edges } |  { (e, e.tail) for e in self.edges }
         while len(edge_sides):
-            face = OrthogonalFace(self, edge_sides.pop())
+            es = edge_sides.pop()
+            face = OrthogonalFace(self, es)
             edge_sides.difference_update(face)
             self.faces.append(face)
 
@@ -500,7 +518,7 @@ class OrthogonalRep(spherogram.Digraph):
         for u, v in self.saturation_edges(True):
             if kind == 'vertical':
                 u, v = v, u
-                D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
+            D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
                 
         D.vertex_to_chain = vertex_to_chain
         return D
@@ -518,14 +536,20 @@ class OrthogonalRep(spherogram.Digraph):
         H = self.chain_coordinates('vertical')
         return {v:(H[v], V[v]) for v in self.vertices}
 
-    def show(self, unit=10):
+    def show(self, unit=10, labels=True):
         pos = self.basic_grid_embedding()
         for v, (a,b) in pos.iteritems():
             pos[v] = (unit*a, unit*b)
-        verts = [ circle(p, 1, fill=True) for p in pos.itervalues() ]
+        if not labels:
+            verts = [ circle(p, 1, fill=True) for p in pos.itervalues() ]
+        else:
+            verts =  [ text(repr(v), p, fontsize=20, color='black') for v, p in pos.iteritems() ]
+            verts += [ circle(p, 1.5, fill=False) for p in pos.itervalues() ]
         edges = [ line( [pos[e.tail], pos[e.head]] ) for e in
                   self.edges if not e in self.dummy]
-        return sum(verts + edges, Graphics())
+        G = sum(verts + edges, Graphics())
+        G.axes(False)
+        return G
         
 #----- plink code --------
 
@@ -576,54 +600,53 @@ def appears_hyperbolic(M):
                   'contains negatively oriented tetrahedra']
     return M.solution_type() in acceptable and M.volume() > 1.0 
 
-def test(manifold):
-    L = link_from_manifold(manifold)
-    M = snappy.Manifold()
-    M.LE.load_from_spherogram(L)
-    M.LE.callback()
-    if not appears_hyperbolic(M):
-        return True
-    return M.is_isometric_to(manifold)
+def test(manifold_with_DT, plink_manifold=None):
+    L = link_from_manifold(manifold_with_DT)
+    PM = plink_manifold
+    if PM is None:
+        PM = snappy.Manifold()
+    PM.LE.load_from_spherogram(L)
+    PM.LE.callback()
+    if appears_hyperbolic(PM):
+        assert abs(manifold_with_DT.volume() - PM.volume())  < 0.000001
+        assert manifold_with_DT.is_isometric_to(PM)
 
 def big_test():
-    for M in snappy.HTLinkExteriors():
-            test(M)
-    
+    PM = snappy.Manifold()
+    while 1:
+        M = snappy.HTLinkExteriors.random()
+        print 'Testing Manifold:', M
+        ans = test(M, PM)
 
-unknot = spherogram.RationalTangle(1).numerator_closure()
-hopf = spherogram.RationalTangle(2).numerator_closure()
-trefoil = spherogram.DTcodec([(4,6,2)]).link()
-big_knot = spherogram.DTcodec([(4, 12, 14, 22, 20, 2, 28, 24, 6, 10, 26, 16, 8, 18)]).link()
-big_link = spherogram.DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link()
+if __name__ == '__main__':
+    unknot = spherogram.RationalTangle(1).numerator_closure()
+    hopf = spherogram.RationalTangle(2).numerator_closure()
+    trefoil = spherogram.DTcodec([(4,6,2)]).link()
+    big_knot = spherogram.DTcodec([(4, 12, 14, 22, 20, 2, 28, 24, 6, 10, 26, 16, 8, 18)]).link()
+    big_link = spherogram.DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link()
 
-square = OrthogonalRep([(0, 1), (3, 2)], [(0, 3), (1,2)])
-OR = OrthogonalRep([ (0,1), (2, 3), (3, 4), (5, 6), (6, 7), (7, 8), (9, 10)],
-                     [(0, 2), (1, 3), (2, 6), (3, 7), (4,8),(5,9),(6, 10)])
-kinked = OrthogonalRep([ (0, 1), (1, 2), (3, 4), (6, 7) ],
-                       [(0,3),(4,6), (2,5), (5,7)])
-kinked2 = OrthogonalRep([ (0,1), (2,3), (4,5), (6,7)], [(1,2), (0, 4), (3,7), (5,6)])
-kinked3 = OrthogonalRep([ (0,1), (2,3), (4,5), (6,7)], [(1,2), (0, 8),
-                                                        (8,4), (3,7), (5,6)])
+    square = OrthogonalRep([(0, 1), (3, 2)], [(0, 3), (1,2)])
+    OR = OrthogonalRep([ (0,1), (2, 3), (3, 4), (5, 6), (6, 7), (7, 8), (9, 10)],
+                         [(0, 2), (1, 3), (2, 6), (3, 7), (4,8),(5,9),(6, 10)])
+    kinked = OrthogonalRep([ (0, 1), (1, 2), (3, 4), (6, 7) ],
+                           [(0,3),(4,6), (2,5), (5,7)])
+    kinked2 = OrthogonalRep([ (0,1), (2,3), (4,5), (6,7)], [(1,2), (0, 4), (3,7), (5,6)])
+    kinked3 = OrthogonalRep([ (0,1), (2,3), (4,5), (6,7)], [(1,2), (0, 8),
+                                                            (8,4), (3,7), (5,6)])
+    BOR = OrthogonalRep([(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)],
+                        [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)])
 
-cs = CrossingStrand(element(trefoil.vertices), 0)
+    BOR2 = OrthogonalRep( [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)], [(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)])
 
-BOR = OrthogonalRep([(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)],
-                    [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)])
+    PDG = spherogram.Digraph([(0, 4), (3, 0), (3, 0), (1, 2), (0, 3), (1, 3), (0, 4), (0, 4), (1, 0), (4, 2), (3,0)])
 
-BOR2 = OrthogonalRep( [(0,3), (2,5), (3, 6), (4, 7), (6, 8), (1, 9)], [(0, 1), (2, 3), (3, 4), (5,6), (6,7), (8, 9)])
+    FOR2 = OrthogonalRep(  [(0, 8), (1, 2), (3,4), (6,5), (7, 9)], [ (0,1), (2, 3), (4, 5), (6, 7), (8, 9) ])
+    FOR1 = OrthogonalRep(  [ (0,1), (2, 3), (4, 5), (6, 7), (8, 9) ], [(0, 8), (1, 2), (3,4), (6,5), (7, 9)])
+    BDG = spherogram.Digraph([(1, 2), (5, 4), (1, 3), (1, 5), (2, 0), (0, 4), (5, 3), (5, 2), (3, 5)])
+    BOR3 = OrthogonalRep( [ (0, 1), (2, 3), (4,5), (6,7)], [(0,2), (3,4), (5,6), (1, 7)] )
+    BOR4 = OrthogonalRep( [ ('a', 'b'), ('c', 'd'), ('e', 'f'), ('g', 'h') ], [('a','g'), ('b','d'), ('c','f'), ('e', 'h')])
+    BOR5 = OrthogonalRep([(8,9), (3,2), (1, 0), (5, 4), (7,6)],[ (7, 8), (6, 5), (4,3), (1, 2), (0, 9)] )
+    face = OrthogonalFace(BOR5, (BOR5.incident(0).pop(), 0) )
+    spec = [[(3, 5), (2, 'b'), ('j', 'd'), (5, 2), ('i', 'n'), ('h', 'f'), ('k', 0), ('m', 'g'), ('a', 3), (4, 'e'), (0, 1), (6, 4), ('l', 6), (1, 'c')], [('b', 'g'), (5, 'j'), (2, 'd'), ('n', 4), ('i', 6), ('a', 'h'), (0, 3), ('l', 'k'), (3, 'm'), ('e', 'f'), (1, 5), (4, 1), (6, 0), ('c', 2)]]
 
-PDG = spherogram.Digraph([(0, 4), (3, 0), (3, 0), (1, 2), (0, 3), (1, 3), (0, 4), (0, 4), (1, 0), (4, 2), (3,0)])
-
-FOR2 = OrthogonalRep(  [(0, 8), (1, 2), (3,4), (6,5), (7, 9)], [ (0,1), (2, 3), (4, 5), (6, 7), (8, 9) ])
-FOR1 = OrthogonalRep(  [ (0,1), (2, 3), (4, 5), (6, 7), (8, 9) ], [(0, 8), (1, 2), (3,4), (6,5), (7, 9)])
-
-
-#L = link_from_manifold(snappy.Manifold('7a3'))
-L = link_from_manifold(snappy.Manifold('K6a1'))
-faces = Faces(L)
-
-def compare_turns(faces, OR):
-    shortlex = lambda x: (len(x), x)
-    return (sorted([ f.turns for f in faces ], key=shortlex), 
-            sorted([f.turns for f in OR.faces], key=shortlex))
-    
+    big_test()
