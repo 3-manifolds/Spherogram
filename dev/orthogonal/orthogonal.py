@@ -529,7 +529,7 @@ class OrthogonalLinkDiagram(list):
             
         return arrows, crossings
 
-    def plink_data(self, spacing=None):
+    def plink_data(self, spacing=None, canvas_width=None):
         """
         Returns:
         * a list of vertex positions
@@ -541,7 +541,7 @@ class OrthogonalLinkDiagram(list):
         y_max = max(b for a,b in emb.values())
 
         if spacing is None:   # Set size to fit nicely in default Plink window, if it fits
-            spacing = max(25, 500 // (max(x_max, y_max) + 2))
+            spacing = max(25, canvas_width // (max(x_max, y_max) + 2))
 
         # We rotate things so the long direction is horizontal.  The Plink canvas
         # coordinate system forces us to flip things to preserve crossing type.  
@@ -563,7 +563,7 @@ class OrthogonalLinkDiagram(list):
         if spacing == 25:
             size = (spacing*(x_max+2), spacing*(y_max+2))
         else:
-            size = (500, 500)
+            size = None
         return size, vertex_positions, arrows, crossings
         
         
@@ -576,7 +576,9 @@ class OrthogonalLinkDiagram(list):
 from plink import Vertex, Arrow, Crossing
 
 def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
-    size, vertices, arrows, crossings = OrthogonalLinkDiagram(link).plink_data(spacing)
+    width = self.window.winfo_width()
+
+    size, vertices, arrows, crossings = OrthogonalLinkDiagram(link).plink_data(spacing, width)
     self.clear()
     self.clear_text()
     for (x, y) in vertices:
@@ -590,9 +592,8 @@ def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
 
     self.create_colors()
     self.goto_start_state()
-    if adjust_plink_size:
-        self.canvas.config(width=size[0], height=size[1])
-        self.canvas.pack()
+    if adjust_plink_size and size:
+        self.window.geometry('%sx%s'% (size[0], size[1] + 25))
 
 plink.LinkEditor.load_from_spherogram = load_from_spherogram
 
@@ -632,7 +633,7 @@ def test(manifold_with_DT, plink_manifold=None):
     PM = plink_manifold
     if PM is None:
         PM = snappy.Manifold()
-    PM.LE.load_from_spherogram(L)
+    PM.LE.load_from_spherogram(L, None, False)
     PM.LE.callback()
     if appears_hyperbolic(PM):
         assert abs(manifold_with_DT.volume() - PM.volume())  < 0.000001

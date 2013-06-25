@@ -339,7 +339,7 @@ class Link(graphs.Digraph):
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.
         """
-        corners = { CrossingStrand(c,i) for c in self.crossings for i in range(4) }
+        corners = set([ CrossingStrand(c,i) for c in self.crossings for i in range(4) ])
         faces = []
         while len(corners):
             face = [corners.pop()]
