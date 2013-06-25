@@ -529,7 +529,7 @@ class OrthogonalLinkDiagram(list):
             
         return arrows, crossings
 
-    def plink_data(self, spacing = 25):
+    def plink_data(self, spacing=None):
         """
         Returns:
         * a list of vertex positions
@@ -537,15 +537,34 @@ class OrthogonalLinkDiagram(list):
         * a list of crossings in the format (arrow over, arrow under)
         """
         emb = self.orthogonal_rep().basic_grid_embedding()
+        x_max = max(a for a,b in emb.values())
+        y_max = max(b for a,b in emb.values())
+
+        if spacing is None:   # Set size to fit nicely in default Plink window, if it fits
+            spacing = max(25, 500 // (max(x_max, y_max) + 2))
+
+        # We rotate things so the long direction is horizontal.  The Plink canvas
+        # coordinate system forces us to flip things to preserve crossing type.  
         vertex_positions = []
         for v in self.strand_CEPs:
-            a, b = emb[v.crossing]
+            if x_max >= y_max:
+                a, b = emb[v.crossing]
+                b = y_max - b
+            else:
+                b, a = emb[v.crossing]
             vertex_positions.append( (spacing*(a+1), spacing*(b+1)) )
 
         vert_indices = {v:i for i, v in enumerate(self.strand_CEPs)}
         arrows, crossings = self.break_into_arrows()
         arrows = [ (vert_indices[a[0]], vert_indices[a[-1]]) for a in arrows]
-        return vertex_positions, arrows, crossings
+
+        if x_max < y_max:
+            x_max, y_max = y_max, x_max        
+        if spacing == 25:
+            size = (spacing*(x_max+2), spacing*(y_max+2))
+        else:
+            size = (500, 500)
+        return size, vertex_positions, arrows, crossings
         
         
 #---------------------------------------------------
@@ -556,8 +575,8 @@ class OrthogonalLinkDiagram(list):
 
 from plink import Vertex, Arrow, Crossing
 
-def load_from_spherogram(self, link, spacing=25):
-    vertices, arrows, crossings = OrthogonalLinkDiagram(link).plink_data(spacing)
+def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
+    size, vertices, arrows, crossings = OrthogonalLinkDiagram(link).plink_data(spacing)
     self.clear()
     self.clear_text()
     for (x, y) in vertices:
@@ -568,9 +587,12 @@ def load_from_spherogram(self, link, spacing=25):
     for u, o in crossings:
         U, O = self.Arrows[u], self.Arrows[o]
         self.Crossings.append(Crossing(O, U))
-    
+
     self.create_colors()
     self.goto_start_state()
+    if adjust_plink_size:
+        self.canvas.config(width=size[0], height=size[1])
+        self.canvas.pack()
 
 plink.LinkEditor.load_from_spherogram = load_from_spherogram
 
