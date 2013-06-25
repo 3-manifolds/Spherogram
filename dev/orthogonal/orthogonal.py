@@ -49,7 +49,7 @@ def topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
     """
-    in_valences = { v:G.in_valence(v) for v in G.vertices }
+    in_valences = dict( (v,G.in_valence(v)) for v in G.vertices  )
     numbering = {}
     curr_sources = [v for v,i in in_valences.iteritems() if i == 0]
     curr_number = 0
@@ -224,7 +224,7 @@ class OrthogonalRep(Digraph):
         
     def _build_faces(self):
         self.faces = []
-        edge_sides = { (e, e.head) for e in self.edges } |  { (e, e.tail) for e in self.edges }
+        edge_sides = set([ (e, e.head) for e in self.edges] + [ (e, e.tail) for e in self.edges ])
         while len(edge_sides):
             es = edge_sides.pop()
             face = OrthogonalFace(self, es)
@@ -282,7 +282,7 @@ class OrthogonalRep(Digraph):
     def chain_coordinates(self, kind):
         D = self.DAG_from_direction(kind)
         chain_coors = topological_numbering(D)
-        return { v:chain_coors[D.vertex_to_chain[v]] for v in self.vertices }
+        return dict( (v,chain_coors[D.vertex_to_chain[v]]) for v in self.vertices )
 
     def basic_grid_embedding(self, rotate=False):
         """
@@ -290,7 +290,7 @@ class OrthogonalRep(Digraph):
         """
         V = self.chain_coordinates('horizontal')
         H = self.chain_coordinates('vertical')
-        return {v:(H[v], V[v]) for v in self.vertices}
+        return dict( (v,(H[v], V[v])) for v in self.vertices)
 
     def show(self, unit=10, labels=True):
         pos = self.basic_grid_embedding()
@@ -316,7 +316,7 @@ class OrthogonalRep(Digraph):
 class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):
         list.__init__(self, crossing_strands)
-        self.edges = {link.CS_to_edge[c]:c for c in crossing_strands}
+        self.edges = dict( (link.CS_to_edge[c],c) for c in crossing_strands)
         self.exterior = exterior
         self.turns =[1 for e in self] 
     
@@ -395,8 +395,8 @@ class OrthogonalLinkDiagram(list):
         self.bend()
         self.orient_edges()
         self.edges = sum([F for F in self], [])
-        strands = {e.crossing for e in self.edges
-                      if isinstance(e.crossing, Strand)}
+        strands = set(e.crossing for e in self.edges
+                      if isinstance(e.crossing, Strand))
         self.strand_CEPs =  [CrossingEntryPoint(s, 0) for s in strands]
         for i, c in enumerate(link.crossings):
             c.label = i
@@ -461,7 +461,7 @@ class OrthogonalLinkDiagram(list):
         flow = networkx.min_cost_flow(N)
         for a, flows in flow.iteritems():
             for b, w_a in flows.iteritems():
-                if w_a and {'s', 't'}.isdisjoint({a, b}):
+                if w_a and set(['s', 't']).isdisjoint(set([a, b])):
                     w_b = flow[b][a]
                     A, B = self[a], self[b]
                     e_a, e_b = A.edge_of_intersection(B)
@@ -554,7 +554,7 @@ class OrthogonalLinkDiagram(list):
                 b, a = emb[v.crossing]
             vertex_positions.append( (spacing*(a+1), spacing*(b+1)) )
 
-        vert_indices = {v:i for i, v in enumerate(self.strand_CEPs)}
+        vert_indices = dict( (v,i) for i, v in enumerate(self.strand_CEPs))
         arrows, crossings = self.break_into_arrows()
         arrows = [ (vert_indices[a[0]], vert_indices[a[-1]]) for a in arrows]
 
@@ -613,7 +613,7 @@ def random_link():
 def check_faces(link):
     faces = link.faces()
     assert len(link.vertices) - len(link.edges) + len(faces) == 2
-    assert set(Counter(sum( faces, [] )).values()) == {1}
+    assert set(Counter(sum( faces, [] )).values()) == set([1])
     assert link.is_planar()
 
 def test_face_method(N):
