@@ -71,17 +71,24 @@ def basic_topological_numbering(G):
 def topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
-    which doesn't have any really stupid features that result in longer
-    edge lengths than necessary.
+    which doesn't have any local moves which decrease the lengths of the
+    (non-dummy) edges.
     """
     n = basic_topological_numbering(G)
-    sources = [v for v in G.vertices if G.in_valence(v) == 0]
-    for s in sources:
-        n[s] = min( n[e.head] for e in G.incident(s) ) - 1
-    sinks = [v for v in G.vertices if G.valence(v) == 0]
-    for t in sinks:
-        n[t] = max( n[e.head] for e in G.incident_to(t) ) + 1
-
+    success = True
+    while success:
+        success = False
+        for v in G.vertices:
+            below = len([e for e in G.incident_to(v) if e.dummy == False])
+            above = len([e for e in G.incident(v) if e.dummy == False])
+            if above != below:
+                if above > below:
+                    new_pos = min( n[e.head] for e in G.incident(v) ) - 1
+                else: 
+                    new_pos = max( n[e.tail] for e in G.incident_to(v) ) + 1
+                if new_pos != n[v]:
+                    n[v] = new_pos
+                    success = True
     return n
 
 
@@ -217,7 +224,7 @@ class OrthogonalRep(Digraph):
             self.add_edge(a, b, 'vertical')
 
         self._build_faces()
-        #self._make_turn_regular()
+        self._make_turn_regular()
 
     def add_edge(self, a, b, kind):
         e = Digraph.add_edge(self, a, b)
@@ -283,16 +290,19 @@ class OrthogonalRep(Digraph):
         vertex_to_chain = element_map(maximal_chains)
         D = Digraph(singles=maximal_chains)
         for e in [e for e in self.edges if e.kind != kind]:
-            D.add_edge(vertex_to_chain[e.tail],
+            d = D.add_edge(vertex_to_chain[e.tail],
                        vertex_to_chain[e.head])
+            d.dummy = e in self.dummy
 
         for u, v in self.saturation_edges(False):
-            D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
+            d = D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
+            d.dummy = True
         for u, v in self.saturation_edges(True):
             if kind == 'vertical':
                 u, v = v, u
-            D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
-                
+            d = D.add_edge(vertex_to_chain[u], vertex_to_chain[v])
+            d.dummy = True
+
         D.vertex_to_chain = vertex_to_chain
         return D
 
@@ -514,11 +524,7 @@ class OrthogonalLinkDiagram(list):
     def orthogonal_rep(self):
         orientations = self.orientations
         spec = [[ (e.crossing, e.opposite().crossing) for e in self.edges if orientations[e] == dir] for dir in ['right', 'up']]
-        ans = OrthogonalRep(*spec)
-        face_sizes = sorted(len(F) for F in self)
-        new_face_sizes = sorted(len(F) for F in ans.faces)
-        assert face_sizes == new_face_sizes
-        return ans
+        return OrthogonalRep(*spec)
 
     def orthogonal_spec(self):
         orientations = self.orientations
