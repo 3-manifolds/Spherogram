@@ -45,7 +45,7 @@ def partial_sums(L):
         ans.append(ans[-1] + x)
     return ans
 
-def topological_numbering(G):
+def basic_topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
     """
@@ -67,6 +67,23 @@ def topological_numbering(G):
         curr_number += 1
 
     return numbering
+
+def topological_numbering(G):
+    """
+    Finds an optimal weighted topological numbering a directed acyclic graph
+    which doesn't have any really stupid features that result in longer
+    edge lengths than necessary.
+    """
+    n = basic_topological_numbering(G)
+    sources = [v for v in G.vertices if G.in_valence(v) == 0]
+    for s in sources:
+        n[s] = min( n[e.head] for e in G.incident(s) ) - 1
+    sinks = [v for v in G.vertices if G.valence(v) == 0]
+    for t in sinks:
+        n[t] = max( n[e.head] for e in G.incident_to(t) ) + 1
+
+    return n
+
 
 def kitty_corner(turns):
     rotations = partial_sums(turns)
