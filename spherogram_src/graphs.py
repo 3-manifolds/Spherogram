@@ -267,7 +267,12 @@ class Graph(object):
         self.vertices.add(hashable)
         if not self.incidence_dict.has_key(hashable):
             self.incidence_dict[hashable] = []
-        
+
+    def remove_vertex(self, hashable):
+        self.vertices.remove(hashable)
+        incident = self.incidence_dict.pop(hashable)
+        self.edges -= set(incident)
+
     def incident(self, vertex):
         """
         Return the set of non-loops incident to the vertex.
@@ -328,6 +333,12 @@ class Graph(object):
         set of edges that cross the cut, a maximal family of
         weighted edge-disjoint paths from source to sink, and
         the set of edges with non-zero residual.
+
+        The edge capacities are supplied as a dictionary, with
+        edges as keys and the capacity of an edge as value.  If
+        no capacity dict is supplied, every edge is given capacity
+        1.
+        
         """
         if sink == source:
             return None
@@ -357,7 +368,7 @@ class Graph(object):
                 break
             # If we got to the sink, do the bookkeeping and continue.
             path = deque()
-            weight = residual[child]
+            flow = residual[child]
             while True:
                 path.appendleft( (vertex, child) )
                 children[vertex].add(child)
@@ -365,12 +376,12 @@ class Graph(object):
                     break
                 child = parent
                 parent, vertex = parents[child]
-                weight = min(weight, residual[child])
+                flow = min(flow, residual[child])
             for vertex, edge in path:
-                residual[edge] -= weight
+                residual[edge] -= flow
                 if residual[edge] == 0:
                     full_edges.add(edge)
-            path_list.append( (weight, path) )
+            path_list.append( (flow, path) )
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
