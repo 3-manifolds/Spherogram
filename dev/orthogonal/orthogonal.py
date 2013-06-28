@@ -409,8 +409,8 @@ class Face(CyclicList):
 
 class OrthogonalLinkDiagram(list):
     """
-    A link diagram where all edges are made up of horiztonal and vertical
-    segements.
+    A link diagram where all edges are made up of horizontal and vertical
+    segments.
     """
     
     def __init__(self, link):
