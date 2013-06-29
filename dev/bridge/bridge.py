@@ -24,8 +24,7 @@ import spherogram, snappy, random
 from spherogram import DTcodec, RationalTangle
 from spherogram.links.links import CrossingStrand
 
-def link_from_manifold(manifold):
-    return DTcodec(manifold.DT_code()).link()
+
 
 def bridge_LP(link):
     """
@@ -43,16 +42,15 @@ def bridge_LP(link):
     # We add a dummy vertex in the middle of each edge so it can bend.
     # The corners here must either both be flat or just one is large.  For
     # the corner to large, *both* flat_edge and large_edge must be 1.  
-    
     flat_edge = LP.new_variable(binary=True)
     large_edge = LP.new_variable(binary=True)
 
     # Exactly one complementary region is the exterior one.
-
     exterior = LP.new_variable(binary=True)
     faces = link.faces()
     LP.add_constraint(sum(exterior[i] for i, F in enumerate(faces)) == 1)
-    
+
+    # Now for the main constraints 
     for c in link.crossings:
         LP.add_constraint(hor_cross[c] + vert_cross[c] == 1)
         for ce in c.entry_points():
@@ -93,5 +91,16 @@ trefoil = DTcodec([(4,6,2)]).link()
 big_knot = DTcodec([(4, 12, 14, 22, 20, 2, 28, 24, 6, 10, 26, 16, 8, 18)]).link()
 big_link = DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link()
 
+
+def link_from_manifold(manifold):
+    return DTcodec(manifold.DT_code()).link()
+
 def random_16():
-    pass
+    n = random.randrange(1, 1008907)
+    return snappy.Manifold('16n%d' % n)
+
+def test_16(N):
+    for i in xrange(N):
+        M = random_16()
+        L = link_from_manifold(random_16())
+        print M.name(), bridge_LP(L)[0]
