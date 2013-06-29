@@ -66,6 +66,9 @@ class Crossing(object):
         verts = [0,1] if self.sign == -1 else [0, 3]
         return [CrossingEntryPoint(self, v) for v in verts]
 
+    def crossing_strands(self):
+        return [CrossingEntryPoint(self, v) for v in range(4)]
+    
     def __setitem__(self, i, other):
         o, j = other
         self.adjacent[i % 4] = other
@@ -280,7 +283,10 @@ class Link(graphs.Digraph):
 
     def crossing_entries(self):
         return sum([C.entry_points() for C in self.crossings], [])
-        
+
+    def crossing_strands(self):
+        return sum([C.crossing_strands() for C in self.crossings], [])
+
     def _build_components(self):
         """
         Each component is stored as a list of *entry points* to
