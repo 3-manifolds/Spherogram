@@ -83,7 +83,7 @@ class Crossing(object):
             return (a[0].label, a[1]) if a else None
         print( "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions) )
 
-    def T_info(self):
+    def DT_info(self):
         labels = self.strand_labels
         over = labels[3]+1 if self.sign == 1 else labels[1] + 1
         under = labels[0]+1
@@ -148,6 +148,16 @@ class CrossingStrand(TotallyOrderedObject):
 
     def previous_corner(self):
         return self.opposite().rotate(-1)
+
+    def oriented(self):
+        """
+        Returns the one of {self, opposite} which is the *head* of the
+        corresponding oriented edge of the link.
+        """
+        c, e = self.crossing, self.entry_point
+        if (c.sign == 1 and e in [0, 3]) or (c.sign == -1 and e in [0, 1]):
+            return self
+        return self.opposite()
 
     def __repr__(self):
         return "<CS %s, %s>" % (self.crossing, self.entry_point)
@@ -243,7 +253,7 @@ def enumerate_lists(lists, n=0, filter=lambda x:True):
         n += len(L)
     return ans
 
-class Link(graphs.Digraph):
+class Link(object):
     def __init__(self, crossings, check_planarity=True):
         if True in [ None in c.adjacent for c in crossings]:
             raise ValueError("No loose strands allowed")
@@ -253,7 +263,7 @@ class Link(graphs.Digraph):
         [s.fuse() for s in crossings if isinstance(s, Strand)]
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
         self._crossing_entries = set()
-        graphs.Digraph.__init__(self, [], [])
+        self.digraph = graphs.Digraph()
         self._orient_crossings()
         self._build_components()
 
@@ -315,13 +325,11 @@ class Link(graphs.Digraph):
             remaining = remaining - set(component)
 
         # Build the underlying graph
-        self.CS_to_edge = CS_to_edge = dict()
         for component in components:
             for c in component:
                 cs0 = CrossingStrand(c.crossing, c.entry_point)
                 cs1 = cs0.opposite()
-                e = self.add_edge(cs0.crossing, cs1.crossing)
-                CS_to_edge[cs0], CS_to_edge[cs1] = e, e
+                e = self.digraph.add_edge(cs0.crossing, cs1.crossing)
 
         self.link_components = components
 
@@ -329,9 +337,11 @@ class Link(graphs.Digraph):
         return pickle.loads(pickle.dumps(self))
     
     def is_planar(self):
-        if not self.is_connected():
+        if not self.digraph.is_connected():
             return False
-        euler = len(self.vertices) - len(self.edges) + len(self.faces())
+        v = len(self.crossings)
+        assert 2*v == len(self.digraph.edges)
+        euler = -v + len(self.faces())
         return euler == 2
 
     def faces(self):
@@ -361,11 +371,11 @@ class Link(graphs.Digraph):
         return faces
         
     def __len__(self):
-        return len(self.vertices)
+        return len(self.crossings)
 
     def PD_code(self, KnotTheory=False, min_strand_index=0):
         PD = []
-        for c in self.vertices:
+        for c in self.crossings:
             PD.append([s + min_strand_index for s in c.strand_labels[:]])
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
@@ -374,7 +384,7 @@ class Link(graphs.Digraph):
         return PD
 
     def DT_code(self, DT_alpha=False):
-        DT_dict = dict( [ c.DT_info() for c in self.vertices] )
+        DT_dict = dict( [ c.DT_info() for c in self.crossings] )
         odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
         DT = [ [DT_dict[x] for x in component] for component in odd_labels]
 
@@ -389,7 +399,7 @@ class Link(graphs.Digraph):
         return DT
 
     def peer_code(self):
-        peer = dict( [ c.peer_info() for c in self.vertices] )
+        peer = dict( [ c.peer_info() for c in self.crossings] )
         even_labels = enumerate_lists(self.link_components, n=0, filter=lambda x:x%2==0)
         ans = '[' + ','.join([repr([peer[c][0] for c in comp])[1:-1].replace(',', '') for comp in even_labels])
         ans += '] / ' + ' '.join([ ['_', '+', '-'][peer[c][1]] for c in sum(even_labels, [])])
@@ -436,7 +446,7 @@ class KLPCrossing(object):
         return getattr(self, info_type)[vertex]
 
 def python_KLP(L):
-    vertices = list(L.vertices)
+    vertices = list(L.crossings)
     for i, v in enumerate(vertices):
         v._KLP_index = i
     return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]

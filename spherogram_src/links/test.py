@@ -97,7 +97,8 @@ def alexander_polynomial_test():
         return 
 
     from sage.all import mathematica, PolynomialRing, ZZ
-    
+
+    mathematica.execute('AppendTo[$Path, "/pkgs"]')
     mathematica.execute('<<KnotTheory`')
     mathematica.execute('Off[KnotTheory::loading]')
     mathematica.execute('Off[KnotTheory::credits]')

@@ -343,7 +343,7 @@ class OrthogonalRep(Digraph):
 class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):
         list.__init__(self, crossing_strands)
-        self.edges = dict( (link.CS_to_edge[c],c) for c in crossing_strands)
+        self.edges = dict( (c.oriented(),c) for c in crossing_strands)
         self.exterior = exterior
         self.turns =[1 for e in self] 
     
