@@ -406,7 +406,25 @@ class Face(CyclicList):
         ext = '*' if self.exterior else ''
         return list.__repr__(self) + ext
 
+def subdivide_edge(crossing_strand, n):
+    """
+    Given a CrossingStrand, subdivides the edge for which it's the *head*
+    into (n + 1) pieces.
 
+    WARNING: this breaks several of the link's internal data structures.
+    """
+    head = crossing_strand
+    backwards = not (head in head.crossing.entry_points())
+    if backwards:
+        head = head.opposite()
+    tail = head.opposite()
+    strands = [Strand() for i in range(n)]
+    strands[0][0] = tail.crossing[tail.entry_point]
+    for i in range(n - 1):
+        strands[i][1] = strands[i+1][0]
+    strands[-1][1] = head.crossing[head.entry_point]
+
+        
 class OrthogonalLinkDiagram(list):
     """
     A link diagram where all edges are made up of horizontal and vertical
@@ -459,24 +477,6 @@ class OrthogonalLinkDiagram(list):
 
         return G
 
-
-    def subdivide_edge(self, crossing_strand, n):
-        """
-        Given a CrossingStrand, subdivides the edge for which it's the *head*
-        into (n + 1) pieces.
-
-        WARNING: this breaks several of the link's internal data structures.
-        """
-        head = crossing_strand
-        backwards = not (head in head.crossing.entry_points())
-        if backwards:
-            head = head.opposite()
-        tail = head.opposite()
-        strands = [Strand() for i in range(n)]
-        strands[0][0] = tail.crossing[tail.entry_point]
-        for i in range(n - 1):
-            strands[i][1] = strands[i+1][0]
-        strands[-1][1] = head.crossing[head.entry_point]
     
     def bend(self):
         """
@@ -494,7 +494,7 @@ class OrthogonalLinkDiagram(list):
                     e_a, e_b = A.edge_of_intersection(B)
                     turns_a = w_a*[1] + w_b*[-1]
                     turns_b = w_b*[1] + w_a*[-1]
-                    self.subdivide_edge(e_a, len(turns_a))
+                    subdivide_edge(e_a, len(turns_a))
                     A.bend(e_a, turns_a)
                     B.bend(e_b, turns_b)
 

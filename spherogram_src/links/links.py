@@ -10,7 +10,7 @@ See the file "doc.pdf" for the conventions, and the file
 
 """
 from .. import graphs
-import  string, os, sys, re
+import  string, os, sys, re, collections
 try:
     import cPickle as pickle
 except ImportError: # Python 3
@@ -100,37 +100,12 @@ class Crossing(object):
 
         return ans
 
+BasicCrossingStrand = collections.namedtuple('BasicCrossingStrand', ['crossing', 'entry_point'])
 
-class TotallyOrderedObject(object):   # Backport of the @total_ordering decorator
-    "Give __eq__ and __lt__ fills in the rest"
-    def __le__(self, other):
-        return self < other or self == other
-    def __ne__(self, other):
-        return not self == other
-    def __gt__(self, other):
-        return other < self
-    def __ge__(self, other):
-        return other <= self
-
-class CrossingStrand(TotallyOrderedObject):
+class CrossingStrand(BasicCrossingStrand):
     """
     One of the four incoming strands at a crossing.
     """
-    def __init__(self, crossing, entry_point):
-        self.crossing, self.entry_point = crossing, entry_point
-
-    def _tuple(self):
-        return (self.crossing, self.entry_point)
-
-    def __lt__(self, other):
-        return self._tuple() < other._tuple()
-    
-    def __eq__(self, other):
-        return self._tuple() == other._tuple()
-
-    def __hash__(self):
-        return hash(self._tuple())
-
     def rotate(self, s=1):
         """
         The CrossingStrand *counter-clockwise* from self.
