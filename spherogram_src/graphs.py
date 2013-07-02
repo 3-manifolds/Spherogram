@@ -263,15 +263,25 @@ class Graph(object):
                 self.incidence_dict[v] = [edge]
         return edge
 
+    def remove_edge(self, edge):
+        for vertex in edge:
+            try:
+                self.incidence_dict[vertex].remove(edge)
+            except KeyError, ValueError:
+                pass
+        self.edges.remove(edge)
+
     def add_vertex(self, hashable):
         self.vertices.add(hashable)
         if not self.incidence_dict.has_key(hashable):
             self.incidence_dict[hashable] = []
 
     def remove_vertex(self, hashable):
+        incident = list(self.incidence_dict[hashable])
+        for edge in incident:
+            self.remove_edge(edge)
         self.vertices.remove(hashable)
-        incident = self.incidence_dict.pop(hashable)
-        self.edges -= set(incident)
+        self.incidence_dict.pop(hashable)
 
     def incident(self, vertex):
         """
@@ -284,6 +294,20 @@ class Graph(object):
         Return the valence of a vertex.
         """
         return len(self.incidence_dict[vertex])
+
+    def depth_first_search(self, start):
+        if start not in self.vertices:
+            raise ValueError('That starting vertex is not in the graph.')
+        stack = [start]
+        seen = set(stack)
+        remaining = set(self.vertices)
+        while remaining:
+            current = stack.pop()
+            remaining.remove(current)
+            neighbors = self[current]
+            stack += [v for v in neighbors if v not in seen]
+            seen.update(neighbors)
+            yield current
 
     def components(self, deleted_vertices=[]):
         """
