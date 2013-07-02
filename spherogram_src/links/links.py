@@ -312,7 +312,7 @@ class Link(object):
         return pickle.loads(pickle.dumps(self))
     
     def is_planar(self):
-        if not self.digraph.is_connected():
+        if not self.digraph.is_weakly_connected():
             return False
         v = len(self.crossings)
         assert 2*v == len(self.digraph.edges)

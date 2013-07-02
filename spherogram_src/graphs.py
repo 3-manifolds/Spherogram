@@ -341,7 +341,7 @@ class Graph(object):
                 component.add(new_vertex)
                 if new_vertex in vertices:
                     vertices.remove(new_vertex)
-            result.append(component)
+            result.append(frozenset(component))
         return result
 
     def is_connected(self, deleted_vertices=[]):
@@ -704,7 +704,21 @@ class Digraph(Graph):
     def out_valence(self, vertex):
         return len([e for e in self.incidence_dict[vertex] if e.tail is vertex])
 
-    def components(self):
+    def is_weakly_connected(self):
+        """
+        A digraph is weakly connected if the associated undirected graph
+        is connected.
+        """
+        return len(self.components()) <= 1
+
+    def is_connected(self):
+        """
+        A digraph is connected if, for every pair of vertices v, w there
+        is either a directed path from v to w or a directed path from w to v.
+        """
+        raise ValueError('Digraph.is_connected has not been written yet.')
+        
+    def strong_components(self):
         """
         Return the vertex sets of the strongly connected components.
 
@@ -717,8 +731,13 @@ class Digraph(Graph):
         """
         return StrongConnector(self).components
 
-    def is_connected(self):
-        return len(self.components()) <= 1
+    def is_strongly_connected(self):
+        """
+        A digraph is stronlgy connected if, for every pair of vertices
+        v, w there is a directed path from v to w and a directed path
+        from w to v.
+        """
+        return len(self.strong_components()) <= 1
 
     def component_DAG(self):
         """
