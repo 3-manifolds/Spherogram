@@ -24,6 +24,7 @@ the associated network N(P) has A_V empty and A_F has no self-loops.
 import snappy, networkx, random, plink, string
 from spherogram.links.links import CrossingStrand, CrossingEntryPoint, Strand
 from spherogram import CyclicList, Digraph, RationalTangle, DTcodec
+import spherogram.graphs
 from collections import *
 
 #---------------------------------------------------
@@ -505,8 +506,11 @@ class OrthogonalLinkDiagram(list):
         """
         orientations = {self[0][0]:'right'}
         N = self.face_network.to_undirected()
-        N.remove_node('s'), N.remove_node('t')
-        for i in networkx.traversal.dfs_preorder_nodes(N, 0):
+        G = spherogram.graphs.Graph(N.edges())
+#        N.remove_node('s'), N.remove_node('t')
+#        for i in networkx.traversal.dfs_preorder_nodes(N, 0):
+        G.remove_vertex('s'), G.remove_vertex('t')
+        for i in G.depth_first_search(0):
             F = self[i]
             for edge in F:
                 if orientations.has_key(edge):
