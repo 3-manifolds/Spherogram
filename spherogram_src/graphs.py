@@ -11,9 +11,12 @@ and an optional list of additional vertices, which may be isolated.
 Vertices are saved as a set, so redundancies in the vertex list will
 be ignored.  Edges are saved as a list, so multiple edges are allowed.
 
-If G is a graph and v a vertex of G then G[v] is a list of distinct
-vertices adjacent to v.  If G is a digraph, then G[v] is the list of
-distinct heads of directed edges with tail v.
+If G is a graph and v a vertex of G then G[v] is a list of vertices
+adjacent to v.  If there are n edges joining v to w then w will
+appear in this list n times.  If G is a digraph, then G[v] returns
+a list of all endpoints of edges having either head or tail at v.
+There additional Digraph methods to get lists of incoming or outgoing
+edges.
 
 For most graphs G, G(v) returns the set of edges incident to G.
 In the case of a FatGraph, the return value is the ordered list
@@ -27,8 +30,8 @@ One can iterate over edges as:
 for x, y in G.edges:
   ...
 
-where x and y will be the two endpoints of the edge (tail and head
-in the case of directed edges).
+where x and y will be the two endpoints of the edge (ordered as
+tail, head in the case of directed edges).
 """
 
 try:
@@ -182,7 +185,7 @@ class FatEdge(Edge):
             raise ValueError('Vertex is not an end of this edge.')
 
 
-class EdgesBFO(object):
+class EdgesDFO(object):
     """
     Iterator for non-loop edges of a graph in the complement of
     a forbidden set, ordered by distance from the source.
@@ -248,7 +251,7 @@ class Graph(object):
             
     def __getitem__(self, vertex):
         """
-        Return a list of adjacent vertices.
+        Return a list of adjacent vertices, one per incident edge.
         """
         return [e(vertex) for e in self.incidence_dict[vertex]]
 
@@ -296,17 +299,20 @@ class Graph(object):
         return len(self.incidence_dict[vertex])
 
     def depth_first_search(self, start):
+        """
+        Generator which yields the vertices in the same component as
+        start, in depth-first order beginning with start.
+        """
         if start not in self.vertices:
             raise ValueError('That starting vertex is not in the graph.')
         stack = [start]
         seen = set(stack)
-        remaining = set(self.vertices)
-        while remaining:
+        while stack:
             current = stack.pop()
-            remaining.remove(current)
-            neighbors = self[current]
-            stack += [v for v in neighbors if v not in seen]
-            seen.update(neighbors)
+            for v in self[current]:
+                if v not in seen:
+                    stack.append(v)
+                    seen.add(v)
             yield current
 
     def components(self, deleted_vertices=[]):
@@ -330,7 +336,7 @@ class Graph(object):
         while vertices:
             component, start = set(), vertices.pop()
             component.add(start)
-            for parent, vertex, child in EdgesBFO(self, start, forbidden):
+            for parent, vertex, child in EdgesDFO(self, start, forbidden):
                 new_vertex = child(vertex)
                 component.add(new_vertex)
                 if new_vertex in vertices:
@@ -379,7 +385,7 @@ class Graph(object):
         while True:
             # Try to find a new path from source to sink
             parents, cut_set, reached_sink = {}, set([source]), False
-            for parent, vertex, child in EdgesBFO(self, source, full_edges):
+            for parent, vertex, child in EdgesDFO(self, source, full_edges):
                  parents[child] = (parent, vertex)
                  cut_set.add(child(vertex))
                  if child(vertex) == sink:
@@ -681,6 +687,8 @@ class Digraph(Graph):
         return set(e for e in self.incidence_dict[vertex]
                      if e.tail is vertex and not e.head is vertex)
 
+    outgoing = incident
+    
     def incident_to(self, vertex):
         """
         Return the set of non-loops which *end* at the vertex.
@@ -688,6 +696,8 @@ class Digraph(Graph):
         return set(e for e in self.incidence_dict[vertex]
                      if e.head is vertex and not e.tail is vertex)
 
+    incoming = incident_to
+    
     def in_valence(self, vertex):
         return len([e for e in self.incidence_dict[vertex] if e.head is vertex])
 
