@@ -34,14 +34,17 @@ where x and y will be the two endpoints of the edge (ordered as
 tail, head in the case of directed edges).
 """
 
+_within_sage = False
 try:
     import sage.all
     import sage.graphs.graph
     _within_sage = True
 except ImportError:
-    from .planarity import planar
-    from spherogram.planarity import planar
-    _within_sage = False
+    try:
+        from .planarity import planar
+        from spherogram.planarity import planar
+    except ValueError: # Allow importing from source directory
+        pass
     
 from collections import deque
 import operator
@@ -69,7 +72,7 @@ class BaseEdge(tuple):
     def __hash__(self):
         return id(self)
     
-    def inciden_to(self):
+    def incident_to(self):
         return list(self)
     
     def is_loop(self):
@@ -374,8 +377,8 @@ class Graph(object):
         The edge capacities are supplied as a dictionary, with
         edges as keys and the capacity of an edge as value.  If
         no capacity dict is supplied, every edge is given capacity
-        1.
-        
+        1.  Edges omitted from the capacity dict have infinite
+        capacity.
         """
         if sink == source:
             return None
@@ -383,6 +386,9 @@ class Graph(object):
             residual = dict.fromkeys(self.edges, 1)
         else:
             residual = dict.copy(capacity)
+            for e in self.edges:
+                if e not in residual:
+                    residual[e] = float('inf')
         full_edges = set([e for e in self.edges if residual[e] == 0])
         children = {}
         for vertex in self.vertices:
@@ -426,8 +432,16 @@ class Graph(object):
                               if vertex in edge
                               and edge(vertex) not in cut_set])
         unsaturated = [ e for e in self.edges if residual[e] > 0 ]
+        flow_dict = dict.fromkeys(self.edges, 0)
+        for flow, edges in path_list:
+            for vertex, edge in edges:
+                if vertex == edge[0]:
+                    flow_dict[edge] += flow
+                else:
+                    flow_dict[edge] -= flow
         return {'set': cut_set, 'edges': cut_edges, 'paths': path_list,
-                'unsaturated': unsaturated}
+                'residuals': residual, 'unsaturated': unsaturated,
+                'flow': flow_dict}
 
     def reduced(self):
         R = ReducedGraph()
