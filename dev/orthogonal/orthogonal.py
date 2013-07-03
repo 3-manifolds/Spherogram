@@ -50,7 +50,7 @@ def basic_topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
     """
-    in_valences = dict( (v,G.in_valence(v)) for v in G.vertices  )
+    in_valences = dict( (v,G.indegree(v)) for v in G.vertices  )
     numbering = {}
     curr_sources = [v for v,i in in_valences.iteritems() if i == 0]
     curr_number = 0
@@ -59,7 +59,7 @@ def basic_topological_numbering(G):
         for v in curr_sources: 
             in_valences.pop(v)
             numbering[v] = curr_number
-            for e in G.incident(v):
+            for e in G.outgoing(v):
                 w = e.head
                 in_valences[w] -= 1
                 if in_valences[w] == 0:
@@ -80,13 +80,13 @@ def topological_numbering(G):
     while success:
         success = False
         for v in G.vertices:
-            below = len([e for e in G.incident_to(v) if e.dummy == False])
-            above = len([e for e in G.incident(v) if e.dummy == False])
+            below = len([e for e in G.incoming(v) if e.dummy == False])
+            above = len([e for e in G.outgoing(v) if e.dummy == False])
             if above != below:
                 if above > below:
-                    new_pos = min( n[e.head] for e in G.incident(v) ) - 1
+                    new_pos = min( n[e.head] for e in G.outgoing(v) ) - 1
                 else: 
-                    new_pos = max( n[e.tail] for e in G.incident_to(v) ) + 1
+                    new_pos = max( n[e.tail] for e in G.incoming(v) ) + 1
                 if new_pos != n[v]:
                     n[v] = new_pos
                     success = True
@@ -265,7 +265,7 @@ class OrthogonalRep(Digraph):
             i,j = F.kitty_corner()
             v0, v1 = F[i][1], F[j][1]
             kind = random.choice( ('vertical', 'horizontal'))
-            if len([e for e in self.incident_to(v0) if e.kind == kind]):
+            if len([e for e in self.incoming(v0) if e.kind == kind]):
                 e = self.add_edge(v0, v1, kind)
             else:
                 e = self.add_edge(v1, v0, kind)
@@ -287,7 +287,7 @@ class OrthogonalRep(Digraph):
             pairs = [e for e in self.edges if e.kind == kind],
             singles = self.vertices)
 
-        maximal_chains = H.components()
+        maximal_chains = H.weak_components()
         vertex_to_chain = element_map(maximal_chains)
         D = Digraph(singles=maximal_chains)
         for e in [e for e in self.edges if e.kind != kind]:
@@ -701,7 +701,7 @@ if __name__ == '__main__':
     BOR3 = OrthogonalRep( [ (0, 1), (2, 3), (4,5), (6,7)], [(0,2), (3,4), (5,6), (1, 7)] )
     BOR4 = OrthogonalRep( [ ('a', 'b'), ('c', 'd'), ('e', 'f'), ('g', 'h') ], [('a','g'), ('b','d'), ('c','f'), ('e', 'h')])
     BOR5 = OrthogonalRep([(8,9), (3,2), (1, 0), (5, 4), (7,6)],[ (7, 8), (6, 5), (4,3), (1, 2), (0, 9)] )
-    face = OrthogonalFace(BOR5, (BOR5.incident(0).pop(), 0) )
+    face = OrthogonalFace(BOR5, (BOR5.outgoing(0).pop(), 0) )
     spec = [[(3, 5), (2, 'b'), ('j', 'd'), (5, 2), ('i', 'n'), ('h', 'f'), ('k', 0), ('m', 'g'), ('a', 3), (4, 'e'), (0, 1), (6, 4), ('l', 6), (1, 'c')], [('b', 'g'), (5, 'j'), (2, 'd'), ('n', 4), ('i', 6), ('a', 'h'), (0, 3), ('l', 'k'), (3, 'm'), ('e', 'f'), (1, 5), (4, 1), (6, 0), ('c', 2)]]
 
     big_test()
