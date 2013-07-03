@@ -245,7 +245,8 @@ class Graph(object):
 
     def __call__(self, vertex):
         """
-        Return the set of incident edges.
+        Return a list of incident edges, including loops, which appear
+        twice.
         """
         return self.incidence_dict[vertex]
             
@@ -254,6 +255,18 @@ class Graph(object):
         Return a list of adjacent vertices, one per incident edge.
         """
         return [e(vertex) for e in self.incidence_dict[vertex]]
+
+    def incident(self, vertex):
+        """
+        Return the set of non-loops incident to the vertex.
+        """
+        return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
+
+    def children(self, vertex):
+        """
+        Return the set of distinct adjacent vertices.
+        """
+        return set(e(vertex) for e in self.incidence_dict[vertex])
 
     def add_edge(self, *args):
         edge = self.Edge(*args)
@@ -286,12 +299,6 @@ class Graph(object):
         self.vertices.remove(hashable)
         self.incidence_dict.pop(hashable)
 
-    def incident(self, vertex):
-        """
-        Return the set of non-loops incident to the vertex.
-        """
-        return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
-
     def valence(self, vertex):
         """
         Return the valence of a vertex.
@@ -309,7 +316,7 @@ class Graph(object):
         seen = set(stack)
         while stack:
             current = stack.pop()
-            for v in self[current]:
+            for v in self.children(current):
                 if v not in seen:
                     stack.append(v)
                     seen.add(v)
@@ -678,45 +685,90 @@ class FatGraph(Graph):
         return len(self.vertices) - len(self.edges) + len(self.boundary_cycles())
 
 class Digraph(Graph):
+    """
+    A directed graph.  This subclass adds methods for finding incoming
+    and outgoing edges, indegree and outdegree, and deals with all
+    three notions of connectedness for digraphs.
+
+    >>> G = Digraph([(0,1),(1,2),(2,3),(3,1),(4,2)])
+    >>> G.indegree(1), G.outdegree(1)
+    (2, 1)
+    >>> G.is_weakly_connected()
+    True
+    >>> G.is_connected()
+    False
+    >>> G.is_strongly_connected()
+    False
+    >>> G.components()
+    Traceback (most recent call last):
+        ...
+    ValueError: Not meaningful for Digraphs.
+    Use weak_components() or strong_components()
+    >>> G.weak_components()
+    [frozenset([0, 1, 2, 3, 4])]
+    >>> G.strong_components()
+    [frozenset([1, 2, 3]), frozenset([0]), frozenset([4])]
+    """
+
     edge_class = DirectedEdge
 
-    def incident(self, vertex):
+    def outgoing(self, vertex):
         """
-        Return the set of non-loops which *begin* at the vertex.
+        Return the set of non-loop edges which *begin* at the vertex.
         """
-        return set(e for e in self.incidence_dict[vertex]
+        return set(e for e in self(vertex)
                      if e.tail is vertex and not e.head is vertex)
 
-    outgoing = incident
-    
-    def incident_to(self, vertex):
+    def incoming(self, vertex):
         """
-        Return the set of non-loops which *end* at the vertex.
+        Return the set of non-loop edges which *end* at the vertex.
         """
-        return set(e for e in self.incidence_dict[vertex]
+        return set(e for e in self(vertex)
                      if e.head is vertex and not e.tail is vertex)
 
-    incoming = incident_to
-    
-    def in_valence(self, vertex):
+    def children(self, vertex):
+        """
+        Return the set of distinct vertices which are endpoints of
+        outgoing non-loop edges.
+        """
+        return set(e(vertex) for e in self.outgoing(vertex))
+
+    def indegree(self, vertex):
         return len([e for e in self.incidence_dict[vertex] if e.head is vertex])
 
-    def out_valence(self, vertex):
+    def outdegree(self, vertex):
         return len([e for e in self.incidence_dict[vertex] if e.tail is vertex])
+
+    weak_components = Graph.components
+
+    def components(self):
+        raise ValueError('Not meaningful for Digraphs.\n'
+                         'Use weak_components() or strong_components()')
 
     def is_weakly_connected(self):
         """
         A digraph is weakly connected if the associated undirected graph
         is connected.
         """
-        return len(self.components()) <= 1
+        return len(self.weak_components()) <= 1
 
     def is_connected(self):
         """
-        A digraph is connected if, for every pair of vertices v, w there
-        is either a directed path from v to w or a directed path from w to v.
+        A digraph is connected if, for every pair of vertices v, w,
+        there is either a directed path from v to w or a directed path
+        from w to v.  This is equivalent to the condition that the
+        strong component DAG be a linear order.  Note that
+        reachability is not a symmetric relation, so there is no
+        associated notion of a connected component.
         """
-        raise ValueError('Digraph.is_connected has not been written yet.')
+        DAG = self.component_DAG()
+        if not DAG.is_weakly_connected():
+            return False
+        elif [v for v in DAG.vertices
+              if DAG.indegree(v)>1 or DAG.outdegree(v)>1]:
+            return False
+        else:
+            return True
         
     def strong_components(self):
         """
@@ -733,8 +785,8 @@ class Digraph(Graph):
 
     def is_strongly_connected(self):
         """
-        A digraph is stronlgy connected if, for every pair of vertices
-        v, w there is a directed path from v to w and a directed path
+        A digraph is strongly connected if, for every pair of vertices
+        v, w, there is a directed path from v to w and a directed path
         from w to v.
         """
         return len(self.strong_components()) <= 1
@@ -777,7 +829,7 @@ class StrongConnector(object):
         self.root[vertex] = len(self.seen)
         self.seen.append(vertex)
         self.unclassified.append(vertex)
-        for child in self.digraph[vertex]:
+        for child in self.digraph.children(vertex):
             if child not in self.seen:
                 self.search(child)
                 self.root[vertex] = min(self.root[child],
