@@ -304,13 +304,14 @@ class Graph(object):
                     seen.add(v)
             yield current
 
-    def depth_first_edges(self, source, forbidden=set(), for_flow=False):
+    def breadth_first_edges(self, source, forbidden=set(), for_flow=False):
         """
         Generator for non-loop edges of a graph in the complement of
-        a forbidden set, ordered by distance from the source.
+        a forbidden set, ordered by distance from the source.  Used for
+        generating paths in the Ford-Fulkerson method.
         
         Yields triples (e, v, f) where e and f are edges containing v
-        and e precedes f in the depth-first ordering.
+        and e precedes f in the breadth-first ordering.
         
         The optional incident argument is a function to be used for
         finding incident edges (e.g. self.outgoing can be used for
@@ -319,6 +320,7 @@ class Graph(object):
         incident = self.flow_incident if for_flow else self.incident
         initial = incident(source) - forbidden
         seen = forbidden | initial
+        # Use a deque since we need to popleft.
         fifo = deque([ (None, source, e) for e in initial ])
         while fifo:
             parent, vertex, child = fifo.popleft()
@@ -351,7 +353,7 @@ class Graph(object):
         while vertices:
             component, start = set(), vertices.pop()
             component.add(start)
-            generator = self.depth_first_edges(
+            generator = self.breadth_first_edges(
                 source=start, forbidden=forbidden)
             for parent, vertex, child in generator:
                 new_vertex = child(vertex)
@@ -374,7 +376,8 @@ class Graph(object):
 
     def one_min_cut(self, source, sink, capacity=None):
         """
-        Find one minimal cut which separates source from sink.
+        Find one minimal cut which separates source from sink, using
+        the classical Ford-Fulkerson algorithm.
 
         Returns a dict containing the set of vertices on the source
         side of the cut, the set of edges that cross the cut, a
@@ -414,7 +417,7 @@ class Graph(object):
         while True:
             # Try to find a new path from source to sink
             parents, cut_set, reached_sink = {}, set([source]), False
-            generator = self.depth_first_edges(
+            generator = self.breadth_first_edges(
                 source=source,
                 forbidden=full_edges,
                 incident=self.flow_incident)
@@ -1024,6 +1027,7 @@ class Poset(set):
             extended = self.closure(start | set([child]))
             for subset in self.closed_subsets(extended):
                 yield subset
+
     
 if _within_sage:
     def _to_sage(self, loops=True, multiedges=True):
