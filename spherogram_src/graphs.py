@@ -49,6 +49,14 @@ except ImportError:
 from collections import deque
 import operator
 
+class CyclicList(list):
+    def __getitem__(self, n):
+        return list.__getitem__(self, n%len(self))
+    def succ(self, x):
+        return self[(self.index(x)+1)%len(self)]
+    def pred(self, x):
+        return self[(self.index(x)-1)%len(self)]
+
 class BaseEdge(tuple):
     """
     Base class for edges: a 2-tuple of vertices with extra methods.
@@ -187,38 +195,6 @@ class FatEdge(Edge):
         except ValueError:
             raise ValueError('Vertex is not an end of this edge.')
 
-
-class EdgesDFO(object):
-    """
-    Iterator for non-loop edges of a graph in the complement of
-    a forbidden set, ordered by distance from the source.
-    
-    Yields triples (e, v, f) where e and f are edges containing v
-    and e precedes f in the depth-first ordering.
-    """
-    def __init__(self, graph, source, forbidden=set()):
-        self.graph = graph
-        self.initial = initial = graph.incident(source) - forbidden
-        self.seen = forbidden | initial
-        self.fifo = deque([ (None, source, e) for e in initial ])
-
-    def __iter__(self):
-        return self
-    
-    def __next__(self):
-        if self.fifo:
-            parent, vertex, child = self.fifo.popleft()
-            new_edges = self.graph.incident(child(vertex)) - self.seen
-            self.seen |= new_edges
-            self.fifo.extend([(child, child(vertex), edge)
-                              for edge in new_edges])
-            return parent, vertex, child
-        else:
-            raise StopIteration
-
-    def next(self):  #For Python 2 compatibility
-        return self.__next__()
-
 class Graph(object):
     """
     A set of vertices and a set of edges joining pairs of vertices.
@@ -264,6 +240,9 @@ class Graph(object):
         Return the set of non-loops incident to the vertex.
         """
         return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
+
+    # Allow flows to go in either direction across an edge.
+    flow_incident = incident
 
     def children(self, vertex):
         """
@@ -325,6 +304,32 @@ class Graph(object):
                     seen.add(v)
             yield current
 
+    def depth_first_edges(self, source, forbidden=set(), for_flow=False):
+        """
+        Generator for non-loop edges of a graph in the complement of
+        a forbidden set, ordered by distance from the source.
+        
+        Yields triples (e, v, f) where e and f are edges containing v
+        and e precedes f in the depth-first ordering.
+        
+        The optional incident argument is a function to be used for
+        finding incident edges (e.g. self.outgoing can be used for
+        digraphs.
+        """
+        incident = self.flow_incident if for_flow else self.incident
+        initial = incident(source) - forbidden
+        seen = forbidden | initial
+        fifo = deque([ (None, source, e) for e in initial ])
+        while fifo:
+            parent, vertex, child = fifo.popleft()
+            new_edges = incident(child(vertex)) - seen
+            seen |= new_edges
+            fifo.extend([(child, child(vertex), edge) for edge in new_edges])
+            yield parent, vertex, child
+
+    def next(self):  #For Python 2 compatibility
+        return self.__next__()
+
     def components(self, deleted_vertices=[]):
         """
         Return the vertex sets of the connected components of the
@@ -333,11 +338,11 @@ class Graph(object):
 
         >>> G = Graph([(0,1),(1,2),(2,0),(2,3),(3,4),(4,2)])
         >>> G.components()
-        [set([0, 1, 2, 3, 4])]
+        [frozenset([0, 1, 2, 3, 4])]
         >>> G.components(deleted_vertices=[2])
-        [set([3, 4]), set([0, 1])]
+        [frozenset([3, 4]), frozenset([0, 1])]
         >>> G.components(deleted_vertices=[0])
-        [set([1, 2, 3, 4])]
+        [frozenset([1, 2, 3, 4])]
         """
         forbidden = set()
         for vertex in deleted_vertices:
@@ -346,7 +351,9 @@ class Graph(object):
         while vertices:
             component, start = set(), vertices.pop()
             component.add(start)
-            for parent, vertex, child in EdgesDFO(self, start, forbidden):
+            generator = self.depth_first_edges(
+                source=start, forbidden=forbidden)
+            for parent, vertex, child in generator:
                 new_vertex = child(vertex)
                 component.add(new_vertex)
                 if new_vertex in vertices:
@@ -369,16 +376,25 @@ class Graph(object):
         """
         Find one minimal cut which separates source from sink.
 
-        Returns the cut set of vertices on the source side, the
-        set of edges that cross the cut, a maximal family of
-        weighted edge-disjoint paths from source to sink, and
-        the set of edges with non-zero residual.
+        Returns a dict containing the set of vertices on the source
+        side of the cut, the set of edges that cross the cut, a
+        maximal family of weighted edge-disjoint paths from source to
+        sink, the set of edges with non-zero residual, and the
+        associated maximum flow.
 
         The edge capacities are supplied as a dictionary, with
-        edges as keys and the capacity of an edge as value.  If
+        edges as keys and the capacity of the edge as value.  If
         no capacity dict is supplied, every edge is given capacity
         1.  Edges omitted from the capacity dict have infinite
         capacity.
+
+        When called as a Graph method, the flow is relative to the
+        implicit orientation of an undirected edge e from e[0] to
+        e[1].  (This is determined when the edge is first constructed
+        from a pair of vertices.) A negative flow value means the flow
+        direction is from e[1] to e[0].  When called as a DiGraph
+        method, paths are directed and flows go in the direction of
+        the directed edge.
         """
         if sink == source:
             return None
@@ -398,7 +414,11 @@ class Graph(object):
         while True:
             # Try to find a new path from source to sink
             parents, cut_set, reached_sink = {}, set([source]), False
-            for parent, vertex, child in EdgesDFO(self, source, full_edges):
+            generator = self.depth_first_edges(
+                source=source,
+                forbidden=full_edges,
+                incident=self.flow_incident)
+            for parent, vertex, child in generator:
                  parents[child] = (parent, vertex)
                  cut_set.add(child(vertex))
                  if child(vertex) == sink:
@@ -431,8 +451,10 @@ class Graph(object):
             cut_edges |= set([edge for edge in self.edges
                               if vertex in edge
                               and edge(vertex) not in cut_set])
+        # Find the unsaturated edges.
         unsaturated = [ e for e in self.edges if residual[e] > 0 ]
         flow_dict = dict.fromkeys(self.edges, 0)
+        # Compute the flow.
         for flow, edges in path_list:
             for vertex, edge in edges:
                 if vertex == edge[0]:
@@ -612,14 +634,6 @@ class ReducedGraph(Graph):
                             pairs.append(pair)
         return pairs
 
-class CyclicList(list):
-    def __getitem__(self, n):
-        return list.__getitem__(self, n%len(self))
-    def succ(self, x):
-        return self[(self.index(x)+1)%len(self)]
-    def pred(self, x):
-        return self[(self.index(x)-1)%len(self)]
-
 class FatGraph(Graph):
     """
     A FatGraph is a Graph which maintains a CyclicList of incident
@@ -733,6 +747,9 @@ class Digraph(Graph):
         return set(e for e in self(vertex)
                      if e.tail is vertex and not e.head is vertex)
 
+    # Force flows to go in the direction of the edge.
+    flow_incident = outgoing
+
     def incoming(self, vertex):
         """
         Return the set of non-loop edges which *end* at the vertex.
@@ -753,6 +770,7 @@ class Digraph(Graph):
     def outdegree(self, vertex):
         return len([e for e in self.incidence_dict[vertex] if e.tail is vertex])
 
+    # For Digraphs we call them weak components.
     weak_components = Graph.components
 
     def components(self):
@@ -789,10 +807,10 @@ class Digraph(Graph):
         Return the vertex sets of the strongly connected components.
 
         >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(3,1)])
-        >>> G.components()
+        >>> G.strong_components()
         [frozenset([1, 2, 3]), frozenset([0])]
         >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(1,3)])
-        >>> G.components()
+        >>> G.strong_components()
         [frozenset([3]), frozenset([2]), frozenset([1]), frozenset([0])]
         """
         return StrongConnector(self).components
