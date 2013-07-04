@@ -312,10 +312,11 @@ class Graph(object):
         
         Yields triples (e, v, f) where e and f are edges containing v
         and e precedes f in the breadth-first ordering.
-        
-        The optional incident argument is a function to be used for
-        finding incident edges (e.g. self.outgoing can be used for
-        digraphs.
+
+        The optional flag "for_flow" specifies that the flow_incident
+        method should be used in place of the incident method for
+        extending paths.  For example, Digraphs set flow_incident =
+        outgoing.
         """
         incident = self.flow_incident if for_flow else self.incident
         initial = incident(source) - forbidden
@@ -341,8 +342,8 @@ class Graph(object):
         >>> G = Graph([(0,1),(1,2),(2,0),(2,3),(3,4),(4,2)])
         >>> G.components()
         [frozenset([0, 1, 2, 3, 4])]
-        >>> G.components(deleted_vertices=[2])
-        [frozenset([3, 4]), frozenset([0, 1])]
+        >>> sorted(G.components(deleted_vertices=[2]))
+        [frozenset([0, 1]), frozenset([3, 4])]
         >>> G.components(deleted_vertices=[0])
         [frozenset([1, 2, 3, 4])]
         """
@@ -398,6 +399,18 @@ class Graph(object):
         direction is from e[1] to e[0].  When called as a DiGraph
         method, paths are directed and flows go in the direction of
         the directed edge.
+
+        >>> caps = {('s',0):3,('s',1):2,(0,1):2,(0,'t'):4,(1,'t'):1}
+        >>> G = Graph(caps.keys())
+        >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
+        >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
+        >>> [flow[e] for e in sorted(G.edges)]
+        [-1, 4, 1, 3, 2]
+        >>> G = Digraph(caps.keys())
+        >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
+        >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
+        >>> [flow[e] for e in sorted(G.edges)]
+        [0, 3, 1, 3, 1]
         """
         if sink == source:
             return None
@@ -420,7 +433,7 @@ class Graph(object):
             generator = self.breadth_first_edges(
                 source=source,
                 forbidden=full_edges,
-                incident=self.flow_incident)
+                for_flow=True)
             for parent, vertex, child in generator:
                  parents[child] = (parent, vertex)
                  cut_set.add(child(vertex))
@@ -487,13 +500,10 @@ class Graph(object):
         >>> G = Graph([(0,1),(1,2),(2,0)]).mergeable()
         >>> F = lambda x: frozenset([x])
         >>> G.merge(F(1),F(2))
-        >>> G
-        Vertices:
-          frozenset([1, 2])
-          frozenset([0])
-        Edges:
-          frozenset([1, 2]) --- frozenset([0])
-          frozenset([0]) --- frozenset([1, 2])
+        >>> sorted(G.vertices)
+        [frozenset([1, 2]), frozenset([0])]
+        >>> sorted(G.edges)[0]
+        frozenset([0]) --- frozenset([1, 2])
         """
         new_vertex = V1|V2
         if new_vertex in self.vertices:
