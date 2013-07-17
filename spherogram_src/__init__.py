@@ -11,5 +11,5 @@ __all__ = ['ABC', 'CyclicList', 'CyclicWord', 'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
-           'RationalTangle', 'Strand', 'Tangle','WhiteheadMove',
+           'RationalTangle', 'Crossing', 'Strand', 'Tangle','WhiteheadMove',
            'Word', 'ZeroTangle']

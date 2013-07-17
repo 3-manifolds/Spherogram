@@ -10,6 +10,7 @@ See the file "doc.pdf" for the conventions, and the file
 
 """
 from .. import graphs
+CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
 try:
     import cPickle as pickle
@@ -24,9 +25,9 @@ class Crossing(object):
     """
     def __init__(self, label=None):
         self.label, self.sign, self.directions = label, 0, set()
-        self.adjacent = [None, None, None, None]
-        self.strand_labels = [None, None, None, None]
-        self.strand_components = [None, None, None, None]
+        self.adjacent = CyclicList([None, None, None, None])
+        self.strand_labels = CyclicList([None, None, None, None])
+        self.strand_components = CyclicList([None, None, None, None])
 
     def make_tail(self, a):
         b = (a, (a + 2) % 4)
@@ -37,7 +38,7 @@ class Crossing(object):
         Rotate the incoming connections by 90*s degrees anticlockwise.  
         """
         rotate = lambda v : (v + s) % 4
-        self.adjacent = self.adjacent[s:] + self.adjacent[:s]
+        self.adjacent = CyclicList(self.adjacent[s:] + self.adjacent[:s])
         for i, (o, j) in enumerate(self.adjacent):
             if o != self:
                 o.adjacent[j] = (self, i)
@@ -229,16 +230,54 @@ def enumerate_lists(lists, n=0, filter=lambda x:True):
     return ans
 
 class Link(object):
+    """
+    Links are made from Crossings.  The general model is that of a PD
+    diagram as described in
+    
+    http://katlas.org/wiki/Planar_Diagrams
+    
+    See the file "doc.pdf" for the conventions, which can be accessed
+    via "spherogram.pdf_docs()", and the file "test.py" for some
+    examples of creating links.
+
+    Here are two ways of creating the figure-8 knot, first via a PD code
+
+    >>> K1 = Link([[8,3,1,4],[2,6,3,5],[6,2,7,1],[4,7,5,8]])
+
+    and by directly gluing up Crossings:
+    
+    >>> a, b, c, d = [Crossing(x) for x in 'abcd']
+    >>> a[0], a[1], a[2], a[3] = c[1], d[0], b[1], b[0]
+    >>> b[2], b[3] = d[3], c[2]
+    >>> c[3], c[0] = d[2], d[1]
+    >>> K2 = Link([a,b,c,d])
+    """
+    
     def __init__(self, crossings, check_planarity=True):
+        # If crossings is just a PD code rather than a list of Crossings,
+        # we create the corresponding Crossings.
+        if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
+            gluings = collections.defaultdict(list)
+            for c, X in enumerate(crossings):
+                for i, x in enumerate(X):
+                    gluings[x].append( (c,i) )
+
+            if {len(v) for v in gluings.values()} != {2}:
+                raise ValueError("PD code isn't consistent")
+             
+            crossings = [Crossing() for d in crossings]
+            for (c,i), (d,j) in gluings.itervalues():
+                crossings[c][i] = crossings[d][j]
+
+        # Make sure everything is tied up. 
         if True in [ None in c.adjacent for c in crossings]:
             raise ValueError("No loose strands allowed")
 
         # Fuse the strands.  If there any components made up
-        # only of strands, these thrown out here.
+        # only of strands, these are thrown out here.
         [s.fuse() for s in crossings if isinstance(s, Strand)]
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
         self._crossing_entries = set()
-        self.digraph = graphs.Digraph()
         self._orient_crossings()
         self._build_components()
 
@@ -300,6 +339,7 @@ class Link(object):
             remaining = remaining - set(component)
 
         # Build the underlying graph
+        self.digraph = graphs.Digraph()
         for component in components:
             for c in component:
                 cs0 = CrossingStrand(c.crossing, c.entry_point)
