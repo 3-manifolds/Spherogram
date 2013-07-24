@@ -324,13 +324,17 @@ class Link(object):
             if len(components) == 0:
                 d = remaining.pop()
             else:
+                found = False
                 for c in sum(components, []):
                     d = c.other()
                     if d in remaining:
                         if labels[c]  % 2 == 0:
                             d = d.next()
+                        found = True
                         break
-
+                if not found:
+                    d = remaining.pop()
+        
             component = components.add(d)
             for c in component:
                 labels.add( c )
