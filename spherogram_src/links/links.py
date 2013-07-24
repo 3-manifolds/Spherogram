@@ -430,6 +430,9 @@ class Link(object):
     def exterior(L):
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
+    def __repr__(self):
+        return "<Link: %d comp; %d cross>" % (len(self.link_components), len(self.crossings))
+
 # ---- building the link exterior if SnapPy is present --------
 
 def vertex_to_KLP(c, v):
