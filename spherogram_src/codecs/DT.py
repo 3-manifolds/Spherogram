@@ -608,6 +608,7 @@ class DTcodec(object):
                 if flip:
                     G.flip(self[label])
 
+
     def unpack_signed_DT(self, signed_dt):
         dt = []
         component = []
