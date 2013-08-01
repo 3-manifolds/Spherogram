@@ -361,7 +361,7 @@ class Link(object):
         v = len(self.crossings)
         assert 2*v == len(self.digraph.edges)
         euler = -v + len(self.faces())
-        return euler == 2
+        return euler == 2 or v == 0
 
     def faces(self):
         """
@@ -469,6 +469,8 @@ class KLPCrossing(object):
 
 def python_KLP(L):
     vertices = list(L.crossings)
+    if len(vertices) == 0:  # Unknot by convention
+        return [0, 1, 1, []]
     for i, v in enumerate(vertices):
         v._KLP_index = i
     return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]
