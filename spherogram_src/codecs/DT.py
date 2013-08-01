@@ -419,13 +419,13 @@ class DTFatGraph(FatGraph):
         """
         return set(self._boundary_slots(edge, side=1))
         
-    def flip(self, vertex):
+    def flip(self, vertex, force=False):
         """
         Move the edge at the North slot to the South slot, and
         move the edge in the South  slot to the North slot.
         """
         #print 'flipping %s'%vertex
-        if self.marked_valences[vertex] > 2:
+        if not force and self.marked_valences[vertex] > 2:
             msg = 'Cannot flip %s with marked valence %d.'%(
                 vertex, self.marked_valences[vertex])
             raise FlippingError(msg)
@@ -602,7 +602,12 @@ class DTcodec(object):
         labels = [abs(N) for component in code for N in component]
         if self.flips is None:
             self.embed()
-            self.flips = [G.flipped(self[N]) for N in labels]
+            # Our convention is that the first crossing is positive.
+            V = self[1]
+            if (V.upper_pair() == (1,3)) ^ G.flipped(V):
+                for label in labels:
+                    G.flip(self[label], force=True)
+            self.flips = [G.flipped(self[label]) for label in labels]
         else:
             for label, flip in zip(labels, self.flips):
                 if flip:
@@ -913,7 +918,8 @@ class DTcodec(object):
             else:
                 b = 0
             crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
-        return Link(crossing_dict.values(), check_planarity=True)
+        link = Link(crossing_dict.values(), check_planarity=True, build=False)
+        return link
 
     def KLPProjection(self):
         """

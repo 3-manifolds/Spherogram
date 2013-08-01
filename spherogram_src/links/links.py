@@ -253,7 +253,7 @@ class Link(object):
     >>> K2 = Link([a,b,c,d])
     """
     
-    def __init__(self, crossings, check_planarity=True):
+    def __init__(self, crossings, check_planarity=True, build=True):
         # If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
         if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
@@ -277,9 +277,10 @@ class Link(object):
         # only of strands, these are thrown out here.
         [s.fuse() for s in crossings if isinstance(s, Strand)]
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
-        self._crossing_entries = set()
-        self._orient_crossings()
-        self._build_components()
+
+        if build:
+            self._orient_crossings()
+            self._build_components()
 
         if check_planarity and not self.is_planar():
             raise ValueError("Link isn't planar")
@@ -311,7 +312,7 @@ class Link(object):
     def crossing_strands(self):
         return sum([C.crossing_strands() for C in self.crossings], [])
 
-    def _build_components(self):
+    def _build_components(self, component_starts=None):
         """
         Each component is stored as a list of *entry points* to
         crossings.  The labeling of the entry points (equivalently
