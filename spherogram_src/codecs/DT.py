@@ -605,8 +605,7 @@ class DTcodec(object):
         if self.flips is None:
             self.embed()
             # Our convention is that the first crossing is positive.
-            V = self[1]
-            if (V.upper_pair() == (1,3)) ^ G.flipped(V):
+            if G.sign(self[1]) != 1:
                 for label in labels:
                     G.flip(self[label], force=True)
             self.flips = [G.flipped(self[label]) for label in labels]
