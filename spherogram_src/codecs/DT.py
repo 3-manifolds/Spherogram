@@ -1,4 +1,6 @@
 from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
+from spherogram.links.links import CrossingEntryPoint
+
 import string
 
 def sign(x):
@@ -898,7 +900,7 @@ class DTcodec(object):
 
     def link(self):
         G = self.fat_graph
-        crossing_dict = {}
+        crossing_dict, slot_dict = {}, {}
         for v in G.vertices:
             c = Crossing(v[0])
             c.make_tail(0)
@@ -908,17 +910,32 @@ class DTcodec(object):
                 c.make_tail(1)
             c.orient()
             crossing_dict[v] = c
+            if v.upper_pair() == (0,2):
+                slot_dict[v] = (3,0,1,2)
+            else:
+                slot_dict[v] = (2,3,0,1) if G.flipped(v) else (0,1,2,3)            
         for edge in G.edges:
-            if edge.slots[0] in edge[0].upper_pair():
-                a = 1 if G.sign(edge[0]) == 1 else 3
+            v0, v1 = edge
+            s0, s1 = edge.slots
+            a0, a1 = slot_dict[v0][s0], slot_dict[v1][s1]
+            c0, c1 = crossing_dict[v0], crossing_dict[v1]
+            c0[a0] = c1[a1]
+        link = Link(crossing_dict.values(), check_planarity=False, build=False)
+        assert link.all_crossings_oriented()
+        component_starts = []
+        i = 1
+        for comp in self.code:
+            c = self[i]
+            if i == c[0]:
+                e = slot_dict[c][2] if G.flipped(c) else slot_dict[c][0]
             else:
-                a = 2
-            if edge.slots[1] in edge[1].upper_pair():
-                b = 3 if G.sign(edge[1]) == 1 else 1
-            else:
-                b = 0
-            crossing_dict[edge[0]][a] = crossing_dict[edge[1]][b]
-        link = Link(crossing_dict.values(), check_planarity=True, build=False)
+                e = slot_dict[c][1]
+            ce = CrossingEntryPoint(crossing_dict[c],e)
+            component_starts.append(ce)
+            i += 2*len(comp)
+        link._build_components(component_starts)
+        if not link.is_planar():
+            raise ValueError('DT code does not seem to define a *planar* diagram')
         return link
 
     def KLPProjection(self):

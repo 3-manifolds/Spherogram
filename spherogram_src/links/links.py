@@ -322,7 +322,9 @@ class Link(object):
         remaining, components = set( self.crossing_entries() ), LinkComponents()
         self.labels = labels = Labels()
         while len(remaining):
-            if len(components) == 0:
+            if component_starts:
+                d = component_starts[len(components)]
+            elif len(components) == 0:
                 d = remaining.pop()
             else:
                 found = False
@@ -406,7 +408,7 @@ class Link(object):
     def DT_code(self, DT_alpha=False):
         DT_dict = dict( [ c.DT_info() for c in self.crossings] )
         odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
-        DT = [ [DT_dict[x] for x in component] for component in odd_labels]
+        DT = [ tuple([DT_dict[x] for x in component]) for component in odd_labels]
 
         if DT_alpha:
             if len(self) > 52:
