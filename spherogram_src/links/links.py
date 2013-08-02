@@ -479,6 +479,10 @@ def python_KLP(L):
     return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]
 
 # ---- Drawing the link --------
+#
+#   This code is no longer used. 
+#
+#----------------------------
 
 from . import draw
 import tempfile 
@@ -503,4 +507,4 @@ def show(self):
     elif sys.platform == 'linux2':
         os.system('okular ' + file.name)
 
-Link.save_link_pdf, Link.show = save_link_pdf, show
+# Link.save_link_pdf, Link.show = save_link_pdf, show

@@ -596,8 +596,9 @@ def orthogonal_draw(self, link_editor=None):
         link_editor = plink.LinkEditor()
     diagram = OrthogonalLinkDiagram(self)
     link_editor.unpickle(*diagram.plink_data())
+    return link_editor
 
-spherogram.Link.draw = orthogonal_draw
+spherogram.Link.view = orthogonal_draw
 
 #---------------------------------------------------
 #
