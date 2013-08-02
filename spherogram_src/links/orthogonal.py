@@ -441,13 +441,11 @@ class OrthogonalLinkDiagram(list):
         self.bend()
         self.orient_edges()
         self.edges = sum([F for F in self], [])
-        strands = set(e.crossing for e in self.edges
-                      if isinstance(e.crossing, Strand))
-        self.strand_CEPs =  [CrossingEntryPoint(s, 0) for s in strands]
+        self.repair_components()
         for i, c in enumerate(link.crossings):
             c.label = i
-        for a, s in zip(string.ascii_letters, list(strands)):
-            s.label = a
+        for j, ce in enumerate(self.strand_CEPs):
+            ce.crossing.label = j
         
     def flow_networkx(faces):
         """
@@ -498,6 +496,21 @@ class OrthogonalLinkDiagram(list):
                     subdivide_edge(e_a, len(turns_a))
                     A.bend(e_a, turns_a)
                     B.bend(e_b, turns_b)
+
+    def repair_components(self):
+        # Repair the link components and store their numbering for
+        # easy reference.  Also order the strand_CEPs so they go component
+        # by component.
+        self.link.link_components = [component[0].component()
+                                     for component in self.link.link_components]
+        self.strand_CEP_to_component = stc = dict()
+        self.strand_CEPs = []
+        for n, component in enumerate(self.link.link_components):
+            for ce in component:
+                if isinstance(ce.crossing, Strand):
+                    stc[ce] = n
+                    self.strand_CEPs.append(ce)
+
 
     def orient_edges(self):
         """
