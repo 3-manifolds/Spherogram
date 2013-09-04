@@ -10,6 +10,7 @@ See the file "doc.pdf" for the conventions, and the file
 
 """
 from .. import graphs
+from . import simplify
 CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
 try:
@@ -19,9 +20,26 @@ except ImportError: # Python 3
     
 class Crossing(object):
     """
-    See crossings.pdf for the conventions.  The sign of the
-    crossing can be in {0, +1, -1}.  In the first case, the
-    strands at the crossings can have any orientations.
+    See "doc.pdf" for the conventions.  The sign of a crossing can be in {0,
+    +1, -1}.  In the first case, the strands at the crossings can have
+    any orientations, but crossings with sign +/-1 must be oriented as
+    shown in "doc.pdf".
+    
+    Roles of some of the other attributes:
+    
+    * label: Arbitrary name used for printing the crossing.
+    
+    * directions: store the orientations of the link components passing
+    through the crossing.  For a +1 crossing this is { (0, 2), (3, 1) }.
+    Set with calls to make_tail.
+    
+    * adjacent: The other Crossings that this Crossing is attached to.
+    
+    * strand_labels: Numbering of the strands, used for DT codes and
+    such.
+    
+    * strand_components: Which element of the parent
+    Link.link_components each input's strand belongs to.
     """
     def __init__(self, label=None):
         self.label, self.sign, self.directions = label, 0, set()
@@ -30,7 +48,13 @@ class Crossing(object):
         self.strand_components = CyclicList([None, None, None, None])
 
     def make_tail(self, a):
+        """
+        Orients the strand joining input "a" to input" a+2" to start at "a" and end at
+        "a+2".
+        """
         b = (a, (a + 2) % 4)
+        if (b[1], b[0]) in self.directions:
+            raise ValueError("Can only orient a strand once.")
         self.directions.add(b)
 
     def rotate(self, s):
@@ -285,6 +309,12 @@ class Link(object):
         if check_planarity and not self.is_planar():
             raise ValueError("Link isn't planar")
 
+        # If the crossings aren't labeled the label them for
+        # debugging purposes.
+        if False not in [X.label is None for X in self.crossings]:
+            for c, X in enumerate(self.crossings):
+                X.label = c
+
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
     
@@ -345,24 +375,30 @@ class Link(object):
                 c.label_crossing(len(components) - 1, labels)
             remaining = remaining - set(component)
 
-        # Build the underlying graph
-        self.digraph = graphs.Digraph()
-        for component in components:
+        self.link_components = components
+
+    def digraph(self):
+        """
+        The underlying directed graph for the link diagram. 
+        """
+        G = graphs.Digraph()
+        for component in self.link_components:
             for c in component:
                 cs0 = CrossingStrand(c.crossing, c.entry_point)
                 cs1 = cs0.opposite()
-                e = self.digraph.add_edge(cs0.crossing, cs1.crossing)
+                e = G.add_edge(cs0.crossing, cs1.crossing)
 
-        self.link_components = components
+        return G
 
     def copy(self):
         return pickle.loads(pickle.dumps(self))
     
     def is_planar(self):
-        if not self.digraph.is_weakly_connected():
+        G = self.digraph()
+        if not G.is_weakly_connected():
             return False
         v = len(self.crossings)
-        assert 2*v == len(self.digraph.edges)
+        assert 2*v == len(G.edges)
         euler = -v + len(self.faces())
         return euler == 2 or v == 0
 
@@ -391,6 +427,23 @@ class Link(object):
                     face.append(next)
 
         return faces
+
+    def basic_simplify(link):
+        """
+        Do Reidemeister I and II moves until none are possible.  Modifies the
+        link in place, and unknot components which are also unlinked may
+        be silently discarded.
+        
+        >>> K = Link([(14,4,1,3),(4,12,5,11),(8,1,9,2),(2,7,3,8),
+                (9,11,10,10),(5,12,6,13),(6,14,7,13), (15, 15, 16, 16)],
+                check_planarity=False)
+        >>> K
+        <Link: 2 comp; 8 cross>
+        >>> K.basic_simplify()
+        >>> K
+        <Link: 1 comp; 4 cross>              
+        """
+        simplify.basic_simplify(link)
         
     def __len__(self):
         return len(self.crossings)
