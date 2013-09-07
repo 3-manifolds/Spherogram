@@ -97,7 +97,7 @@ class Crossing(object):
     def __setitem__(self, i, other):
         o, j = other
         self.adjacent[i % 4] = other
-        other[0].adjacent[other[1]] = (self, i)
+        other[0].adjacent[other[1]] = (self, i % 4)
         
 
     def __repr__(self):
@@ -377,7 +377,7 @@ class Link(object):
                     if others:
                         for j, d in enumerate(others):
                             if d.component_label() is None:
-                                if labels[c] % 2 == 0:
+                                if labels[d.other()] % 2 == 0:
                                     d = d.next()
                                 found = True
                                 break
@@ -492,7 +492,7 @@ class Link(object):
                 raise ValueError("Too many crossing for alphabetic DT code")
             DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
             init_data = [len(self), len(DT)] +  [len(c) for c in DT]
-            DT = ''.join([DT_alphabet[x] for x in init_data] + [DT_alphabet[x>>1] for x in sum(DT, [])])
+            DT = ''.join([DT_alphabet[x] for x in init_data] + [DT_alphabet[x>>1] for x in sum(DT, tuple())])
             DT = "DT[" + DT + "]"
 
         return DT

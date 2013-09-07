@@ -16,12 +16,17 @@ def remove_crossings(link, eliminate):
     link.crossings and link.link_components.
     """
     if len(eliminate):
-        link.crossings = [C for C in link.crossings if not C in eliminate]
+        for C in eliminate:
+            link.crossings.remove(C)
         new_components = []
-        for comp in link.link_components:
-            new_comp = [ce for ce in comp if ce.crossing not in eliminate]
-            if new_comp:
-                new_components.append(new_comp)
+        for component in link.link_components:
+            for C in eliminate:
+                try:
+                    component.remove(C)
+                except ValueError:
+                    pass
+            if len(component):
+                new_components.append(component)
         link.link_components = new_components
         
 def reidemeister_I(link, C):
@@ -70,9 +75,9 @@ def reidemeister_I_and_II(link, A):
                     if X != B:
                         X[x] = Y[y]
                         changed.update({X, Y})
+                    remove_crossings(link, eliminated)
                     break
 
-    remove_crossings(link, eliminated)
     return eliminated, changed
 
 def basic_simplify(link):
