@@ -46,7 +46,7 @@ except ImportError:
     except ValueError: # Allow importing from source directory
         pass
     
-from collections import deque
+from collections import deque, defaultdict
 import operator
 
 class CyclicList(list):
@@ -541,22 +541,18 @@ class ReducedGraph(Graph):
     
     def __init__(self, pairs=[], singles=[]):
         self.Edge = self.__class__.edge_class
+        self.find_edge = dict()
         Graph.__init__(self, pairs, singles) 
 
-    def find_edge(self, vertex1, vertex2):
-        pair = (vertex1, vertex2)
-        for edge in self.edges:
-            if edge == pair:
-                return edge
-
     def add_edge(self, x, y):
-        edge = self.find_edge(x, y)
-        if edge:
+        if self.find_edge.has_key((x,y)):
+            edge = self.find_edge[(x, y)]
             edge.multiplicity += 1
         else:
             edge = self.Edge(x, y)
             self.vertices.update([x,y])
             self.edges.add(edge)
+            self.find_edge[(x,y)] = edge
             for v in edge:
                 try:
                     self.incidence_dict[v].append(edge)
@@ -623,7 +619,7 @@ class ReducedGraph(Graph):
             v, V = majors
             if self.valence(v) == 3:
                 return []
-            edge = self.find_edge(v,V)
+            edge = self.find_edge[(v,V)]
             if not edge or edge.multiplicity < 2:
                 return []
             return majors
@@ -637,7 +633,7 @@ class ReducedGraph(Graph):
                 elif len(components) == 2:
                     M0 = len(major_set & components[0])
                     M1 = len(major_set & components[1])
-                    edge = self.find_edge(*pair)
+                    edge = self.find_edge[pair]
                     if edge:
                         if M0 or M1:
                             pairs.append(pair)

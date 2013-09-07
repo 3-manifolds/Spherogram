@@ -17,7 +17,7 @@ try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
-    
+
 class Crossing(object):
     """
     See "doc.pdf" for the conventions.  The sign of a crossing can be in {0,
@@ -172,7 +172,9 @@ class CrossingEntryPoint(CrossingStrand):
         return CrossingEntryPoint(*c.adjacent[ (e + s) % (2*s)])
 
     def other(self):
-        return [o for o in self.crossing.entry_points() if o != self][0]
+        nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
+        other = nonzero_entry_point if self.entry_point == 0 else 0
+        return CrossingEntryPoint(self.crossing, other)
 
     def is_under_crossing(self):
         return self.entry_point == 0
@@ -190,6 +192,9 @@ class CrossingEntryPoint(CrossingStrand):
                 ans.append(next)
 
         return ans
+
+    def component_label(self):
+        return self.crossing.strand_components[self.entry_point]      
 
     def label_crossing(self, comp, labels):
         c, e = self.crossing, self.entry_point
@@ -315,6 +320,8 @@ class Link(object):
             for c, X in enumerate(self.crossings):
                 X.label = c
 
+
+
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
     
@@ -329,7 +336,7 @@ class Link(object):
             while not finished:
                 d, j = c.adjacent[i]
                 d.make_tail(j)
-                remaining = remaining - set( [ (c, i), (d, j) ])
+                remaining.discard( (c,i) ), remaining.discard( (d,j) )
                 c, i = d, (j+2) % 4
                 finished = (c, i) == start
 
@@ -337,11 +344,17 @@ class Link(object):
             c.orient()
 
     def crossing_entries(self):
-        return sum([C.entry_points() for C in self.crossings], [])
+        ans = []
+        for C in self.crossings:
+            ans += C.entry_points()
+        return ans
 
     def crossing_strands(self):
-        return sum([C.crossing_strands() for C in self.crossings], [])
-
+        ans = []
+        for C in self.crossings:
+            ans += C.crossing_strands()
+        return ans
+    
     def _build_components(self, component_starts=None):
         """
         Each component is stored as a list of *entry points* to
@@ -350,6 +363,7 @@ class Link(object):
         crossing has both an odd and and even incoming strand.
         """
         remaining, components = set( self.crossing_entries() ), LinkComponents()
+        other_crossing_entries = []
         self.labels = labels = Labels()
         while len(remaining):
             if component_starts:
@@ -357,22 +371,32 @@ class Link(object):
             elif len(components) == 0:
                 d = remaining.pop()
             else:
-                found = False
-                for c in sum(components, []):
-                    d = c.other()
-                    if d in remaining:
-                        if labels[c]  % 2 == 0:
-                            d = d.next()
-                        found = True
-                        break
+                found, comp_index = False, 0
+                while not found and comp_index < len(components):
+                    others = other_crossing_entries[comp_index]
+                    if others:
+                        for j, d in enumerate(others):
+                            if d.component_label() is None:
+                                if labels[c] % 2 == 0:
+                                    d = d.next()
+                                found = True
+                                break
+                        other_crossing_entries[comp_index] = others[j:]
+                    comp_index += 1
+
                 if not found:
                     d = remaining.pop()
         
             component = components.add(d)
             for c in component:
                 labels.add( c )
+            others = []
             for c in component:
                 c.label_crossing(len(components) - 1, labels)
+                o = c.other()
+                if o.component_label() is None:
+                    others.append(o)
+            other_crossing_entries.append(others)
             remaining = remaining - set(component)
 
         self.link_components = components
@@ -443,7 +467,7 @@ class Link(object):
         >>> K
         <Link: 1 comp; 4 cross>              
         """
-        simplify.basic_simplify(link)
+        return simplify.basic_simplify(link)
         
     def __len__(self):
         return len(self.crossings)
