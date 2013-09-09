@@ -20,7 +20,7 @@ def partition_list(L, parts):
     ans = []
     k = 0
     for p in parts:
-        ans.append(L[k:k+p])
+        ans.append(tuple(L[k:k+p]))
         k += p
     return ans
 
