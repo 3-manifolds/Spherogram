@@ -1,6 +1,8 @@
 from .links import Crossing, Strand, Link
 from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle, IdentityBraid, join_strands
+from . import orthogonal 
 import os, sys
+Link.view = orthogonal.orthogonal_draw
 
 def pdf_docs():
     "Open the PDF docs for links and tangles using the default application"

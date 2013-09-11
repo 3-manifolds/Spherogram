@@ -50,7 +50,7 @@ version = '1.1'
 setup( name = 'spherogram',
        version = version,
        zip_safe = False,
-       install_requires = [],
+       install_requires = ['networkx>=1.3'],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links', 'spherogram.codecs'],
        package_dir = {'spherogram' : 'spherogram_src'},

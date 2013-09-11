@@ -21,10 +21,9 @@ As all vertices (=crossings) of the underlying graph are 4-valent, things simpif
 the associated network N(P) has A_V empty and A_F has no self-loops.
 """
 
-import snappy, networkx, random, plink, string
-from spherogram.links.links import CrossingStrand, CrossingEntryPoint, Strand
-from spherogram import CyclicList, Digraph, RationalTangle, DTcodec
-import spherogram.graphs
+import networkx, random, plink, string
+from .links import CrossingStrand, CrossingEntryPoint, Strand
+from ..graphs import CyclicList, Graph, Digraph
 from collections import *
 
 #---------------------------------------------------
@@ -519,7 +518,7 @@ class OrthogonalLinkDiagram(list):
         """
         orientations = {self[0][0]:'right'}
         N = self.face_network.to_undirected()
-        G = spherogram.graphs.Graph(N.edges())
+        G = Graph(N.edges())
 #        N.remove_node('s'), N.remove_node('t')
 #        for i in networkx.traversal.dfs_preorder_nodes(N, 0):
         G.remove_vertex('s'), G.remove_vertex('t')
@@ -611,8 +610,6 @@ def orthogonal_draw(self, link_editor=None):
     link_editor.unpickle(*diagram.plink_data())
     return link_editor
 
-spherogram.Link.view = orthogonal_draw
-
 #---------------------------------------------------
 #
 #  Testing code
@@ -620,49 +617,55 @@ spherogram.Link.view = orthogonal_draw
 #---------------------------------------------------
 
 
-def link_from_manifold(manifold):
-    return DTcodec(manifold.DT_code()).link()
-
-def random_link():
-    return link_from_manifold(HTLinkExteriors.random())
-
-def check_faces(link):
-    faces = link.faces()
-    assert len(link.vertices) - len(link.edges) + len(faces) == 2
-    assert set(Counter(sum( faces, [] )).values()) == set([1])
-    assert link.is_planar()
-
-def test_face_method(N):
-    for i in xrange(N):
-        check_faces(random_link())
-
-def element(S):
-    return list(S)[0]
-
-def appears_hyperbolic(M):
-    acceptable = ['all tetrahedra positively oriented',
-                  'contains negatively oriented tetrahedra']
-    return M.solution_type() in acceptable and M.volume() > 1.0 
-
-def test(manifold_with_DT, plink_manifold=None):
-    L = link_from_manifold(manifold_with_DT)
-    PM = plink_manifold
-    if PM is None:
-        PM = snappy.Manifold()
-    PM.LE.load_from_spherogram(L, None, False)
-    PM.LE.callback()
-    if appears_hyperbolic(PM):
-        assert abs(manifold_with_DT.volume() - PM.volume())  < 0.000001
-        assert manifold_with_DT.is_isometric_to(PM)
-
-def big_test():
-    PM = snappy.Manifold()
-    while 1:
-        M = snappy.HTLinkExteriors.random()
-        print 'Testing Manifold:', M
-        ans = test(M, PM)
 
 if __name__ == '__main__':
+    import snappy
+    import plink
+    from spherogram import DTcodec
+    
+    def link_from_manifold(manifold):
+        return DTcodec(manifold.DT_code()).link()
+
+    def random_link():
+        return link_from_manifold(HTLinkExteriors.random())
+
+    def check_faces(link):
+        faces = link.faces()
+        assert len(link.vertices) - len(link.edges) + len(faces) == 2
+        assert set(Counter(sum( faces, [] )).values()) == set([1])
+        assert link.is_planar()
+
+    def test_face_method(N):
+        for i in xrange(N):
+            check_faces(random_link())
+
+    def element(S):
+        return list(S)[0]
+
+    def appears_hyperbolic(M):
+        acceptable = ['all tetrahedra positively oriented',
+                      'contains negatively oriented tetrahedra']
+        return M.solution_type() in acceptable and M.volume() > 1.0 
+
+    def test(manifold_with_DT, plink_manifold=None):
+        L = link_from_manifold(manifold_with_DT)
+        PM = plink_manifold
+        if PM is None:
+            PM = snappy.Manifold()
+        PM.LE.load_from_spherogram(L, None, False)
+        PM.LE.callback()
+        if appears_hyperbolic(PM):
+            assert abs(manifold_with_DT.volume() - PM.volume())  < 0.000001
+            assert manifold_with_DT.is_isometric_to(PM)
+
+    def big_test():
+        PM = snappy.Manifold()
+        while 1:
+            M = snappy.HTLinkExteriors.random()
+            print 'Testing Manifold:', M
+            ans = test(M, PM)
+
+    from .tangles import RationalTangle
     unknot = RationalTangle(1).numerator_closure()
     hopf = RationalTangle(2).numerator_closure()
     trefoil = DTcodec([(4,6,2)]).link()
