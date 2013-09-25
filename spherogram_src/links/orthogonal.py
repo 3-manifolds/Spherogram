@@ -608,6 +608,7 @@ def orthogonal_draw(self, link_editor=None):
         link_editor = plink.LinkEditor()
     diagram = OrthogonalLinkDiagram(self)
     link_editor.unpickle(*diagram.plink_data())
+    link_editor.zoom_to_fit()
     return link_editor
 
 #---------------------------------------------------
