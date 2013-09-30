@@ -39,10 +39,10 @@ def reidemeister_I(link, C):
     for i in range(4):
         if C.adjacent[i] == (C, (i+1)%4):
             (A, a), (B, b) = C.adjacent[i+2], C.adjacent[i+3]
-            elim = {C}
+            elim = set([C])
             if C != A:
                 A[a] = B[b]
-                changed = {A, B}
+                changed = set([A, B])
 
     remove_crossings(link, elim)
     return elim, changed
@@ -68,13 +68,13 @@ def reidemeister_I_and_II(link, A):
                     X, x = A.adjacent[a+3]
                     Y, y = B.adjacent[b+1]
                     Z, z = B.adjacent[b+2]
-                    eliminated = {A, B}
+                    eliminated = set([A, B])
                     if W != B:
                         W[w] = Z[z]
-                        changed.update({W, Z})
+                        changed.update(set([W, Z]))
                     if X != B:
                         X[x] = Y[y]
-                        changed.update({X, Y})
+                        changed.update(set([X, Y]))
                     remove_crossings(link, eliminated)
                     break
 
