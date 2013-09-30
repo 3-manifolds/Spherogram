@@ -291,7 +291,7 @@ class Link(object):
                 for i, x in enumerate(X):
                     gluings[x].append( (c,i) )
 
-            if {len(v) for v in gluings.values()} != {2}:
+            if set([len(v) for v in gluings.values()]) != set([2]):
                 raise ValueError("PD code isn't consistent")
              
             crossings = [Crossing() for d in crossings]
