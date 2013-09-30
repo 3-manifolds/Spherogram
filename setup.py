@@ -43,9 +43,11 @@ class clean(Command):
         os.system('rm -f planarity_src/planarity.c')
 
 
-# Main module 
+# Main module
 
-version = '1.1'
+version='1.2'
+with open('version.txt','w') as output:
+    output.write(version)
 
 setup( name = 'spherogram',
        version = version,
@@ -65,6 +67,3 @@ setup( name = 'spherogram',
        keywords = 'graphs, presentations',
        url = '',
        )
-
-with open('version.txt','w') as output:
-    output.write(version)
