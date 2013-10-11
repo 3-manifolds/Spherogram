@@ -513,6 +513,61 @@ class Link(object):
     def __repr__(self):
         return "<Link: %d comp; %d cross>" % (len(self.link_components), len(self.crossings))
 
+    def writhe(self):
+        """Finds the writhe of a knot.
+            Example:
+            sage: f=fig_8()
+            sage: f.writhe()
+            0
+            """
+        writhe_value=0
+        for i in range(len(self.crossings)):
+                writhe_value+=self.crossings[i].sign
+        return writhe_value
+
+    def linking_number(self):
+        """Returns the linking number of self if self has two components;
+        or the sum of the linking numbers of all pairs of components 
+        in general."""
+        n = 0
+        for s in self.link_components:
+            tally = [0]*len(self.crossings)
+            for c in s:
+                for i, x in enumerate(self.crossings):
+                    if c[0] == x:
+                        tally[i] += 1
+            for i, m in enumerate(tally):
+                if m == 1:
+                    n += (self.crossings)[i].sign
+        n = n/4
+        return n
+
+
+    def linking_matrix(self):
+        """Calcluates the linking number for each pair of link components.                                         
+        Returns a linking matrix, in which the (i,j)th component is the linking                                    
+        number of the ith and jth link components."""
+        matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
+        #print matrix                                                                                              
+        for n1, comp1 in enumerate(self.link_components):
+            for n2, comp2 in enumerate(self.link_components):
+                tally = [ [0 for m in range(len(self.crossings)) ] for n in range(2) ]
+                if not (comp1 == comp2):
+                    for i, c in enumerate(self.crossings):
+                        for x1 in comp1:
+                            if x1[0] == c:
+                                tally[0][i] += 1
+                        for x2 in comp2:
+                            if x2[0] == c:
+                                tally[1][i] += 1
+                for k, c in enumerate(self.crossings):
+                    if (tally[0][k] == 1 and tally[1][k] == 1):
+                        matrix[n1][n2] += 0.5 * (c.sign)
+        for i1, m1 in enumerate(matrix):
+            for i2, m2 in enumerate(m1):
+                matrix[i1][i2] = int(matrix[i1][i2])
+        return matrix
+
 # ---- building the link exterior if SnapPy is present --------
 
 def vertex_to_KLP(c, v):
