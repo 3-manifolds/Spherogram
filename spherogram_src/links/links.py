@@ -514,21 +514,25 @@ class Link(object):
         return "<Link: %d comp; %d cross>" % (len(self.link_components), len(self.crossings))
 
     def writhe(self):
-        """Finds the writhe of a knot.
-            Example:
-            sage: f=fig_8()
-            sage: f.writhe()
-            0
-            """
+        """
+        Finds the writhe of a knot.
+
+        Example:
+        >>> L = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+        >>> L.writhe()
+        0
+        """
         writhe_value=0
         for i in range(len(self.crossings)):
                 writhe_value+=self.crossings[i].sign
         return writhe_value
 
     def linking_number(self):
-        """Returns the linking number of self if self has two components;
+        """
+        Returns the linking number of self if self has two components;
         or the sum of the linking numbers of all pairs of components 
-        in general."""
+        in general.
+        """
         n = 0
         for s in self.link_components:
             tally = [0]*len(self.crossings)
@@ -544,11 +548,13 @@ class Link(object):
 
 
     def linking_matrix(self):
-        """Calcluates the linking number for each pair of link components.                                         
+        """
+        Calcluates the linking number for each pair of link components.
+        
         Returns a linking matrix, in which the (i,j)th component is the linking                                    
-        number of the ith and jth link components."""
+        number of the ith and jth link components.
+        """
         matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
-        #print matrix                                                                                              
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
                 tally = [ [0 for m in range(len(self.crossings)) ] for n in range(2) ]
