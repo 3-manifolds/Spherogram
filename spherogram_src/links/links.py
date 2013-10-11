@@ -518,8 +518,8 @@ class Link(object):
         Finds the writhe of a knot.
 
         Example:
-        >>> L = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
-        >>> L.writhe()
+        >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+        >>> K.writhe()
         0
         """
         writhe_value=0
