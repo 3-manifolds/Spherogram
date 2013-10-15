@@ -17,6 +17,11 @@ try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
+from sage.matrix.constructor import matrix
+from sage.symbolic.ring import SR
+from sage.groups.free_group import FreeGroup
+import sage.graphs.graph as graph
+from sage.symbolic.ring import var
 
 class Crossing(object):
     """
@@ -573,6 +578,213 @@ class Link(object):
             for i2, m2 in enumerate(m1):
                 matrix[i1][i2] = int(matrix[i1][i2])
         return matrix
+
+    def writhe(self):
+        """
+        Finds the writhe of a knot.
+        
+        >>> f=fig_8()
+        >>> f.writhe()
+        0
+        """
+        writhe_value=0
+        for i in range(len(self.crossings)):
+                writhe_value+=self.crossings[i].sign
+        return writhe_value
+
+    def linking_number(self):
+        """
+        Returns the linking number of self if self has two components;
+        or the sum of the linking numbers of all pairs of components 
+        in general.
+        """
+        n = 0
+        for s in self.link_components:
+            tally = [0]*len(self.crossings)
+            for c in s:
+                for i, x in enumerate(self.crossings):
+                    if c[0] == x:
+                        tally[i] += 1
+            for i, m in enumerate(tally):
+                if m == 1:
+                    n += (self.crossings)[i].sign
+        n = n/4
+        return n
+
+    def linking_matrix(self):
+        """
+        Calcluates the linking number for each pair of link components.                                         
+        Returns a linking matrix, in which the (i,j)th component is the linking                                    
+        number of the ith and jth link components.
+        """
+        matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
+        #print matrix                                                                                              
+        for n1, comp1 in enumerate(self.link_components):
+            for n2, comp2 in enumerate(self.link_components):
+                tally = [ [0 for m in range(len(self.crossings)) ] for n in range(2) ]
+                if not (comp1 == comp2):
+                    for i, c in enumerate(self.crossings):
+                        for x1 in comp1:
+                            if x1[0] == c:
+                                tally[0][i] += 1
+                        for x2 in comp2:
+                            if x2[0] == c:
+                                tally[1][i] += 1
+                for k, c in enumerate(self.crossings):
+                    if (tally[0][k] == 1 and tally[1][k] == 1):
+                        matrix[n1][n2] += 0.5 * (c.sign)
+        for i1, m1 in enumerate(matrix):
+            for i2, m2 in enumerate(m1):
+                matrix[i1][i2] = int(matrix[i1][i2])
+        return matrix
+
+    def pieces(self):
+        """
+        Auxiliary function used by knot_group. Constructs the strands 
+        of the knot from under-crossing to under-crossing. Needed for the
+        Wirtinger Presentation.
+        """
+        pieces = []
+        for s, x in enumerate(self.crossings):
+            y = x
+            l = 2
+            go = True
+            pieces.append([])
+            pieces[s].append(x[l])
+            while go:
+                #print 'building strands'                                                               
+                #print y.adjacent[l][1]                                                                 
+                if y.adjacent[l][1] == 0:
+                    pieces[s].append(y.adjacent[l][0][0])
+                    break
+                pieces[s].append(y.adjacent[l])
+                if y.adjacent[l][1] == 1:
+                    pieces[s].append(y.adjacent[l][0][3])
+                if y.adjacent[l][1] == 3:
+                    pieces[s].append(y.adjacent[l][0][1])
+                lnew = (y.adjacent[l][1] + 2)%4
+                y = y.adjacent[l][0]
+                l = lnew
+        return pieces
+
+    def knot_group(self):
+        """
+        Computes the knot group using the Wirtinger presentation. 
+        Returns a finitely presented group.
+        """
+        n = len(self.crossings)
+        F = FreeGroup(n)
+        g = list(F.gens())
+        rels = []
+        pieces = self.pieces()
+
+        for z in self.crossings:
+            for m, p in enumerate(pieces):
+                for t, q in enumerate(p):
+                    if q[0] == z:
+                        if t == 0:
+                            j = m
+                        elif t == len(p)-1:
+                            i = m
+                        else:
+                            k = m
+            i+=1; j+=1; k+=1
+            if z.sign > 0:
+                r = F([-k,i,k,-j])
+                #r = (g[k]**-1)*g[i]*g[k]*(g[j]**-1)                                                    
+            if z.sign < 0:
+                r = F([k,i,-k,-j])
+                #r = g[k]*g[i]*(g[k]**-1)*(g[j]**-1)                                                    
+            rels.append(r)
+
+        G = F/rels
+        return G
+
+    def alexander_matrix(self):
+        """
+        Returns the alexander matrix of self.
+        
+        >>> L = Link(3,1)
+        >>> L.alexander_matrix()
+        [    -1 -t + 1      t]
+        [     t     -1 -t + 1]
+        [-t + 1      t     -1]
+        """
+        G = self.knot_group()
+        B = G.alexander_matrix()
+        m = B.nrows()
+        n = B.ncols()
+        C = matrix(SR,n,m)
+        t = var('t')
+        for i in range(n):
+            for j in range(m):
+                for k in B[j,i].terms():
+                    p = 0
+                    x = k.leading_item()
+                    for w in x[0].syllables():
+                        p = p+w[1]
+                    y = (t**p)*x[1]
+                    C[j,i] = C[j,i] + y
+        return C #should this be a k by k minor? or full matrix?                                       
+    
+    def alexander_poly(self, v='no'):
+        """
+        Calculates the alexander polynomial of self. For links with one component,
+        can evaluate the alexander polynomial at v.
+       
+        >>> K = Link(4,1)
+        >>> K.alexander_poly()
+        -t - 1/t + 3
+        >>> K.alexander_poly(4)
+        -5/4
+        """
+        t = var('t')
+        C = self.alexander_matrix()
+        m = C.nrows()
+        n = C.ncols()
+        if n>m:
+            k = m-1
+        else:
+            k = n-1
+        minor = C[0:k,0:k]
+        p = minor.determinant().expand()
+        exps = [x[1] for x in p.coeffs()]
+        a = max(exps)
+        b = min(exps)
+        c = -1*(b+a)/2
+        q = p*(t**c)
+        if len(self.link_components) == 1:
+            if q.subs(t==1) == -1:
+                q = -1*q
+            if v=='no':
+                return q.expand()
+            else:
+                return q.subs(t==v)
+        else:
+            return q.expand()
+
+    def connected_sum(self, other_knot):
+        """
+        Returns the connected sum of two knots.                                                       
+       
+        >>> K = Link(4,1)                                                                              
+        >>> K.connected_sum(K)                                                                         
+        Knot with 8 crossings                                                                            
+        """
+        first=self.copy()
+        second=other_knot.copy()
+        (f1,i1) = (first.crossings[0],0)
+        (f2,i2) = f1.adjacent[i1]
+        (g1,j1) = (second.crossings[0],0)
+        (g2,j2) = g1.adjacent[j1]
+        f1[i1]=g2[j2]
+        f2[i2]=g1[j1]
+        for c in first.crossings: #Indicate which crossings came from which knot.                        
+            c.label=(c.label, 1)
+        for c in second.crossings:
+            c.label=(c.label, 2)
+            first.crossings.append(c)
+        return Link(first.crossings)
 
 # ---- building the link exterior if SnapPy is present --------
 
