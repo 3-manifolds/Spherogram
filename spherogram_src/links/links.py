@@ -786,6 +786,151 @@ class Link(object):
             first.crossings.append(c)
         return Link(first.crossings)
 
+    def _build_faces(self):
+        """
+        Auxiliary function used to create a black graph-- creates list of faces.
+        """
+        faces=list()
+        for c in self.crossings:
+            for i in range (4):
+                curr_face=list()
+                start=c[i]
+                curr_face.append(c[i])
+                matched=False
+                point=c.adjacent[i]
+                while matched==False:
+                    curr_face.append(point)
+                    (a,y)=point
+                    point=(a,(y-1)%4)
+                    ycoord=y-1
+                    xcoord=self.crossings.index(a)
+                    if point==start:
+                        matched=True
+                        break
+                    else:
+                        curr_face.append(point)
+                        point=self.crossings[xcoord].adjacent[ycoord]
+                matched=False
+                for f in faces:
+                    if set(curr_face)==set(f):
+                        matched=True
+                        break
+                if not matched:
+                    faces.append(curr_face)
+        return faces
+
+    def black_graph(self, return_signs=False):
+        """
+        Finds the black graph for a knot, and returns just one component of the graph.                
+       
+        >>> K=Link(5,1)                                                                                
+        >>> K.black_graph()                                                                            
+        Subgraph of (): Multi-graph on 2 vertices                                                        
+        """
+        faces=self._build_faces()
+        coords=list()
+        signs=list()
+        for i in range(len(faces)-1):
+            for j in range (i+1, len(faces)):
+                a=set(faces[i])
+                b=set(faces[j])
+                s=a.union(b)
+                for x in range(len(self.crossings)):
+                    crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
+                    total=set(crossings)
+                    if total.issubset(s):
+                        coords.append((tuple(faces[i]),tuple(faces[j])))
+                        if set([self.crossings[x][1], self.crossings[x][2]]).issubset(set(faces[i])) or set([self.crossings[x][3], self.crossings[x][0]]).issubset(set(faces[i])):
+                                signs.append(-1)
+                        elif set([self.crossings[x][2], self.crossings[x][3]]).issubset(set(faces[i])) or set([self.crossings[x][0], self.crossings[x][1]]).issubset(set(faces[i])):
+                                signs.append(1)
+
+        G=graph.Graph(coords)
+        component=G.connected_components()[1]
+        G=G.subgraph(component)
+        #Built shorter versions of coords and signs corresponding just to those edges in the subgraph:   
+        new_coords = list()
+        new_signs = list()
+        edges = G.edges()
+        for n in range(len(coords)):
+            if coords[n]+(None,) in edges:
+                new_coords.append(coords[n])
+                new_signs.append(signs[n])
+            if (coords[n][1],coords[n][0],None) in edges:
+                new_coords.append((coords[n][1],coords[n][0]))
+                new_signs.append(signs[n])
+        if return_signs==True:
+            return (new_signs,new_coords)
+        else:
+            return G
+
+    def goeritz_matrix(self):
+        """
+        Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
+        
+        >>> K=Link(4,1)
+        >>> K.goeritz_matrix()
+        [-3  2]
+        [ 2 -3]
+        """
+
+        (all_signs,all_edges)=self.black_graph(True)
+        g=self.black_graph()
+        l=g.vertices()
+        m=matrix(len(g.vertices()),len(g.vertices()))
+        for n in range(len(all_edges)):
+            e = all_edges[n]
+            i=l.index(e[0])
+            j=l.index(e[1])
+            m[(i,j)]=m[(i,j)]+all_signs[n]
+            m[(j,i)]=m[(j,i)]+all_signs[n]
+        for i in range(len(g.vertices())):
+            m[(i,i)]=sum(m.column(i))*(-1)
+        m=m.delete_rows([0])
+        m=m.delete_columns([0])
+        return m
+
+    def _find_crossing(self, e):
+        """
+        Auxiliary function used by signature to find which                                                         
+        crossing corresponds to an edge in the black graph.
+        """
+        a=set(e[0])
+        b=set(e[1])
+        s=a.union(b)
+        for x in range(len(self.crossings)):
+            crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
+            total=set(crossings)
+            if total.issubset(s):
+                return self.crossings[x]
+
+    def signature(self):
+        """
+        Returns the signature of the link.                                                            
+       
+        >>> f=fig_8()                                                                                  
+        >>> f.signature()                                                                              
+        0
+        """
+
+        answer=0
+        (signs,edges)=self.black_graph(True)
+        for i in range(len(signs)):
+            v=self._find_crossing(edges[i])
+            if signs[i]*v.sign==1:
+                answer=answer+signs[i]
+        m=self.goeritz_matrix()
+        vals=m.eigenvalues()
+        pos=0
+        neg=0
+        for v in vals:
+            if v>0:
+                pos+=1
+            elif v<0:
+                neg+=1
+        sig=pos-neg+answer
+        return sig
+
 # ---- building the link exterior if SnapPy is present --------
 
 def vertex_to_KLP(c, v):
