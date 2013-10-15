@@ -22,6 +22,7 @@ from sage.symbolic.ring import SR
 from sage.groups.free_group import FreeGroup
 import sage.graphs.graph as graph
 from sage.symbolic.ring import var
+import copy
 
 class Crossing(object):
     """
@@ -912,7 +913,6 @@ class Link(object):
         >>> f.signature()                                                                              
         0
         """
-
         answer=0
         (signs,edges)=self.black_graph(True)
         for i in range(len(signs)):
@@ -930,6 +930,40 @@ class Link(object):
                 neg+=1
         sig=pos-neg+answer
         return sig
+
+    def copy(self):
+        """
+        Returns a copy of the knot.                                                        
+       
+        >>> f=fig_8()                                                                       
+        >>> copy=f.copy()                                                                   
+        >>> f.PD_code()                                                                     
+        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]                              
+        >>> copy.PD_code()                                                                  
+        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]"""
+        return copy.deepcopy(self)
+
+    def mirror(self):
+        """
+        Returns the mirror of a knot.                                                            
+        >>> k=torus_knot(2,3)                                                                 
+        >>> k.crossings[0].sign                                                               
+        1                                                                                       
+        >>> mirr=k.mirror()                                                                   
+        >>> mirr.crossings[0].sign                                                            
+        -1                                                                                      
+        """
+        knot_copy=self.copy()
+        crossings = knot_copy.crossings
+        #Clear the strand labels and adjacent components. This shouldn't be necessary.              
+        for c in crossings:
+         c.strand_labels = [None, None, None, None]
+         c.strand_components = [None, None, None, None]
+         c.sign = 0
+         c.directions = set()
+        for c in crossings:
+            c.rotate_by_90()
+        return Link(crossings)
 
 # ---- building the link exterior if SnapPy is present --------
 
