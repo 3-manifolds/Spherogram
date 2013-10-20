@@ -63,7 +63,7 @@ class BaseEdge(tuple):
     Calling a BaseEdge with one of its vertices returns the other one.
     """
 
-    def __new__(cls, x, y):
+    def __new__(cls, x, y, **kwargs):
         return tuple.__new__(cls, (x,y))
         
     def __call__(self, end):
@@ -250,8 +250,8 @@ class Graph(object):
         """
         return set(e(vertex) for e in self.incidence_dict[vertex])
 
-    def add_edge(self, *args):
-        edge = self.Edge(*args)
+    def add_edge(self, *args, **kwargs):
+        edge = self.Edge(*args, **kwargs)
         self.edges.add(edge)
         self.vertices.update(edge)
         for v in edge:
