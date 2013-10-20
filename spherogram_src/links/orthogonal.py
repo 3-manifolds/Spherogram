@@ -564,7 +564,7 @@ class OrthogonalLinkDiagram(list):
         for i, arrow in enumerate(arrows):
             for a in arrow[1:-1]:
                 if a.is_over_crossing():
-                    crossings.append( (undercrossings[a.other()], i, False) )
+                    crossings.append( (undercrossings[a.other()], i, 'r') )
             
         return arrows, crossings
 
