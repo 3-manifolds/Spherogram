@@ -9,6 +9,22 @@ See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 
 """
+
+#Check if being run inside sage; if not, some functionality disabled.
+_within_sage = False
+try:
+    import sage.all
+    import sage.graphs.graph
+    _within_sage = True
+    from sage.matrix.constructor import matrix
+    from sage.symbolic.ring import SR
+    from sage.groups.free_group import FreeGroup
+    import sage.graphs.graph as graph
+    from sage.symbolic.ring import var
+except ImportError:
+    pass
+not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
+
 from .. import graphs
 from . import simplify
 CyclicList = graphs.CyclicList
@@ -17,12 +33,9 @@ try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
-from sage.matrix.constructor import matrix
-from sage.symbolic.ring import SR
-from sage.groups.free_group import FreeGroup
-import sage.graphs.graph as graph
-from sage.symbolic.ring import var
 import copy
+
+
 
 class Crossing(object):
     """
@@ -560,6 +573,8 @@ class Link(object):
         Returns a linking matrix, in which the (i,j)th component is the linking                                    
         number of the ith and jth link components.
         """
+        if not _within_sage:
+            raise RuntimeError('linking_matrix '+not_in_sage_msg)
         matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
@@ -580,64 +595,6 @@ class Link(object):
                 matrix[i1][i2] = int(matrix[i1][i2])
         return matrix
 
-    def writhe(self):
-        """
-        Finds the writhe of a knot.
-        
-        >>> f=fig_8()
-        >>> f.writhe()
-        0
-        """
-        writhe_value=0
-        for i in range(len(self.crossings)):
-                writhe_value+=self.crossings[i].sign
-        return writhe_value
-
-    def linking_number(self):
-        """
-        Returns the linking number of self if self has two components;
-        or the sum of the linking numbers of all pairs of components 
-        in general.
-        """
-        n = 0
-        for s in self.link_components:
-            tally = [0]*len(self.crossings)
-            for c in s:
-                for i, x in enumerate(self.crossings):
-                    if c[0] == x:
-                        tally[i] += 1
-            for i, m in enumerate(tally):
-                if m == 1:
-                    n += (self.crossings)[i].sign
-        n = n/4
-        return n
-
-    def linking_matrix(self):
-        """
-        Calcluates the linking number for each pair of link components.                                         
-        Returns a linking matrix, in which the (i,j)th component is the linking                                    
-        number of the ith and jth link components.
-        """
-        matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
-        #print matrix                                                                                              
-        for n1, comp1 in enumerate(self.link_components):
-            for n2, comp2 in enumerate(self.link_components):
-                tally = [ [0 for m in range(len(self.crossings)) ] for n in range(2) ]
-                if not (comp1 == comp2):
-                    for i, c in enumerate(self.crossings):
-                        for x1 in comp1:
-                            if x1[0] == c:
-                                tally[0][i] += 1
-                        for x2 in comp2:
-                            if x2[0] == c:
-                                tally[1][i] += 1
-                for k, c in enumerate(self.crossings):
-                    if (tally[0][k] == 1 and tally[1][k] == 1):
-                        matrix[n1][n2] += 0.5 * (c.sign)
-        for i1, m1 in enumerate(matrix):
-            for i2, m2 in enumerate(m1):
-                matrix[i1][i2] = int(matrix[i1][i2])
-        return matrix
 
     def pieces(self):
         """
@@ -673,6 +630,9 @@ class Link(object):
         Computes the knot group using the Wirtinger presentation. 
         Returns a finitely presented group.
         """
+        if not _within_sage:
+            raise RuntimeError('knot_group '+not_in_sage_msg)
+
         n = len(self.crossings)
         F = FreeGroup(n)
         g = list(F.gens())
@@ -711,6 +671,9 @@ class Link(object):
         [     t     -1 -t + 1]
         [-t + 1      t     -1]
         """
+        if not _within_sage:
+            raise RuntimeError('alexander_matrix '+not_in_sage_msg)
+
         G = self.knot_group()
         B = G.alexander_matrix()
         m = B.nrows()
@@ -739,6 +702,9 @@ class Link(object):
         >>> K.alexander_poly(4)
         -5/4
         """
+        if not _within_sage:
+            raise RuntimeError('alexander_poly '+not_in_sage_msg)
+
         t = var('t')
         C = self.alexander_matrix()
         m = C.nrows()
@@ -874,6 +840,8 @@ class Link(object):
         [-3  2]
         [ 2 -3]
         """
+        if not _within_sage:
+            raise RuntimeError('goeritz_matrix '+not_in_sage_msg)
 
         (all_signs,all_edges)=self.black_graph(True)
         g=self.black_graph()
@@ -913,6 +881,9 @@ class Link(object):
         >>> f.signature()                                                                              
         0
         """
+        if not _within_sage:
+            raise RuntimeError('signature '+not_in_sage_msg)
+
         answer=0
         (signs,edges)=self.black_graph(True)
         for i in range(len(signs)):
