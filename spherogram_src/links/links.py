@@ -9,6 +9,22 @@ See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 
 """
+
+#Check if being run inside sage; if not, some functionality disabled.
+_within_sage = False
+try:
+    import sage.all
+    import sage.graphs.graph
+    _within_sage = True
+    from sage.matrix.constructor import matrix
+    from sage.symbolic.ring import SR
+    from sage.groups.free_group import FreeGroup
+    import sage.graphs.graph as graph
+    from sage.symbolic.ring import var
+except ImportError:
+    pass
+not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
+
 from .. import graphs
 from . import simplify
 CyclicList = graphs.CyclicList
@@ -17,6 +33,9 @@ try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
+import copy
+
+
 
 class Crossing(object):
     """
@@ -554,6 +573,8 @@ class Link(object):
         Returns a linking matrix, in which the (i,j)th component is the linking                                    
         number of the ith and jth link components.
         """
+        if not _within_sage:
+            raise RuntimeError('linking_matrix '+not_in_sage_msg)
         matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
@@ -573,6 +594,347 @@ class Link(object):
             for i2, m2 in enumerate(m1):
                 matrix[i1][i2] = int(matrix[i1][i2])
         return matrix
+
+
+    def pieces(self):
+        """
+        Auxiliary function used by knot_group. Constructs the strands 
+        of the knot from under-crossing to under-crossing. Needed for the
+        Wirtinger Presentation.
+        """
+        pieces = []
+        for s, x in enumerate(self.crossings):
+            y = x
+            l = 2
+            go = True
+            pieces.append([])
+            pieces[s].append(x[l])
+            while go:
+                #print 'building strands'                                                               
+                #print y.adjacent[l][1]                                                                 
+                if y.adjacent[l][1] == 0:
+                    pieces[s].append(y.adjacent[l][0][0])
+                    break
+                pieces[s].append(y.adjacent[l])
+                if y.adjacent[l][1] == 1:
+                    pieces[s].append(y.adjacent[l][0][3])
+                if y.adjacent[l][1] == 3:
+                    pieces[s].append(y.adjacent[l][0][1])
+                lnew = (y.adjacent[l][1] + 2)%4
+                y = y.adjacent[l][0]
+                l = lnew
+        return pieces
+
+    def knot_group(self):
+        """
+        Computes the knot group using the Wirtinger presentation. 
+        Returns a finitely presented group.
+        """
+        if not _within_sage:
+            raise RuntimeError('knot_group '+not_in_sage_msg)
+
+        n = len(self.crossings)
+        F = FreeGroup(n)
+        g = list(F.gens())
+        rels = []
+        pieces = self.pieces()
+
+        for z in self.crossings:
+            for m, p in enumerate(pieces):
+                for t, q in enumerate(p):
+                    if q[0] == z:
+                        if t == 0:
+                            j = m
+                        elif t == len(p)-1:
+                            i = m
+                        else:
+                            k = m
+            i+=1; j+=1; k+=1
+            if z.sign > 0:
+                r = F([-k,i,k,-j])
+                #r = (g[k]**-1)*g[i]*g[k]*(g[j]**-1)                                                    
+            if z.sign < 0:
+                r = F([k,i,-k,-j])
+                #r = g[k]*g[i]*(g[k]**-1)*(g[j]**-1)                                                    
+            rels.append(r)
+
+        G = F/rels
+        return G
+
+    def alexander_matrix(self):
+        """
+        Returns the alexander matrix of self.
+        
+        >>> L = Link(3,1)
+        >>> L.alexander_matrix()
+        [    -1 -t + 1      t]
+        [     t     -1 -t + 1]
+        [-t + 1      t     -1]
+        """
+        if not _within_sage:
+            raise RuntimeError('alexander_matrix '+not_in_sage_msg)
+
+        G = self.knot_group()
+        B = G.alexander_matrix()
+        m = B.nrows()
+        n = B.ncols()
+        C = matrix(SR,n,m)
+        t = var('t')
+        for i in range(n):
+            for j in range(m):
+                for k in B[j,i].terms():
+                    p = 0
+                    x = k.leading_item()
+                    for w in x[0].syllables():
+                        p = p+w[1]
+                    y = (t**p)*x[1]
+                    C[j,i] = C[j,i] + y
+        return C #should this be a k by k minor? or full matrix?                                       
+    
+    def alexander_poly(self, v='no'):
+        """
+        Calculates the alexander polynomial of self. For links with one component,
+        can evaluate the alexander polynomial at v.
+       
+        >>> K = Link(4,1)
+        >>> K.alexander_poly()
+        -t - 1/t + 3
+        >>> K.alexander_poly(4)
+        -5/4
+        """
+        if not _within_sage:
+            raise RuntimeError('alexander_poly '+not_in_sage_msg)
+
+        t = var('t')
+        C = self.alexander_matrix()
+        m = C.nrows()
+        n = C.ncols()
+        if n>m:
+            k = m-1
+        else:
+            k = n-1
+        minor = C[0:k,0:k]
+        p = minor.determinant().expand()
+        exps = [x[1] for x in p.coeffs()]
+        a = max(exps)
+        b = min(exps)
+        c = -1*(b+a)/2
+        q = p*(t**c)
+        if len(self.link_components) == 1:
+            if q.subs(t==1) == -1:
+                q = -1*q
+            if v=='no':
+                return q.expand()
+            else:
+                return q.subs(t==v)
+        else:
+            return q.expand()
+
+    def connected_sum(self, other_knot):
+        """
+        Returns the connected sum of two knots.                                                       
+       
+        >>> K = Link(4,1)                                                                              
+        >>> K.connected_sum(K)                                                                         
+        Knot with 8 crossings                                                                            
+        """
+        first=self.copy()
+        second=other_knot.copy()
+        (f1,i1) = (first.crossings[0],0)
+        (f2,i2) = f1.adjacent[i1]
+        (g1,j1) = (second.crossings[0],0)
+        (g2,j2) = g1.adjacent[j1]
+        f1[i1]=g2[j2]
+        f2[i2]=g1[j1]
+        for c in first.crossings: #Indicate which crossings came from which knot.                        
+            c.label=(c.label, 1)
+        for c in second.crossings:
+            c.label=(c.label, 2)
+            first.crossings.append(c)
+        return Link(first.crossings)
+
+    def _build_faces(self):
+        """
+        Auxiliary function used to create a black graph-- creates list of faces.
+        """
+        faces=list()
+        for c in self.crossings:
+            for i in range (4):
+                curr_face=list()
+                start=c[i]
+                curr_face.append(c[i])
+                matched=False
+                point=c.adjacent[i]
+                while matched==False:
+                    curr_face.append(point)
+                    (a,y)=point
+                    point=(a,(y-1)%4)
+                    ycoord=y-1
+                    xcoord=self.crossings.index(a)
+                    if point==start:
+                        matched=True
+                        break
+                    else:
+                        curr_face.append(point)
+                        point=self.crossings[xcoord].adjacent[ycoord]
+                matched=False
+                for f in faces:
+                    if set(curr_face)==set(f):
+                        matched=True
+                        break
+                if not matched:
+                    faces.append(curr_face)
+        return faces
+
+    def black_graph(self, return_signs=False):
+        """
+        Finds the black graph for a knot, and returns just one component of the graph.                
+       
+        >>> K=Link(5,1)                                                                                
+        >>> K.black_graph()                                                                            
+        Subgraph of (): Multi-graph on 2 vertices                                                        
+        """
+        faces=self._build_faces()
+        coords=list()
+        signs=list()
+        for i in range(len(faces)-1):
+            for j in range (i+1, len(faces)):
+                a=set(faces[i])
+                b=set(faces[j])
+                s=a.union(b)
+                for x in range(len(self.crossings)):
+                    crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
+                    total=set(crossings)
+                    if total.issubset(s):
+                        coords.append((tuple(faces[i]),tuple(faces[j])))
+                        if set([self.crossings[x][1], self.crossings[x][2]]).issubset(set(faces[i])) or set([self.crossings[x][3], self.crossings[x][0]]).issubset(set(faces[i])):
+                                signs.append(-1)
+                        elif set([self.crossings[x][2], self.crossings[x][3]]).issubset(set(faces[i])) or set([self.crossings[x][0], self.crossings[x][1]]).issubset(set(faces[i])):
+                                signs.append(1)
+
+        G=graph.Graph(coords)
+        component=G.connected_components()[1]
+        G=G.subgraph(component)
+        #Built shorter versions of coords and signs corresponding just to those edges in the subgraph:   
+        new_coords = list()
+        new_signs = list()
+        edges = G.edges()
+        for n in range(len(coords)):
+            if coords[n]+(None,) in edges:
+                new_coords.append(coords[n])
+                new_signs.append(signs[n])
+            if (coords[n][1],coords[n][0],None) in edges:
+                new_coords.append((coords[n][1],coords[n][0]))
+                new_signs.append(signs[n])
+        if return_signs==True:
+            return (new_signs,new_coords)
+        else:
+            return G
+
+    def goeritz_matrix(self):
+        """
+        Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
+        
+        >>> K=Link(4,1)
+        >>> K.goeritz_matrix()
+        [-3  2]
+        [ 2 -3]
+        """
+        if not _within_sage:
+            raise RuntimeError('goeritz_matrix '+not_in_sage_msg)
+
+        (all_signs,all_edges)=self.black_graph(True)
+        g=self.black_graph()
+        l=g.vertices()
+        m=matrix(len(g.vertices()),len(g.vertices()))
+        for n in range(len(all_edges)):
+            e = all_edges[n]
+            i=l.index(e[0])
+            j=l.index(e[1])
+            m[(i,j)]=m[(i,j)]+all_signs[n]
+            m[(j,i)]=m[(j,i)]+all_signs[n]
+        for i in range(len(g.vertices())):
+            m[(i,i)]=sum(m.column(i))*(-1)
+        m=m.delete_rows([0])
+        m=m.delete_columns([0])
+        return m
+
+    def _find_crossing(self, e):
+        """
+        Auxiliary function used by signature to find which                                                         
+        crossing corresponds to an edge in the black graph.
+        """
+        a=set(e[0])
+        b=set(e[1])
+        s=a.union(b)
+        for x in range(len(self.crossings)):
+            crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
+            total=set(crossings)
+            if total.issubset(s):
+                return self.crossings[x]
+
+    def signature(self):
+        """
+        Returns the signature of the link.                                                            
+       
+        >>> f=fig_8()                                                                                  
+        >>> f.signature()                                                                              
+        0
+        """
+        if not _within_sage:
+            raise RuntimeError('signature '+not_in_sage_msg)
+
+        answer=0
+        (signs,edges)=self.black_graph(True)
+        for i in range(len(signs)):
+            v=self._find_crossing(edges[i])
+            if signs[i]*v.sign==1:
+                answer=answer+signs[i]
+        m=self.goeritz_matrix()
+        vals=m.eigenvalues()
+        pos=0
+        neg=0
+        for v in vals:
+            if v>0:
+                pos+=1
+            elif v<0:
+                neg+=1
+        sig=pos-neg+answer
+        return sig
+
+    def copy(self):
+        """
+        Returns a copy of the knot.                                                        
+       
+        >>> f=fig_8()                                                                       
+        >>> copy=f.copy()                                                                   
+        >>> f.PD_code()                                                                     
+        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]                              
+        >>> copy.PD_code()                                                                  
+        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]"""
+        return copy.deepcopy(self)
+
+    def mirror(self):
+        """
+        Returns the mirror of a knot.                                                            
+        >>> k=torus_knot(2,3)                                                                 
+        >>> k.crossings[0].sign                                                               
+        1                                                                                       
+        >>> mirr=k.mirror()                                                                   
+        >>> mirr.crossings[0].sign                                                            
+        -1                                                                                      
+        """
+        knot_copy=self.copy()
+        crossings = knot_copy.crossings
+        #Clear the strand labels and adjacent components. This shouldn't be necessary.              
+        for c in crossings:
+         c.strand_labels = [None, None, None, None]
+         c.strand_components = [None, None, None, None]
+         c.sign = 0
+         c.directions = set()
+        for c in crossings:
+            c.rotate_by_90()
+        return Link(crossings)
 
 # ---- building the link exterior if SnapPy is present --------
 
