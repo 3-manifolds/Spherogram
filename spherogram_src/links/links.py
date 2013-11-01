@@ -24,6 +24,7 @@ try:
 except ImportError:
     pass
 not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
+no_snappy_msg = 'requires that SnapPy be installed.'
 
 from .. import graphs
 from . import simplify
@@ -526,7 +527,7 @@ class Link(object):
     def KLPProjection(self):
         return python_KLP(self)
 
-    def exterior(L):
+    def exterior(self):
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def __repr__(self):
@@ -536,7 +537,6 @@ class Link(object):
         """
         Finds the writhe of a knot.
 
-        Example:
         >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.writhe()
         0
@@ -691,7 +691,7 @@ class Link(object):
                     C[j,i] = C[j,i] + y
         return C #should this be a k by k minor? or full matrix?                                       
     
-    def alexander_poly(self, v='no'):
+    def alexander_poly(self, v='no', method='wirt'):
         """
         Calculates the alexander polynomial of self. For links with one component,
         can evaluate the alexander polynomial at v.
@@ -705,30 +705,37 @@ class Link(object):
         if not _within_sage:
             raise RuntimeError('alexander_poly '+not_in_sage_msg)
 
-        t = var('t')
-        C = self.alexander_matrix()
-        m = C.nrows()
-        n = C.ncols()
-        if n>m:
-            k = m-1
+        if method == 'snappy':
+            try:
+                import snappy
+                return snappy.snap.alexander_polynomial(self.exterior())
+            except ImportError:
+                raise RunTimeError('this method for alexander_poly '+no_snappy_msg)
         else:
-            k = n-1
-        minor = C[0:k,0:k]
-        p = minor.determinant().expand()
-        exps = [x[1] for x in p.coeffs()]
-        a = max(exps)
-        b = min(exps)
-        c = -1*(b+a)/2
-        q = p*(t**c)
-        if len(self.link_components) == 1:
-            if q.subs(t==1) == -1:
-                q = -1*q
-            if v=='no':
-                return q.expand()
+            t = var('t')
+            C = self.alexander_matrix()
+            m = C.nrows()
+            n = C.ncols()
+            if n>m:
+                k = m-1
             else:
-                return q.subs(t==v)
-        else:
-            return q.expand()
+                k = n-1
+            minor = C[0:k,0:k]
+            p = minor.determinant().expand()
+            exps = [x[1] for x in p.coeffs()]
+            a = max(exps)
+            b = min(exps)
+            c = -1*(b+a)/2
+            q = p*(t**c)
+            if len(self.link_components) == 1:
+                if q.subs(t==1) == -1:
+                    q = -1*q
+                if v=='no':
+                    return q.expand()
+                else:
+                    return q.subs(t==v)
+            else:
+                return q.expand()
 
     def connected_sum(self, other_knot):
         """
@@ -753,39 +760,6 @@ class Link(object):
             first.crossings.append(c)
         return Link(first.crossings)
 
-    def _build_faces(self):
-        """
-        Auxiliary function used to create a black graph-- creates list of faces.
-        """
-        faces=list()
-        for c in self.crossings:
-            for i in range (4):
-                curr_face=list()
-                start=c[i]
-                curr_face.append(c[i])
-                matched=False
-                point=c.adjacent[i]
-                while matched==False:
-                    curr_face.append(point)
-                    (a,y)=point
-                    point=(a,(y-1)%4)
-                    ycoord=y-1
-                    xcoord=self.crossings.index(a)
-                    if point==start:
-                        matched=True
-                        break
-                    else:
-                        curr_face.append(point)
-                        point=self.crossings[xcoord].adjacent[ycoord]
-                matched=False
-                for f in faces:
-                    if set(curr_face)==set(f):
-                        matched=True
-                        break
-                if not matched:
-                    faces.append(curr_face)
-        return faces
-
     def black_graph(self, return_signs=False):
         """
         Finds the black graph for a knot, and returns just one component of the graph.                
@@ -794,7 +768,16 @@ class Link(object):
         >>> K.black_graph()                                                                            
         Subgraph of (): Multi-graph on 2 vertices                                                        
         """
-        faces=self._build_faces()
+        # this is a bit hacky, could stand to be re-written
+
+        faces = []
+        for x in self.faces():
+            l = []
+            for y in x:
+                l.append((y[0],y[1]))
+                l.append((y[0],(y[1]+1)%4))
+            faces.append(l)
+
         coords=list()
         signs=list()
         for i in range(len(faces)-1):
@@ -834,7 +817,7 @@ class Link(object):
     def goeritz_matrix(self):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
-        
+       
         >>> K=Link(4,1)
         >>> K.goeritz_matrix()
         [-3  2]
@@ -861,7 +844,7 @@ class Link(object):
 
     def _find_crossing(self, e):
         """
-        Auxiliary function used by signature to find which                                                         
+        Auxiliary function used by signature to find which
         crossing corresponds to an edge in the black graph.
         """
         a=set(e[0])
@@ -875,8 +858,7 @@ class Link(object):
 
     def signature(self):
         """
-        Returns the signature of the link.                                                            
-       
+        Returns the signature of the link.       
         >>> f=fig_8()                                                                                  
         >>> f.signature()                                                                              
         0
@@ -904,8 +886,7 @@ class Link(object):
 
     def copy(self):
         """
-        Returns a copy of the knot.                                                        
-       
+        Returns a copy of the knot.       
         >>> f=fig_8()                                                                       
         >>> copy=f.copy()                                                                   
         >>> f.PD_code()                                                                     
@@ -928,13 +909,52 @@ class Link(object):
         crossings = knot_copy.crossings
         #Clear the strand labels and adjacent components. This shouldn't be necessary.              
         for c in crossings:
-         c.strand_labels = [None, None, None, None]
-         c.strand_components = [None, None, None, None]
-         c.sign = 0
-         c.directions = set()
+            c.strand_labels = [None, None, None, None]
+            c.strand_components = [None, None, None, None]
+            c.sign = 0
+            c.directions = set()
         for c in crossings:
             c.rotate_by_90()
         return Link(crossings)
+
+    def colorability_matrix(self):
+        """Auxiliary function used by determinant. Returns 'colorability matrix'."""
+        edges = self.pieces()
+        m=matrix(len(self.crossings), len(edges))
+        for c in self.crossings:
+            for i in range(4):
+                for s in edges:
+                    if (c,i) in s:
+                        ind=edges.index(s)
+                        if i==1 or i==3:
+                            m[(self.crossings.index(c),ind)]+=1
+                        if i==2 or i==0:
+                            m[(self.crossings.index(c),ind)]=-1
+                        break
+        return m
+
+
+    def determinant(self, method='wirt'):
+        """Returns the determinant of the knot K, a non-negative integer.                
+       
+        >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+        >>> K.determinant()                                                        
+        3"""
+        if method=='color':
+            M = self.colorability_matrix()
+            size = len(self.crossings)-1
+            N = matrix(size, size)
+            for i in range(size):
+                for j in range(size):
+                    N[(i,j)]=M[(i+1,j+1)]
+            return abs(N.determinant())
+        elif method=='goeritz':
+            return self.goeritz_matrix().determinant()
+        else:
+            t = var('t')
+            return abs(self.alexander_poly(v=-1))
+            
+
 
 # ---- building the link exterior if SnapPy is present --------
 
