@@ -565,7 +565,7 @@ class ReducedGraph(Graph):
         Return the valence of a vertex, counting edge multiplicities.
         """
         valence = 0
-        for e in self.incidence_dict[v]:
+        for e in self.incidence_dict[vertex]:
                 valence += e.multiplicity
         return valence
 
