@@ -34,9 +34,8 @@ try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
+
 import copy
-
-
 
 class Crossing(object):
     """
@@ -303,7 +302,15 @@ class Link(object):
     """
     
     def __init__(self, crossings, check_planarity=True, build=True):
-        # If crossings is just a PD code rather than a list of Crossings,
+        # We check if crossings is a string
+        if isinstance(crossings, str):
+            try:
+                import snappy
+                crossings = (snappy.Manifold(crossings)).link().crossings
+            except ImportError:
+                raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
+        
+        #If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
         if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
             gluings = collections.defaultdict(list)
@@ -339,8 +346,6 @@ class Link(object):
         if False not in [X.label is None for X in self.crossings]:
             for c, X in enumerate(self.crossings):
                 X.label = c
-
-
 
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
@@ -565,7 +570,6 @@ class Link(object):
         n = n/4
         return n
 
-
     def linking_matrix(self):
         """
         Calcluates the linking number for each pair of link components.
@@ -594,7 +598,6 @@ class Link(object):
             for i2, m2 in enumerate(m1):
                 matrix[i1][i2] = int(matrix[i1][i2])
         return matrix
-
 
     def pieces(self):
         """
@@ -727,15 +730,12 @@ class Link(object):
             b = min(exps)
             c = -1*(b+a)/2
             q = p*(t**c)
-            if len(self.link_components) == 1:
-                if q.subs(t==1) == -1:
-                    q = -1*q
-                if v=='no':
-                    return q.expand()
-                else:
-                    return q.subs(t==v)
-            else:
+            if q.subs(t==1) == -1:
+                q = -1*q
+            if v=='no':
                 return q.expand()
+            else:
+                return q.subs(t==v)
 
     def connected_sum(self, other_knot):
         """
@@ -929,17 +929,17 @@ class Link(object):
                         if i==1 or i==3:
                             m[(self.crossings.index(c),ind)]+=1
                         if i==2 or i==0:
-                            m[(self.crossings.index(c),ind)]=-1
+                            m[(self.crossings.index(c),ind)]-=1
                         break
         return m
-
 
     def determinant(self, method='wirt'):
         """Returns the determinant of the knot K, a non-negative integer.                
        
         >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.determinant()                                                        
-        3"""
+        3
+        """
         if method=='color':
             M = self.colorability_matrix()
             size = len(self.crossings)-1
@@ -949,7 +949,7 @@ class Link(object):
                     N[(i,j)]=M[(i+1,j+1)]
             return abs(N.determinant())
         elif method=='goeritz':
-            return self.goeritz_matrix().determinant()
+            return abs(self.goeritz_matrix().determinant())
         else:
             t = var('t')
             return abs(self.alexander_poly(v=-1))
