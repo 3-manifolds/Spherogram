@@ -74,10 +74,11 @@ class TestLinkFunctions(unittest.TestCase):
     def testLinkingMatrix(self):
         M = [[0]]
         N = [[0, -1], [-1, 0]]
+        N2 = [[0, 1], [1, 0]]
         P = [[0,0,0],[0,0,0],[0,0,0]]
         for k in self.knots:
             self.assertEqual(k.linking_matrix(),      M)
-        self.assert_(self.L2a1.linking_matrix() == N or self.L2a1.linking_matrix() == -1*N)
+        self.assert_(self.L2a1.linking_matrix() == N or self.L2a1.linking_matrix() == N2)
         self.assertEqual(self.Borr.linking_matrix(),       P)
 
     def testKnotGroup(self):
@@ -109,6 +110,7 @@ class TestLinkFunctions(unittest.TestCase):
         self.assertEqual(self.K8a13.alexander_poly(method='snappy'),      a**6 - 3*a**5 + 4*a**4 - 5*a**3 + 4*a**2 - 3*a + 1)
         
     def testConnectedSum(self):
+        # repeat so many times (5)
         random_index = randrange(0,len(self.knots))
         k1 = self.knots[random_index]
         random_index = randrange(0, len(self.knots))
@@ -136,6 +138,7 @@ class TestLinkFunctions(unittest.TestCase):
         self.assertEqual(abs(self.Borr.signature()),       0)
 
     def testCopy(self):
+        # test a certain number of times
         random_index = randrange(0,len(self.knots))
         k1 = self.knots[random_index]
         k1_prime = k1.copy()
