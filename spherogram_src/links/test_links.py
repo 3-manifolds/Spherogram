@@ -182,16 +182,16 @@ class TestLinkFunctions(unittest.TestCase):
         while repeat > 0:
             k1 = self.random_knot()
             k1_prime = k1.mirror()
-            self.assert_(k1.signature() == -1*k1_prime.signature())
-            self.assert_(k1.writhe() == -1*k1_prime.writhe())
+            self.assert_(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for "+ repr(K))
+            self.assert_(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for "+repr(K))
             repeat-=1
             
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
             k2_prime = k2.mirror()
-            self.assert_(k2.signature() == -1*k2_prime.signature())
-            self.assert_(k2.writhe() == -1*k2_prime.writhe())
+            self.assert_(k2.signature() == -1*k2_prime.signature(), msg="link signature failed for " + repr(K))
+            self.assert_(k2.writhe() == -1*k2_prime.writhe(), msg="link writhe failed for " + repr(K))
             repeat-=1
 
     def testDet(self):

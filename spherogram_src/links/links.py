@@ -103,16 +103,12 @@ class Crossing(object):
             self.directions = set([(0,2), (1,3)])
         else:
             self.directions = set([(0,2), (3,1)])
+        self.sign = -1*self.sign
 
     def rev(self):
-        self.directions = set( [(b,a) for a,b in self.directions] ) 
+        # does this work? not sure
+        self.directions = set( [(b,a) for (a,b) in self.directions] ) 
     
-    def mirr(self):
-        self.rotate_by_90()
-        dir = list(self.directions)
-        self.directions = set()
-        self.directions = set( [dir[1], (dir[0][1], dir[0][0])] )
-
     def orient(self):
         if (2, 0) in self.directions:
             self.rotate_by_180()
@@ -923,13 +919,12 @@ class Link(object):
         knot_copy=self.copy()
         crossings = knot_copy.crossings
         #Clear the strand labels and adjacent components. This shouldn't be necessary.              
+        #for c in crossings:
+            #c.strand_labels = [None, None, None, None]
+            #c.strand_components = [None, None, None, None]
+            #c.sign = 0
+            #c.directions = set()
         for c in crossings:
-            c.strand_labels = [None, None, None, None]
-            c.strand_components = [None, None, None, None]
-            c.sign = 0
-            c.directions = set()
-        for c in crossings:
-            #c.mirr()
             c.rotate_by_90()
             c.flip_sign()
         return Link(crossings)
@@ -939,16 +934,15 @@ class Link(object):
         knot_copy = self.copy()
         crossings = knot_copy.crossings
         #Clear the strand labels and adjacent components. This shouldn't be necessary.
+        #for c in crossings:
+        #    c.strand_labels = [None, None, None, None]
+        #    c.strand_components = [None, None, None, None]
+        #    c.sign = 0
+        #    c.directions = set()
         for c in crossings:
-            c.strand_labels = [None, None, None, None]
-            c.strand_components = [None, None, None, None]
-            c.sign = 0
-            c.directions = set()
-        for c in crossings:
-            #c.rev()
-            c.rotate_by_180()
+            c.rev()
+            #c.rotate_by_180()
         return Link(crossings)
-
 
     def colorability_matrix(self):
         """Auxiliary function used by determinant. Returns 'colorability matrix'."""
