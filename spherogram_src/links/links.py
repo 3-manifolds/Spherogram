@@ -97,6 +97,21 @@ class Crossing(object):
     def rotate_by_180(self):
         "Effective reverses directions of the strands"
         self.rotate(2)
+        
+    def flip_sign(self):
+        if (3,1) in self.directions:
+            self.directions = set([(0,2), (1,3)])
+        else:
+            self.directions = set([(0,2), (3,1)])
+
+    def rev(self):
+        self.directions = set( [(b,a) for a,b in self.directions] ) 
+    
+    def mirr(self):
+        self.rotate_by_90()
+        dir = list(self.directions)
+        self.directions = set()
+        self.directions = set( [dir[1], (dir[0][1], dir[0][0])] )
 
     def orient(self):
         if (2, 0) in self.directions:
@@ -118,7 +133,6 @@ class Crossing(object):
         self.adjacent[i % 4] = other
         other[0].adjacent[other[1]] = (self, i % 4)
         
-
     def __repr__(self):
         return "%s" % self.label
 
@@ -896,6 +910,7 @@ class Link(object):
         return copy.deepcopy(self)
 
     def mirror(self):
+        # needs fixed
         """
         Returns the mirror of a knot.                                                            
         >>> k=torus_knot(2,3)                                                                 
@@ -914,8 +929,26 @@ class Link(object):
             c.sign = 0
             c.directions = set()
         for c in crossings:
+            #c.mirr()
             c.rotate_by_90()
+            c.flip_sign()
         return Link(crossings)
+
+    def reverse(self):
+        # needs fixed
+        knot_copy = self.copy()
+        crossings = knot_copy.crossings
+        #Clear the strand labels and adjacent components. This shouldn't be necessary.
+        for c in crossings:
+            c.strand_labels = [None, None, None, None]
+            c.strand_components = [None, None, None, None]
+            c.sign = 0
+            c.directions = set()
+        for c in crossings:
+            #c.rev()
+            c.rotate_by_180()
+        return Link(crossings)
+
 
     def colorability_matrix(self):
         """Auxiliary function used by determinant. Returns 'colorability matrix'."""
