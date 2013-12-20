@@ -1,4 +1,3 @@
-planarity-read-only/
 planarity.c
 dist/
 build/
@@ -10,4 +9,4 @@ dev/References
 dev/orthogonal/ogdf/ortho
 syntax: glob
 *.pyc
-
+planarity_src/c/*.o
