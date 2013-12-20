@@ -11,7 +11,7 @@ try:
 except ImportError:    
     planarity_dir = ['planarity_src/c']
     planarity_extra_objects = glob.glob('planarity_src/c/*.o')
-    if not os.path.exists(planarity_dir[0]) and 'clean' not in sys.argv:
+    if 'clean' not in sys.argv:
         os.chdir('planarity_src')
         os.system('sh build_planarity.sh')
         os.chdir('..')
