@@ -9,13 +9,13 @@ try:
     import sage.libs
     ext_modules = []
 except ImportError:    
-    planarity_dir = ['planarity_src/planarity-read-only/c']
-    planarity_extra_objects = glob.glob('planarity_src/planarity-read-only/c/*.o')
+    planarity_dir = ['planarity_src/c']
+    planarity_extra_objects = glob.glob('planarity_src/c/*.o')
     if not os.path.exists(planarity_dir[0]) and 'clean' not in sys.argv:
         os.chdir('planarity_src')
         os.system('sh build_planarity.sh')
         os.chdir('..')
-        planarity_extra_objects = glob.glob('planarity_src/planarity-read-only/c/*.o')
+        planarity_extra_objects = glob.glob('planarity_src/c/*.o')
         if len(planarity_extra_objects) == 0:
             print("NOTE: Need to run 'build_planarity.sh' script in 'planarity_src' before this module can be built.")
             sys.exit()
@@ -39,7 +39,6 @@ class clean(Command):
     def run(self):
         os.system('rm -rf build dist')
         os.system('rm -rf spherogram*.egg-info')
-        os.system('rm -rf planarity_src/planarity-read-only')
         os.system('rm -f planarity_src/planarity.c')
 
 
