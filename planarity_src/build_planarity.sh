@@ -1,7 +1,10 @@
 #!/bin/bash
-svn checkout http://planarity.googlecode.com/svn/trunk/ planarity-read-only
-cd planarity-read-only
-patch -p0 < ../planarity.patch
+#
+# How the source was downloaded.  
+# svn checkout http://planarity.googlecode.com/svn/trunk/ planarity-read-only
+# cd planarity-read-only
+# patch -p0 < ../planarity.patch
+
 cd c
 if [ `uname` = "Darwin" ]; then
   gcc -arch i386 -arch x86_64 -c *.c nauty/*.c
