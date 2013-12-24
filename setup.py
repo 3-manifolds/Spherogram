@@ -9,22 +9,15 @@ try:
     import sage.libs
     ext_modules = []
 except ImportError:    
-    planarity_dir = ['planarity_src/c']
-    planarity_extra_objects = glob.glob('planarity_src/c/*.o')
-    if 'clean' not in sys.argv:
-        os.chdir('planarity_src')
-        os.system('sh build_planarity.sh')
-        os.chdir('..')
-        planarity_extra_objects = glob.glob('planarity_src/c/*.o')
-        if len(planarity_extra_objects) == 0:
-            print("NOTE: Need to run 'build_planarity.sh' script in 'planarity_src' before this module can be built.")
-            sys.exit()
-
+    planarity_dir = 'planarity_src/c/'
+    planarity_ui_sources = glob.glob(planarity_dir + 'planarity*.c')
+    planarity_sources = [file for file in glob.glob('planarity_src/c/*.c')
+                         if not file in planarity_ui_sources]
+    
     Planarity = Extension(
         name = 'spherogram.planarity',
-        sources = ['planarity_src/planarity.pyx'], 
-        include_dirs = planarity_dir, 
-        extra_objects = planarity_extra_objects,
+        sources = ['planarity_src/planarity.pyx'] + planarity_sources, 
+        include_dirs = [planarity_dir], 
         )
 
     ext_modules = [Planarity]
@@ -40,8 +33,6 @@ class clean(Command):
         os.system('rm -rf build dist')
         os.system('rm -rf spherogram*.egg-info')
         os.system('rm -f planarity_src/planarity.c')
-        os.system('rm -f planarity_src/c/*.o')
-
 
 # Main module
 
