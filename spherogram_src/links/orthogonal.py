@@ -21,7 +21,7 @@ As all vertices (=crossings) of the underlying graph are 4-valent, things simpif
 the associated network N(P) has A_V empty and A_F has no self-loops.
 """
 
-import networkx, random, plink, string
+import networkx, random, string
 from .links import CrossingStrand, CrossingEntryPoint, Strand
 from ..graphs import CyclicList, Graph, Digraph
 from collections import *
@@ -605,6 +605,7 @@ class OrthogonalLinkDiagram(list):
 
 def orthogonal_draw(self, link_editor=None):
     if link_editor is None:
+        import plink
         link_editor = plink.LinkEditor()
     diagram = OrthogonalLinkDiagram(self)
     link_editor.unpickle(*diagram.plink_data())
