@@ -302,9 +302,11 @@ class Link(object):
     
     def __init__(self, crossings, check_planarity=True, build=True):
         # We check if crossings is a string
+        self.name = None
         if isinstance(crossings, str):
             try:
                 import snappy
+                self.name = crossings
                 crossings = (snappy.Manifold(crossings)).link().crossings
             except ImportError:
                 raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
@@ -534,6 +536,8 @@ class Link(object):
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def __repr__(self):
+        if self.name:
+            return "Link("+repr(self.name)+")"
         return "<Link: %d comp; %d cross>" % (len(self.link_components), len(self.crossings))
 
     def writhe(self):
