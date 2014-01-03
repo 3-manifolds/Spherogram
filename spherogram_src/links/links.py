@@ -97,17 +97,6 @@ class Crossing(object):
     def rotate_by_180(self):
         "Effective reverses directions of the strands"
         self.rotate(2)
-        
-    def flip_sign(self):
-        if (3,1) in self.directions:
-            self.directions = set([(0,2), (1,3)])
-        else:
-            self.directions = set([(0,2), (3,1)])
-        self.sign = -1*self.sign
-
-    def rev(self):
-        # does this work? not sure
-        self.directions = set( [(b,a) for (a,b) in self.directions] ) 
     
     def orient(self):
         if (2, 0) in self.directions:
@@ -446,7 +435,6 @@ class Link(object):
                 cs0 = CrossingStrand(c.crossing, c.entry_point)
                 cs1 = cs0.opposite()
                 e = G.add_edge(cs0.crossing, cs1.crossing)
-
         return G
 
     def copy(self):
@@ -906,9 +894,8 @@ class Link(object):
         return copy.deepcopy(self)
 
     def mirror(self):
-        # needs fixed
         """
-        Returns the mirror of a knot.                                                            
+        Returns the mirror of a knot. Is not consistent about orientations.
         >>> k=torus_knot(2,3)                                                                 
         >>> k.crossings[0].sign                                                               
         1                                                                                       
@@ -916,33 +903,11 @@ class Link(object):
         >>> mirr.crossings[0].sign                                                            
         -1                                                                                      
         """
-        knot_copy=self.copy()
-        crossings = knot_copy.crossings
-        #Clear the strand labels and adjacent components. This shouldn't be necessary.              
-        #for c in crossings:
-            #c.strand_labels = [None, None, None, None]
-            #c.strand_components = [None, None, None, None]
-            #c.sign = 0
-            #c.directions = set()
-        for c in crossings:
-            c.rotate_by_90()
-            c.flip_sign()
-        return Link(crossings)
-
-    def reverse(self):
-        # needs fixed
-        knot_copy = self.copy()
-        crossings = knot_copy.crossings
-        #Clear the strand labels and adjacent components. This shouldn't be necessary.
-        #for c in crossings:
-        #    c.strand_labels = [None, None, None, None]
-        #    c.strand_components = [None, None, None, None]
-        #    c.sign = 0
-        #    c.directions = set()
-        for c in crossings:
-            c.rev()
-            #c.rotate_by_180()
-        return Link(crossings)
+        pd = self.PD_code()
+        new_pd = list()
+        for x in pd:
+            new_pd.append (x[1:]+(x[0],))
+        return Link(new_pd)
 
     def colorability_matrix(self):
         """Auxiliary function used by determinant. Returns 'colorability matrix'."""
