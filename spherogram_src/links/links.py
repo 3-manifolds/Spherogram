@@ -536,9 +536,8 @@ class Link(object):
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def __repr__(self):
-        if self.name:
-            return "Link("+repr(self.name)+")"
-        return "<Link: %d comp; %d cross>" % (len(self.link_components), len(self.crossings))
+        name = self.name if self.name else ''
+        return "<Link %s: %d comp; %d cross>" % (name, len(self.link_components), len(self.crossings))
 
     def writhe(self):
         """
