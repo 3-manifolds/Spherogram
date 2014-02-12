@@ -1,0 +1,33 @@
+
+The program planarmap.c provides an interface to the generation code
+which consists of the files PM*
+
+
+Compile it with :
+> make
+or equivalent.
+
+Then, planarmap -h   should give available options.
+There should be no more fake options and less incoherent ones...
+
+in any case, mailto:Gilles.Schaeffer@lix.polytechnique.fr for help.
+
+
+
+-----
+
+An example related to the paper "On the asymptotic number 
+of plane curves and alternating knots" by G. Schaeffer and P. Zinn-Justin:
+
+To make statistics on the number of lace components of
+10000 planar curves with 2000 crossings the command is
+
+planarmap -Q1 -N10000 -E2000 -I0 -S10
+
+This read "generate 10000 maps of type Q1 (general quartic) with
+size 2000 exactly (-I0) and compute statistic number 10.  
+
+The program outputs a distribution giving the distribution on the
+sample in Maple list format. This should look like:
+
+cumulGauss10000:=[[28,3],[29,2],[30,5],[31,5],[32,10],[33,13],[34,23],[35,28],[36,48],[37,59],[38,95],[39,131],[40,188],[41,216],[42,238],[43,338],[44,404],[45,422],[46,477],[47,543],[48,579],[49,600],[50,639],[51,598],[52,572],[53,552],[54,489],[55,434],[56,418],[57,361],[58,325],[59,229],[60,223],[61,167],[62,137],[63,104],[64,96],[65,65],[66,49],[67,39],[68,24],[69,19],[70,7],[71,10],[72,2],[73,3],[74,3],[75,4],[76,2],[78,2]];

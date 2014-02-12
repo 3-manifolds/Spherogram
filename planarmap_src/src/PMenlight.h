@@ -1,0 +1,10 @@
+extern long pmLabelCanon(pm_edge *Root);
+extern long pmChainVtx(pm_edge *Root);
+extern long pmChainFaces(pm_edge *Root);
+extern void pmMakeaFace(pm_edge *C1, pm_vertex *Fce, long mark, long *nbf);
+extern long pmAddFaces(pm_edge *Root);
+extern void pmLabelFaces(pm_vertex *Face);
+extern void pmClearLblFace(pm_vertex *Face);
+extern void pmClearLblVtx(pm_vertex *Vtx);
+extern long pmBicolorFaces(pm_edge *Root);
+extern void pmEdgeMap(pmMap *Map);

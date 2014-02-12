@@ -22,6 +22,22 @@ except ImportError:
 
     ext_modules = [Planarity]
 
+# The planarmap extension
+
+pmap_dir = 'planarmap_src/'
+pmap_src_dir = pmap_dir + '/src/'
+pmap_src_files = [pmap_src_dir + file for file in
+                  ['PMdef.c', 'PMplanmap.c', 'PMenlight.c',
+                   'PMconjugation.c', 'PMextract.c']]
+
+Planarmap = Extension(
+    name = 'spherogram.planarmap',
+    sources =  [pmap_dir + 'planarmap.pyx'] + pmap_src_files, 
+    include_dirs = [pmap_src_dir]
+    )
+
+ext_modules.append(Planarmap)
+
 
 class clean(Command):
     user_options = []
