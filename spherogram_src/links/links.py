@@ -482,14 +482,16 @@ class Link(object):
         link in place, and unknot components which are also unlinked may
         be silently discarded.
         
-        >>> K = Link([(14,4,1,3),(4,12,5,11),(8,1,9,2),(2,7,3,8),
-                (9,11,10,10),(5,12,6,13),(6,14,7,13), (15, 15, 16, 16)],
-                check_planarity=False)
+        >>> K = Link([(13,10,14,11),(11,5,12,4),(3,13,4,12),  \
+                 (9,14,10,1),(1,7,2,6),(2,7,3,8),(5,9,6,8)])
         >>> K
-        <Link: 2 comp; 8 cross>
+        <Link: 1 comp; 7 cross>
         >>> K.basic_simplify()
+        True
         >>> K
-        <Link: 1 comp; 4 cross>              
+        <Link: 1 comp; 4 cross>
+        >>> K.basic_simplify()  # Already done all it can
+        False
         """
         from . import simplify
         return simplify.basic_simplify(self)
@@ -501,9 +503,10 @@ class Link(object):
         are no type III moves or it has done the specified number of
         consecutive type III moves without reducing the crossing number.
 
-        >>> K = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11), (17,0,14,9), (12,9,13,8), (3,13,4,10), (1,16,2,15), (16,6,17,7)])
+        >>> K = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11), \
+                (17,0,14,9), (12,9,13,8), (3,13,4,10), (1,16,2,15), (16,6,17,7)])
         >>> K
-        <Link : 3 comp; 9 cross>
+        <Link: 3 comp; 9 cross>
         >>> K.basic_simplify()
         False
         >>> K.simplify()
@@ -513,7 +516,7 @@ class Link(object):
         unlinked may be silently discarded.
 
         >>> K
-        <Link : 2 comp; 2 cross>
+        <Link: 2 comp; 2 cross>
         """
         from . import simplify
         return simplify.simplify(self)
@@ -557,12 +560,25 @@ class Link(object):
     def KLPProjection(self):
         return python_KLP(self)
 
+    def split_link_diagram(self, destroy_original=False):
+        """
+        Breaks the given link diagram into pieces, one for each connected
+        component of the underlying 4-valent graph.
+
+        >>> L = Link([(2,1,1,2),(4,3,3,4)], check_planarity=False)
+        >>> L.split_link_diagram()
+        [<Link: 1 comp; 1 cross>, <Link: 1 comp; 1 cross>]
+        """
+        link = self.copy() if not destroy_original else self
+        return [Link(list(component), check_planarity=False)
+                for component in link.digraph().weak_components()]
+    
     def exterior(self):
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def __repr__(self):
-        name = self.name if self.name else ''
-        return "<Link %s: %d comp; %d cross>" % (name, len(self.link_components), len(self.crossings))
+        name = ' ' + self.name if self.name else ''
+        return "<Link%s: %d comp; %d cross>" % (name, len(self.link_components), len(self.crossings))
 
     def writhe(self):
         """
@@ -694,7 +710,7 @@ class Link(object):
         """
         Returns the alexander matrix of self.
         
-        >>> L = Link(3,1)
+        >>> L = Link('3_1')
         >>> L.alexander_matrix()
         [    -1 -t + 1      t]
         [     t     -1 -t + 1]
@@ -725,7 +741,7 @@ class Link(object):
         Calculates the alexander polynomial of self. For links with one component,
         can evaluate the alexander polynomial at v.
        
-        >>> K = Link(4,1)
+        >>> K = Link('4a1')
         >>> K.alexander_poly()
         -t - 1/t + 3
         >>> K.alexander_poly(4)
@@ -767,9 +783,9 @@ class Link(object):
         """
         Returns the connected sum of two knots.                                                       
        
-        >>> K = Link(4,1)                                                                              
+        >>> K = Link('4_1')                                                                              
         >>> K.connected_sum(K)                                                                         
-        Knot with 8 crossings                                                                            
+        <Link: 1 comp; 8 cross>
         """
         first=self.copy()
         second=other_knot.copy()
@@ -788,11 +804,12 @@ class Link(object):
 
     def black_graph(self, return_signs=False):
         """
-        Finds the black graph for a knot, and returns just one component of the graph.                
+        Finds the black graph for a knot, and returns just
+        one component of the graph.                
        
-        >>> K=Link(5,1)                                                                                
-        >>> K.black_graph()                                                                            
-        Subgraph of (): Multi-graph on 2 vertices                                                        
+        >>> K=Link('5_1')                                                                                
+        >>> K.black_graph()
+        Subgraph of (): Multi-graph on 2 vertices
         """
         # this is a bit hacky, could stand to be re-written
 
@@ -844,7 +861,7 @@ class Link(object):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
        
-        >>> K=Link(4,1)
+        >>> K=Link('4_1')
         >>> K.goeritz_matrix()
         [-3  2]
         [ 2 -3]
@@ -885,8 +902,8 @@ class Link(object):
     def signature(self):
         """
         Returns the signature of the link.       
-        >>> f=fig_8()                                                                                  
-        >>> f.signature()                                                                              
+        >>> K = Link('4a1')                                                                               
+        >>> K.signature()                                                                              
         0
         """
         if not _within_sage:
@@ -913,23 +930,22 @@ class Link(object):
     def copy(self):
         """
         Returns a copy of the knot.       
-        >>> f=fig_8()                                                                       
-        >>> copy=f.copy()                                                                   
-        >>> f.PD_code()                                                                     
-        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]                              
-        >>> copy.PD_code()                                                                  
-        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]"""
+        >>> K=Link('4_1')
+        >>> copy=K.copy()
+        >>> K.PD_code() == copy.PD_code()
+        True
+        """
         return copy.deepcopy(self)
 
     def mirror(self):
         """
         Returns the mirror of a knot. Is not consistent about orientations.
-        >>> k=torus_knot(2,3)                                                                 
-        >>> k.crossings[0].sign                                                               
-        1                                                                                       
-        >>> mirr=k.mirror()                                                                   
-        >>> mirr.crossings[0].sign                                                            
-        -1                                                                                      
+        >>> K = Link('3_1')
+        >>> K.crossings[0].sign                                                               
+        1
+        >>> mirror =K.mirror()                                                                   
+        >>> mirror.crossings[0].sign                                                            
+        -1
         """
         pd = self.PD_code()
         new_pd = list()
@@ -958,8 +974,10 @@ class Link(object):
        
         >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.determinant()                                                        
-        3
+        5
         """
+        if not _within_sage:
+            raise RuntimeError('determinant '+not_in_sage_msg)
         if method=='color':
             M = self.colorability_matrix()
             size = len(self.crossings)-1
