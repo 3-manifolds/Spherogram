@@ -27,7 +27,6 @@ not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
 no_snappy_msg = 'requires that SnapPy be installed.'
 
 from .. import graphs
-from . import simplify
 CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
 try:
@@ -477,7 +476,7 @@ class Link(object):
 
         return faces
 
-    def basic_simplify(link):
+    def basic_simplify(self):
         """
         Do Reidemeister I and II moves until none are possible.  Modifies the
         link in place, and unknot components which are also unlinked may
@@ -492,7 +491,33 @@ class Link(object):
         >>> K
         <Link: 1 comp; 4 cross>              
         """
-        return simplify.basic_simplify(link)
+        from . import simplify
+        return simplify.basic_simplify(self)
+
+    def simplify(self, max_consecutive_failures=100):
+        """
+        Applies a series of Reidemeister type III moves to the link, simplifying
+        it via type I and II moves whenever possible.  Continues until there
+        are no type III moves or it has done the specified number of
+        consecutive type III moves without reducing the crossing number.
+
+        >>> K = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11), (17,0,14,9), (12,9,13,8), (3,13,4,10), (1,16,2,15), (16,6,17,7)])
+        >>> K
+        <Link : 3 comp; 9 cross>
+        >>> K.basic_simplify()
+        False
+        >>> K.simplify()
+        True
+        
+        Modifies the link in place, and unknot components which are also
+        unlinked may be silently discarded.
+
+        >>> K
+        <Link : 2 comp; 2 cross>
+        """
+        from . import simplify
+        return simplify.simplify(self)
+
         
     def __len__(self):
         return len(self.crossings)
