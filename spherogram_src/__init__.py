@@ -12,4 +12,4 @@ __all__ = ['ABC', 'CyclicList', 'CyclicWord', 'DTcodec', 'Digraph',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
            'RationalTangle', 'Crossing', 'Strand', 'Tangle','WhiteheadMove',
-           'Word', 'ZeroTangle']
+           'Word', 'ZeroTangle', 'random_knot']

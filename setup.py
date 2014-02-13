@@ -49,6 +49,7 @@ class clean(Command):
         os.system('rm -rf build dist')
         os.system('rm -rf spherogram*.egg-info')
         os.system('rm -f planarity_src/planarity.c')
+        os.system('rm -f planarmap_src/planarmap.c')
 
 # Main module
 
