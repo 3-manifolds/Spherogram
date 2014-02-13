@@ -9,6 +9,9 @@ data structure are updated at each step.
 * Unknot components which are also unlinked may be silently discarded.
 """
 
+from . import links
+import random
+
 def remove_crossings(link, eliminate):
     """
     Deletes the given crossings. Assumes that they have already been
@@ -94,4 +97,62 @@ def basic_simplify(link):
         to_visit.update(changed)
 
     return len(eliminated) > 0
+
+def possible_type_III_moves(link):
+    """
+    Returns all triples of crossings where a type III move is possible.
+    """
+    ans = []
+    for face in link.faces():
+        if len(face) == 3:
+            if sum(ce.entry_point % 2 for ce in face) in [1, 2]:
+                while(face[1][1]% 2 != 0 or face[2][1]% 2 != 1):    # renumber face_list
+                    face = [face[1], face[2], face[0]]
+                ans.append(face)
+    return ans
+
+def insert_strand(X, x):
+    Y, y = X.adjacent[x]
+    S = links.Strand()
+    S[0], S[1] = X[x], Y[y]
+    return S
+
+def reidemeister_III(link, triple):
+    """
+    Performs the given type III move.  Modifies the given link but doesn't
+    update its lists of link components.
+    """
+    A, B, C = [t.crossing for t in triple]
+    a, b, c =  [t.entry_point for t in triple]
+    # We insert Strands around the border of the triple to make the code more
+    # transparent and eliminate some special cases.
+    old_border =  [(C, c-1), (C, c-2), (A, a-1), (A, a-2), (B, b-1), (B, b-2)]
+    border_strands = [insert_strand(*P) for P in old_border]
+    new_boarder = [(A,a), (B, b+1), (B, b), (C, c+1), (C, c), (A, a+1)]
+    for i, (X,x) in enumerate(new_boarder):
+        X[x] = border_strands[i][0]
+    A[a-1], B[b-1], C[c-1] = B[b+2], C[c+2], A[a+2]
+    [S.fuse() for S in border_strands]
+
+def simplify(link, max_consecutive_failures=100):
+    """
+    Applies a series of type III moves to the link, simplifying it via type
+    I and II moves whenever possible.
+    """
+    failures, success = 0, False
+    while failures < max_consecutive_failures:
+        poss_moves = possible_type_III_moves(link)
+        if len(poss_moves) == 0:
+            break
+        reidemeister_III(link, random.choice(poss_moves))
+        if link.basic_simplify():
+            failures = 0
+            success = True
+        else:
+            failures += 1
+
+    link._build_components()
+    return success
+
+
 
