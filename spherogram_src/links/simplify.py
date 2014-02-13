@@ -10,6 +10,7 @@ data structure are updated at each step.
 """
 
 from . import links
+from .. import graphs
 import random
 
 def remove_crossings(link, eliminate):
@@ -140,6 +141,8 @@ def simplify(link, max_consecutive_failures=100):
     I and II moves whenever possible.
     """
     failures, success = 0, False
+    if link.basic_simplify():
+        success = True
     while failures < max_consecutive_failures:
         poss_moves = possible_type_III_moves(link)
         if len(poss_moves) == 0:
@@ -154,5 +157,73 @@ def simplify(link, max_consecutive_failures=100):
     link._build_components()
     return success
 
+def common_element(X, Y):
+    return list(set(X) & set(Y))[0]
 
+class Face(tuple):
+    """
+    A complementary region of the link diagram.
+    """
+    def __new__(cls, edges, label=None):
+        ans = tuple.__new__(cls, edges)
+        ans.label = label
+        return ans
 
+    def __repr__(self):
+        return "<F%d>" % self.label
+
+class DualGraphOfFaces(graphs.Graph):
+    """
+    The dual graph to a link diagram D, whose vertices correspond to
+    complementary regions (faces) of D and whose edges are dual to the
+    edges of D.
+    """
+    def __init__(self, link):
+        graphs.Graph.__init__(self)
+        faces = [Face(face, i) for i, face in enumerate(link.faces())]
+        self.edge_to_face = to_face = {}
+        for face in faces:
+            for edge in face:
+                to_face[edge] = face
+
+        for edge, face in to_face.iteritems():
+            neighbor = to_face[edge.opposite()]
+            if face.label < neighbor.label:
+                dual_edge = self.add_edge(face, neighbor)
+                dual_edge.interface = (edge, edge.opposite())
+                dual_edge.label= len(self.edges) - 1
+
+        #assert self.is_planar()
+
+    def two_cycles(self):
+        """
+        Finds all two cycles and returns them as a pair of CrossingStrands which
+        are dual to the edges in the cycle.  The crossing strands are
+        oriented consistently with respect to one of the faces which a
+        vertex for the cycle.
+        """
+        cycles = []
+        for face0 in self.vertices:
+            for dual_edge0 in self.incident(face0):
+                face1 = dual_edge0(face0) 
+                if face0.label < face1.label:
+                    for dual_edge1 in self.incident(face1):
+                        if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
+                            cycles.append( (common_element(face0, dual_edge0.interface),
+                                            common_element(face0, dual_edge1.interface)))
+        return cycles
+        
+def deconnect_sum(link):
+    """
+    Warning: Destroys the original link.
+    """
+    for cs0, cs1 in DualGraphOfFaces(link).two_cycles():
+        A, a = cs0.opposite()
+        B, b = cs0
+        C, c = cs1.opposite()
+        D, d = cs1
+        A[a] = D[d]
+        B[b] = C[c]
+    link._build_components()
+    return link.split_link_diagram(destroy_original=True)
+        
