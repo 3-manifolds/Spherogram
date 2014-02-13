@@ -1,5 +1,6 @@
 import spherogram
 import unittest
+import doctest
 from random import randrange
 
 class TestLinkFunctions(unittest.TestCase):
@@ -112,7 +113,8 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k.knot_group().abelian_invariants()[0],       0)
             self.assertEqual(len(k.knot_group().abelian_invariants()),     len(k.link_components))
        
-    def testAlexanderPoly(self): 
+    def testAlexanderPoly(self):
+        from sage.all import var, sqrt
         t = var('t')
         a = var('a')
 
@@ -249,5 +251,10 @@ class TestLinkFunctions(unittest.TestCase):
             repeat-=1
 
 
+doctest.testmod(spherogram.links.links)
+doctest.testmod(spherogram.links.orthogonal)
 suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
 unittest.TextTestRunner(verbosity=2).run(suite)
+
+
+
