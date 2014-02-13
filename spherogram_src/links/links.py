@@ -275,6 +275,9 @@ def enumerate_lists(lists, n=0, filter=lambda x:True):
         n += len(L)
     return ans
 
+
+
+
 class Link(object):
     """
     Links are made from Crossings.  The general model is that of a PD
@@ -476,6 +479,15 @@ class Link(object):
 
         return faces
 
+    def dual_graph(self):
+        """
+        The dual graph to a link diagram D, whose vertices correspond to
+        complementary regions (faces) of D and whose edges are dual to the
+        edges of D.
+        """
+        from . import simplify
+        return simplify.DualGraphOfFaces(self)
+
     def basic_simplify(self):
         """
         Do Reidemeister I and II moves until none are possible.  Modifies the
@@ -521,7 +533,6 @@ class Link(object):
         from . import simplify
         return simplify.simplify(self)
 
-        
     def __len__(self):
         return len(self.crossings)
 
@@ -572,6 +583,22 @@ class Link(object):
         link = self.copy() if not destroy_original else self
         return [Link(list(component), check_planarity=False)
                 for component in link.digraph().weak_components()]
+
+    def deconnect_sum(self, destroy_original=False):
+        """
+        Undoes all connect sums that are diagramatically obvious,
+        i.e. those where there is a circle which meets the projection
+        in two points.
+
+        >>> K = Link('5_2')
+        >>> L = K.connected_sum(K); L
+        <Link: 1 comp; 10 cross>
+        >>> L.deconnect_sum()
+        [<Link: 1 comp; 5 cross>, <Link: 1 comp; 5 cross>]
+        """
+        link = self.copy() if not destroy_original else self
+        from . import simplify
+        return simplify.deconnect_sum(link)
     
     def exterior(self):
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
@@ -711,7 +738,7 @@ class Link(object):
         Returns the alexander matrix of self.
         
         >>> L = Link([(3,0,4,1),(5,2,0,3),(1,4,2,5)])  # Trefoil
-        >>> L.alexander_matrix()
+        >>> L.alexander_matrix()   #doctest: +SKIP
         [    -1 -t + 1      t]
         [     t     -1 -t + 1]
         [-t + 1      t     -1]
@@ -862,7 +889,7 @@ class Link(object):
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
        
         >>> K=Link('4_1')
-        >>> K.goeritz_matrix()
+        >>> K.goeritz_matrix()   #doctest: +SKIP
         [-3  2]
         [ 2 -3]
         """
