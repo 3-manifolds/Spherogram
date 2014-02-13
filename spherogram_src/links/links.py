@@ -710,7 +710,7 @@ class Link(object):
         """
         Returns the alexander matrix of self.
         
-        >>> L = Link('3_1')
+        >>> L = Link([(3,0,4,1),(5,2,0,3),(1,4,2,5)])  # Trefoil
         >>> L.alexander_matrix()
         [    -1 -t + 1      t]
         [     t     -1 -t + 1]
