@@ -1,7 +1,6 @@
 import sys, os, glob
-from setuptools import setup, Command
-from distutils.extension import Extension
-from Cython.Distutils import build_ext
+from setuptools import setup, Command, Extension
+from Cython.Build import cythonize
 
 # The planarity extension
 
@@ -32,12 +31,14 @@ pmap_src_files = [pmap_src_dir + file for file in
 
 Planarmap = Extension(
     name = 'spherogram.planarmap',
+
     sources =  [pmap_dir + 'planarmap.pyx'] + pmap_src_files, 
     include_dirs = [pmap_src_dir]
     )
 
 ext_modules.append(Planarmap)
-
+if not 'clean' in sys.argv:
+    ext_modules = cythonize(ext_modules)
 
 class clean(Command):
     user_options = []
@@ -60,13 +61,13 @@ with open('version.txt','w') as output:
 setup( name = 'spherogram',
        version = version,
        zip_safe = False,
-       install_requires = ['networkx>=1.3'],
+       install_requires = ['networkx>=1.3', 'cython'],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links', 'spherogram.codecs'],
        package_dir = {'spherogram' : 'spherogram_src'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = ext_modules,
-       cmdclass =  {'build_ext': build_ext, 'clean':clean},
+       cmdclass =  {'clean':clean},
        entry_points = {},
        author = 'Marc Culler and Nathan Dunfield and John Berge',
        author_email = 'culler@math.uic.edu, nmd@illinois.edu',
