@@ -310,6 +310,58 @@ class Link(object):
                 crossings = (snappy.Manifold(crossings)).link().crossings
             except ImportError:
                 raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
+                
+        # We check if crossings is a sage braid word
+        import sage.groups.braid as braid
+        if isinstance(crossings,braid.Braid):
+            braidword = crossings
+            braidgens = list(braidword.parent().gens())
+            s = [0]*(len(braidgens)+1) # start                                                               
+            l = [0]*(len(braidgens)+1) # loose ends                                                          
+            braidsylls = []
+            for b in braidword.syllables():
+                if b[1]>0:
+                    braidsylls = braidsylls+[b[0]]*abs(b[1])
+                if b[1]<0:
+                    braidsylls = braidsylls+[b[0]**-1]*abs(b[1])
+            xings = [0]*len(braidsylls)
+
+            for i, b in enumerate(braidsylls): # for each syllable, there is a single crossing               
+                label = "x"+repr(i)
+                xings[i] = Crossing(label)
+                for j, a in enumerate(braidgens): # j tells us which two strands are crossing                
+                    if b == a: # if crossing is negative  
+                        #print('-')
+                        if(s[j]==0):
+                            s[j] = (i,1)
+                        else:
+                            xings[i][1] = xings[l[j][0]][l[j][1]]
+                        if(s[j+1]==0):
+                            s[j+1] = (i,0)
+                        else:
+                            xings[i][0] = xings[l[j+1][0]][l[j+1][1]]
+                        l[j] = (i,2)
+                        l[j+1] = (i,3)
+                    if b**-1 == a: # if crossing is positive      
+                        #print('+')
+                        if(s[j]==0):
+                            s[j] = (i,0)
+                        else:
+                            xings[i][0] = xings[l[j][0]][l[j][1]]
+                        if(s[j+1]==0):
+                            s[j+1] = (i,3)
+                        else:
+                            xings[i][3] = xings[l[j+1][0]][l[j][1]]
+                        l[j] = (i,2)
+                        l[j+1] = (i,1)
+                      
+            # get rid of un-knots                                                                            
+            s2 = [r for r in  s if r != 0]
+            l2 = [r for r in  l if r != 0]
+            # fuse braid ends                                                                                
+            for j in range(len(s2)):
+                xings[s2[j][0]][s2[j][1]] = xings[l2[j][0]][l2[j][1]]
+            crossings=xings
         
         #If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
@@ -615,8 +667,6 @@ class Link(object):
             pieces.append([])
             pieces[s].append(x[l])
             while go:
-                #print 'building strands'                                                               
-                #print y.adjacent[l][1]                                                                 
                 if y.adjacent[l][1] == 0:
                     pieces[s].append(y.adjacent[l][0][0])
                     break
@@ -657,56 +707,87 @@ class Link(object):
             i+=1; j+=1; k+=1
             if z.sign > 0:
                 r = F([-k,i,k,-j])
-                #r = (g[k]**-1)*g[i]*g[k]*(g[j]**-1)                                                    
             if z.sign < 0:
                 r = F([k,i,-k,-j])
-                #r = g[k]*g[i]*(g[k]**-1)*(g[j]**-1)                                                    
             rels.append(r)
 
         G = F/rels
         return G
 
-    def alexander_matrix(self):
+    def alexander_matrix(self, mv=True):
         """
         Returns the alexander matrix of self.
         
-        >>> L = Link(3,1)
+        >>> L = spherogram.Link('3_1')
         >>> L.alexander_matrix()
-        [    -1 -t + 1      t]
-        [     t     -1 -t + 1]
-        [-t + 1      t     -1]
+        (
+        [    -1      t -t + 1]           
+        [-t + 1     -1      t]           
+        [     t -t + 1     -1], [t, t, t]
+        )
+        >>> K = spherogram.Link('L2a1')
+        >>> K.alexander_matrix()
+        (
+        [ t1 - 1 -t2 + 1]          
+        [-t1 + 1  t2 - 1], [t2, t1]
+        )
         """
+
         if not _within_sage:
             raise RuntimeError('alexander_matrix '+not_in_sage_msg)
 
+        comp = len(self.link_components)
+        if comp < 2:
+            mv = False
+
         G = self.knot_group()
         B = G.alexander_matrix()
+        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
+
+        if(mv):
+            t = list(var('t%d' % (i+1)) for i in range(0,comp))
+        else:
+            t = [var('t')]*comp
+
+        import sage.symbolic.relation as rel
+
+        eq = [y(g) == 1 for y in G.relations()]
+        solns = rel.solve(eq,g, solution_dict=True)
+        r = list(set([solns[0][h] for h in g]))
+        dict1 = {r[i]:t[i] for i in range(len(t))}
+
+        for i in range(len(g)):
+            g[i] = g[i].subs(solns[0]).subs(dict1)
+
         m = B.nrows()
         n = B.ncols()
-        C = matrix(SR,n,m)
-        t = var('t')
+        C = matrix(SR,m,n)
+
         for i in range(n):
             for j in range(m):
                 for k in B[j,i].terms():
-                    p = 0
                     x = k.leading_item()
-                    for w in x[0].syllables():
-                        p = p+w[1]
-                    y = (t**p)*x[1]
-                    C[j,i] = C[j,i] + y
-        return C #should this be a k by k minor? or full matrix?                                       
-    
-    def alexander_poly(self, v='no', method='wirt'):
+                    C[j,i] = C[j,i] + x[1]*x[0](g)
+
+        return (C,g)
+
+    def alexander_poly(self, multivar=True, v='no', method='wirt'):
         """
         Calculates the alexander polynomial of self. For links with one component,
         can evaluate the alexander polynomial at v.
        
-        >>> K = Link(4,1)
+        >>> K = spherogram.Link('4_1')
         >>> K.alexander_poly()
         -t - 1/t + 3
         >>> K.alexander_poly(4)
         -5/4
+
+        >>> K = spherogram.Link('L7n1')
+        >>> K.alexander_poly()
+        (t2^3 + t1)/(sqrt(t1)*t2^(3/2))
         """
+
+        # sign normalization still missing
         if not _within_sage:
             raise RuntimeError('alexander_poly '+not_in_sage_msg)
 
@@ -717,33 +798,57 @@ class Link(object):
             except ImportError:
                 raise RunTimeError('this method for alexander_poly '+no_snappy_msg)
         else:
-            t = var('t')
-            C = self.alexander_matrix()
+            comp = len(self.link_components)
+            if comp < 2:
+                multivar = False
+
+            if(multivar):
+                t = list(var('t%d' % (i+1)) for i in range(0,comp))
+            else:
+                t = [var('t')]
+
+            M = self.alexander_matrix(mv=multivar)
+            C = M[0]
             m = C.nrows()
             n = C.ncols()
             if n>m:
                 k = m-1
             else:
                 k = n-1
-            minor = C[0:k,0:k]
-            p = minor.determinant().expand()
-            exps = [x[1] for x in p.coeffs()]
+                
+            subMatrix = C[0:k,0:k]
+            p = subMatrix.determinant()
+
+            if multivar:
+                t_i = M[1][-1]
+                p = (p.factor())/(t_i-1)
+
+            p = self.normalize_alex_poly(p.expand(),t)
+
+            if v != 'no':
+                dict1 = {t[i]:v[i] for i in range(len(t))}
+                return p.subs(dict1)
+                
+            if multivar: # it's easier to view this way
+                return p.factor()
+            else:
+                return p.expand()
+
+    def normalize_alex_poly(self,p,t):
+        comp = len(self.link_components)
+        for i in range(0,len(t)):
+            exps = [x[1] for x in p.coeffs(t[i])]
             a = max(exps)
             b = min(exps)
-            c = -1*(b+a)/2
-            q = p*(t**c)
-            if q.subs(t==1) == -1:
-                q = -1*q
-            if v=='no':
-                return q.expand()
-            else:
-                return q.subs(t==v)
+            c = -1*(a+b)/2.
+            p = p*(t[i]**c)
+        return p
 
     def connected_sum(self, other_knot):
         """
         Returns the connected sum of two knots.                                                       
        
-        >>> K = Link(4,1)                                                                              
+        >>> K = spherogram.Link('4_1')                                                                              
         >>> K.connected_sum(K)                                                                         
         Knot with 8 crossings                                                                            
         """
@@ -766,7 +871,7 @@ class Link(object):
         """
         Finds the black graph for a knot, and returns just one component of the graph.                
        
-        >>> K=Link(5,1)                                                                                
+        >>> K = spherogram.Link('5_1')                                                                                
         >>> K.black_graph()                                                                            
         Subgraph of (): Multi-graph on 2 vertices                                                        
         """
@@ -820,7 +925,7 @@ class Link(object):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
        
-        >>> K=Link(4,1)
+        >>> K = spherogram.Link('4_1')
         >>> K.goeritz_matrix()
         [-3  2]
         [ 2 -3]
@@ -861,8 +966,8 @@ class Link(object):
     def signature(self):
         """
         Returns the signature of the link.       
-        >>> f=fig_8()                                                                                  
-        >>> f.signature()                                                                              
+        >>> K = spherogram.Link('4_1')                                                                                  
+        >>> K.signature()                                                                              
         0
         """
         if not _within_sage:
@@ -889,9 +994,9 @@ class Link(object):
     def copy(self):
         """
         Returns a copy of the knot.       
-        >>> f=fig_8()                                                                       
-        >>> copy=f.copy()                                                                   
-        >>> f.PD_code()                                                                     
+        >>> K = spherogram.Link('4_1')                                                                      
+        >>> copy = K.copy()                                                                   
+        >>> K.PD_code()                                                                     
         [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]                              
         >>> copy.PD_code()                                                                  
         [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]"""
@@ -932,7 +1037,7 @@ class Link(object):
     def determinant(self, method='wirt'):
         """Returns the determinant of the knot K, a non-negative integer.                
        
-        >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+        >>> K = spherogram.Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.determinant()                                                        
         3
         """
