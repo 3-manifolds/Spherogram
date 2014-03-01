@@ -9,6 +9,11 @@
 
 #include "PMdef.h"
 
+#ifdef __MINGW32__
+ #define srand48 srand
+ #define lrand48 rand
+#endif
+
 /****************************************/
 /* data utility functions */
 /****************************************/
@@ -304,9 +309,6 @@ pm_edge *pmNextSeed(void)
   else
     return pmSeed[++pmSeedBeg];
 }
-
-
-
 
 /******************************/
 /* this function initialize the random generator */
