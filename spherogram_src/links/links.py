@@ -21,6 +21,7 @@ try:
     from sage.groups.free_group import FreeGroup
     import sage.graphs.graph as graph
     from sage.symbolic.ring import var
+    import sage.groups.braid as braid
 except ImportError:
     pass
 not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
@@ -304,64 +305,21 @@ class Link(object):
         # We check if crossings is a string
         self.name = None
         if isinstance(crossings, str):
-            try:
-                import snappy
-                self.name = crossings
-                crossings = (snappy.Manifold(crossings)).link().crossings
-            except ImportError:
-                raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
+            if(crossings[:2] == 'T(' ):
+                import torus
+                crossings = torus.torus_knot(crossings).crossings
+            else:
+                try:
+                    import snappy
+                    self.name = crossings
+                    crossings = (snappy.Manifold(crossings)).link().crossings
+                except ImportError:
+                    raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
                 
         # We check if crossings is a sage braid word
-        import sage.groups.braid as braid
         if isinstance(crossings,braid.Braid):
-            braidword = crossings
-            braidgens = list(braidword.parent().gens())
-            s = [0]*(len(braidgens)+1) # start                                                               
-            l = [0]*(len(braidgens)+1) # loose ends                                                          
-            braidsylls = []
-            for b in braidword.syllables():
-                if b[1]>0:
-                    braidsylls = braidsylls+[b[0]]*abs(b[1])
-                if b[1]<0:
-                    braidsylls = braidsylls+[b[0]**-1]*abs(b[1])
-            xings = [0]*len(braidsylls)
-
-            for i, b in enumerate(braidsylls): # for each syllable, there is a single crossing               
-                label = "x"+repr(i)
-                xings[i] = Crossing(label)
-                for j, a in enumerate(braidgens): # j tells us which two strands are crossing                
-                    if b == a: # if crossing is negative  
-                        #print('-')
-                        if(s[j]==0):
-                            s[j] = (i,1)
-                        else:
-                            xings[i][1] = xings[l[j][0]][l[j][1]]
-                        if(s[j+1]==0):
-                            s[j+1] = (i,0)
-                        else:
-                            xings[i][0] = xings[l[j+1][0]][l[j+1][1]]
-                        l[j] = (i,2)
-                        l[j+1] = (i,3)
-                    if b**-1 == a: # if crossing is positive      
-                        #print('+')
-                        if(s[j]==0):
-                            s[j] = (i,0)
-                        else:
-                            xings[i][0] = xings[l[j][0]][l[j][1]]
-                        if(s[j+1]==0):
-                            s[j+1] = (i,3)
-                        else:
-                            xings[i][3] = xings[l[j+1][0]][l[j][1]]
-                        l[j] = (i,2)
-                        l[j+1] = (i,1)
-                      
-            # get rid of un-knots                                                                            
-            s2 = [r for r in  s if r != 0]
-            l2 = [r for r in  l if r != 0]
-            # fuse braid ends                                                                                
-            for j in range(len(s2)):
-                xings[s2[j][0]][s2[j][1]] = xings[l2[j][0]][l2[j][1]]
-            crossings=xings
+            import braid_functions
+            crossings = braid_functions.braidwordToCrossings(crossings,method='braid')
         
         #If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
@@ -826,6 +784,7 @@ class Link(object):
             p = self.normalize_alex_poly(p.expand(),t)
 
             if v != 'no':
+                print(v)
                 dict1 = {t[i]:v[i] for i in range(len(t))}
                 return p.subs(dict1)
                 
@@ -1052,8 +1011,7 @@ class Link(object):
         elif method=='goeritz':
             return abs(self.goeritz_matrix().determinant())
         else:
-            t = var('t')
-            return abs(self.alexander_poly(v=-1))
+            return abs(self.alexander_poly(multivar=False, v=[-1]))
             
 
 
