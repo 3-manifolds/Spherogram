@@ -319,7 +319,7 @@ class Link(object):
         # We check if crossings is a sage braid word
         if isinstance(crossings,braid.Braid):
             import braid_functions
-            crossings = braid_functions.braidwordToCrossings(crossings,method='braid')
+            crossings = braid_functions.braidwordToCrossings(crossings)
         
         #If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
