@@ -23,8 +23,8 @@ def torus_knot(name, method='calc'):
     q = int(name[comma+1:-1])
         
     if method == 'braid':
-        B = braid.BraidGroup(p-1)
-        b = B([i for i in range(0,p-1)]*q)
+        B = braid.BraidGroup(p)
+        b = B([i+1 for i in range(0,p-1)]*q)
         return spherogram.Link(b)
 
     else: 
