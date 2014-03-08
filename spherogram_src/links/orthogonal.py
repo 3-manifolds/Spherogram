@@ -609,8 +609,11 @@ def orthogonal_draw(self, link_editor=None):
         link_editor = plink.LinkEditor()
     diagram = OrthogonalLinkDiagram(self)
     link_editor.unpickle(*diagram.plink_data())
-    link_editor.zoom_to_fit()
-    link_editor.goto_start_state()
+    try:
+        link_editor.zoom_to_fit()
+        link_editor.goto_start_state()
+    except AttributeError:  # Have been passed just a LinkManager which has no Tk canvas
+        pass
     return link_editor
 
 #---------------------------------------------------
