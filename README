@@ -1,0 +1,31 @@
+Spherogram
+===========
+
+Spherogram is a Python module for dealing with the kind of planar diagrams that arise in 3-dimensional topology, such as link and Heegaard diagrams.  It a component of the larger SnapPy project:
+
+    http://snappy.computop.org
+
+For some basic examples of using Spherogram to build links, see 
+
+    http://snappy.computop.org/spherogram.html
+
+Developed by 
+
+* Marc Culler,  http://math.uic.edu/~culler
+* Nathan Dunfield,  http://dunfield.info
+
+with contributions from 
+
+* Robert Lipshitz
+* Jennet Dickinson
+
+
+License
+========
+
+This code is released under the GNU General Public License version 2 or (at your option) any later version as published by the Free Software Foundation.  See
+
+     http://www.gnu.org/licenses/gpl-2.0.txt 
+
+for the complete license text. 
+
