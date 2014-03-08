@@ -19,6 +19,13 @@ with contributions from
 * Robert Lipshitz
 * Jennet Dickinson
 
+Also includes third-party libraries:
+
+* Planarity by John Boyer 
+  https://code.google.com/p/planarity/
+
+* Planarmap by Giles Schaeffer
+  http://www.lix.polytechnique.fr/Labo/Gilles.Schaeffer/PagesWeb/PlanarMap/
 
 License
 ========
