@@ -21,6 +21,9 @@ def torus_knot(name, method='calc'):
 
     p = int(name[2:comma])
     q = int(name[comma+1:-1])
+
+    if p==0 or q==0:
+        raise Exception("Torus_knot(p,q) requires p, q, non-zero.")
         
     if method == 'braid':
         B = braid.BraidGroup(p)
@@ -29,9 +32,6 @@ def torus_knot(name, method='calc'):
 
     else: 
         to_mirror=False
-	
-        if p==0 or q==0:
-            raise Exception("Torus_knot(p,q) requires p, q, non-zero.")
 		        
         #If q<0 or p<0 run torus_knot for |p|, |q| and then if p*q<0 take the mirror.
 	if p<0 or q<0:
@@ -56,9 +56,9 @@ def torus_knot(name, method='calc'):
 				our_crossings[i][1]=our_crossings[i+1][0]
 				our_crossings[i][2]=our_crossings[i+1][3]
 			if to_mirror:
-				return Link(our_crossings).mirror()
+				return spherogram.Link(our_crossings).mirror()
 			else:
-				return Link(our_crossings)
+				return spherogram.Link(our_crossings)
         
 		if q==1:
 			our_crossings[0][0]=our_crossings[0][1]
@@ -67,9 +67,9 @@ def torus_knot(name, method='calc'):
 			for i in range (q):
 				print(spherogram.Crossing(i).adjacent)
         	if to_mirror:
-				return spherogram.Link(our_crossings).mirror()
+                    return spherogram.Link(our_crossings).mirror()
         	else:
-        		return Link(our_crossings)
+                    return spherogram.Link(our_crossings)
     
 	if p != 2:
 		our_crossings=dict()

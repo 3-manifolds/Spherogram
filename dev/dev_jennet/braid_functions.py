@@ -4,6 +4,7 @@ Initialize a link from a sage braid word.
 """
 import spherogram
 import sage.groups.braid as braid
+
 def braidwordToCrossings(braidword):
     
     braidgens = list(braidword.parent().gens())
