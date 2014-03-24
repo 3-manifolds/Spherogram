@@ -307,7 +307,7 @@ class Link(object):
         if isinstance(crossings, str):
             if(crossings[:2] == 'T(' ):
                 import torus
-                crossings = torus.torus_knot(crossings).crossings
+                crossings = torus.torus_knot(crossings, method='braid').crossings
             else:
                 try:
                     import snappy
@@ -729,7 +729,7 @@ class Link(object):
 
         return (C,g)
 
-    def alexander_poly(self, multivar=True, v='no', method='wirt'):
+    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
         """
         Calculates the alexander polynomial of self. For links with one component,
         can evaluate the alexander polynomial at v.
@@ -781,10 +781,10 @@ class Link(object):
                 t_i = M[1][-1]
                 p = (p.factor())/(t_i-1)
 
-            p = self.normalize_alex_poly(p.expand(),t)
+            if(norm):
+                p = self.normalize_alex_poly(p.expand(),t)
 
             if v != 'no':
-                print(v)
                 dict1 = {t[i]:v[i] for i in range(len(t))}
                 return p.subs(dict1)
                 
@@ -1011,7 +1011,7 @@ class Link(object):
         elif method=='goeritz':
             return abs(self.goeritz_matrix().determinant())
         else:
-            return abs(self.alexander_poly(multivar=False, v=[-1]))
+            return abs(self.alexander_poly(multivar=False, v=[-1], norm = False))
             
 
 
