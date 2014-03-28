@@ -306,7 +306,7 @@ class Link(object):
         self.name = None
         if isinstance(crossings, str):
             if(crossings[:2] == 'T(' ):
-                import torus
+                import spherogram.dev.dev_jennet.torus as torus
                 crossings = torus.torus_knot(crossings, method='braid').crossings
             else:
                 try:
@@ -318,7 +318,7 @@ class Link(object):
                 
         # We check if crossings is a sage braid word
         if isinstance(crossings,braid.Braid):
-            import braid_functions
+            import spherogram.dev.dev_jennet.braid_functions as braid_functions
             crossings = braid_functions.braidwordToCrossings(crossings)
         
         #If crossings is just a PD code rather than a list of Crossings,
