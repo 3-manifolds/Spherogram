@@ -29,14 +29,12 @@ def braidwordToCrossings(braidword):
             # j tells us which two strands are crossing                
 
             if b == a: # if crossing is negative  
-                print('-')
                 xings[i][1] = l[j][0][l[j][1]]
                 xings[i][0] = l[j+1][0][l[j+1][1]]
                 l[j]   = (xings[i],2)
                 l[j+1] = (xings[i],3)
                     
             if b**-1 == a: # if crossing is positive      
-                print('+')
                 xings[i][0] = l[j][0][l[j][1]]
                 xings[i][3] = l[j+1][0][l[j+1][1]]
                 l[j]   = (xings[i],1)
