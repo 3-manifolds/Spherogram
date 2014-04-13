@@ -307,7 +307,10 @@ class Link(object):
         if isinstance(crossings, str):
             if(crossings[:2] == 'T(' ):
                 import spherogram.dev.dev_jennet.torus as torus
-                crossings = torus.torus_knot(crossings, method='braid').crossings
+                if _within_sage:
+                    crossings = torus.torus_knot(crossings, method='braid').crossings
+                else:
+                    crossings = torus.torus_knot(crossings).crossings
             else:
                 try:
                     import snappy
