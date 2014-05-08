@@ -1,3 +1,5 @@
+import sage.graphs.graph as graph
+
 def subgraphs(G):
     "Returns a list of all graphs gotten by taking a subset of the edges of G."
     if not G.edges():
@@ -99,7 +101,7 @@ def cyc(G,T,e):
     except:
         pass
     #Now the typical case.
-    S = Graph(T.edges()) #Hack because otherwise sage thinks this is a multigraph, and cycle_basis is not implemented for such.
+    S = graph.Graph(T.edges()) #Hack because otherwise sage thinks this is a multigraph, and cycle_basis is not implemented for such.
     S.add_edge(e)
     cb = S.cycle_basis()[0]
     answer = list()

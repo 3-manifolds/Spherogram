@@ -3,7 +3,7 @@ from __future__ import print_function
 Functions needed to calculate the Jones polynomial of K. Still needs work ...
 """
 import spherogram
-import spanning_trees
+#import spanning_trees
 import tree_functions
 from sage.symbolic.ring import var
 
@@ -40,7 +40,7 @@ def _edge_sign(K, edge): #Giving weird answers; maybe not working right?
 def Kauffman_states(K):
     "Returns the set of Kauffman states for the Alexander polynomial, corresponding to the spanning trees in the black graph. Returns a list of dictionaries, with keys crossings and values faces in the knot projection."
     G = K.black_graph()
-    trees = spanning_trees.spanning_trees(G)
+    trees = G.spanning_trees()
     marked_edge = ((K.crossings[0],0), K.crossings[0].adjacent[0]) #We (arbitrarily) mark an edge in K.
     states = list()
     for T in trees:
@@ -92,7 +92,7 @@ def Jones_poly(K,variable=None):
     answer = 0
     A = var('A')
     G = K.black_graph()
-    for T in spanning_trees.spanning_trees(G):
+    for T in G.spanning_trees():
         answer = answer + _Jones_contrib(K,G,T,A)
     answer = answer * (-A)**(3*K.writhe()) #Switched this to a -. Sign of exponent seems to be off from standard conventions.
     answer = answer.expand()
