@@ -1,4 +1,5 @@
 import sage.graphs.graph as graph
+from sage.graphs.graph import *
 
 def subgraphs(G):
     "Returns a list of all graphs gotten by taking a subset of the edges of G."
@@ -20,7 +21,7 @@ def orient_tree(T, root):
     if not T.edges():
         verts = T.vertices()
         v = verts[0]
-        return DiGraph({v:list()})
+        return graph.DiGraph({v:list()})
     H = T.copy()
     H.delete_vertex(root)
     root_edges = list()
@@ -36,7 +37,7 @@ def orient_tree(T, root):
     all_edges = root_edges
     for P in pieces:
         all_edges = all_edges+P.edges()
-    return DiGraph(all_edges)
+    return graph.DiGraph(all_edges)
 
 def cut(G,T,e):
     """
