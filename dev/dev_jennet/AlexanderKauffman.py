@@ -1,3 +1,28 @@
+def orient_tree(T, root):
+    "Returns a digraph by orienting T outwards from root."
+    if not T.is_tree():
+        raise Exception("Input must be a tree.")
+    if not T.edges():
+        verts = T.vertices()
+        v = verts[0]
+        return graph.DiGraph({v:list()})
+    H = T.copy()
+    H.delete_vertex(root)
+    root_edges = list()
+    for e in T.edges_incident(root):
+        if e[0] == root:
+            root_edges.append(e)
+        else:
+            root_edges.append((e[1],e[0],e[2]))
+    pieces = list() #Orient the subtrees gotten by deleting root.
+    for e in root_edges:
+        comp = H.subgraph(H.connected_component_containing_vertex(e[1]))
+        pieces.append(orient_tree(comp,e[1]))
+    all_edges = root_edges
+    for P in pieces:
+        all_edges = all_edges+P.edges()
+    return graph.DiGraph(all_edges)
+
 def _crossing_to_edge(K,G,c):
     "Returns the edge of G corresponding to crossing c, where G is either the black graph or white graph."
     edge = list()
@@ -20,13 +45,6 @@ def _dual_spanning_tree(K,T):
     crossings_to_ignore = [e[2] for e in T.edges()]
     crossings_to_use = [c for c in K.crossings if not c in crossings_to_ignore]
     return Graph([K._crossing_to_edge(G,c) for c in crossings_to_use])
-
-def _edge_sign(K, edge): #Giving weird answers; maybe not working right?
-    "Returns the sign (+/- 1) associated to given edge in the black graph."
-    crossing = edge[2]
-    if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
-        return +1
-    return -1
 
 def Kauffman_states(K):
     "Returns the set of Kauffman states for the Alexander polynomial, corresponding to the spanning trees in the black graph. Returns a list of dictionaries, with keys crossings and values faces in the knot projection."
