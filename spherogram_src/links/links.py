@@ -849,7 +849,6 @@ class Link(object):
             faces.append(l)
 
         coords=list()
-        signs=list()
         for i in range(len(faces)-1):
             for j in range (i+1, len(faces)):
                 a=set(faces[i])
@@ -860,29 +859,11 @@ class Link(object):
                     total=set(crossings)
                     if total.issubset(s):
                         coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
-                        if set([self.crossings[x][1], self.crossings[x][2]]).issubset(set(faces[i])) or set([self.crossings[x][3], self.crossings[x][0]]).issubset(set(faces[i])):
-                                signs.append(-1)
-                        elif set([self.crossings[x][2], self.crossings[x][3]]).issubset(set(faces[i])) or set([self.crossings[x][0], self.crossings[x][1]]).issubset(set(faces[i])):
-                                signs.append(1)
 
         G=graph.Graph(coords)
         component=G.connected_components()[1]
         G=G.subgraph(component)
-        #Built shorter versions of coords and signs corresponding just to those edges in the subgraph:   
-        new_coords = list()
-        new_signs = list()
-        edges = G.edges()
-        for n in range(len(coords)):
-            if coords[n]+(None,) in edges:
-                new_coords.append(coords[n])
-                new_signs.append(signs[n])
-            if (coords[n][1],coords[n][0],None) in edges:
-                new_coords.append((coords[n][1],coords[n][0]))
-                new_signs.append(signs[n])
-#        if return_signs==True:
-#            return (new_signs,new_coords)
-#        else:
-            return G
+        return G
 
     def _edge_sign(K, edge):
         "Returns the sign (+/- 1) associated to given edge in the black graph."
@@ -1002,9 +983,11 @@ class Link(object):
                         break
         return m
 
-    def determinant(self, method='wirt'):
+    def determinant(self, method='goeritz'):
         """Returns the determinant of the knot K, a non-negative integer.                
-       
+
+        Possible methods are 'wirt', using the Wirtinger presentation; 'goeritz', using the Goeritz matrix, and 'color', using the 'colorability matrix', or anything else, to compute the Alexander polynomial at -1.
+        
         >>> K = spherogram.Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.determinant()                                                        
         3
