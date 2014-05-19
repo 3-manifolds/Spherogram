@@ -829,15 +829,16 @@ class Link(object):
             first.crossings.append(c)
         return Link(first.crossings)
 
-    def black_graph(self, return_signs=False):
+    def black_graph(self):
         """
-        Finds the black graph for a knot, and returns just one component of the graph.                
+        Returns the black graph of K. If the black graph is disconnected (which can only happen for a split link diagram), returns one connected component.
+
+        The edges are labeled by the crossings they correspond to.
        
         >>> K = spherogram.Link('5_1')                                                                                
         >>> K.black_graph()                                                                            
         Subgraph of (): Multi-graph on 2 vertices                                                        
         """
-        # this is a bit hacky, could stand to be re-written
 
         faces = []
         for x in self.faces():
@@ -858,7 +859,7 @@ class Link(object):
                     crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
                     total=set(crossings)
                     if total.issubset(s):
-                        coords.append((tuple(faces[i]),tuple(faces[j])))
+                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
                         if set([self.crossings[x][1], self.crossings[x][2]]).issubset(set(faces[i])) or set([self.crossings[x][3], self.crossings[x][0]]).issubset(set(faces[i])):
                                 signs.append(-1)
                         elif set([self.crossings[x][2], self.crossings[x][3]]).issubset(set(faces[i])) or set([self.crossings[x][0], self.crossings[x][1]]).issubset(set(faces[i])):
@@ -878,11 +879,18 @@ class Link(object):
             if (coords[n][1],coords[n][0],None) in edges:
                 new_coords.append((coords[n][1],coords[n][0]))
                 new_signs.append(signs[n])
-        if return_signs==True:
-            return (new_signs,new_coords)
-        else:
+#        if return_signs==True:
+#            return (new_signs,new_coords)
+#        else:
             return G
 
+    def _edge_sign(K, edge):
+        "Returns the sign (+/- 1) associated to given edge in the black graph."
+        crossing = edge[2]
+        if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
+            return +1
+        return -1
+        
     def goeritz_matrix(self):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
@@ -895,16 +903,14 @@ class Link(object):
         if not _within_sage:
             raise RuntimeError('goeritz_matrix '+not_in_sage_msg)
 
-        (all_signs,all_edges)=self.black_graph(True)
         g=self.black_graph()
         l=g.vertices()
         m=matrix(len(g.vertices()),len(g.vertices()))
-        for n in range(len(all_edges)):
-            e = all_edges[n]
+        for e in g.edges():
             i=l.index(e[0])
             j=l.index(e[1])
-            m[(i,j)]=m[(i,j)]+all_signs[n]
-            m[(j,i)]=m[(j,i)]+all_signs[n]
+            m[(i,j)]=m[(i,j)]+self._edge_sign(e)
+            m[(j,i)]=m[(j,i)]+self._edge_sign(e)
         for i in range(len(g.vertices())):
             m[(i,i)]=sum(m.column(i))*(-1)
         m=m.delete_rows([0])
@@ -936,11 +942,11 @@ class Link(object):
             raise RuntimeError('signature '+not_in_sage_msg)
 
         answer=0
-        (signs,edges)=self.black_graph(True)
-        for i in range(len(signs)):
-            v=self._find_crossing(edges[i])
-            if signs[i]*v.sign==1:
-                answer=answer+signs[i]
+        G = self.black_graph()
+        for e in G.edges():
+            v = e[2]
+            if self._edge_sign(e) == v.sign:
+                answer = answer + v.sign
         m=self.goeritz_matrix()
         vals=m.eigenvalues()
         pos=0
