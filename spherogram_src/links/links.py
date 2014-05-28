@@ -80,12 +80,13 @@ class Crossing(object):
         Rotate the incoming connections by 90*s degrees anticlockwise.  
         """
         rotate = lambda v : (v + s) % 4
-        self.adjacent = CyclicList(self.adjacent[s:] + self.adjacent[:s])
-        for i, (o, j) in enumerate(self.adjacent):
+        new_adjacent = CyclicList(self.adjacent[s:] + self.adjacent[:s])
+        for i, (o, j) in enumerate(new_adjacent):
             if o != self:
                 o.adjacent[j] = (self, i)
+                self.adjacent[i] = (o, j)
             else:
-                self.adjacent[i] = (self, rotate(j))
+                self.adjacent[i] = (self, (j - s) % 4)
 
         self.directions = set( [ (rotate(a), rotate(b)) for a, b in self.directions] )
 
