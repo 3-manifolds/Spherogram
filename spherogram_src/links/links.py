@@ -22,6 +22,7 @@ try:
     import sage.graphs.graph as graph
     from sage.symbolic.ring import var
     import sage.groups.braid as braid
+    from sage.all import ZZ
 except ImportError:
     pass
 not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
@@ -747,19 +748,15 @@ class Link(object):
         """
         Returns the alexander matrix of self.
 
-        >>> L = spherogram.Link('3_1')
+        >>> L = Link('3_1')
         >>> L.alexander_matrix()
-        (
-        [    -1      t -t + 1]           
-        [-t + 1     -1      t]           
-        [     t -t + 1     -1], [t, t, t]
-        )
-        >>> K = spherogram.Link('L2a1')
-        >>> K.alexander_matrix()
-        (
-        [ t1 - 1 -t2 + 1]          
-        [-t1 + 1  t2 - 1], [t2, t1]
-        )
+        ([      -1 -1/t + 1      1/t]
+        [     1/t       -1 -1/t + 1]
+        [-1/t + 1      1/t       -1], [t, t, t])
+        >>> L = Link([(4,1,3,2),(1,4,2,3)])
+        >>> L.alexander_matrix()
+        ([ t1 - 1 -t2 + 1]
+        [-t1 + 1  t2 - 1], [t2, t1])
         """
 
         if not _within_sage:
@@ -804,23 +801,21 @@ class Link(object):
         """
         Calculates the alexander polynomial of self. For links with one component,
         can evaluate the alexander polynomial at v.
-       
-<<<<<<< local
-        >>> K = Link('4a1')
-=======
-        >>> K = spherogram.Link('4_1')
->>>>>>> other
-        >>> K.alexander_poly()
-        -t - 1/t + 3
-        >>> K.alexander_poly(4)
-        -5/4
 
-        >>> K = spherogram.Link('L7n1')
+        >>> K = Link('4_1')
         >>> K.alexander_poly()
-        (t2^3 + t1)/(sqrt(t1)*t2^(3/2))
+        t + 1/t - 3
+        >>> K.alexander_poly(v=[4])
+        5/4
+
+        >>> K = Link('L7n1')
+        >>> K.alexander_poly(norm=False)
+        (t1*t2^3 + 1)/(t1*t2^4)
         """
 
-        # sign normalization still missing
+        # sign normalization still missing, but when "norm=True" the
+        # leading coefficient with respect to the first variable is made
+        # positive. 
         if not _within_sage:
             raise RuntimeError('alexander_poly '+not_in_sage_msg)
 
@@ -869,12 +864,17 @@ class Link(object):
                 return p.expand()
 
     def normalize_alex_poly(self,p,t):
-        comp = len(self.link_components)
+        # Normalize the sign of the leading coefficient 
+        l = p
+        for v in t:
+            l = l.leading_coefficient(v)
+        if l < 0:
+            p = -p            
         for i in range(0,len(t)):
             exps = [x[1] for x in p.coeffs(t[i])]
             a = max(exps)
             b = min(exps)
-            c = -1*(a+b)/2.
+            c = -1*(a+b)/ZZ(2)
             p = p*(t[i]**c)
         return p
 
@@ -882,11 +882,7 @@ class Link(object):
         """
         Returns the connected sum of two knots.                                                       
        
-<<<<<<< local
         >>> K = Link('4_1')                                                                              
-=======
-        >>> K = spherogram.Link('4_1')                                                                              
->>>>>>> other
         >>> K.connected_sum(K)                                                                         
         <Link: 1 comp; 8 cross>
         """
@@ -907,24 +903,14 @@ class Link(object):
 
     def black_graph(self):
         """
-<<<<<<< local
-        Finds the black graph for a knot, and returns just
-        one component of the graph.                
-=======
-        Returns the black graph of K. If the black graph is disconnected (which can only happen for a split link diagram), returns one connected component.
+        Returns the black graph of K. If the black graph is disconnected (which
+        can only happen for a split link diagram), returns one connected component.
 
         The edges are labeled by the crossings they correspond to.
->>>>>>> other
-       
-<<<<<<< local
+
         >>> K=Link('5_1')                                                                                
         >>> K.black_graph()
         Subgraph of (): Multi-graph on 2 vertices
-=======
-        >>> K = spherogram.Link('5_1')                                                                                
-        >>> K.black_graph()                                                                            
-        Subgraph of (): Multi-graph on 2 vertices                                                        
->>>>>>> other
         """
 
         faces = []
@@ -963,15 +949,9 @@ class Link(object):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
        
-<<<<<<< local
         >>> K=Link('4_1')
-        >>> K.goeritz_matrix()   #doctest: +SKIP
-=======
-        >>> K = spherogram.Link('4_1')
-        >>> K.goeritz_matrix()
->>>>>>> other
-        [-3  2]
-        [ 2 -3]
+        >>> K.goeritz_matrix().det()
+        5
         """
         if not _within_sage:
             raise RuntimeError('goeritz_matrix '+not_in_sage_msg)
@@ -1007,11 +987,7 @@ class Link(object):
     def signature(self):
         """
         Returns the signature of the link.       
-<<<<<<< local
         >>> K = Link('4a1')                                                                               
-=======
-        >>> K = spherogram.Link('4_1')                                                                                  
->>>>>>> other
         >>> K.signature()                                                                              
         0
         """
@@ -1038,21 +1014,13 @@ class Link(object):
 
     def copy(self):
         """
-        Returns a copy of the knot.       
-<<<<<<< local
+        Returns a copy of the knot.
+
         >>> K=Link('4_1')
         >>> copy=K.copy()
         >>> K.PD_code() == copy.PD_code()
         True
         """
-=======
-        >>> K = spherogram.Link('4_1')                                                                      
-        >>> copy = K.copy()                                                                   
-        >>> K.PD_code()                                                                     
-        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]                              
-        >>> copy.PD_code()                                                                  
-        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]"""
->>>>>>> other
         return copy.deepcopy(self)
 
     def mirror(self):
@@ -1090,9 +1058,11 @@ class Link(object):
     def determinant(self, method='goeritz'):
         """Returns the determinant of the knot K, a non-negative integer.                
 
-        Possible methods are 'wirt', using the Wirtinger presentation; 'goeritz', using the Goeritz matrix, and 'color', using the 'colorability matrix', or anything else, to compute the Alexander polynomial at -1.
+        Possible methods are 'wirt', using the Wirtinger presentation; 'goeritz',
+        using the Goeritz matrix, and 'color', using the 'colorability matrix', or
+        anything else, to compute the Alexander polynomial at -1.
         
-        >>> K = spherogram.Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+        >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.determinant()                                                        
         5
         """
