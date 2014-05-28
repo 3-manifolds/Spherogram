@@ -1156,34 +1156,3 @@ def python_KLP(L):
     for i, v in enumerate(vertices):
         v._KLP_index = i
     return [len(vertices), 0, len(L.link_components), [KLPCrossing(c) for c in vertices]]
-
-# ---- Drawing the link --------
-#
-#   This code is no longer used. 
-#
-#----------------------------
-
-from . import draw
-import tempfile 
-
-def save_link_pdf(self, filename):
-    """
-    Requires Bartholomew's "draw programme",
-    MetaPost, and the Ghostscript based "epstopdf". 
-    """
-    file = open(filename, 'wb')
-    file.write(draw.link_pdf(self.peer_code()))
-    file.close()
-
-def show(self):
-    # this leaves crud in your tmp directory
-    file = tempfile.NamedTemporaryFile(delete=False)
-    file.write(draw.link_pdf(self.peer_code()))
-    file.close()
-    if sys.platform == 'darwin':
-        os.system('open ' + file.name)
-    # this is not very portable.
-    elif sys.platform == 'linux2':
-        os.system('okular ' + file.name)
-
-# Link.save_link_pdf, Link.show = save_link_pdf, show
