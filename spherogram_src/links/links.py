@@ -21,6 +21,7 @@ try:
     from sage.groups.free_group import FreeGroup
     import sage.graphs.graph as graph
     from sage.symbolic.ring import var
+    import sage.groups.braid as braid
 except ImportError:
     pass
 not_in_sage_msg = 'is only available when running Spherogram inside Sage.'
@@ -307,12 +308,24 @@ class Link(object):
         # We check if crossings is a string
         self.name = None
         if isinstance(crossings, str):
-            try:
-                import snappy
-                self.name = crossings
-                crossings = (snappy.Manifold(crossings)).link().crossings
-            except ImportError:
-                raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
+            if(crossings[:2] == 'T(' ):
+                import spherogram.dev.dev_jennet.torus as torus
+                if _within_sage:
+                    crossings = torus.torus_knot(crossings, method='braid').crossings
+                else:
+                    crossings = torus.torus_knot(crossings).crossings
+            else:
+                try:
+                    import snappy
+                    self.name = crossings
+                    crossings = (snappy.Manifold(crossings)).link().crossings
+                except ImportError:
+                    raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
+                
+        # We check if crossings is a sage braid word
+        if isinstance(crossings,braid.Braid):
+            import spherogram.dev.dev_jennet.braid_functions as braid_functions
+            crossings = braid_functions.braidwordToCrossings(crossings)
         
         #If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
@@ -683,8 +696,6 @@ class Link(object):
             pieces.append([])
             pieces[s].append(x[l])
             while go:
-                #print 'building strands'                                                               
-                #print y.adjacent[l][1]                                                                 
                 if y.adjacent[l][1] == 0:
                     pieces[s].append(y.adjacent[l][0][0])
                     break
@@ -725,56 +736,91 @@ class Link(object):
             i+=1; j+=1; k+=1
             if z.sign > 0:
                 r = F([-k,i,k,-j])
-                #r = (g[k]**-1)*g[i]*g[k]*(g[j]**-1)                                                    
             if z.sign < 0:
                 r = F([k,i,-k,-j])
-                #r = g[k]*g[i]*(g[k]**-1)*(g[j]**-1)                                                    
             rels.append(r)
 
         G = F/rels
         return G
 
-    def alexander_matrix(self):
+    def alexander_matrix(self, mv=True):
         """
         Returns the alexander matrix of self.
-        
-        >>> L = Link([(3,0,4,1),(5,2,0,3),(1,4,2,5)])  # Trefoil
-        >>> L.alexander_matrix()   #doctest: +SKIP
-        [    -1 -t + 1      t]
-        [     t     -1 -t + 1]
-        [-t + 1      t     -1]
+
+        >>> L = spherogram.Link('3_1')
+        >>> L.alexander_matrix()
+        (
+        [    -1      t -t + 1]           
+        [-t + 1     -1      t]           
+        [     t -t + 1     -1], [t, t, t]
+        )
+        >>> K = spherogram.Link('L2a1')
+        >>> K.alexander_matrix()
+        (
+        [ t1 - 1 -t2 + 1]          
+        [-t1 + 1  t2 - 1], [t2, t1]
+        )
         """
+
         if not _within_sage:
             raise RuntimeError('alexander_matrix '+not_in_sage_msg)
 
+        comp = len(self.link_components)
+        if comp < 2:
+            mv = False
+
         G = self.knot_group()
         B = G.alexander_matrix()
+        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
+
+        if(mv):
+            t = list(var('t%d' % (i+1)) for i in range(0,comp))
+        else:
+            t = [var('t')]*comp
+
+        import sage.symbolic.relation as rel
+
+        eq = [y(g) == 1 for y in G.relations()]
+        solns = rel.solve(eq,g, solution_dict=True)
+        r = list(set([solns[0][h] for h in g]))
+        dict1 = {r[i]:t[i] for i in range(len(t))}
+
+        for i in range(len(g)):
+            g[i] = g[i].subs(solns[0]).subs(dict1)
+
         m = B.nrows()
         n = B.ncols()
-        C = matrix(SR,n,m)
-        t = var('t')
+        C = matrix(SR,m,n)
+
         for i in range(n):
             for j in range(m):
                 for k in B[j,i].terms():
-                    p = 0
                     x = k.leading_item()
-                    for w in x[0].syllables():
-                        p = p+w[1]
-                    y = (t**p)*x[1]
-                    C[j,i] = C[j,i] + y
-        return C #should this be a k by k minor? or full matrix?                                       
-    
-    def alexander_poly(self, v='no', method='wirt'):
+                    C[j,i] = C[j,i] + x[1]*x[0](g)
+
+        return (C,g)
+
+    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
         """
         Calculates the alexander polynomial of self. For links with one component,
         can evaluate the alexander polynomial at v.
        
+<<<<<<< local
         >>> K = Link('4a1')
+=======
+        >>> K = spherogram.Link('4_1')
+>>>>>>> other
         >>> K.alexander_poly()
         -t - 1/t + 3
         >>> K.alexander_poly(4)
         -5/4
+
+        >>> K = spherogram.Link('L7n1')
+        >>> K.alexander_poly()
+        (t2^3 + t1)/(sqrt(t1)*t2^(3/2))
         """
+
+        # sign normalization still missing
         if not _within_sage:
             raise RuntimeError('alexander_poly '+not_in_sage_msg)
 
@@ -785,33 +831,62 @@ class Link(object):
             except ImportError:
                 raise RunTimeError('this method for alexander_poly '+no_snappy_msg)
         else:
-            t = var('t')
-            C = self.alexander_matrix()
+            comp = len(self.link_components)
+            if comp < 2:
+                multivar = False
+
+            if(multivar):
+                t = list(var('t%d' % (i+1)) for i in range(0,comp))
+            else:
+                t = [var('t')]
+
+            M = self.alexander_matrix(mv=multivar)
+            C = M[0]
             m = C.nrows()
             n = C.ncols()
             if n>m:
                 k = m-1
             else:
                 k = n-1
-            minor = C[0:k,0:k]
-            p = minor.determinant().expand()
-            exps = [x[1] for x in p.coeffs()]
+                
+            subMatrix = C[0:k,0:k]
+            p = subMatrix.determinant()
+
+            if multivar:
+                t_i = M[1][-1]
+                p = (p.factor())/(t_i-1)
+
+            if(norm):
+                p = self.normalize_alex_poly(p.expand(),t)
+
+            if v != 'no':
+                dict1 = {t[i]:v[i] for i in range(len(t))}
+                return p.subs(dict1)
+                
+            if multivar: # it's easier to view this way
+                return p.factor()
+            else:
+                return p.expand()
+
+    def normalize_alex_poly(self,p,t):
+        comp = len(self.link_components)
+        for i in range(0,len(t)):
+            exps = [x[1] for x in p.coeffs(t[i])]
             a = max(exps)
             b = min(exps)
-            c = -1*(b+a)/2
-            q = p*(t**c)
-            if q.subs(t==1) == -1:
-                q = -1*q
-            if v=='no':
-                return q.expand()
-            else:
-                return q.subs(t==v)
+            c = -1*(a+b)/2.
+            p = p*(t[i]**c)
+        return p
 
     def connected_sum(self, other_knot):
         """
         Returns the connected sum of two knots.                                                       
        
+<<<<<<< local
         >>> K = Link('4_1')                                                                              
+=======
+        >>> K = spherogram.Link('4_1')                                                                              
+>>>>>>> other
         >>> K.connected_sum(K)                                                                         
         <Link: 1 comp; 8 cross>
         """
@@ -830,16 +905,27 @@ class Link(object):
             first.crossings.append(c)
         return Link(first.crossings)
 
-    def black_graph(self, return_signs=False):
+    def black_graph(self):
         """
+<<<<<<< local
         Finds the black graph for a knot, and returns just
         one component of the graph.                
+=======
+        Returns the black graph of K. If the black graph is disconnected (which can only happen for a split link diagram), returns one connected component.
+
+        The edges are labeled by the crossings they correspond to.
+>>>>>>> other
        
+<<<<<<< local
         >>> K=Link('5_1')                                                                                
         >>> K.black_graph()
         Subgraph of (): Multi-graph on 2 vertices
+=======
+        >>> K = spherogram.Link('5_1')                                                                                
+        >>> K.black_graph()                                                                            
+        Subgraph of (): Multi-graph on 2 vertices                                                        
+>>>>>>> other
         """
-        # this is a bit hacky, could stand to be re-written
 
         faces = []
         for x in self.faces():
@@ -850,7 +936,6 @@ class Link(object):
             faces.append(l)
 
         coords=list()
-        signs=list()
         for i in range(len(faces)-1):
             for j in range (i+1, len(faces)):
                 a=set(faces[i])
@@ -860,53 +945,45 @@ class Link(object):
                     crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
                     total=set(crossings)
                     if total.issubset(s):
-                        coords.append((tuple(faces[i]),tuple(faces[j])))
-                        if set([self.crossings[x][1], self.crossings[x][2]]).issubset(set(faces[i])) or set([self.crossings[x][3], self.crossings[x][0]]).issubset(set(faces[i])):
-                                signs.append(-1)
-                        elif set([self.crossings[x][2], self.crossings[x][3]]).issubset(set(faces[i])) or set([self.crossings[x][0], self.crossings[x][1]]).issubset(set(faces[i])):
-                                signs.append(1)
+                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
 
         G=graph.Graph(coords)
         component=G.connected_components()[1]
         G=G.subgraph(component)
-        #Built shorter versions of coords and signs corresponding just to those edges in the subgraph:   
-        new_coords = list()
-        new_signs = list()
-        edges = G.edges()
-        for n in range(len(coords)):
-            if coords[n]+(None,) in edges:
-                new_coords.append(coords[n])
-                new_signs.append(signs[n])
-            if (coords[n][1],coords[n][0],None) in edges:
-                new_coords.append((coords[n][1],coords[n][0]))
-                new_signs.append(signs[n])
-        if return_signs==True:
-            return (new_signs,new_coords)
-        else:
-            return G
+        return G
 
+    def _edge_sign(K, edge):
+        "Returns the sign (+/- 1) associated to given edge in the black graph."
+        crossing = edge[2]
+        if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
+            return +1
+        return -1
+        
     def goeritz_matrix(self):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
        
+<<<<<<< local
         >>> K=Link('4_1')
         >>> K.goeritz_matrix()   #doctest: +SKIP
+=======
+        >>> K = spherogram.Link('4_1')
+        >>> K.goeritz_matrix()
+>>>>>>> other
         [-3  2]
         [ 2 -3]
         """
         if not _within_sage:
             raise RuntimeError('goeritz_matrix '+not_in_sage_msg)
 
-        (all_signs,all_edges)=self.black_graph(True)
         g=self.black_graph()
         l=g.vertices()
         m=matrix(len(g.vertices()),len(g.vertices()))
-        for n in range(len(all_edges)):
-            e = all_edges[n]
+        for e in g.edges():
             i=l.index(e[0])
             j=l.index(e[1])
-            m[(i,j)]=m[(i,j)]+all_signs[n]
-            m[(j,i)]=m[(j,i)]+all_signs[n]
+            m[(i,j)]=m[(i,j)]+self._edge_sign(e)
+            m[(j,i)]=m[(j,i)]+self._edge_sign(e)
         for i in range(len(g.vertices())):
             m[(i,i)]=sum(m.column(i))*(-1)
         m=m.delete_rows([0])
@@ -930,7 +1007,11 @@ class Link(object):
     def signature(self):
         """
         Returns the signature of the link.       
+<<<<<<< local
         >>> K = Link('4a1')                                                                               
+=======
+        >>> K = spherogram.Link('4_1')                                                                                  
+>>>>>>> other
         >>> K.signature()                                                                              
         0
         """
@@ -938,11 +1019,11 @@ class Link(object):
             raise RuntimeError('signature '+not_in_sage_msg)
 
         answer=0
-        (signs,edges)=self.black_graph(True)
-        for i in range(len(signs)):
-            v=self._find_crossing(edges[i])
-            if signs[i]*v.sign==1:
-                answer=answer+signs[i]
+        G = self.black_graph()
+        for e in G.edges():
+            v = e[2]
+            if self._edge_sign(e) == v.sign:
+                answer = answer + v.sign
         m=self.goeritz_matrix()
         vals=m.eigenvalues()
         pos=0
@@ -958,11 +1039,20 @@ class Link(object):
     def copy(self):
         """
         Returns a copy of the knot.       
+<<<<<<< local
         >>> K=Link('4_1')
         >>> copy=K.copy()
         >>> K.PD_code() == copy.PD_code()
         True
         """
+=======
+        >>> K = spherogram.Link('4_1')                                                                      
+        >>> copy = K.copy()                                                                   
+        >>> K.PD_code()                                                                     
+        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]                              
+        >>> copy.PD_code()                                                                  
+        [[1, 5, 2, 4], [3, 6, 4, 7], [7, 2, 0, 3], [5, 1, 6, 0]]"""
+>>>>>>> other
         return copy.deepcopy(self)
 
     def mirror(self):
@@ -997,10 +1087,12 @@ class Link(object):
                         break
         return m
 
-    def determinant(self, method='wirt'):
+    def determinant(self, method='goeritz'):
         """Returns the determinant of the knot K, a non-negative integer.                
-       
-        >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+
+        Possible methods are 'wirt', using the Wirtinger presentation; 'goeritz', using the Goeritz matrix, and 'color', using the 'colorability matrix', or anything else, to compute the Alexander polynomial at -1.
+        
+        >>> K = spherogram.Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
         >>> K.determinant()                                                        
         5
         """
@@ -1017,8 +1109,7 @@ class Link(object):
         elif method=='goeritz':
             return abs(self.goeritz_matrix().determinant())
         else:
-            t = var('t')
-            return abs(self.alexander_poly(v=-1))
+            return abs(self.alexander_poly(multivar=False, v=[-1], norm = False))
             
 
 
