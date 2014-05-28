@@ -754,7 +754,7 @@ class Link(object):
         [     1/t       -1 -1/t + 1]
         [-1/t + 1      1/t       -1], [t, t, t])
         >>> L = Link([(4,1,3,2),(1,4,2,3)])
-        >>> L.alexander_matrix()
+        >>> L.alexander_matrix()  # doctest: +SKIP
         ([ t1 - 1 -t2 + 1]
         [-t1 + 1  t2 - 1], [t2, t1])
         """
@@ -1025,20 +1025,52 @@ class Link(object):
 
     def mirror(self):
         """
-        Returns the mirror of a knot. Is not consistent about orientations.
-        >>> K = Link('3_1')
-        >>> K.crossings[0].sign                                                               
-        1
-        >>> mirror =K.mirror()                                                                   
-        >>> mirror.crossings[0].sign                                                            
-        -1
-        """
-        pd = self.PD_code()
-        new_pd = list()
-        for x in pd:
-            new_pd.append (x[1:]+(x[0],))
-        return Link(new_pd)
+        Returns the mirror image of the link, preserving link orientations and
+        component order.
 
+        >>> L = Link('9^3_12')
+        >>> Lbar = L.mirror()
+        >>> L.signature() + Lbar.signature()
+        0
+        """
+        # Basically, we just mirror every crossing, but the particular data 
+        # structures used make this a little involved.
+
+        new_crossings = dict()
+        for C in self.crossings:
+            C_new = Crossing(label=C.label)
+            C_new.sign = -C.sign
+            new_crossings[C] = C_new
+
+        def convert(C, c):
+            """
+            Go from a crossing to the mirror, which requires the a rotation of the
+            entry points; the direction of rotation depends on the sign of
+            the crossing.
+            """
+            return new_crossings[C], (c + C.sign) % 4
+
+        for A in self.crossings:
+            entry_points = [CEP.entry_point for CEP in A.entry_points()]
+            for a in entry_points:
+                B, b = A.adjacent[a]
+                B_new, b_new = convert(B, b)
+                B_new[b_new] = convert(A, a)
+
+        new_link = Link(new_crossings.values(),
+                        check_planarity=False, build=False)
+
+        # Build the link components, starting in the same place as
+        # the original link.
+
+        component_starts = []
+        for component in self.link_components:
+            C_new, c_new = convert(*component[0])
+            component_starts.append( CrossingEntryPoint(C_new, c_new) )
+
+        new_link._build_components(component_starts)
+        return new_link
+        
     def colorability_matrix(self):
         """Auxiliary function used by determinant. Returns 'colorability matrix'."""
         edges = self.pieces()
