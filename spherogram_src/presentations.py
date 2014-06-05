@@ -317,12 +317,15 @@ class Presentation(object):
     
     def whitehead_graph(self):
         Wh = ReducedGraph()
+        vertex_dict = {}
         for letter in self.generators:
-            Wh.add_vertex(letter)
-            Wh.add_vertex(-letter)
+            vertex_dict[letter] = letter
+            vertex_dict[-letter] = -letter
+            Wh.add_vertex(vertex_dict[letter])
+            Wh.add_vertex(vertex_dict[-letter])
         for relator in self.relators:
             for n in range(-1, len(relator)-1):
-                Wh.add_edge(relator[n], -relator[n+1])
+                Wh.add_edge(vertex_dict[relator[n]], vertex_dict[-relator[n+1]])
         return Wh
 
     def find_reducers(self):
