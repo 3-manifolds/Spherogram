@@ -324,7 +324,7 @@ class Link(object):
                     raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
                 
         # We check if crossings is a sage braid word
-        if isinstance(crossings,braid.Braid):
+        if _within_sage and isinstance(crossings, braid.Braid):
             import spherogram.dev.dev_jennet.braid_functions as braid_functions
             crossings = braid_functions.braidwordToCrossings(crossings)
         
