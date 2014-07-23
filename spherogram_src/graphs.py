@@ -940,7 +940,7 @@ class Poset(set):
     
     def search(self, vertex, seen, digraph):
         seen.append(vertex)
-        for child in digraph[vertex]:
+        for child in digraph.children(vertex):
             if child in self.smaller[vertex]:
                 raise ValueError('Digraph is not acyclic.')
             self.smaller[child].add(vertex)
@@ -990,7 +990,7 @@ class Poset(set):
         else:
             return self.closure(result)
 
-    def closed_subsets(self, start=None):
+    def XXclosed_subsets(self, start=None):
         """
         Generator for all transitively closed subsets.
         """
@@ -1006,12 +1006,12 @@ class Poset(set):
             self.closed.add(start)
             yield start
         for element in complement:
-            print( 'adding ', element)
+           # print( 'adding ', element)
             extended = self.closure(start | set([element]))
-            for subset in self.closed_subsets(extended):
+            for subset in self.XXclosed_subsets(extended):
                 yield subset
 
-    def closed_subsets(self, start=None):
+    def XXXclosed_subsets(self, start=None):
         """
         Generator for all transitively closed subsets.  The subsets
         are computed once, then cached for use in subsequent calls.
@@ -1031,10 +1031,46 @@ class Poset(set):
             children.update(self.successors[element] - start)
         for child in children:
             extended = self.closure(start | set([child]))
-            for subset in self.closed_subsets(extended):
+            for subset in self.XXXclosed_subsets(extended):
                 yield subset
 
-    
+    def closed_subsets(self):
+        """
+        Generator for all nonempty transitively closed subsets.
+        """
+        # A closed subset is the closure of its set of maximal
+        # elements, which is an arbitrary subset of pairwise
+        # incomparable elements.  For the empty relation, every subset
+        # is pairwise incomparable.  So, in general, this can easily
+        # generate exponentially many subsets.
+        #
+        # This is used for finding level transformations of group
+        # presentations.  We should think about taking advantage of
+        # the special features of that situation.  For now, though, we
+        # just iterate through all subsets and check each one.
+
+        for X in powerset(self.elements):
+            if 0 < len(X):
+                pairwise_incomparable = True
+                for x in X:
+                    if ( X.intersection(self.smaller[x]) or
+                         X.intersection(self.larger[x]) ):
+                        pairwise_incomparable = False
+                        break
+                if pairwise_incomparable:
+                    yield self.closure(X)
+
+def powerset(S):
+    """Recursive generator for all subsets of a set."""
+    X = S.copy()
+    while X:
+        for x in X: break
+        X.remove(x)
+        singleton = set([x])
+        for Y in powerset(X):
+            yield(singleton | Y)
+        yield X
+
 if _within_sage:
     def _to_sage(self, loops=True, multiedges=True):
         S = sage.graphs.graph.Graph(loops=loops, multiedges=multiedges)
