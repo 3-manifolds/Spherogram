@@ -271,12 +271,15 @@ class WhiteheadMove(object):
         subs = []
         for x in self.generators:
             sub = '%s -> '%self.alphabet[x]
-            # Be careful with these minus signs!
-            if -x not in self.cut_set and x != self.letter:
-                sub += self.alphabet[self.letter]
-            sub += self.alphabet[x]
-            if x not in self.cut_set and x != -self.letter:
-                sub += self.alphabet[-self.letter]
+            if x == self.letter or x == -self.letter:
+                sub += self.alphabet[x]
+            else:
+                # Be careful with these minus signs!
+                if -x not in self.cut_set and x != self.letter:
+                    sub += self.alphabet[self.letter]
+                sub += self.alphabet[x]
+                if x not in self.cut_set and x != -self.letter:
+                    sub += self.alphabet[-self.letter]
             subs.append(sub)
         return ', '.join(subs)
             
@@ -352,12 +355,15 @@ class Presentation(object):
         for relator in self.relators:
             new_relator = []
             for x in relator:
-                # Be careful with these minus signs!
-                if -x not in cut_set and x != a:
-                    new_relator.append(a)
-                new_relator.append(x)
-                if x not in cut_set and x != -a:
-                    new_relator.append(-a)
+                if x == a or x == -a:
+                    new_relator.append(x)
+                else:
+                    # Be careful with these minus signs!
+                    if -x not in cut_set:
+                        new_relator.append(a)
+                    new_relator.append(x)
+                    if x not in cut_set:
+                        new_relator.append(-a)
             W = CyclicWord(new_relator, self.alphabet)
             new_relators.append(W)
         return Presentation(new_relators, self.generators)
@@ -390,7 +396,7 @@ class Presentation(object):
             if not reducers:
                 return result
             reduction, a, cut_set = reducers[0]
-            w = WhiteheadMove(a, cut_set, self.generators, self.alphabet)
+            #w = WhiteheadMove(a, cut_set, self.generators, self.alphabet)
             #print(w)
             result = result.whitehead_move(a, cut_set)
             #print(result.relators)
@@ -407,17 +413,18 @@ class Presentation(object):
         ...   print(P, len(P))
         ...
         generators: [A, B, C]
-        relators: [ABCaaBacAcbbAC] 14
-        generators: [A, B, C]
-        relators: [ABCaaBcAAcbabC] 14
-        generators: [A, B, C]
         relators: [AABCaBaaccbbAC] 14
         generators: [A, B, C]
+        relators: [ABCaaBacAcbbAC] 14
+        generators: [A, B, C]
         relators: [AAABCBaaccbabC] 14
+        generators: [A, B, C]
+        relators: [ABCaaBcAAcbabC] 14
         generators: [A, B, C]
         relators: [AACaBacBAcabbC] 14
         generators: [A, B, C]
         relators: [AABaBcacAbaCbC] 14
+
         """
 
 #        For each generator x we find one minimal (x,x^-1)-cut.  We
@@ -428,8 +435,8 @@ class Presentation(object):
 #        a cycle of length 2.  We then form the DAG of strong
 #        components of D, and its associated poset.  The transitively
 #        closed subsets determine all cuts, which must be level
-#        transformations.  The generator yields all level
-#        transformations of the form (x,X) where where neither X nor
+#        transformations.  This generator yields all level
+#        transformations of the form (x,X) where neither X nor
 #        its complement has size 1.
 
         reducers, levels = self.find_reducers()
