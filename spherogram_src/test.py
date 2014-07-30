@@ -1,9 +1,9 @@
-import spherogram, spherogram.links.test
+import spherogram, spherogram.links.test, spherogram.links.simplify
 import snappy, doctest
 
 snappy.number.Number._accuracy_for_testing = 8
 modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
-           spherogram.links.links, spherogram.links.orthogonal]
+           spherogram.links.links, spherogram.links.orthogonal, spherogram.links.simplify]
 
 if snappy.SnapPy._within_sage:
     snappy.Manifold.use_field_conversion('snappy')
