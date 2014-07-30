@@ -320,6 +320,7 @@ class OrthogonalRep(Digraph):
         return dict( (v,(H[v], V[v])) for v in self.vertices)
 
     def show(self, unit=10, labels=True):
+        from sage.all import circle, text, line,  Graphics
         pos = self.basic_grid_embedding()
         for v, (a,b) in pos.iteritems():
             pos[v] = (unit*a, unit*b)
@@ -519,8 +520,6 @@ class OrthogonalLinkDiagram(list):
         orientations = {self[0][0]:'right'}
         N = self.face_network.to_undirected()
         G = Graph(N.edges())
-#        N.remove_node('s'), N.remove_node('t')
-#        for i in networkx.traversal.dfs_preorder_nodes(N, 0):
         G.remove_vertex('s'), G.remove_vertex('t')
         for i in G.depth_first_search(0):
             F = self[i]
