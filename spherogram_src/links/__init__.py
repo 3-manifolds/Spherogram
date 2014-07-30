@@ -16,4 +16,11 @@ def pdf_docs():
         command = 'xdg-open'
     os.system(command + ' ' + file)
 
+    
+try:
+    import sage.groups.braid
+    from .invariants import Link
+except ImportError:
+    pass
+
 __all__ = ['Crossing', 'Strand', 'Link', 'Tangle', 'RationalTangle', 'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'join_strands', 'pdf_docs', 'random_knot']
