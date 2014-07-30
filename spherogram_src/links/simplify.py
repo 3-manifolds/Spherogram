@@ -9,7 +9,7 @@ data structure are updated at each step.
 * Unknot components which are also unlinked may be silently discarded.
 """
 
-from . import links
+from .links import Link, Strand
 from .. import graphs
 import random
 
@@ -102,6 +102,13 @@ def basic_simplify(link):
 def possible_type_III_moves(link):
     """
     Returns all triples of crossings where a type III move is possible.
+
+    In this example, one type III move is forbidden since a crossing
+    repeats twice.
+    
+    >>> L = Link([(2,1,3,2),(3,8,4,1),(4,6,5,5),(6,8,7,7)])
+    >>> len(possible_type_III_moves(L))
+    1
     """
     ans = []
     for face in link.faces():
@@ -109,12 +116,13 @@ def possible_type_III_moves(link):
             if sum(ce.entry_point % 2 for ce in face) in [1, 2]:
                 while(face[1][1]% 2 != 0 or face[2][1]% 2 != 1):    # renumber face_list
                     face = [face[1], face[2], face[0]]
-                ans.append(face)
+                if len(set([e.crossing for e in face])) == 3:  # No repeated crossings
+                    ans.append(face)
     return ans
 
 def insert_strand(X, x):
     Y, y = X.adjacent[x]
-    S = links.Strand()
+    S = Strand()
     S[0], S[1] = X[x], Y[y]
     return S
 
