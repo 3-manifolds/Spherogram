@@ -254,8 +254,16 @@ class TestLinkFunctions(unittest.TestCase):
 
 doctest.testmod(spherogram.links.links)
 doctest.testmod(spherogram.links.orthogonal)
-suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
-unittest.TextTestRunner(verbosity=2).run(suite)
+try:
+    import sage.braid.Braid
+    _within_sage = True
+except ImportError:
+    _within_sage = False
+
+if _within_sage:
+    doctest.testmod(spherogram.links.invariants)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
+    unittest.TextTestRunner(verbosity=2).run(suite)
 
 
 
