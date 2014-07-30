@@ -6,7 +6,12 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 
 """
 
-from . import links
+from .links import Crossing, Strand
+try:
+    from .invariants import Link
+except ImportError:
+    from .links import Link
+
 try:
     import cPickle as pickle
 except ImportError: # Python 3
@@ -65,7 +70,7 @@ class Tangle(object):
     def __neg__(self):
         "Mirror image of self"
         T = self.copy()
-        [c.rotate_by_90() for c in T.crossings if not isinstance(c, links.Strand)]
+        [c.rotate_by_90() for c in T.crossings if not isinstance(c, Strand)]
         return T
 
     def __or__(self, other):
@@ -104,14 +109,14 @@ class Tangle(object):
         T = self.copy()
         for i in range(0, 2*self.n, 2):
             join_strands(T.adjacent[i], T.adjacent[i + 1])
-        return links.Link(T.crossings, check_planarity=False)
+        return Link(T.crossings, check_planarity=False)
 
     def denominator_closure(self):
         "The braid closure picture"
         T = self.copy()
         for i in range(0, self.n):
             join_strands(T.adjacent[i], T.adjacent[i + self.n])
-        return links.Link(T.crossings, check_planarity=False)
+        return Link(T.crossings, check_planarity=False)
 
     def __repr__(self):
         return "<Tangle: %s>" % self.label
@@ -121,22 +126,22 @@ Tangle.braid_closure = Tangle.denominator_closure
 
 class ZeroTangle(Tangle):
     def __init__(self):
-        bot, top = links.Strand('B'), links.Strand('T')
+        bot, top = Strand('B'), Strand('T')
         Tangle.__init__(self, 2, [bot, top], [ (bot, 0), (bot, 1), (top, 0), (top, 1) ] )
 
 class InfinityTangle(Tangle):
     def __init__(self):
-        left, right = links.Strand('L'), links.Strand('R')
+        left, right = Strand('L'), Strand('R')
         Tangle.__init__(self, 2, [left, right],  [ (left, 0), (right, 0), (left, 1), (right, 1) ] )
 
 class MinusOneTangle(Tangle):
     def __init__(self):
-        c = links.Crossing('-one')
+        c = Crossing('-one')
         Tangle.__init__(self, 2, [c], [(c,3), (c, 0), (c, 2), (c, 1)])
 
 class OneTangle(Tangle):
     def __init__(self):
-        c = links.Crossing('one')
+        c = Crossing('one')
         Tangle.__init__(self, 2, [c], [(c,0), (c, 1), (c, 3), (c, 2)])
     
 class IntegerTangle(Tangle):
@@ -188,7 +193,7 @@ class RationalTangle(Tangle):
 
 class IdentityBraid(Tangle):
     def __init__(self, n):
-        strands = [links.Strand() for i in range(n)]
+        strands = [Strand() for i in range(n)]
         entry_points = [ (s, 0) for s in strands] + [(s,1) for s in strands]
         Tangle.__init__(self, n, strands, entry_points)
         

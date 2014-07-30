@@ -1,8 +1,13 @@
-from .links import Crossing, Strand, Link
+from .links import Crossing, Strand
+try:
+    from .invariants import Link   # Only works in Sage
+except ImportError:
+    from .links import Link   # Lacks some methods for computing invariants
+
 from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle, IdentityBraid, join_strands
-from . import orthogonal 
-import os, sys
+from . import orthogonal
 Link.view = orthogonal.orthogonal_draw
+import os, sys
 from .random_links import random_knot
 
 def pdf_docs():
@@ -15,12 +20,5 @@ def pdf_docs():
     else:
         command = 'xdg-open'
     os.system(command + ' ' + file)
-
-    
-try:
-    import sage.groups.braid
-    from .invariants import Link
-except ImportError:
-    pass
 
 __all__ = ['Crossing', 'Strand', 'Link', 'Tangle', 'RationalTangle', 'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'join_strands', 'pdf_docs', 'random_knot']

@@ -378,7 +378,7 @@ class Graph(object):
     def one_min_cut(self, source, sink, capacity=None):
         """
         Find one minimal cut which separates source from sink, using
-        the classical Ford-Fulkerson algorithm.
+        the classical Ford-Fulkerson algorithm.te
 
         Returns a dict containing the set of vertices on the source
         side of the cut, the set of edges that cross the cut, a
@@ -587,7 +587,7 @@ class ReducedGraph(Graph):
         if _within_sage:
             S = sans_loops.sage(loops=False, multiedges=False)
             is_planar = S.is_planar(set_embedding=True)
-            embedding = S.get_embedding()
+            embedding = S.get_embedding() if is_planar else None
         else:
             is_planar, embedding = planar(sans_loops)
 

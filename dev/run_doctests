@@ -1,0 +1,13 @@
+#! /usr/bin/env bash
+
+cd ../
+python setup.py install
+sage -python setup.py install --user
+
+echo "-------------------------------"
+echo "PLAIN PYTHON"
+python -m spherogram.test
+echo ""
+echo "-------------------------------"
+echo "SAGE PYTHON"
+sage -python -m spherogram.test

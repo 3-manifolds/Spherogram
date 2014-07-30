@@ -1,7 +1,8 @@
-import spherogram
+import spherogram, snappy
 import unittest
 import doctest
 from random import randrange
+from . import test_montesinos
 
 class TestLinkFunctions(unittest.TestCase):
     
@@ -251,19 +252,11 @@ class TestLinkFunctions(unittest.TestCase):
             self.assert_(k2.black_graph().is_planar())
             repeat-=1
 
-
-doctest.testmod(spherogram.links.links)
-doctest.testmod(spherogram.links.orthogonal)
-try:
-    import sage.braid.Braid
-    _within_sage = True
-except ImportError:
-    _within_sage = False
-
-if _within_sage:
-    doctest.testmod(spherogram.links.invariants)
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+def run():
+    test_montesinos.test(15)
+    if snappy.SnapPy._within_sage:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
+        unittest.TextTestRunner(verbosity=2).run(suite)
 
 
 
