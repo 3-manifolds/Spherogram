@@ -489,8 +489,8 @@ class Link(links.Link):
         >>> D.is_bridge()
         True
         >>> B = D.bridge()
-        >>> B.bohua_code()
-        'None\\t3 5 4 3 2 1 0 8 4 3 2 3 5 4 2 1 4 3 1 0 2 1 1 0 5 4 3 2 1 0'
+        >>> len(B.bohua_code())
+        64
         """
         from . import morse
         return morse.MorseLinkDiagram(self)
