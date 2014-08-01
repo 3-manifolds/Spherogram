@@ -8,7 +8,8 @@ modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
 if snappy.SnapPy._within_sage:
     snappy.Manifold.use_field_conversion('snappy')
     snappy.ManifoldHP.use_field_conversion('snappy')
-    modules.append(spherogram.links.invariants)
+    import spherogram.links.morse
+    modules += [spherogram.links.invariants, spherogram.links.morse]
 
 for module in modules:
     results = doctest.testmod(module)

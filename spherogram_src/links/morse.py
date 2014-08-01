@@ -1,10 +1,16 @@
 """
-The *bridge number* of a planar link diagram D is
+The *Morse number* of a planar link diagram D is
 
-b(D) = min { # of maxima of h on D }
+m(D) = min { # of maxima of h on D }
 
-where h is a generic height function on R^2. Here, we compute b(D) via
-linear programming, using ideas from
+where h is a height function on R^2 which is generic on D; alternatively,
+this is the minimum number of cups/caps in a "MorseLink" presentation:
+
+   http://katlas.math.toronto.edu/wiki/MorseLink_Presentations
+
+of the diagram D.  The Morse number is very closely related to the more
+traditional bridge number.  In this submodule, we compute m(D) via
+integer linear programming, using ideas from
 
 [DP] Didimo and Pizzonia, Upward Embeddings and Orientations of
 Undirected Planar Graphs. <http://jgaa.info/getPaper?id=68>
@@ -18,18 +24,33 @@ are opposite.
 
 * The sum of the corner types around every face is degree - 2, with the
 exception of the exterior face (which is degree + 2).
+
+This code written by Nathan Dunfield who claims (not very plausibly) that
+he will write a paper about this algorithm at some point.  The bit that
+annoys him is that [DP] is polynomial time, but the algorithm here is not
+known to be.  The issue is that [DP] creates a very special kind of ILP
+(a network flow) which can be solved in polynomial time, but below we're
+reduced to using a generic ILP solver.  
 """
 
-import spherogram, snappy, random
-from spherogram import DTcodec, RationalTangle, Digraph, CyclicList, Link, join_strands
-from spherogram.links.links import CrossingStrand, Crossing, Strand
-from orthogonal import basic_topological_numbering
 from sage.numerical.mip import MixedIntegerLinearProgram
+from ..graphs import CyclicList, Digraph
+from .invariants import Link
+from .links import CrossingStrand, Crossing, Strand
+from .orthogonal import basic_topological_numbering
+from .tangles import RationalTangle
 
-def bridge_LP(link):
+def morse_via_LP(link):
     """
-    An integer linear program which computes the bridge number of the given
-    link diagram.   
+    An integer linear program which computes the Morse number of the given
+    link diagram.
+
+    >>> K = RationalTangle(23, 43).denominator_closure()
+    >>> morse, details = morse_via_LP(K)
+    >>> morse
+    2
+    >>> morse_via_LP(Link('8_20'))[0]
+    3
     """
     LP = MixedIntegerLinearProgram(maximization=False)
 
@@ -67,11 +88,9 @@ def bridge_LP(link):
         LP.add_constraint(eqn == (2*len(face) - 2 + 4*exterior[i]))
 
     LP.set_objective(sum(large_edge.values()))
-    bridge = int(LP.solve())
-    assert bridge % 2 == 0
-    return bridge//2, LP.get_values([hor_cross, vert_cross, flat_edge, large_edge, exterior])
-
-
+    morse = int(LP.solve())
+    assert morse % 2 == 0
+    return morse//2, LP.get_values([hor_cross, vert_cross, flat_edge, large_edge, exterior])
 
 
 def have_positive_value(D):
@@ -95,7 +114,7 @@ def pairing_to_permuation(pairing):
 
 class UpwardSnake(tuple):
     """
-    Start with an UpwardLinkDiagram, resolve all the crossings vertically,
+    Start with an MorseLinkDiagram, resolve all the crossings vertically,
     and snip all the mins/maxes.  The resulting pieces are the UpwardSnakes.
     """
     def __new__(self, crossing_strand, link):
@@ -122,10 +141,15 @@ class UpwardSnake(tuple):
         ans.heights = heights
         return ans
         
-class UpwardLinkDiagram(object):
+class MorseLinkDiagram(object):
+    """
+    A planar link diagram with a height function on R^2 which
+    is Morse on the link. 
+    """
     def __init__(self, link):
         self.link = link = link.copy()
-        bridge, values = bridge_LP(link)
+        morse, values = morse_via_LP(link)
+        self.morse_index = morse
         self.bends = set(have_positive_value(values[3]))
         self.faces = faces = link.faces()
         self.exterior = self.faces[have_positive_value(values[4])[0]]
@@ -138,6 +162,20 @@ class UpwardLinkDiagram(object):
         self.upward_snakes()
 
     def orient_edges(self):
+        """
+        Orients the edges of the link (that is, its CrossingStrands) with
+        respect to the height function.
+
+        >>> L = Link('K3a1')
+        >>> D = MorseLinkDiagram(L)
+        >>> orients = D.orientations.values()
+        >>> len(orients) == 4*len(L.crossings)
+        True
+        >>> sorted(orients)
+        ['down', 'down', 'max', 'max', 'max', 'max', 'min', 'min', 'min', 'min', 'up', 'up']
+        >>> orients.count('max') == 2*D.morse_index
+        True
+        """
         def expand_orientation(cs, kind):
             c, i = cs
             kinds = CyclicList(['up', 'down', 'down', 'up'])
@@ -170,11 +208,10 @@ class UpwardLinkDiagram(object):
             current = new
                     
         self.orientations = orientations
-
-
+        
     def strands_below(self, crossing):
         """
-        The two upward strands below crossing.  
+        The two upward strands below the crossing.  
         """
         kinds = self.orientations
         a = CrossingStrand(crossing, 0)
@@ -193,6 +230,17 @@ class UpwardLinkDiagram(object):
             return b
                     
     def digraph(self):
+        """
+        The directed graph whose vertices are the mins/maxes of the height
+        function together with the crossings, and where the edges come from
+        the link and are directed upwards with respect to the height function.
+
+        >>> L = Link('K4a1')
+        >>> D = MorseLinkDiagram(L)
+        >>> G = D.digraph()
+        >>> len(G.vertices)
+        8
+        """
         G = Digraph()
         kinds = self.orientations
         for cs in self.bends:
@@ -210,10 +258,23 @@ class UpwardLinkDiagram(object):
         return G
 
     def set_heights(self):
+        """
+        Assigns a height to each min/max and crossing of the
+        diagram.
+        """
         D = self.digraph()
         self.heights = basic_topological_numbering(D)
 
     def upward_snakes(self):
+        """
+        Resolve all the crossings vertically and snip all the mins/maxes. The
+        resulting pieces are the UpwardSnakes.  For a diagram in bridge position,
+        the number of snakes is just twice the bridge number.
+
+        >>> D = MorseLinkDiagram(Link('8a1'))
+        >>> len(D.snakes)
+        4
+        """
         kinds = self.orientations
         self.snakes = snakes = []
         for cs in self.bends:
@@ -230,6 +291,9 @@ class UpwardLinkDiagram(object):
         
 
     def pack_snakes(self):
+        """
+        Give the snakes horizonal positions.
+        """
         snakes, to_snake = self.snakes, self.strand_to_snake
         S = Digraph(singles=snakes)
         for c in self.link.crossings:
@@ -258,6 +322,10 @@ class UpwardLinkDiagram(object):
         self.snakes_at_height = snakes_at_height
 
     def is_bridge(self):
+        """
+        Returns whether the link is in bridge position with respect to this
+        height function.
+        """
         return sorted(self.snake_pos.values()) == range(len(self.snakes))
 
     def bridge(self):
@@ -293,6 +361,10 @@ class UpwardLinkDiagram(object):
                 
 
 class BridgeDiagram(object):
+    """
+    A proper bridge diagram of a link, that is, a height function
+    where all the mins are below all the maxes.  
+    """
     def __init__(self, bottom, crossings, top):
         self.bottom, self.crossings, self.top = bottom, crossings, top
         self.width = 2*len(bottom)
@@ -341,73 +413,3 @@ class BridgeDiagram(object):
 
     def is_proper(self):
         return max( abs(a-b) for a, b in self.crossings) < 2
-        
-                    
-def bridge(link, tries = 20, check = True):
-    if isinstance(link, (snappy.Triangulation, snappy.Manifold)):
-        link = link_from_manifold(link)
-    for i in xrange(tries):
-        UL = UpwardLinkDiagram(link)
-        if UL.is_bridge():
-            B = UL.bridge()
-            if B.is_proper():
-                if check:
-                    ML = link.exterior()
-                    if ML.solution_type() == 'all tetrahedra positively oriented':
-                        MB = B.link().exterior()
-                        assert ML.is_isometric_to(MB)
-                        try:
-                            import bohua_HF
-                            MHF = bohua_HF.bridge_code_to_link(B.bohua_code()).exterior()
-                            assert ML.is_isometric_to(MHF)
-                        except ImportError:
-                            pass
-
-                        
-                return B
-        
-        
-def test2():
-    while True:
-        L = random_16()
-        print L.name, bridge(L).width
-        
-            
-
-def test1():
-    for M in snappy.HTLinkExteriors(num_cusps=1):
-        if M.volume() < 2.0:
-            continue
-        L = link_from_manifold(M)
-        b = bridge_LP(L)[0]
-        tb = M.is_two_bridge()
-        if b == 2:
-            assert tb
-        if tb and b > 2 or b > 3:
-            print M, b, M.is_two_bridge()
-
-unknot = RationalTangle(1).numerator_closure()
-hopf = RationalTangle(2).numerator_closure()
-for i, c in enumerate(hopf.crossings):
-    c.label = i
-    
-trefoil = DTcodec([(4,6,2)]).link()
-big_knot = DTcodec([(4, 12, 14, 22, 20, 2, 28, 24, 6, 10, 26, 16, 8, 18)]).link()
-big_link = DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link()
-
-
-def link_from_manifold(manifold):
-    return DTcodec(manifold.DT_code()).link()
-
-def random_16():
-    n = random.randrange(1, 1008907)
-    M = snappy.Manifold('16n%d' % n)
-    L = link_from_manifold(M)
-    L.name = M.name()
-    return L
-
-def test_16(N):
-    for i in xrange(N):
-        M = random_16()
-        L = random_16()
-        print M.name(), bridge_LP(L)[0]

@@ -453,3 +453,44 @@ class Link(links.Link):
             return abs(self.goeritz_matrix().determinant())
         else:
             return abs(self.alexander_poly(multivar=False, v=[-1], norm = False))
+
+    def morse_index(self):
+        """
+        The *Morse number* of a planar link diagram D is
+
+            m(D) = min { # of maxima of h on D }
+
+        where h is a height function on R^2 which is generic on D; alternatively,
+        this is the minimum number of cups/caps in a "MorseLink" presentation:
+
+           http://katlas.math.toronto.edu/wiki/MorseLink_Presentations
+
+        of the diagram D.  The Morse number is very closely related to the more
+        traditional bridge number.
+
+        >>> K = Link('5_2')
+        >>> K.morse_index()
+        2
+        >>> Link('6^3_2').morse_index()
+        3
+        """
+        from . import morse
+        return morse.morse_via_LP(self)[0]
+
+    def morse_diagram(self):
+        """
+        Returns a MorseLinkDiagram of this link diagram, that is a choice
+        of height function which realizes the Morse number.
+
+        >>> L = Link('L8n2')
+        >>> D = L.morse_diagram()
+        >>> D.morse_index == L.morse_index()
+        True
+        >>> D.is_bridge()
+        True
+        >>> B = D.bridge()
+        >>> B.bohua_code()
+        'None\\t3 5 4 3 2 1 0 8 4 3 2 3 5 4 2 1 4 3 1 0 2 1 1 0 5 4 3 2 1 0'
+        """
+        from . import morse
+        return morse.MorseLinkDiagram(self)
