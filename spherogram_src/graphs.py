@@ -1,4 +1,8 @@
 from __future__ import print_function
+
+import networkx as nx
+
+
 """
 Python implementation of graphs, reduced graphs, directed graphs, fat
 graphs (graphs with ordered adjacency lists) and fat directed graphs.
@@ -531,6 +535,16 @@ class Graph(object):
         V = [frozenset([v]) for v in self.vertices]
         E = [self.Edge(frozenset([x]), frozenset([y])) for x, y in self.edges]
         return self.__class__(E,V)
+
+    def to_networkx(self):
+        """
+	Return a copy of the graph in the networkx format
+	"""
+	G = nx.Graph()
+	G.add_nodes_from(self.vertices)
+	G.add_edges_from(self.edges)
+	
+	return G
 
 class ReducedGraph(Graph):
     """

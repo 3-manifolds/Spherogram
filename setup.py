@@ -54,7 +54,7 @@ class clean(Command):
 
 # Main module
 
-version='1.4a1'
+version='1.4a2'
 with open('version.txt','w') as output:
     output.write(version)
 

@@ -4,8 +4,8 @@ standard invariants.  Much of this code was contributed by Robert Lipshitz
 and Jennet Dickinson.  
 """
 
-from . import links
-from .links import Crossing, Strand
+from . import links_base
+from .links_base import Crossing, Strand
 
 import sage.all
 import sage.graphs.graph
@@ -76,7 +76,7 @@ def braidword_to_crossings(braidword):
     return crossings
 
 
-class Link(links.Link):
+class Link(links_base.Link):
     """
     Links are made from Crossings.  The general model is that of a PD
     diagram as described in
@@ -130,7 +130,7 @@ class Link(links.Link):
             b = B([i+1 for i in range(0,p-1)]*q)
             crossings = braidword_to_crossings(b)
         
-        links.Link.__init__(self, crossings, check_planarity, build)
+        links_base.Link.__init__(self, crossings, check_planarity, build)
 
     
     def linking_matrix(self):

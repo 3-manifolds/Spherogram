@@ -35,8 +35,7 @@ reduced to using a generic ILP solver.
 
 from sage.numerical.mip import MixedIntegerLinearProgram
 from ..graphs import CyclicList, Digraph
-from .invariants import Link
-from .links import CrossingStrand, Crossing, Strand
+from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
 from .tangles import RationalTangle
 
