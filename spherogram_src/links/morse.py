@@ -39,7 +39,7 @@ from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
 from .tangles import RationalTangle
 
-def morse_via_LP(link):
+def morse_via_LP(link, solver='GLPK'):
     """
     An integer linear program which computes the Morse number of the given
     link diagram.
@@ -51,7 +51,7 @@ def morse_via_LP(link):
     >>> morse_via_LP(Link('8_20'))[0]
     3
     """
-    LP = MixedIntegerLinearProgram(maximization=False)
+    LP = MixedIntegerLinearProgram(maximization=False, solver=solver)
 
     # Near a crossing, the level sets of the height function are either
     # horizontal or vertical, and so there are two flat corners which
@@ -145,9 +145,9 @@ class MorseLinkDiagram(object):
     A planar link diagram with a height function on R^2 which
     is Morse on the link. 
     """
-    def __init__(self, link):
+    def __init__(self, link, solver='GLPK'):
         self.link = link = link.copy()
-        morse, values = morse_via_LP(link)
+        morse, values = morse_via_LP(link, solver)
         self.morse_index = morse
         self.bends = set(have_positive_value(values[3]))
         self.faces = faces = link.faces()

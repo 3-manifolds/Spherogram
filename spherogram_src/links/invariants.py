@@ -454,7 +454,7 @@ class Link(links_base.Link):
         else:
             return abs(self.alexander_poly(multivar=False, v=[-1], norm = False))
 
-    def morse_index(self):
+    def morse_number(self, solver='GLPK'):
         """
         The *Morse number* of a planar link diagram D is
 
@@ -475,7 +475,7 @@ class Link(links_base.Link):
         3
         """
         from . import morse
-        return morse.morse_via_LP(self)[0]
+        return morse.morse_via_LP(self, solver)[0]
 
     def morse_diagram(self):
         """
