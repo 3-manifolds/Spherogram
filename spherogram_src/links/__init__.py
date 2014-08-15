@@ -1,8 +1,4 @@
-from .links import Crossing, Strand
-try:
-    from .invariants import Link   # Only works in Sage
-except ImportError:
-    from .links import Link   # Lacks some methods for computing invariants
+from .links import Crossing, Strand, Link
 
 from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle, IdentityBraid, join_strands
 from . import orthogonal

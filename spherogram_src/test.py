@@ -8,7 +8,7 @@ modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
 if snappy.SnapPy._within_sage:
     snappy.Manifold.use_field_conversion('snappy')
     snappy.ManifoldHP.use_field_conversion('snappy')
-    import spherogram.links.morse
+    import spherogram.links.morse, spherogram.links.invariants
     modules += [spherogram.links.invariants, spherogram.links.morse]
 
 for module in modules:

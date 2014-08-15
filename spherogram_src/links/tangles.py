@@ -6,11 +6,7 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 
 """
 
-from .links import Crossing, Strand
-try:
-    from .invariants import Link
-except ImportError:
-    from .links import Link
+from .links import Crossing, Strand, Link
 
 try:
     import cPickle as pickle
