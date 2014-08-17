@@ -878,6 +878,36 @@ class Link(object):
             p = p*(t[i]**c)
         return p
 
+    def conway_poly(self):
+        """
+        Return the conway polynomial.  Link must be a knot.
+        >>> K = Link('7_3')
+        >>> K.conway_poly()
+        2*t^4 + 5*t^2 + 1
+        >>> t = var('t')
+        >>> K.alexander_poly()(t=t^2)
+        2*t^4 - 3*t^2 - 3/t^2 + 2/t^4 + 3
+        >>> K.conway_poly()(t=t-1/t).expand().simplify()
+        2*t^4 - 3*t^2 - 3/t^2 + 2/t^4 + 3
+
+        """
+        assert len(self.link_components) == 1
+        AP = self.alexander_poly()
+        coeffs = AP.coefficients()
+        assert coeffs[0][1] == -coeffs[-1][1]
+        t = AP.variables()[0]
+        AP2 = AP(t=t**2)
+        conway = 0
+        while 1:
+            a = AP2.leading_coefficient(t)
+            n = AP2.degree(t)
+            if a == 0:
+                break
+            conway += a*t**n
+            AP2 -= a*(t - 1/t)**n
+            AP2 = AP2.expand().simplify()
+        return conway
+
     def connected_sum(self, other_knot):
         """
         Returns the connected sum of two knots.                                                       
