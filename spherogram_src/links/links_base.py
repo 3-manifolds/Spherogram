@@ -671,11 +671,209 @@ class Link(object):
                 l = lnew
         return pieces
 
+    def knot_group(self):
+        """
+        Computes the knot group using the Wirtinger presentation. 
+        Returns a finitely presented group.
+        """
+        if not _within_sage:
+            raise RuntimeError('knot_group '+not_in_sage_msg)
+
+        n = len(self.crossings)
+        F = FreeGroup(n)
+        g = list(F.gens())
+        rels = []
+        pieces = self.pieces()
+
+        for z in self.crossings:
+            for m, p in enumerate(pieces):
+                for t, q in enumerate(p):
+                    if q[0] == z:
+                        if t == 0:
+                            j = m
+                        elif t == len(p)-1:
+                            i = m
+                        else:
+                            k = m
+            i+=1; j+=1; k+=1
+            if z.sign > 0:
+                r = F([-k,i,k,-j])
+            if z.sign < 0:
+                r = F([k,i,-k,-j])
+            rels.append(r)
+
+        G = F/rels
+        return G
+
+    def alexander_matrix(self, mv=True):
+        """
+        Returns the alexander matrix of self.
+
+        >>> L = Link('3_1')
+        >>> L.alexander_matrix()
+        ([      -1 -1/t + 1      1/t]
+        [     1/t       -1 -1/t + 1]
+        [-1/t + 1      1/t       -1], [t, t, t])
+        >>> L = Link([(4,1,3,2),(1,4,2,3)])
+        >>> L.alexander_matrix()  # doctest: +SKIP
+        ([ t1 - 1 -t2 + 1]
+        [-t1 + 1  t2 - 1], [t2, t1])
+        """
+
+        if not _within_sage:
+            raise RuntimeError('alexander_matrix '+not_in_sage_msg)
+
+        comp = len(self.link_components)
+        if comp < 2:
+            mv = False
+
+        G = self.knot_group()
+        B = G.alexander_matrix()
+        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
+
+        if(mv):
+            t = list(var('t%d' % (i+1)) for i in range(0,comp))
+        else:
+            t = [var('t')]*comp
+
+        import sage.symbolic.relation as rel
+
+        eq = [y(g) == 1 for y in G.relations()]
+        solns = rel.solve(eq,g, solution_dict=True)
+        r = list(set([solns[0][h] for h in g]))
+        dict1 = {r[i]:t[i] for i in range(len(t))}
+
+        for i in range(len(g)):
+            g[i] = g[i].subs(solns[0]).subs(dict1)
+
+        m = B.nrows()
+        n = B.ncols()
+        C = matrix(SR,m,n)
+
+        for i in range(n):
+            for j in range(m):
+                for k in B[j,i].terms():
+                    x = k.leading_item()
+                    C[j,i] = C[j,i] + x[1]*x[0](g)
+
+        return (C,g)
+
+    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
+        """
+        Calculates the alexander polynomial of self. For links with one component,
+        can evaluate the alexander polynomial at v.
+
+        >>> K = Link('4_1')
+        >>> K.alexander_poly()
+        t + 1/t - 3
+        >>> K.alexander_poly(v=[4])
+        5/4
+
+        >>> K = Link('L7n1')
+        >>> K.alexander_poly(norm=False)
+        (t1*t2^3 + 1)/(t1*t2^4)
+        """
+
+        # sign normalization still missing, but when "norm=True" the
+        # leading coefficient with respect to the first variable is made
+        # positive. 
+        if not _within_sage:
+            raise RuntimeError('alexander_poly '+not_in_sage_msg)
+
+        if method == 'snappy':
+            try:
+                import snappy
+                return snappy.snap.alexander_polynomial(self.exterior())
+            except ImportError:
+                raise RunTimeError('this method for alexander_poly '+no_snappy_msg)
+        else:
+            comp = len(self.link_components)
+            if comp < 2:
+                multivar = False
+
+            if(multivar):
+                t = list(var('t%d' % (i+1)) for i in range(0,comp))
+            else:
+                t = [var('t')]
+
+            M = self.alexander_matrix(mv=multivar)
+            C = M[0]
+            m = C.nrows()
+            n = C.ncols()
+            if n>m:
+                k = m-1
+            else:
+                k = n-1
+                
+            subMatrix = C[0:k,0:k]
+            p = subMatrix.determinant()
+
+            if multivar:
+                t_i = M[1][-1]
+                p = (p.factor())/(t_i-1)
+
+            if(norm):
+                p = self.normalize_alex_poly(p.expand(),t)
+
+            if v != 'no':
+                dict1 = {t[i]:v[i] for i in range(len(t))}
+                return p.subs(dict1)
+                
+            if multivar: # it's easier to view this way
+                return p.factor()
+            else:
+                return p.expand()
+
+    def normalize_alex_poly(self,p,t):
+        # Normalize the sign of the leading coefficient 
+        l = p
+        for v in t:
+            l = l.leading_coefficient(v)
+        if l < 0:
+            p = -p            
+        for i in range(0,len(t)):
+            exps = [x[1] for x in p.coeffs(t[i])]
+            a = max(exps)
+            b = min(exps)
+            c = -1*(a+b)/ZZ(2)
+            p = p*(t[i]**c)
+        return p
+
+    def conway_poly(self):
+        """
+        Return the conway polynomial.  Link must be a knot.
+        >>> K = Link('7_3')
+        >>> K.conway_poly()
+        2*t^4 + 5*t^2 + 1
+        >>> t = var('t')
+        >>> K.alexander_poly()(t=t^2)
+        2*t^4 - 3*t^2 - 3/t^2 + 2/t^4 + 3
+        >>> K.conway_poly()(t=t-1/t).expand().simplify()
+        2*t^4 - 3*t^2 - 3/t^2 + 2/t^4 + 3
+
+        """
+        assert len(self.link_components) == 1
+        AP = self.alexander_poly()
+        coeffs = AP.coefficients()
+        assert coeffs[0][1] == -coeffs[-1][1]
+        t = AP.variables()[0]
+        AP2 = AP(t=t**2)
+        conway = 0
+        while 1:
+            a = AP2.leading_coefficient(t)
+            n = AP2.degree(t)
+            if a == 0:
+                break
+            conway += a*t**n
+            AP2 -= a*(t - 1/t)**n
+            AP2 = AP2.expand().simplify()
+        return conway
+
     def connected_sum(self, other_knot):
         """
         Returns the connected sum of two knots.                                                       
        
-        >>> K = Link('4_1')                                                                              
+        >>> K = Link('4_1')
         >>> K.connected_sum(K)                                                                         
         <Link: 1 comp; 8 cross>
         """
