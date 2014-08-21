@@ -671,7 +671,7 @@ class Link(object):
                 l = lnew
         return pieces
 
-y    def knot_group(self):
+    def knot_group(self):
         """
         Computes the knot group using the Wirtinger presentation. 
         Returns a finitely presented group.
