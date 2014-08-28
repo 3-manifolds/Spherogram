@@ -3,4 +3,4 @@ typedef struct cumul{
 }pmCumul;
 
 extern void pmStatistic(pmMap *Map, pmStats *Stat, pmCumul *Cumul);
-
+extern long pmStatGauss(pmMap *Map); 

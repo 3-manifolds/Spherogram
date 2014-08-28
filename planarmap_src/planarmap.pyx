@@ -44,14 +44,22 @@ cdef extern from 'PMplanmap.h':
     extern int pmPlanMap(pmSize *S, pmMethod *Meth,
                          pmMemory *M, pmMap *Map)
     extern int pmFreeMap(pmMap *Map)
+
+cdef extern from 'stats.h':
+    extern long pmStatGauss(pmMap *Map)
         
-def random_map(num_vertices, edge_connectivity=2):
+def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):
     """
     Use Gilles Schaeffer's "Planarmap program" to generate
     a random 4-valent planar graph with the given number
     of vertices.
 
     The "edge_connectivity" parameter can be any of 2, 4, or 6.
+    Recall that a graph is k-edge-connected if removing any set
+    of *less than* k edges disconnects the graph.  In particular,
+    for 4-valent graphs, being 2-connected is just the same as
+    being connected.  In particuar, a 2-connected graph can
+    (and frequently do) have looped edges. 
     """
     cdef pmSize size
     cdef pmMethod method
@@ -79,6 +87,10 @@ def random_map(num_vertices, edge_connectivity=2):
     method.verbose = 0
     pmMemoryInit(&size, &method, &memory)
     pmPlanMap(&size, &method, &memory, &the_map)
+    if num_link_comps > 0:
+        while pmStatGauss(&the_map) != num_link_comps:
+            pmFreeMap(&the_map)
+            pmPlanMap(&size, &method, &memory, &the_map)
 
     ans = []
     vert = the_map.root.c_from

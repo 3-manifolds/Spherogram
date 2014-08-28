@@ -13,7 +13,7 @@ from .. import graphs
 from . import links
 from spherogram.planarmap import random_map as raw_random_map
 
-def random_map(num_verts, edge_conn_param=2):
+def random_map(num_verts, edge_conn_param=4, initial_map_gives_knot=False):
     """
     Returns a dictionary of endpoints of edges in the form:
 
@@ -22,7 +22,8 @@ def random_map(num_verts, edge_conn_param=2):
     if isinstance(num_verts, list):
         data = num_verts
     else:
-        data = raw_random_map(num_verts, edge_conn_param)
+        num_link_comps = 1 if initial_map_gives_knot else 0
+        data = raw_random_map(num_verts, edge_conn_param, num_link_comps)
 
     vertex_adjacencies = []
     for vertex, adjacencies in data:
@@ -77,9 +78,20 @@ def largest_prime_piece(link):
         return links.Link([])
     return max(pieces, key=lambda L:len(L.crossings))
 
-def random_knot(crossings, edge_conn_param=4):
-    plane_map = random_map(crossings, edge_conn_param)
-    initial_knot = longest_component(map_to_link(plane_map))
+def random_knot(crossings, edge_conn_param=4, initial_map_gives_knot=False, return_all_pieces=False, prime_decomposition=True):
+    if initial_map_gives_knot:
+        plane_map = random_map(crossings, edge_conn_param, 1)
+        initial_knot = map_to_link(plane_map)
+    else:
+        plane_map = random_map(crossings, edge_conn_param)
+        initial_knot = longest_component(map_to_link(plane_map))    
+
     initial_knot.simplify()
-    return largest_prime_piece(initial_knot)
+    if prime_decomposition:
+        if return_all_pieces:
+            return simplified_prime_pieces(initial_knot)
+        else:
+            return largest_prime_piece(initial_knot)
+    else:
+        return initial_knot
 
