@@ -27,7 +27,7 @@ pmap_dir = 'planarmap_src/'
 pmap_src_dir = pmap_dir + '/src/'
 pmap_src_files = [pmap_src_dir + file for file in
                   ['PMdef.c', 'PMplanmap.c', 'PMenlight.c',
-                   'PMconjugation.c', 'PMextract.c']]
+                   'PMconjugation.c', 'PMextract.c', 'stats.c']]
 
 Planarmap = Extension(
     name = 'spherogram.planarmap',
