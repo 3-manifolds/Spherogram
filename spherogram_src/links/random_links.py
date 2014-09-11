@@ -10,7 +10,7 @@ Details to hopefullly appear in some paper or other.
 
 import os, sys, re, gzip, random
 from .. import graphs
-from . import links
+from . import links, twist
 from spherogram.planarmap import random_map as raw_random_map
 
 def random_map(num_verts, edge_conn_param=4, initial_map_gives_knot=False):
@@ -78,14 +78,22 @@ def largest_prime_piece(link):
         return links.Link([])
     return max(pieces, key=lambda L:len(L.crossings))
 
-def random_knot(crossings, edge_conn_param=4, initial_map_gives_knot=False, return_all_pieces=False, prime_decomposition=True):
+def random_knot(crossings,
+                edge_conn_param=4,
+                initial_map_gives_knot=False, 
+                return_all_pieces=False, 
+                prime_decomposition=True,
+                consistient_twist_regions=False):
     if initial_map_gives_knot:
         plane_map = random_map(crossings, edge_conn_param, 1)
         initial_knot = map_to_link(plane_map)
     else:
         plane_map = random_map(crossings, edge_conn_param)
-        initial_knot = longest_component(map_to_link(plane_map))    
+        initial_knot = longest_component(map_to_link(plane_map))
 
+    if consistient_twist_regions:
+        twist.make_twist_regions_consistent(initial_knot)
+        
     initial_knot.simplify()
     if prime_decomposition:
         if return_all_pieces:
@@ -94,4 +102,11 @@ def random_knot(crossings, edge_conn_param=4, initial_map_gives_knot=False, retu
             return largest_prime_piece(initial_knot)
     else:
         return initial_knot
+
+def new_random_knot(crossings, prime_decomposition=True):
+    return random_knot(crossings, edge_conn_param=4,
+                initial_map_gives_knot=True, 
+                return_all_pieces=False, 
+                prime_decomposition=prime_decomposition,
+                consistient_twist_regions=True)
 

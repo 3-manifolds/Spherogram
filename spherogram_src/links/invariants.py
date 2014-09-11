@@ -469,9 +469,9 @@ class Link(links_base.Link):
         traditional bridge number.
 
         >>> K = Link('5_2')
-        >>> K.morse_index()
+        >>> K.morse_number()
         2
-        >>> Link('6^3_2').morse_index()
+        >>> Link('6^3_2').morse_number()
         3
         """
         from . import morse
@@ -484,7 +484,7 @@ class Link(links_base.Link):
 
         >>> L = Link('L8n2')
         >>> D = L.morse_diagram()
-        >>> D.morse_index == L.morse_index()
+        >>> D.morse_number == L.morse_number()
         True
         >>> D.is_bridge()
         True

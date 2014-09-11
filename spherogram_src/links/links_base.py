@@ -343,8 +343,7 @@ class Link(object):
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
 
         if build:
-            self._orient_crossings()
-            self._build_components()
+            self._build()
 
         if check_planarity and not self.is_planar():
             raise ValueError("Link isn't planar")
@@ -357,7 +356,18 @@ class Link(object):
 
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
-    
+
+    def _build(self):
+        self._orient_crossings()
+        self._build_components()
+
+    def _rebuild(self):
+        self.link_components = None
+        for c in self.crossings:
+            c.sign = 0
+            c.directions.clear()
+        self._build()
+        
     def _orient_crossings(self):
         if self.all_crossings_oriented():
             return
