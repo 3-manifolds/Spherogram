@@ -148,7 +148,7 @@ class MorseLinkDiagram(object):
     def __init__(self, link, solver='GLPK'):
         self.link = link = link.copy()
         morse, values = morse_via_LP(link, solver)
-        self.morse_index = morse
+        self.morse_number = morse
         self.bends = set(have_positive_value(values[3]))
         self.faces = faces = link.faces()
         self.exterior = self.faces[have_positive_value(values[4])[0]]
@@ -172,7 +172,7 @@ class MorseLinkDiagram(object):
         True
         >>> sorted(orients)
         ['down', 'down', 'max', 'max', 'max', 'max', 'min', 'min', 'min', 'min', 'up', 'up']
-        >>> orients.count('max') == 2*D.morse_index
+        >>> orients.count('max') == 2*D.morse_number
         True
         """
         def expand_orientation(cs, kind):
