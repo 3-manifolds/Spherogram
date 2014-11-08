@@ -584,6 +584,8 @@ class DTcodec(object):
         N = start = 1
         last_odd = -1
         for c, component in enumerate(code):
+            if len(component) == 0:
+                continue
             last_odd += 2*len(component)
             V = self[N]
             # Walk around this component, adding edges.
