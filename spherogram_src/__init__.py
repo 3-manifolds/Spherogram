@@ -7,6 +7,12 @@ try:
 except ImportError:
     pass
 
+# Make the module version number easily accessible.
+from . import version as _version
+def version():
+    return _version.version
+__version__ = version()
+
 __all__ = ['ABC', 'CyclicList', 'CyclicWord', 'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
