@@ -54,7 +54,7 @@ class clean(Command):
 
 # Main module
 
-version='1.4a2'
+exec(open('spherogram_src/version.py').read())
 with open('version.txt','w') as output:
     output.write(version)
 
@@ -72,7 +72,7 @@ setup( name = 'spherogram',
        author = 'Marc Culler and Nathan Dunfield and John Berge',
        author_email = 'culler@math.uic.edu, nmd@illinois.edu',
        description = 'Spherical diagrams for 3-manifold topology',
-       license = 'GPL',
+       license = 'GPL v2+',
        keywords = 'knots, links, graphs, presentations',
        url = '',
        )
