@@ -494,3 +494,14 @@ class Link(links_base.Link):
         """
         from . import morse
         return morse.MorseLinkDiagram(self)
+
+    def jones_poly(self, variable=None):
+        """
+        Returns the Jones polynomial of the link.
+
+        >>> L = Link('8_5')
+        >>> L.jones_poly()
+        q^8 - 2*q^7 + 3*q^6 - 4*q^5 + 3*q^4 - 3*q^3 + 3*q^2 - q + 1
+        """
+        from . import jones
+        return jones.Jones_poly(self, variable)

@@ -2,11 +2,8 @@ from __future__ import print_function
 """
 Functions needed to calculate the Jones polynomial of K. Still needs work ...
 """
-import spherogram
-#import spanning_trees
 from sage.symbolic.ring import var
 import sage.graphs.graph as graph
-
 
 def cut(G,T,e):
     """
@@ -28,8 +25,7 @@ def cut(G,T,e):
         if (f[0] in C1 and f[1] in C2) or (f[0] in C2 and f[1] in C1):
             if f != e:
                 answer.append(f)
-    return answer
-    
+    return answer    
 
 def is_internally_active(G, T, e):
     """
@@ -129,7 +125,7 @@ def _Jones_contrib(K, G, T, A):
 
 def Jones_poly(K,variable=None):
     if not variable:
-        variable = var('t')
+        variable = var('q')
     answer = 0
     A = var('A')
     G = K.black_graph()
