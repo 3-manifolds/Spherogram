@@ -55,8 +55,6 @@ class clean(Command):
 # Main module
 
 exec(open('spherogram_src/version.py').read())
-with open('version.txt','w') as output:
-    output.write(version)
 
 setup( name = 'spherogram',
        version = version,
