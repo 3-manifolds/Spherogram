@@ -1,6 +1,5 @@
 import sys, os, glob
 from setuptools import setup, Command, Extension
-from Cython.Build import cythonize
 
 # The planarity extension
 
@@ -21,6 +20,7 @@ except ImportError:
 
     ext_modules = [Planarity]
 
+
 # The planarmap extension
 
 pmap_dir = 'planarmap_src/'
@@ -37,8 +37,19 @@ Planarmap = Extension(
     )
 
 ext_modules.append(Planarmap)
-if not 'clean' in sys.argv:
-    ext_modules = cythonize(ext_modules)
+
+
+# If have Cython, check that .c files are up to date:
+
+try:
+    from Cython.Build import cythonize
+    if 'clean' not in sys.argv:
+        cythonize(ext_modules)
+except ImportError:
+    pass 
+
+
+# A real clean
 
 class clean(Command):
     user_options = []
@@ -49,28 +60,44 @@ class clean(Command):
     def run(self):
         os.system('rm -rf build dist')
         os.system('rm -rf spherogram*.egg-info')
-        os.system('rm -f planarity_src/planarity.c')
-        os.system('rm -f planarmap_src/planarmap.c')
-
+        
 # Main module
 
 exec(open('spherogram_src/version.py').read())
 
+# Get long description from README
+long_description = open('README').read()
+long_description = long_description.split('==\n')[1]
+long_description = long_description.split('\nDeveloped')[0]
+
 setup( name = 'spherogram',
        version = version,
-       zip_safe = False,
-       install_requires = ['networkx>=1.3', 'cython'],
+       install_requires = ['networkx>=1.3'],
        dependency_links = [],
-       packages = ['spherogram', 'spherogram.links',  'spherogram.links.test', 'spherogram.codecs', 'spherogram.dev', 'spherogram.dev.dev_jennet'],
+       packages = ['spherogram', 'spherogram.links',
+                   'spherogram.links.test', 'spherogram.codecs',
+                   'spherogram.dev', 'spherogram.dev.dev_jennet'],
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = ext_modules,
        cmdclass =  {'clean':clean},
-       entry_points = {},
-       author = 'Marc Culler and Nathan Dunfield and John Berge',
-       author_email = 'culler@math.uic.edu, nmd@illinois.edu',
-       description = 'Spherical diagrams for 3-manifold topology',
-       license = 'GPL v2+',
-       keywords = 'knots, links, graphs, presentations',
-       url = '',
-       )
+       zip_safe = False,
+
+       description= 'Spherical diagrams for 3-manifold topology', 
+       long_description = long_description,
+       author = 'Marc Culler and Nathan M. Dunfield',
+       author_email = 'culler@uic.edu, nathan@dunfield.info',
+       license='GPLv2+',
+       url = 'https://bitbucket.org/t3m/spherogram',
+       classifiers = [
+           'Development Status :: 5 - Production/Stable',
+           'Intended Audience :: Science/Research',
+           'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+           'Operating System :: OS Independent',
+           'Programming Language :: C',
+           'Programming Language :: Python',
+           'Topic :: Scientific/Engineering :: Mathematics',
+        ],
+        keywords = 'knot, link, SnapPy',
+)
+
