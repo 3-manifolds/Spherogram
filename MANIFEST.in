@@ -1,0 +1,6 @@
+include planarity_src/c/*.h
+include planarity_src/planarity.pyx
+include planarity_src/planarity.c
+include planarmap_src/src/*.h
+include planamap_src/planarmap.pyx
+include planarmap_src/planarmap.c
