@@ -14,7 +14,7 @@ except ImportError:
     
     Planarity = Extension(
         name = 'spherogram.planarity',
-        sources = ['planarity_src/planarity.pyx'] + planarity_sources, 
+        sources = ['planarity_src/planarity.c'] + planarity_sources, 
         include_dirs = [planarity_dir], 
         )
 
@@ -32,7 +32,7 @@ pmap_src_files = [pmap_src_dir + file for file in
 Planarmap = Extension(
     name = 'spherogram.planarmap',
 
-    sources =  [pmap_dir + 'planarmap.pyx'] + pmap_src_files, 
+    sources =  [pmap_dir + 'planarmap.c'] + pmap_src_files, 
     include_dirs = [pmap_src_dir]
     )
 
@@ -44,7 +44,7 @@ ext_modules.append(Planarmap)
 try:
     from Cython.Build import cythonize
     if 'clean' not in sys.argv:
-        cythonize(ext_modules)
+        cythonize(['planarity_src/planarity.pyx', pmap_dir + 'planarmap.pyx'])
 except ImportError:
     pass 
 
