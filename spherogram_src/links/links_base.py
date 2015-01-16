@@ -1036,6 +1036,7 @@ class Link(object):
                     break
             start = origin
             end = start.next()
+            circled_around = False
             while True:
                 length = 0
                 alreadyseen = []
@@ -1043,13 +1044,17 @@ class Link(object):
                     alreadyseen.append(end.crossing)
                     length += 1
                     end = end.next()
+                    if end == origin:
+                        circled_around = True
                 if length >= 1:
                     overcrosses.append([start,length])
                 start = end
                 end = start.next()
-                if start == origin:
+                circled_around = circled_around or (start == origin)
+                if circled_around:
                     break
         return sorted(overcrosses, key=lambda overcross: overcross[1], reverse=True)
+
 
     def backtrack(self, steps=10):
         """
