@@ -310,19 +310,19 @@ pm_edge *pmNextSeed(void)
     return pmSeed[++pmSeedBeg];
 }
 
-/******************************/
-/* this function initialize the random generator */
-/******************************/
-int pmInitRND(pmMethod *Meth){
-  srand48(Meth->seed); printvf("# Seed: %ld\n",Meth->seed);
-  return(TRUE);
+/* 
+Schaeffer's original code used libc's rand48 function; the Python
+wrapper uses a callback function to "random.randrange" so that the
+seed can be easily set by the user.  Also, Python's Mersenne Twister
+generator is typically better than that provided by libc.  
+*/
+
+long (*pmRandom_callback)(long);
+
+void set_pmRandom_callback(long (*function)(long)){
+    pmRandom_callback = function;
 }
 
-/******************************/
-/* this function generate random integers between 1,n */
-/******************************/
 long pmRandom(long n){
-  if (n>0) 
-    return lrand48()%n+1;
-  else return 1; 
+    return (*pmRandom_callback)(n);
 }

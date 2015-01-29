@@ -18,4 +18,4 @@ __all__ = ['ABC', 'CyclicList', 'CyclicWord', 'DTcodec', 'Digraph',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
            'RationalTangle', 'Crossing', 'Strand', 'Tangle','WhiteheadMove',
-           'Word', 'ZeroTangle', 'random_knot', 'new_random_knot']
+           'Word', 'ZeroTangle', 'random_link']

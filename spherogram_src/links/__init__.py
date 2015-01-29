@@ -4,7 +4,7 @@ from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle, Identit
 from . import orthogonal
 Link.view = orthogonal.orthogonal_draw
 import os, sys
-from .random_links import random_knot, new_random_knot
+from .random_links import random_link
 
 def pdf_docs():
     "Open the PDF docs for links and tangles using the default application"
@@ -19,4 +19,4 @@ def pdf_docs():
 
 __all__ = ['Crossing', 'Strand', 'Link', 'Tangle', 'RationalTangle',
     'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'join_strands',
-    'pdf_docs', 'random_knot', 'new_random_knot']
+    'pdf_docs', 'random_link']

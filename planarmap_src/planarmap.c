@@ -503,6 +503,27 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject
 
 static PyObject *__Pyx_GetBuiltinName(PyObject *name);
 
+static CYTHON_INLINE PyObject *__Pyx_GetModuleGlobalName(PyObject *name);
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
+#else
+#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
+#endif
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
+#endif
+
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
+
+static CYTHON_INLINE void __Pyx_ErrRestore(PyObject *type, PyObject *value, PyObject *tb);
+static CYTHON_INLINE void __Pyx_ErrFetch(PyObject **type, PyObject **value, PyObject **tb);
+
+static void __Pyx_WriteUnraisable(const char *name, int clineno,
+                                  int lineno, const char *filename,
+                                  int full_traceback);
+
 static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
 
 static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[], \
@@ -512,24 +533,7 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[], \
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
-#else
-#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
-static CYTHON_INLINE void __Pyx_ErrRestore(PyObject *type, PyObject *value, PyObject *tb);
-static CYTHON_INLINE void __Pyx_ErrFetch(PyObject **type, PyObject **value, PyObject **tb);
-
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
-
-static CYTHON_INLINE PyObject *__Pyx_GetModuleGlobalName(PyObject *name);
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
-#endif
-
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
@@ -568,9 +572,11 @@ static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
 
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
+
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
 
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
 
 static int __Pyx_check_binary_version(void);
 
@@ -582,27 +588,30 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 /* Module declarations from 'libc.stdlib' */
 
 /* Module declarations from 'planarmap' */
+static long __pyx_f_9planarmap_randrange_callback(long); /*proto*/
 #define __Pyx_MODULE_NAME "planarmap"
 int __pyx_module_is_main_planarmap = 0;
 
 /* Implementation of 'planarmap' */
 static PyObject *__pyx_builtin_ValueError;
-static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_num_vertices, PyObject *__pyx_v_edge_connectivity, int __pyx_v_num_link_comps); /* proto */
+static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_num_vertices, int __pyx_v_edge_connectivity, int __pyx_v_num_link_comps, int __pyx_v_max_tries); /* proto */
 static char __pyx_k_ans[] = "ans";
 static char __pyx_k_edge[] = "edge";
 static char __pyx_k_main[] = "__main__";
 static char __pyx_k_size[] = "size";
 static char __pyx_k_test[] = "__test__";
 static char __pyx_k_vert[] = "vert";
+static char __pyx_k_tries[] = "tries";
 static char __pyx_k_import[] = "__import__";
 static char __pyx_k_memory[] = "memory";
 static char __pyx_k_method[] = "method";
 static char __pyx_k_random[] = "random";
 static char __pyx_k_the_map[] = "the_map";
+static char __pyx_k_max_tries[] = "max_tries";
 static char __pyx_k_planarmap[] = "planarmap";
+static char __pyx_k_randrange[] = "randrange";
 static char __pyx_k_ValueError[] = "ValueError";
 static char __pyx_k_random_map[] = "random_map";
-static char __pyx_k_getrandbits[] = "getrandbits";
 static char __pyx_k_num_vertices[] = "num_vertices";
 static char __pyx_k_edges_at_vert[] = "edges_at_vert";
 static char __pyx_k_num_link_comps[] = "num_link_comps";
@@ -616,9 +625,9 @@ static PyObject *__pyx_n_s_ans;
 static PyObject *__pyx_n_s_edge;
 static PyObject *__pyx_n_s_edge_connectivity;
 static PyObject *__pyx_n_s_edges_at_vert;
-static PyObject *__pyx_n_s_getrandbits;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_main;
+static PyObject *__pyx_n_s_max_tries;
 static PyObject *__pyx_n_s_memory;
 static PyObject *__pyx_n_s_method;
 static PyObject *__pyx_n_s_num_link_comps;
@@ -626,33 +635,127 @@ static PyObject *__pyx_n_s_num_vertices;
 static PyObject *__pyx_n_s_planarmap;
 static PyObject *__pyx_n_s_random;
 static PyObject *__pyx_n_s_random_map;
+static PyObject *__pyx_n_s_randrange;
 static PyObject *__pyx_n_s_size;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_the_map;
+static PyObject *__pyx_n_s_tries;
 static PyObject *__pyx_n_s_vert;
-static PyObject *__pyx_int_2;
-static PyObject *__pyx_int_4;
-static PyObject *__pyx_int_6;
+static PyObject *__pyx_int_0;
+static PyObject *__pyx_int_1;
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_codeobj__3;
 
-/* "planarmap.pyx":51
- *     extern long pmStatGauss(pmMap *Map)
+/* "planarmap.pyx":55
+ * # We want Planarmap to use the same pseudo-random number generator as Python.
  * 
- * def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):             # <<<<<<<<<<<<<<
+ * cdef long randrange_callback(long n):             # <<<<<<<<<<<<<<
+ *     return random.randrange(n) + 1
+ * 
+ */
+
+static long __pyx_f_9planarmap_randrange_callback(long __pyx_v_n) {
+  long __pyx_r;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  long __pyx_t_6;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("randrange_callback", 0);
+
+  /* "planarmap.pyx":56
+ * 
+ * cdef long randrange_callback(long n):
+ *     return random.randrange(n) + 1             # <<<<<<<<<<<<<<
+ * 
+ * set_pmRandom_callback(randrange_callback)
+ */
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_random); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_randrange); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyInt_From_long(__pyx_v_n); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = NULL;
+  if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  if (!__pyx_t_4) {
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_GOTREF(__pyx_t_1);
+  } else {
+    __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_5);
+    PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
+    PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_t_2);
+    __Pyx_GIVEREF(__pyx_t_2);
+    __pyx_t_2 = 0;
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = PyNumber_Add(__pyx_t_1, __pyx_int_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_6 = __Pyx_PyInt_As_long(__pyx_t_3); if (unlikely((__pyx_t_6 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_r = __pyx_t_6;
+  goto __pyx_L0;
+
+  /* "planarmap.pyx":55
+ * # We want Planarmap to use the same pseudo-random number generator as Python.
+ * 
+ * cdef long randrange_callback(long n):             # <<<<<<<<<<<<<<
+ *     return random.randrange(n) + 1
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_WriteUnraisable("planarmap.randrange_callback", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "planarmap.pyx":63
+ * # The main function
+ * 
+ * def random_map(num_vertices, int edge_connectivity=4,             # <<<<<<<<<<<<<<
+ *                int num_link_comps=0, int max_tries=100):
  *     """
- *     Use Gilles Schaeffer's "Planarmap program" to generate
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_9planarmap_1random_map(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9planarmap_random_map[] = "\n    Use Gilles Schaeffer's \"Planarmap program\" to generate\n    a random 4-valent planar graph with the given number\n    of vertices.\n\n    The \"edge_connectivity\" parameter can be any of 2, 4, or 6.\n    Recall that a graph is k-edge-connected if removing any set\n    of *less than* k edges disconnects the graph.  In particular,\n    for 4-valent graphs, being 2-connected is just the same as\n    being connected.  In particuar, a 2-connected graph can\n    (and frequently do) have looped edges. \n    ";
+static char __pyx_doc_9planarmap_random_map[] = "\n    Use Gilles Schaeffer's \"Planarmap program\" to generate\n    a random 4-valent planar graph with the given number\n    of vertices.\n\n    The \"edge_connectivity\" parameter can be any of 2, 4, or 6.\n    Recall that a graph is k-edge-connected if removing any set\n    of *less than* k edges disconnects the graph.  In particular,\n    for 4-valent graphs, being 2-connected is just the same as\n    being connected.  In particuar, a 2-connected graph can\n    (and frequently do) have looped edges.\n\n    Under the hood, it uses Python's pseudo-random number\n    generator.\n    ";
 static PyMethodDef __pyx_mdef_9planarmap_1random_map = {"random_map", (PyCFunction)__pyx_pw_9planarmap_1random_map, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9planarmap_random_map};
 static PyObject *__pyx_pw_9planarmap_1random_map(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_num_vertices = 0;
-  PyObject *__pyx_v_edge_connectivity = 0;
+  int __pyx_v_edge_connectivity;
   int __pyx_v_num_link_comps;
+  int __pyx_v_max_tries;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -660,13 +763,13 @@ static PyObject *__pyx_pw_9planarmap_1random_map(PyObject *__pyx_self, PyObject 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("random_map (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_num_vertices,&__pyx_n_s_edge_connectivity,&__pyx_n_s_num_link_comps,0};
-    PyObject* values[3] = {0,0,0};
-    values[1] = ((PyObject *)__pyx_int_4);
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_num_vertices,&__pyx_n_s_edge_connectivity,&__pyx_n_s_num_link_comps,&__pyx_n_s_max_tries,0};
+    PyObject* values[4] = {0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
         case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -688,12 +791,18 @@ static PyObject *__pyx_pw_9planarmap_1random_map(PyObject *__pyx_self, PyObject 
           PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_num_link_comps);
           if (value) { values[2] = value; kw_args--; }
         }
+        case  3:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_max_tries);
+          if (value) { values[3] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "random_map") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "random_map") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
         case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -702,183 +811,189 @@ static PyObject *__pyx_pw_9planarmap_1random_map(PyObject *__pyx_self, PyObject 
       }
     }
     __pyx_v_num_vertices = values[0];
-    __pyx_v_edge_connectivity = values[1];
+    if (values[1]) {
+      __pyx_v_edge_connectivity = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_edge_connectivity == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    } else {
+      __pyx_v_edge_connectivity = ((int)4);
+    }
     if (values[2]) {
-      __pyx_v_num_link_comps = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_num_link_comps == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_num_link_comps = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_num_link_comps == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_num_link_comps = ((int)0);
+    }
+    if (values[3]) {
+      __pyx_v_max_tries = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_max_tries == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    } else {
+      __pyx_v_max_tries = ((int)100);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("random_map", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("random_map", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("planarmap.random_map", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9planarmap_random_map(__pyx_self, __pyx_v_num_vertices, __pyx_v_edge_connectivity, __pyx_v_num_link_comps);
+  __pyx_r = __pyx_pf_9planarmap_random_map(__pyx_self, __pyx_v_num_vertices, __pyx_v_edge_connectivity, __pyx_v_num_link_comps, __pyx_v_max_tries);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_num_vertices, PyObject *__pyx_v_edge_connectivity, int __pyx_v_num_link_comps) {
+static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_num_vertices, int __pyx_v_edge_connectivity, int __pyx_v_num_link_comps, int __pyx_v_max_tries) {
   pmSize __pyx_v_size;
   pmMethod __pyx_v_method;
   pmMemory __pyx_v_memory;
   pmMap __pyx_v_the_map;
   pm_edge *__pyx_v_edge;
   pm_vertex *__pyx_v_vert;
+  PyObject *__pyx_v_tries = NULL;
   PyObject *__pyx_v_ans = NULL;
   PyObject *__pyx_v_edges_at_vert = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  int __pyx_t_2;
-  char __pyx_t_3;
-  char __pyx_t_4;
+  char __pyx_t_1;
+  char __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  long __pyx_t_4;
   long __pyx_t_5;
   long __pyx_t_6;
   long __pyx_t_7;
   long __pyx_t_8;
-  long __pyx_t_9;
-  PyObject *__pyx_t_10 = NULL;
+  int __pyx_t_9;
+  int __pyx_t_10;
   PyObject *__pyx_t_11 = NULL;
-  PyObject *__pyx_t_12 = NULL;
-  PyObject *__pyx_t_13 = NULL;
-  pm_vertex *__pyx_t_14;
-  pm_edge *__pyx_t_15;
-  int __pyx_t_16;
+  pm_vertex *__pyx_t_12;
+  pm_edge *__pyx_t_13;
+  int __pyx_t_14;
+  PyObject *__pyx_t_15 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("random_map", 0);
 
-  /* "planarmap.pyx":71
- *     cdef pm_vertex *vert
- * 
- *     if edge_connectivity==2:             # <<<<<<<<<<<<<<
- *         size.m, size.b = 4, 4
- *     elif edge_connectivity==4:
- */
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_edge_connectivity, __pyx_int_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__pyx_t_2) {
-
-    /* "planarmap.pyx":72
- * 
- *     if edge_connectivity==2:
- *         size.m, size.b = 4, 4             # <<<<<<<<<<<<<<
- *     elif edge_connectivity==4:
- *         size.m, size.b = 5, 5
- */
-    __pyx_t_3 = 4;
-    __pyx_t_4 = 4;
-    __pyx_v_size.m = __pyx_t_3;
-    __pyx_v_size.b = __pyx_t_4;
-    goto __pyx_L3;
-  }
-
-  /* "planarmap.pyx":73
- *     if edge_connectivity==2:
- *         size.m, size.b = 4, 4
- *     elif edge_connectivity==4:             # <<<<<<<<<<<<<<
- *         size.m, size.b = 5, 5
- *     elif edge_connectivity==6:
- */
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_edge_connectivity, __pyx_int_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__pyx_t_2) {
-
-    /* "planarmap.pyx":74
- *         size.m, size.b = 4, 4
- *     elif edge_connectivity==4:
- *         size.m, size.b = 5, 5             # <<<<<<<<<<<<<<
- *     elif edge_connectivity==6:
- *         size.m, size.b = 6, 5
- */
-    __pyx_t_4 = 5;
-    __pyx_t_3 = 5;
-    __pyx_v_size.m = __pyx_t_4;
-    __pyx_v_size.b = __pyx_t_3;
-    goto __pyx_L3;
-  }
-
-  /* "planarmap.pyx":75
+  /* "planarmap.pyx":91
  *     elif edge_connectivity==4:
  *         size.m, size.b = 5, 5
  *     elif edge_connectivity==6:             # <<<<<<<<<<<<<<
  *         size.m, size.b = 6, 5
  *     else:
  */
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_edge_connectivity, __pyx_int_6, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__pyx_t_2) {
+  switch (__pyx_v_edge_connectivity) {
 
-    /* "planarmap.pyx":76
+    /* "planarmap.pyx":87
+ *     cdef pm_vertex *vert
+ * 
+ *     if edge_connectivity==2:             # <<<<<<<<<<<<<<
+ *         size.m, size.b = 4, 4
+ *     elif edge_connectivity==4:
+ */
+    case 2:
+
+    /* "planarmap.pyx":88
+ * 
+ *     if edge_connectivity==2:
+ *         size.m, size.b = 4, 4             # <<<<<<<<<<<<<<
+ *     elif edge_connectivity==4:
+ *         size.m, size.b = 5, 5
+ */
+    __pyx_t_1 = 4;
+    __pyx_t_2 = 4;
+    __pyx_v_size.m = __pyx_t_1;
+    __pyx_v_size.b = __pyx_t_2;
+    break;
+
+    /* "planarmap.pyx":89
+ *     if edge_connectivity==2:
+ *         size.m, size.b = 4, 4
+ *     elif edge_connectivity==4:             # <<<<<<<<<<<<<<
+ *         size.m, size.b = 5, 5
+ *     elif edge_connectivity==6:
+ */
+    case 4:
+
+    /* "planarmap.pyx":90
+ *         size.m, size.b = 4, 4
+ *     elif edge_connectivity==4:
+ *         size.m, size.b = 5, 5             # <<<<<<<<<<<<<<
+ *     elif edge_connectivity==6:
+ *         size.m, size.b = 6, 5
+ */
+    __pyx_t_2 = 5;
+    __pyx_t_1 = 5;
+    __pyx_v_size.m = __pyx_t_2;
+    __pyx_v_size.b = __pyx_t_1;
+    break;
+
+    /* "planarmap.pyx":91
+ *     elif edge_connectivity==4:
+ *         size.m, size.b = 5, 5
+ *     elif edge_connectivity==6:             # <<<<<<<<<<<<<<
+ *         size.m, size.b = 6, 5
+ *     else:
+ */
+    case 6:
+
+    /* "planarmap.pyx":92
  *         size.m, size.b = 5, 5
  *     elif edge_connectivity==6:
  *         size.m, size.b = 6, 5             # <<<<<<<<<<<<<<
  *     else:
  *         raise ValueError("Invalid edge_connectivity parameter")
  */
-    __pyx_t_3 = 6;
-    __pyx_t_4 = 5;
-    __pyx_v_size.m = __pyx_t_3;
-    __pyx_v_size.b = __pyx_t_4;
-    goto __pyx_L3;
-  }
-  /*else*/ {
+    __pyx_t_1 = 6;
+    __pyx_t_2 = 5;
+    __pyx_v_size.m = __pyx_t_1;
+    __pyx_v_size.b = __pyx_t_2;
+    break;
+    default:
 
-    /* "planarmap.pyx":78
+    /* "planarmap.pyx":94
  *         size.m, size.b = 6, 5
  *     else:
  *         raise ValueError("Invalid edge_connectivity parameter")             # <<<<<<<<<<<<<<
  * 
  *     size.v = num_vertices
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    break;
   }
-  __pyx_L3:;
 
-  /* "planarmap.pyx":80
+  /* "planarmap.pyx":96
  *         raise ValueError("Invalid edge_connectivity parameter")
  * 
  *     size.v = num_vertices             # <<<<<<<<<<<<<<
  *     size.e, size.f, size.r, size.g, size.d = 0, 0, 0, 0, 0
  *     size.t = -1
  */
-  __pyx_t_5 = __Pyx_PyInt_As_long(__pyx_v_num_vertices); if (unlikely((__pyx_t_5 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_v_size.v = __pyx_t_5;
+  __pyx_t_4 = __Pyx_PyInt_As_long(__pyx_v_num_vertices); if (unlikely((__pyx_t_4 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 96; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_size.v = __pyx_t_4;
 
-  /* "planarmap.pyx":81
+  /* "planarmap.pyx":97
  * 
  *     size.v = num_vertices
  *     size.e, size.f, size.r, size.g, size.d = 0, 0, 0, 0, 0             # <<<<<<<<<<<<<<
  *     size.t = -1
  *     size.dgArr = NULL
  */
+  __pyx_t_4 = 0;
   __pyx_t_5 = 0;
   __pyx_t_6 = 0;
   __pyx_t_7 = 0;
   __pyx_t_8 = 0;
-  __pyx_t_9 = 0;
-  __pyx_v_size.e = __pyx_t_5;
-  __pyx_v_size.f = __pyx_t_6;
-  __pyx_v_size.r = __pyx_t_7;
-  __pyx_v_size.g = __pyx_t_8;
-  __pyx_v_size.d = __pyx_t_9;
+  __pyx_v_size.e = __pyx_t_4;
+  __pyx_v_size.f = __pyx_t_5;
+  __pyx_v_size.r = __pyx_t_6;
+  __pyx_v_size.g = __pyx_t_7;
+  __pyx_v_size.d = __pyx_t_8;
 
-  /* "planarmap.pyx":82
+  /* "planarmap.pyx":98
  *     size.v = num_vertices
  *     size.e, size.f, size.r, size.g, size.d = 0, 0, 0, 0, 0
  *     size.t = -1             # <<<<<<<<<<<<<<
@@ -887,7 +1002,7 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
  */
   __pyx_v_size.t = -1;
 
-  /* "planarmap.pyx":83
+  /* "planarmap.pyx":99
  *     size.e, size.f, size.r, size.g, size.d = 0, 0, 0, 0, 0
  *     size.t = -1
  *     size.dgArr = NULL             # <<<<<<<<<<<<<<
@@ -896,73 +1011,29 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
  */
   __pyx_v_size.dgArr = NULL;
 
-  /* "planarmap.pyx":85
+  /* "planarmap.pyx":101
  *     size.dgArr = NULL
  * 
  *     method.core, method.pic = 0, 0             # <<<<<<<<<<<<<<
- *     method.seed = random.getrandbits(8*sizeof(long) - 1)
- *     method.verbose = 0
- */
-  __pyx_t_4 = 0;
-  __pyx_t_3 = 0;
-  __pyx_v_method.core = __pyx_t_4;
-  __pyx_v_method.pic = __pyx_t_3;
-
-  /* "planarmap.pyx":86
- * 
- *     method.core, method.pic = 0, 0
- *     method.seed = random.getrandbits(8*sizeof(long) - 1)             # <<<<<<<<<<<<<<
  *     method.verbose = 0
  *     pmMemoryInit(&size, &method, &memory)
  */
-  __pyx_t_10 = __Pyx_GetModuleGlobalName(__pyx_n_s_random); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_getrandbits); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_11);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyInt_FromSize_t(((8 * (sizeof(long))) - 1)); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_12 = NULL;
-  if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_11))) {
-    __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_11);
-    if (likely(__pyx_t_12)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_11);
-      __Pyx_INCREF(__pyx_t_12);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_11, function);
-    }
-  }
-  if (!__pyx_t_12) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_11, __pyx_t_10); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-    __Pyx_GOTREF(__pyx_t_1);
-  } else {
-    __pyx_t_13 = PyTuple_New(1+1); if (unlikely(!__pyx_t_13)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_13);
-    PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_12); __Pyx_GIVEREF(__pyx_t_12); __pyx_t_12 = NULL;
-    PyTuple_SET_ITEM(__pyx_t_13, 0+1, __pyx_t_10);
-    __Pyx_GIVEREF(__pyx_t_10);
-    __pyx_t_10 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_13, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_9 = __Pyx_PyInt_As_long(__pyx_t_1); if (unlikely((__pyx_t_9 == (long)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 86; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_method.seed = __pyx_t_9;
+  __pyx_t_2 = 0;
+  __pyx_t_1 = 0;
+  __pyx_v_method.core = __pyx_t_2;
+  __pyx_v_method.pic = __pyx_t_1;
 
-  /* "planarmap.pyx":87
+  /* "planarmap.pyx":102
+ * 
  *     method.core, method.pic = 0, 0
- *     method.seed = random.getrandbits(8*sizeof(long) - 1)
  *     method.verbose = 0             # <<<<<<<<<<<<<<
  *     pmMemoryInit(&size, &method, &memory)
  *     pmPlanMap(&size, &method, &memory, &the_map)
  */
   __pyx_v_method.verbose = 0;
 
-  /* "planarmap.pyx":88
- *     method.seed = random.getrandbits(8*sizeof(long) - 1)
+  /* "planarmap.pyx":103
+ *     method.core, method.pic = 0, 0
  *     method.verbose = 0
  *     pmMemoryInit(&size, &method, &memory)             # <<<<<<<<<<<<<<
  *     pmPlanMap(&size, &method, &memory, &the_map)
@@ -970,81 +1041,143 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
  */
   pmMemoryInit((&__pyx_v_size), (&__pyx_v_method), (&__pyx_v_memory));
 
-  /* "planarmap.pyx":89
+  /* "planarmap.pyx":104
  *     method.verbose = 0
  *     pmMemoryInit(&size, &method, &memory)
  *     pmPlanMap(&size, &method, &memory, &the_map)             # <<<<<<<<<<<<<<
  *     if num_link_comps > 0:
- *         while pmStatGauss(&the_map) != num_link_comps:
+ *         tries = 0
  */
   pmPlanMap((&__pyx_v_size), (&__pyx_v_method), (&__pyx_v_memory), (&__pyx_v_the_map));
 
-  /* "planarmap.pyx":90
+  /* "planarmap.pyx":105
  *     pmMemoryInit(&size, &method, &memory)
  *     pmPlanMap(&size, &method, &memory, &the_map)
  *     if num_link_comps > 0:             # <<<<<<<<<<<<<<
- *         while pmStatGauss(&the_map) != num_link_comps:
- *             pmFreeMap(&the_map)
+ *         tries = 0
+ *         while pmStatGauss(&the_map) != num_link_comps and tries < max_tries:
  */
-  __pyx_t_2 = ((__pyx_v_num_link_comps > 0) != 0);
-  if (__pyx_t_2) {
+  __pyx_t_9 = ((__pyx_v_num_link_comps > 0) != 0);
+  if (__pyx_t_9) {
 
-    /* "planarmap.pyx":91
+    /* "planarmap.pyx":106
  *     pmPlanMap(&size, &method, &memory, &the_map)
  *     if num_link_comps > 0:
- *         while pmStatGauss(&the_map) != num_link_comps:             # <<<<<<<<<<<<<<
+ *         tries = 0             # <<<<<<<<<<<<<<
+ *         while pmStatGauss(&the_map) != num_link_comps and tries < max_tries:
+ *             pmFreeMap(&the_map)
+ */
+    __Pyx_INCREF(__pyx_int_0);
+    __pyx_v_tries = __pyx_int_0;
+
+    /* "planarmap.pyx":107
+ *     if num_link_comps > 0:
+ *         tries = 0
+ *         while pmStatGauss(&the_map) != num_link_comps and tries < max_tries:             # <<<<<<<<<<<<<<
  *             pmFreeMap(&the_map)
  *             pmPlanMap(&size, &method, &memory, &the_map)
  */
     while (1) {
-      __pyx_t_2 = ((pmStatGauss((&__pyx_v_the_map)) != __pyx_v_num_link_comps) != 0);
-      if (!__pyx_t_2) break;
+      __pyx_t_10 = ((pmStatGauss((&__pyx_v_the_map)) != __pyx_v_num_link_comps) != 0);
+      if (__pyx_t_10) {
+      } else {
+        __pyx_t_9 = __pyx_t_10;
+        goto __pyx_L6_bool_binop_done;
+      }
+      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_max_tries); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 107; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_11 = PyObject_RichCompare(__pyx_v_tries, __pyx_t_3, Py_LT); __Pyx_XGOTREF(__pyx_t_11); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 107; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_11); if (unlikely(__pyx_t_10 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 107; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __pyx_t_9 = __pyx_t_10;
+      __pyx_L6_bool_binop_done:;
+      if (!__pyx_t_9) break;
 
-      /* "planarmap.pyx":92
- *     if num_link_comps > 0:
- *         while pmStatGauss(&the_map) != num_link_comps:
+      /* "planarmap.pyx":108
+ *         tries = 0
+ *         while pmStatGauss(&the_map) != num_link_comps and tries < max_tries:
  *             pmFreeMap(&the_map)             # <<<<<<<<<<<<<<
  *             pmPlanMap(&size, &method, &memory, &the_map)
- * 
+ *             tries += 1
  */
       pmFreeMap((&__pyx_v_the_map));
 
-      /* "planarmap.pyx":93
- *         while pmStatGauss(&the_map) != num_link_comps:
+      /* "planarmap.pyx":109
+ *         while pmStatGauss(&the_map) != num_link_comps and tries < max_tries:
  *             pmFreeMap(&the_map)
  *             pmPlanMap(&size, &method, &memory, &the_map)             # <<<<<<<<<<<<<<
+ *             tries += 1
+ * 
+ */
+      pmPlanMap((&__pyx_v_size), (&__pyx_v_method), (&__pyx_v_memory), (&__pyx_v_the_map));
+
+      /* "planarmap.pyx":110
+ *             pmFreeMap(&the_map)
+ *             pmPlanMap(&size, &method, &memory, &the_map)
+ *             tries += 1             # <<<<<<<<<<<<<<
+ * 
+ *         if tries==max_tries:
+ */
+      __pyx_t_11 = PyNumber_InPlaceAdd(__pyx_v_tries, __pyx_int_1); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 110; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_11);
+      __Pyx_DECREF_SET(__pyx_v_tries, __pyx_t_11);
+      __pyx_t_11 = 0;
+    }
+
+    /* "planarmap.pyx":112
+ *             tries += 1
+ * 
+ *         if tries==max_tries:             # <<<<<<<<<<<<<<
+ *             return
+ * 
+ */
+    __pyx_t_11 = __Pyx_PyInt_From_int(__pyx_v_max_tries); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_11);
+    __pyx_t_3 = PyObject_RichCompare(__pyx_v_tries, __pyx_t_11, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_9 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__pyx_t_9) {
+
+      /* "planarmap.pyx":113
+ * 
+ *         if tries==max_tries:
+ *             return             # <<<<<<<<<<<<<<
  * 
  *     ans = []
  */
-      pmPlanMap((&__pyx_v_size), (&__pyx_v_method), (&__pyx_v_memory), (&__pyx_v_the_map));
+      __Pyx_XDECREF(__pyx_r);
+      __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+      goto __pyx_L0;
     }
-    goto __pyx_L4;
+    goto __pyx_L3;
   }
-  __pyx_L4:;
+  __pyx_L3:;
 
-  /* "planarmap.pyx":95
- *             pmPlanMap(&size, &method, &memory, &the_map)
+  /* "planarmap.pyx":115
+ *             return
  * 
  *     ans = []             # <<<<<<<<<<<<<<
  *     vert = the_map.root.c_from
  *     while vert != NULL:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 95; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_ans = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 115; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_ans = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
 
-  /* "planarmap.pyx":96
+  /* "planarmap.pyx":116
  * 
  *     ans = []
  *     vert = the_map.root.c_from             # <<<<<<<<<<<<<<
  *     while vert != NULL:
  *         edges_at_vert = []
  */
-  __pyx_t_14 = __pyx_v_the_map.root->from;
-  __pyx_v_vert = __pyx_t_14;
+  __pyx_t_12 = __pyx_v_the_map.root->from;
+  __pyx_v_vert = __pyx_t_12;
 
-  /* "planarmap.pyx":97
+  /* "planarmap.pyx":117
  *     ans = []
  *     vert = the_map.root.c_from
  *     while vert != NULL:             # <<<<<<<<<<<<<<
@@ -1052,32 +1185,32 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
  *         edge = vert.root
  */
   while (1) {
-    __pyx_t_2 = ((__pyx_v_vert != NULL) != 0);
-    if (!__pyx_t_2) break;
+    __pyx_t_9 = ((__pyx_v_vert != NULL) != 0);
+    if (!__pyx_t_9) break;
 
-    /* "planarmap.pyx":98
+    /* "planarmap.pyx":118
  *     vert = the_map.root.c_from
  *     while vert != NULL:
  *         edges_at_vert = []             # <<<<<<<<<<<<<<
  *         edge = vert.root
  *         while edge != vert.root.prev:
  */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 98; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_XDECREF_SET(__pyx_v_edges_at_vert, ((PyObject*)__pyx_t_1));
-    __pyx_t_1 = 0;
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_XDECREF_SET(__pyx_v_edges_at_vert, ((PyObject*)__pyx_t_3));
+    __pyx_t_3 = 0;
 
-    /* "planarmap.pyx":99
+    /* "planarmap.pyx":119
  *     while vert != NULL:
  *         edges_at_vert = []
  *         edge = vert.root             # <<<<<<<<<<<<<<
  *         while edge != vert.root.prev:
  *             edges_at_vert.append(edge.label)
  */
-    __pyx_t_15 = __pyx_v_vert->root;
-    __pyx_v_edge = __pyx_t_15;
+    __pyx_t_13 = __pyx_v_vert->root;
+    __pyx_v_edge = __pyx_t_13;
 
-    /* "planarmap.pyx":100
+    /* "planarmap.pyx":120
  *         edges_at_vert = []
  *         edge = vert.root
  *         while edge != vert.root.prev:             # <<<<<<<<<<<<<<
@@ -1085,78 +1218,78 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
  *             edge = edge.next
  */
     while (1) {
-      __pyx_t_2 = ((__pyx_v_edge != __pyx_v_vert->root->prev) != 0);
-      if (!__pyx_t_2) break;
+      __pyx_t_9 = ((__pyx_v_edge != __pyx_v_vert->root->prev) != 0);
+      if (!__pyx_t_9) break;
 
-      /* "planarmap.pyx":101
+      /* "planarmap.pyx":121
  *         edge = vert.root
  *         while edge != vert.root.prev:
  *             edges_at_vert.append(edge.label)             # <<<<<<<<<<<<<<
  *             edge = edge.next
  *         edges_at_vert.append(edge.label)
  */
-      __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_edge->label); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 101; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_16 = __Pyx_PyList_Append(__pyx_v_edges_at_vert, __pyx_t_1); if (unlikely(__pyx_t_16 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 101; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_v_edge->label); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_edges_at_vert, __pyx_t_3); if (unlikely(__pyx_t_14 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "planarmap.pyx":102
+      /* "planarmap.pyx":122
  *         while edge != vert.root.prev:
  *             edges_at_vert.append(edge.label)
  *             edge = edge.next             # <<<<<<<<<<<<<<
  *         edges_at_vert.append(edge.label)
  *         ans.append( (vert.label, tuple(edges_at_vert)) )
  */
-      __pyx_t_15 = __pyx_v_edge->next;
-      __pyx_v_edge = __pyx_t_15;
+      __pyx_t_13 = __pyx_v_edge->next;
+      __pyx_v_edge = __pyx_t_13;
     }
 
-    /* "planarmap.pyx":103
+    /* "planarmap.pyx":123
  *             edges_at_vert.append(edge.label)
  *             edge = edge.next
  *         edges_at_vert.append(edge.label)             # <<<<<<<<<<<<<<
  *         ans.append( (vert.label, tuple(edges_at_vert)) )
  *         vert = vert.next
  */
-    __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_edge->label); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 103; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_16 = __Pyx_PyList_Append(__pyx_v_edges_at_vert, __pyx_t_1); if (unlikely(__pyx_t_16 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 103; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_v_edge->label); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_edges_at_vert, __pyx_t_3); if (unlikely(__pyx_t_14 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "planarmap.pyx":104
+    /* "planarmap.pyx":124
  *             edge = edge.next
  *         edges_at_vert.append(edge.label)
  *         ans.append( (vert.label, tuple(edges_at_vert)) )             # <<<<<<<<<<<<<<
  *         vert = vert.next
  *     pmFreeMap(&the_map)
  */
-    __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v_vert->label); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_11 = PyList_AsTuple(__pyx_v_edges_at_vert); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_v_vert->label); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_11 = PyList_AsTuple(__pyx_v_edges_at_vert); if (unlikely(!__pyx_t_11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_11);
-    __pyx_t_13 = PyTuple_New(2); if (unlikely(!__pyx_t_13)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_13);
-    PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_1);
-    __Pyx_GIVEREF(__pyx_t_1);
-    PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_11);
+    __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_15);
+    PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_t_11);
     __Pyx_GIVEREF(__pyx_t_11);
-    __pyx_t_1 = 0;
+    __pyx_t_3 = 0;
     __pyx_t_11 = 0;
-    __pyx_t_16 = __Pyx_PyList_Append(__pyx_v_ans, __pyx_t_13); if (unlikely(__pyx_t_16 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+    __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_ans, __pyx_t_15); if (unlikely(__pyx_t_14 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-    /* "planarmap.pyx":105
+    /* "planarmap.pyx":125
  *         edges_at_vert.append(edge.label)
  *         ans.append( (vert.label, tuple(edges_at_vert)) )
  *         vert = vert.next             # <<<<<<<<<<<<<<
  *     pmFreeMap(&the_map)
  *     return ans
  */
-    __pyx_t_14 = __pyx_v_vert->next;
-    __pyx_v_vert = __pyx_t_14;
+    __pyx_t_12 = __pyx_v_vert->next;
+    __pyx_v_vert = __pyx_t_12;
   }
 
-  /* "planarmap.pyx":106
+  /* "planarmap.pyx":126
  *         ans.append( (vert.label, tuple(edges_at_vert)) )
  *         vert = vert.next
  *     pmFreeMap(&the_map)             # <<<<<<<<<<<<<<
@@ -1165,7 +1298,7 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
  */
   pmFreeMap((&__pyx_v_the_map));
 
-  /* "planarmap.pyx":107
+  /* "planarmap.pyx":127
  *         vert = vert.next
  *     pmFreeMap(&the_map)
  *     return ans             # <<<<<<<<<<<<<<
@@ -1177,24 +1310,23 @@ static PyObject *__pyx_pf_9planarmap_random_map(CYTHON_UNUSED PyObject *__pyx_se
   __pyx_r = __pyx_v_ans;
   goto __pyx_L0;
 
-  /* "planarmap.pyx":51
- *     extern long pmStatGauss(pmMap *Map)
+  /* "planarmap.pyx":63
+ * # The main function
  * 
- * def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):             # <<<<<<<<<<<<<<
+ * def random_map(num_vertices, int edge_connectivity=4,             # <<<<<<<<<<<<<<
+ *                int num_link_comps=0, int max_tries=100):
  *     """
- *     Use Gilles Schaeffer's "Planarmap program" to generate
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_11);
-  __Pyx_XDECREF(__pyx_t_12);
-  __Pyx_XDECREF(__pyx_t_13);
+  __Pyx_XDECREF(__pyx_t_15);
   __Pyx_AddTraceback("planarmap.random_map", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_tries);
   __Pyx_XDECREF(__pyx_v_ans);
   __Pyx_XDECREF(__pyx_v_edges_at_vert);
   __Pyx_XGIVEREF(__pyx_r);
@@ -1232,9 +1364,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_edge, __pyx_k_edge, sizeof(__pyx_k_edge), 0, 0, 1, 1},
   {&__pyx_n_s_edge_connectivity, __pyx_k_edge_connectivity, sizeof(__pyx_k_edge_connectivity), 0, 0, 1, 1},
   {&__pyx_n_s_edges_at_vert, __pyx_k_edges_at_vert, sizeof(__pyx_k_edges_at_vert), 0, 0, 1, 1},
-  {&__pyx_n_s_getrandbits, __pyx_k_getrandbits, sizeof(__pyx_k_getrandbits), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
+  {&__pyx_n_s_max_tries, __pyx_k_max_tries, sizeof(__pyx_k_max_tries), 0, 0, 1, 1},
   {&__pyx_n_s_memory, __pyx_k_memory, sizeof(__pyx_k_memory), 0, 0, 1, 1},
   {&__pyx_n_s_method, __pyx_k_method, sizeof(__pyx_k_method), 0, 0, 1, 1},
   {&__pyx_n_s_num_link_comps, __pyx_k_num_link_comps, sizeof(__pyx_k_num_link_comps), 0, 0, 1, 1},
@@ -1242,14 +1374,16 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_planarmap, __pyx_k_planarmap, sizeof(__pyx_k_planarmap), 0, 0, 1, 1},
   {&__pyx_n_s_random, __pyx_k_random, sizeof(__pyx_k_random), 0, 0, 1, 1},
   {&__pyx_n_s_random_map, __pyx_k_random_map, sizeof(__pyx_k_random_map), 0, 0, 1, 1},
+  {&__pyx_n_s_randrange, __pyx_k_randrange, sizeof(__pyx_k_randrange), 0, 0, 1, 1},
   {&__pyx_n_s_size, __pyx_k_size, sizeof(__pyx_k_size), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_the_map, __pyx_k_the_map, sizeof(__pyx_k_the_map), 0, 0, 1, 1},
+  {&__pyx_n_s_tries, __pyx_k_tries, sizeof(__pyx_k_tries), 0, 0, 1, 1},
   {&__pyx_n_s_vert, __pyx_k_vert, sizeof(__pyx_k_vert), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -1259,28 +1393,28 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "planarmap.pyx":78
+  /* "planarmap.pyx":94
  *         size.m, size.b = 6, 5
  *     else:
  *         raise ValueError("Invalid edge_connectivity parameter")             # <<<<<<<<<<<<<<
  * 
  *     size.v = num_vertices
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_s_Invalid_edge_connectivity_parame); if (unlikely(!__pyx_tuple_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_s_Invalid_edge_connectivity_parame); if (unlikely(!__pyx_tuple_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 94; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "planarmap.pyx":51
- *     extern long pmStatGauss(pmMap *Map)
+  /* "planarmap.pyx":63
+ * # The main function
  * 
- * def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):             # <<<<<<<<<<<<<<
+ * def random_map(num_vertices, int edge_connectivity=4,             # <<<<<<<<<<<<<<
+ *                int num_link_comps=0, int max_tries=100):
  *     """
- *     Use Gilles Schaeffer's "Planarmap program" to generate
  */
-  __pyx_tuple__2 = PyTuple_Pack(11, __pyx_n_s_num_vertices, __pyx_n_s_edge_connectivity, __pyx_n_s_num_link_comps, __pyx_n_s_size, __pyx_n_s_method, __pyx_n_s_memory, __pyx_n_s_the_map, __pyx_n_s_edge, __pyx_n_s_vert, __pyx_n_s_ans, __pyx_n_s_edges_at_vert); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__2 = PyTuple_Pack(13, __pyx_n_s_num_vertices, __pyx_n_s_edge_connectivity, __pyx_n_s_num_link_comps, __pyx_n_s_max_tries, __pyx_n_s_size, __pyx_n_s_method, __pyx_n_s_memory, __pyx_n_s_the_map, __pyx_n_s_edge, __pyx_n_s_vert, __pyx_n_s_tries, __pyx_n_s_ans, __pyx_n_s_edges_at_vert); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(3, 0, 11, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_dunfield_Dropbox_Spherogr, __pyx_n_s_random_map, 51, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(4, 0, 13, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_dunfield_Dropbox_Spherogr, __pyx_n_s_random_map, 63, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -1290,9 +1424,8 @@ static int __Pyx_InitCachedConstants(void) {
 
 static int __Pyx_InitGlobals(void) {
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
-  __pyx_int_2 = PyInt_FromLong(2); if (unlikely(!__pyx_int_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_int_4 = PyInt_FromLong(4); if (unlikely(!__pyx_int_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_int_6 = PyInt_FromLong(6); if (unlikely(!__pyx_int_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_int_0 = PyInt_FromLong(0); if (unlikely(!__pyx_int_0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_int_1 = PyInt_FromLong(1); if (unlikely(!__pyx_int_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -1394,16 +1527,25 @@ PyMODINIT_FUNC PyInit_planarmap(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_random, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 2; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "planarmap.pyx":51
- *     extern long pmStatGauss(pmMap *Map)
+  /* "planarmap.pyx":58
+ *     return random.randrange(n) + 1
  * 
- * def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):             # <<<<<<<<<<<<<<
- *     """
- *     Use Gilles Schaeffer's "Planarmap program" to generate
+ * set_pmRandom_callback(randrange_callback)             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9planarmap_1random_map, NULL, __pyx_n_s_planarmap); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  set_pmRandom_callback(__pyx_f_9planarmap_randrange_callback);
+
+  /* "planarmap.pyx":63
+ * # The main function
+ * 
+ * def random_map(num_vertices, int edge_connectivity=4,             # <<<<<<<<<<<<<<
+ *                int num_link_comps=0, int max_tries=100):
+ *     """
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9planarmap_1random_map, NULL, __pyx_n_s_planarmap); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_random_map, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_random_map, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 63; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "planarmap.pyx":1
@@ -1466,6 +1608,149 @@ static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
 #endif
     }
     return result;
+}
+
+static CYTHON_INLINE PyObject *__Pyx_GetModuleGlobalName(PyObject *name) {
+    PyObject *result;
+#if CYTHON_COMPILING_IN_CPYTHON
+    result = PyDict_GetItem(__pyx_d, name);
+    if (likely(result)) {
+        Py_INCREF(result);
+    } else {
+#else
+    result = PyObject_GetItem(__pyx_d, name);
+    if (!result) {
+        PyErr_Clear();
+#endif
+        result = __Pyx_GetBuiltinName(name);
+    }
+    return result;
+}
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
+    PyObject *result;
+    ternaryfunc call = func->ob_type->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
+    PyObject *self, *result;
+    PyCFunction cfunc;
+    cfunc = PyCFunction_GET_FUNCTION(func);
+    self = PyCFunction_GET_SELF(func);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    result = cfunc(self, arg);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static PyObject* __Pyx__PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+    PyObject *result;
+    PyObject *args = PyTuple_New(1);
+    if (unlikely(!args)) return NULL;
+    Py_INCREF(arg);
+    PyTuple_SET_ITEM(args, 0, arg);
+    result = __Pyx_PyObject_Call(func, args, NULL);
+    Py_DECREF(args);
+    return result;
+}
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+#ifdef __Pyx_CyFunction_USED
+    if (likely(PyCFunction_Check(func) || PyObject_TypeCheck(func, __pyx_CyFunctionType))) {
+#else
+    if (likely(PyCFunction_Check(func))) {
+#endif
+        if (likely(PyCFunction_GET_FLAGS(func) & METH_O)) {
+            return __Pyx_PyObject_CallMethO(func, arg);
+        }
+    }
+    return __Pyx__PyObject_CallOneArg(func, arg);
+}
+#else
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+    PyObject* args = PyTuple_Pack(1, arg);
+    return (likely(args)) ? __Pyx_PyObject_Call(func, args, NULL) : NULL;
+}
+#endif
+
+static CYTHON_INLINE void __Pyx_ErrRestore(PyObject *type, PyObject *value, PyObject *tb) {
+#if CYTHON_COMPILING_IN_CPYTHON
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    PyThreadState *tstate = PyThreadState_GET();
+    tmp_type = tstate->curexc_type;
+    tmp_value = tstate->curexc_value;
+    tmp_tb = tstate->curexc_traceback;
+    tstate->curexc_type = type;
+    tstate->curexc_value = value;
+    tstate->curexc_traceback = tb;
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+#else
+    PyErr_Restore(type, value, tb);
+#endif
+}
+static CYTHON_INLINE void __Pyx_ErrFetch(PyObject **type, PyObject **value, PyObject **tb) {
+#if CYTHON_COMPILING_IN_CPYTHON
+    PyThreadState *tstate = PyThreadState_GET();
+    *type = tstate->curexc_type;
+    *value = tstate->curexc_value;
+    *tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+#else
+    PyErr_Fetch(type, value, tb);
+#endif
+}
+
+static void __Pyx_WriteUnraisable(const char *name, CYTHON_UNUSED int clineno,
+                                  CYTHON_UNUSED int lineno, CYTHON_UNUSED const char *filename,
+                                  int full_traceback) {
+    PyObject *old_exc, *old_val, *old_tb;
+    PyObject *ctx;
+    __Pyx_ErrFetch(&old_exc, &old_val, &old_tb);
+    if (full_traceback) {
+        Py_XINCREF(old_exc);
+        Py_XINCREF(old_val);
+        Py_XINCREF(old_tb);
+        __Pyx_ErrRestore(old_exc, old_val, old_tb);
+        PyErr_PrintEx(1);
+    }
+    #if PY_MAJOR_VERSION < 3
+    ctx = PyString_FromString(name);
+    #else
+    ctx = PyUnicode_FromString(name);
+    #endif
+    __Pyx_ErrRestore(old_exc, old_val, old_tb);
+    if (!ctx) {
+        PyErr_WriteUnraisable(Py_None);
+    } else {
+        PyErr_WriteUnraisable(ctx);
+        Py_DECREF(ctx);
+    }
 }
 
 static void __Pyx_RaiseDoubleKeywordsError(
@@ -1605,56 +1890,6 @@ static void __Pyx_RaiseArgtupleInvalid(
                  "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
                  func_name, more_or_less, num_expected,
                  (num_expected == 1) ? "" : "s", num_found);
-}
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = func->ob_type->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
-static CYTHON_INLINE void __Pyx_ErrRestore(PyObject *type, PyObject *value, PyObject *tb) {
-#if CYTHON_COMPILING_IN_CPYTHON
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    PyThreadState *tstate = PyThreadState_GET();
-    tmp_type = tstate->curexc_type;
-    tmp_value = tstate->curexc_value;
-    tmp_tb = tstate->curexc_traceback;
-    tstate->curexc_type = type;
-    tstate->curexc_value = value;
-    tstate->curexc_traceback = tb;
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-#else
-    PyErr_Restore(type, value, tb);
-#endif
-}
-static CYTHON_INLINE void __Pyx_ErrFetch(PyObject **type, PyObject **value, PyObject **tb) {
-#if CYTHON_COMPILING_IN_CPYTHON
-    PyThreadState *tstate = PyThreadState_GET();
-    *type = tstate->curexc_type;
-    *value = tstate->curexc_value;
-    *tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
-#else
-    PyErr_Fetch(type, value, tb);
-#endif
 }
 
 #if PY_MAJOR_VERSION < 3
@@ -1811,72 +2046,6 @@ static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject 
 bad:
     Py_XDECREF(owned_instance);
     return;
-}
-#endif
-
-static CYTHON_INLINE PyObject *__Pyx_GetModuleGlobalName(PyObject *name) {
-    PyObject *result;
-#if CYTHON_COMPILING_IN_CPYTHON
-    result = PyDict_GetItem(__pyx_d, name);
-    if (likely(result)) {
-        Py_INCREF(result);
-    } else {
-#else
-    result = PyObject_GetItem(__pyx_d, name);
-    if (!result) {
-        PyErr_Clear();
-#endif
-        result = __Pyx_GetBuiltinName(name);
-    }
-    return result;
-}
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
-    PyObject *self, *result;
-    PyCFunction cfunc;
-    cfunc = PyCFunction_GET_FUNCTION(func);
-    self = PyCFunction_GET_SELF(func);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = cfunc(self, arg);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static PyObject* __Pyx__PyObject_CallOneArg(PyObject *func, PyObject *arg) {
-    PyObject *result;
-    PyObject *args = PyTuple_New(1);
-    if (unlikely(!args)) return NULL;
-    Py_INCREF(arg);
-    PyTuple_SET_ITEM(args, 0, arg);
-    result = __Pyx_PyObject_Call(func, args, NULL);
-    Py_DECREF(args);
-    return result;
-}
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
-#ifdef __Pyx_CyFunction_USED
-    if (likely(PyCFunction_Check(func) || PyObject_TypeCheck(func, __pyx_CyFunctionType))) {
-#else
-    if (likely(PyCFunction_Check(func))) {
-#endif
-        if (likely(PyCFunction_GET_FLAGS(func) & METH_O)) {
-            return __Pyx_PyObject_CallMethO(func, arg);
-        }
-    }
-    return __Pyx__PyObject_CallOneArg(func, arg);
-}
-#else
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
-    PyObject* args = PyTuple_Pack(1, arg);
-    return (likely(args)) ? __Pyx_PyObject_Call(func, args, NULL) : NULL;
 }
 #endif
 
@@ -2228,6 +2397,32 @@ raise_neg_overflow:
     return (int) -1;
 }
 
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
+    const long neg_one = (long) -1, const_zero = 0;
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(long) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long long)) {
+            return PyLong_FromUnsignedLongLong((unsigned long long) value);
+        }
+    } else {
+        if (sizeof(long) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(long long)) {
+            return PyLong_FromLongLong((long long) value);
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+        return _PyLong_FromByteArray(bytes, sizeof(long),
+                                     little, !is_unsigned);
+    }
+}
+
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *x) {
     const long neg_one = (long) -1, const_zero = 0;
     const int is_unsigned = neg_one > const_zero;
@@ -2323,28 +2518,28 @@ raise_neg_overflow:
     return (long) -1;
 }
 
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
-    const long neg_one = (long) -1, const_zero = 0;
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value) {
+    const int neg_one = (int) -1, const_zero = 0;
     const int is_unsigned = neg_one > const_zero;
     if (is_unsigned) {
-        if (sizeof(long) < sizeof(long)) {
+        if (sizeof(int) < sizeof(long)) {
             return PyInt_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long)) {
+        } else if (sizeof(int) <= sizeof(unsigned long)) {
             return PyLong_FromUnsignedLong((unsigned long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long long)) {
+        } else if (sizeof(int) <= sizeof(unsigned long long)) {
             return PyLong_FromUnsignedLongLong((unsigned long long) value);
         }
     } else {
-        if (sizeof(long) <= sizeof(long)) {
+        if (sizeof(int) <= sizeof(long)) {
             return PyInt_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(long long)) {
+        } else if (sizeof(int) <= sizeof(long long)) {
             return PyLong_FromLongLong((long long) value);
         }
     }
     {
         int one = 1; int little = (int)*(unsigned char *)&one;
         unsigned char *bytes = (unsigned char *)&value;
-        return _PyLong_FromByteArray(bytes, sizeof(long),
+        return _PyLong_FromByteArray(bytes, sizeof(int),
                                      little, !is_unsigned);
     }
 }
