@@ -22,6 +22,13 @@ except ImportError: # Python 3
 
 import copy
 
+def is_iterable(obj):
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
 class Crossing(object):
     """
     See "doc.pdf" for the conventions.  The sign of a crossing can be in {0,
@@ -46,8 +53,15 @@ class Crossing(object):
     Link.link_components each input's strand belongs to.
     """
     def __init__(self, label=None):
-        self.label, self.sign, self.directions = label, 0, set()
+        self.label = label
         self.adjacent = CyclicList([None, None, None, None])
+        self._clear()
+
+    def _clear(self):
+        self.sign, self.directions = 0, set()
+        self._clear_strand_info()
+
+    def _clear_strand_info(self):
         self.strand_labels = CyclicList([None, None, None, None])
         self.strand_components = CyclicList([None, None, None, None])
 
@@ -152,6 +166,9 @@ class CrossingStrand(BasicCrossingStrand):
 
     def previous_corner(self):
         return self.opposite().rotate(-1)
+
+    def strand_label(self):
+        return self.crossing.strand_labels[self.entry_point]
 
     def oriented(self):
         """
@@ -314,7 +331,10 @@ class Link(object):
                 try:
                     import snappy
                     self.name = crossings
-                    crossings = (snappy.Manifold(crossings)).link().crossings
+                    ans = snappy.Manifold(self.name).link()
+                    build = False
+                    crossings = ans.crossings
+                    self.link_components = ans.link_components
                 except ImportError:
                     raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
         
@@ -364,8 +384,7 @@ class Link(object):
     def _rebuild(self):
         self.link_components = None
         for c in self.crossings:
-            c.sign = 0
-            c.directions.clear()
+            c._clear()
         self._build()
         
     def _orient_crossings(self):
@@ -408,6 +427,9 @@ class Link(object):
         remaining, components = set( self.crossing_entries() ), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
+        for c in self.crossings:
+            c._clear_strand_info()
+        
         while len(remaining):
             if component_starts:
                 d = component_starts[len(components)]
@@ -503,50 +525,156 @@ class Link(object):
         from . import simplify
         return simplify.DualGraphOfFaces(self)
 
-    def basic_simplify(self):
+    def simplify(self, mode='basic', type_III_limit=100):
         """
-        Do Reidemeister I and II moves until none are possible.  Modifies the
-        link in place, and unknot components which are also unlinked may
-        be silently discarded.
-        
+        Tries to simplify the link projection.  Returns whether it succeeded
+        in reducing the number of crossings.  Modifies the link in
+        place, and unknot components which are also unlinked may be
+        silently discarded.  The ordering of ``link_components`` is not
+        always preserved.
+
+        The following strategies can be employed.
+
+        1. In the default ``basic`` mode, it does Reidemeister I and II moves
+           until none are possible.
+
+        2. In ``level`` mode, it does random Reidemeister III moves, reducing
+           the number of crossings via type I and II moves whenever possible.
+           The process stops when it has done ``type_III_limit`` *consecutive*
+           type III moves without any simplification.
+
+        3. In ``pickup`` mode, it also minimizes the number of crossings of
+           strands which cross entirely above (or below) the diagram by
+           finding the path crossing over the diagram with the least number of
+           overcrossings (or undercrossings); this has the effect of doing
+           "picking up" strands and putting them down elsewhere.
+
+        4. Finally, the ``global`` mode is the combination of 3 and 4. 
+
+
+        Some examples:
+
         >>> K = Link([(13,10,14,11),(11,5,12,4),(3,13,4,12),  \
                  (9,14,10,1),(1,7,2,6),(2,7,3,8),(5,9,6,8)])
         >>> K
         <Link: 1 comp; 7 cross>
-        >>> K.basic_simplify()
+        >>> K.simplify('basic')
         True
         >>> K
         <Link: 1 comp; 4 cross>
-        >>> K.basic_simplify()  # Already done all it can
+        >>> K.simplify('basic')  # Already done all it can
         False
-        """
-        from . import simplify
-        return simplify.basic_simplify(self)
 
-    def simplify(self, max_consecutive_failures=100):
-        """
-        Applies a series of Reidemeister type III moves to the link, simplifying
-        it via type I and II moves whenever possible.  Continues until there
-        are no type III moves or it has done the specified number of
-        consecutive type III moves without reducing the crossing number.
-
-        >>> K = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11), \
+        >>> L = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11), \
                 (17,0,14,9), (12,9,13,8), (3,13,4,10), (1,16,2,15), (16,6,17,7)])
-        >>> K
+        >>> L
         <Link: 3 comp; 9 cross>
-        >>> K.basic_simplify()
+        >>> L.simplify('basic')
         False
-        >>> K.simplify()
+        >>> L.simplify('level')
         True
-        
-        Modifies the link in place, and unknot components which are also
-        unlinked may be silently discarded.
-
-        >>> K
+        >>> L    # Trivial unlinked component has been discarded!
         <Link: 2 comp; 2 cross>
+
+        >>> K = Link('K14n2345')
+        >>> K.backtrack(30) 
+        >>> K.simplify('global')
+        True
+        >>> K
+        <Link: 1 comp; 14 cross>
         """
         from . import simplify
-        return simplify.simplify(self)
+        if mode == 'basic':
+            return simplify.basic_simplify(self)
+        elif mode == 'level':
+            return simplify.simplify_via_level_type_III(self, type_III_limit)
+        elif mode == 'pickup':
+            return simplify.pickup_simplify(self)
+        elif mode == 'global':
+            return simplify.pickup_simplify(self, type_III_limit)
+
+    def backtrack(self, steps=10):
+        """
+        Performs a sequence of Reidemeister moves which increase or maintain
+        the number of crossings in a diagram.  The number of such
+        moves is the parameter steps.  The diagram is modified in place. 
+
+        >>> K = Link('L14a7689')
+        >>> K
+        <Link L14a7689: 2 comp; 14 cross>
+        >>> K.backtrack(steps = 50)
+        >>> len(K.crossings) > 20
+        True
+        """
+        from . import simplify
+        L = simplify.backtrack(self,num_steps = steps)
+        self.crossings = L.crossings
+        self.labels = L.labels
+        self.link_components = L.link_components
+        self.name = L.name
+
+
+    def sublink(self, components):
+        """
+        Returns the sublink consisting of the specified components; see the
+        example below for the various accepted forms.
+
+        Warnings: Components in the sublink that are both unknotted
+        and unlinked may be silently thrown away.  The order of the
+        components in the sublink need not correspond to their order
+        in the original link.
+
+        >>> L = Link('L14n64110')
+        >>> L
+        <Link L14n64110: 5 comp; 14 cross>
+        >>> L.sublink([1,2,3,4])
+        <Link: 4 comp; 10 cross>
+        >>> comps = L.link_components
+        >>> L.sublink([comps[0], comps[1]])
+        <Link: 2 comp; 2 cross>
+
+        If you just want one component you can do this:
+
+        >>> L = Link('L11a127')
+        >>> L.sublink(1)
+        <Link: 1 comp; 7 cross>
+        >>> L.sublink(L.link_components[0])
+        <Link: 0 comp; 0 cross>
+
+        The last answer is because the second component is unknotted
+        and so thown away.
+        """
+
+        if components in self.link_components or not is_iterable(components):
+            components = [components]
+        indices = []
+        for c in components:
+            if is_iterable(c):
+                c = self.link_components.index(c)
+            else:
+                try:
+                    self.link_components[c]
+                except IndexError:
+                    raise ValueError('No component of that index')
+            indices.append(c)
+
+        def keep(C):
+            return {i in indices for i in C.strand_components} == {True}
+        
+        L = self.copy()
+        final_crossings = []
+        for C in L.crossings:
+            if keep(C):
+                final_crossings.append(C)
+            else:
+                for j in [0, 1]:
+                    if C.strand_components[j] in indices:
+                        A, a = C.adjacent[j]
+                        B, b = C.adjacent[j + 2]
+                        A[a] = B[b]
+
+        return type(self)(final_crossings, check_planarity=False)
+
 
     def __len__(self):
         return len(self.crossings)
@@ -611,8 +739,8 @@ class Link(object):
         >>> L.deconnect_sum()
         [<Link: 1 comp; 5 cross>, <Link: 1 comp; 5 cross>]
         """
-        link = self.copy() if not destroy_original else self
         from . import simplify
+        link = self.copy() if not destroy_original else self
         return simplify.deconnect_sum(link)
     
     def exterior(self):
@@ -680,204 +808,6 @@ class Link(object):
                 y = y.adjacent[l][0]
                 l = lnew
         return pieces
-
-    def knot_group(self):
-        """
-        Computes the knot group using the Wirtinger presentation. 
-        Returns a finitely presented group.
-        """
-        if not _within_sage:
-            raise RuntimeError('knot_group '+not_in_sage_msg)
-
-        n = len(self.crossings)
-        F = FreeGroup(n)
-        g = list(F.gens())
-        rels = []
-        pieces = self.pieces()
-
-        for z in self.crossings:
-            for m, p in enumerate(pieces):
-                for t, q in enumerate(p):
-                    if q[0] == z:
-                        if t == 0:
-                            j = m
-                        elif t == len(p)-1:
-                            i = m
-                        else:
-                            k = m
-            i+=1; j+=1; k+=1
-            if z.sign > 0:
-                r = F([-k,i,k,-j])
-            if z.sign < 0:
-                r = F([k,i,-k,-j])
-            rels.append(r)
-
-        G = F/rels
-        return G
-
-    def alexander_matrix(self, mv=True):
-        """
-        Returns the alexander matrix of self.
-
-        >>> L = Link('3_1')
-        >>> L.alexander_matrix()
-        ([      -1 -1/t + 1      1/t]
-        [     1/t       -1 -1/t + 1]
-        [-1/t + 1      1/t       -1], [t, t, t])
-        >>> L = Link([(4,1,3,2),(1,4,2,3)])
-        >>> L.alexander_matrix()  # doctest: +SKIP
-        ([ t1 - 1 -t2 + 1]
-        [-t1 + 1  t2 - 1], [t2, t1])
-        """
-
-        if not _within_sage:
-            raise RuntimeError('alexander_matrix '+not_in_sage_msg)
-
-        comp = len(self.link_components)
-        if comp < 2:
-            mv = False
-
-        G = self.knot_group()
-        B = G.alexander_matrix()
-        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
-
-        if(mv):
-            t = list(var('t%d' % (i+1)) for i in range(0,comp))
-        else:
-            t = [var('t')]*comp
-
-        import sage.symbolic.relation as rel
-
-        eq = [y(g) == 1 for y in G.relations()]
-        solns = rel.solve(eq,g, solution_dict=True)
-        r = list(set([solns[0][h] for h in g]))
-        dict1 = {r[i]:t[i] for i in range(len(t))}
-
-        for i in range(len(g)):
-            g[i] = g[i].subs(solns[0]).subs(dict1)
-
-        m = B.nrows()
-        n = B.ncols()
-        C = matrix(SR,m,n)
-
-        for i in range(n):
-            for j in range(m):
-                for k in B[j,i].terms():
-                    x = k.leading_item()
-                    C[j,i] = C[j,i] + x[1]*x[0](g)
-
-        return (C,g)
-
-    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
-        """
-        Calculates the alexander polynomial of self. For links with one component,
-        can evaluate the alexander polynomial at v.
-
-        >>> K = Link('4_1')
-        >>> K.alexander_poly()
-        t + 1/t - 3
-        >>> K.alexander_poly(v=[4])
-        5/4
-
-        >>> K = Link('L7n1')
-        >>> K.alexander_poly(norm=False)
-        (t1*t2^3 + 1)/(t1*t2^4)
-        """
-
-        # sign normalization still missing, but when "norm=True" the
-        # leading coefficient with respect to the first variable is made
-        # positive. 
-        if not _within_sage:
-            raise RuntimeError('alexander_poly '+not_in_sage_msg)
-
-        if method == 'snappy':
-            try:
-                import snappy
-                return snappy.snap.alexander_polynomial(self.exterior())
-            except ImportError:
-                raise RunTimeError('this method for alexander_poly '+no_snappy_msg)
-        else:
-            comp = len(self.link_components)
-            if comp < 2:
-                multivar = False
-
-            if(multivar):
-                t = list(var('t%d' % (i+1)) for i in range(0,comp))
-            else:
-                t = [var('t')]
-
-            M = self.alexander_matrix(mv=multivar)
-            C = M[0]
-            m = C.nrows()
-            n = C.ncols()
-            if n>m:
-                k = m-1
-            else:
-                k = n-1
-                
-            subMatrix = C[0:k,0:k]
-            p = subMatrix.determinant()
-
-            if multivar:
-                t_i = M[1][-1]
-                p = (p.factor())/(t_i-1)
-
-            if(norm):
-                p = self.normalize_alex_poly(p.expand(),t)
-
-            if v != 'no':
-                dict1 = {t[i]:v[i] for i in range(len(t))}
-                return p.subs(dict1)
-                
-            if multivar: # it's easier to view this way
-                return p.factor()
-            else:
-                return p.expand()
-
-    def normalize_alex_poly(self,p,t):
-        # Normalize the sign of the leading coefficient 
-        l = p
-        for v in t:
-            l = l.leading_coefficient(v)
-        if l < 0:
-            p = -p            
-        for i in range(0,len(t)):
-            exps = [x[1] for x in p.coeffs(t[i])]
-            a = max(exps)
-            b = min(exps)
-            c = -1*(a+b)/ZZ(2)
-            p = p*(t[i]**c)
-        return p
-
-    def conway_poly(self):
-        """
-        Return the conway polynomial.  Link must be a knot.
-        >>> K = Link('7_3')
-        >>> K.conway_poly()
-        2*t^4 + 5*t^2 + 1
-        >>> t = var('t')
-        >>> K.alexander_poly()(t=t^2)
-        2*t^4 - 3*t^2 - 3/t^2 + 2/t^4 + 3
-        >>> K.conway_poly()(t=t-1/t).expand().simplify()
-        2*t^4 - 3*t^2 - 3/t^2 + 2/t^4 + 3
-
-        """
-        assert len(self.link_components) == 1
-        AP = self.alexander_poly()
-        coeffs = AP.coefficients()
-        assert coeffs[0][1] == -coeffs[-1][1]
-        t = AP.variables()[0]
-        AP2 = AP(t=t**2)
-        conway = 0
-        while 1:
-            a = AP2.leading_coefficient(t)
-            n = AP2.degree(t)
-            if a == 0:
-                break
-            conway += a*t**n
-            AP2 -= a*(t - 1/t)**n
-            AP2 = AP2.expand().simplify()
-        return conway
 
     def connected_sum(self, other_knot):
         """
@@ -956,7 +886,26 @@ class Link(object):
         new_link._build_components(component_starts)
         return new_link
 
+    def alternating(self):
+        """
+        Returns the alternating link with the same planar graph.  No attempt
+        is made to preserve the order of the link components or ensure
+        that the DT code of the result has all positive entries (as
+        opposed to all negative).
 
+        >>> L = Link('L14n12345')
+        >>> A = L.alternating()
+        >>> A.exterior().identify()
+        [L14a5150(0,0)(0,0)]
+        """
+        L = self.copy()
+        for C in L.crossings:
+            a, b = C.DT_info()
+            if a*b < 0:
+                C.rotate_by_90()
+        L._rebuild()
+        return L        
+            
     def optimize_overcrossings(self):
         """
         Minimizes the number of crossings of a strand which crosses entirely
@@ -967,59 +916,6 @@ class Link(object):
         """
         from . import simplify
         return simplify.strand_pickup(self, self.overcrossings())
-
-    def global_simplify(self,full_simplify=False):
-        """
-        Performs optimize_overcrossings on a diagram, flips, and performs the
-        same process on the other side of the diagram, simplifying in between
-        until the process stabilizes. The boolean full_simplify indicates 
-        whether or not to perform a simplification that includes Reidemeister III
-        type moves.
-        
-        >>> K = Link('K14n2345')
-        >>> K.backtrack(30) 
-        >>> K.global_simplify()
-        >>> K
-        <Link: 1 comp; 14 cross>
-        """
-
-        from . import simplify
-        stabilized = len(self.crossings) == 0
-        L = self
-
-        if full_simplify:
-            L.simplify()
-        else:
-            L.basic_simplify()
-            L._build_components()
-
-        while not stabilized:
-            L, overcrossingsremoved = L.optimize_overcrossings()
-
-            if full_simplify:
-                L.simplify()
-            else:
-                L.basic_simplify()
-                L._build_components()
-
-            if len(L.crossings) == 0:
-                break
-            mirror = L.mirror()
-            mirror, undercrossingsremoved = mirror.optimize_overcrossings()
-            L = mirror.mirror()
-            
-            if full_simplify:
-                L.simplify()
-            else:
-                L.basic_simplify()
-                L._build_components()
-            stabilized = ((overcrossingsremoved == 0) and (undercrossingsremoved == 0)) or (len(L.crossings) == 0)
-        
-        self.crossings = L.crossings
-        self.labels = L.labels
-        self.link_components = L.link_components
-        self.name = L.name
- 
 
     def overcrossings(self):
         """
@@ -1056,25 +952,7 @@ class Link(object):
         return sorted(overcrosses, key=lambda overcross: overcross[1], reverse=True)
 
 
-    def backtrack(self, steps=10):
-        """
-        Performs a sequence of Reidemeister moves which increase or maintain the number of 
-        crossings in a diagram.  The number of such moves is the parameter steps.
 
-        >>> K = Link('L14a7689')
-        >>> K
-        <Link L14a7689: 2 comp; 14 cross>
-        >>> K.backtrack(steps = 50)
-        >>> len(K.crossings) > 14
-        True
-        """
-        from . import simplify
-        
-        L = simplify.backtrack(self,num_steps = steps)
-        self.crossings = L.crossings
-        self.labels = L.labels
-        self.link_components = L.link_components
-        self.name = L.name
 
 
 # ---- building the link exterior if SnapPy is present --------

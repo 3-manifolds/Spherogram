@@ -26,10 +26,11 @@ def remove_crossings(link, eliminate):
         new_components = []
         for component in link.link_components:
             for C in eliminate:
-                try:
-                    component.remove(C)
-                except ValueError:
-                    pass
+                for cep in C.entry_points():
+                    try:
+                        component.remove(cep)
+                    except ValueError:
+                        pass
             if len(component):
                 new_components.append(component)
         link.link_components = new_components
@@ -98,7 +99,19 @@ def basic_simplify(link):
         to_visit.difference_update(elim)
         to_visit.update(changed)
 
-    return len(eliminated) > 0
+    success = len(eliminated) > 0
+
+    # Redo the strand labels (used for DT codes)
+    if success:
+        component_starts = []
+        for component in link.link_components:
+            a, b = component[:2]
+            if a.strand_label() % 2 == 0:
+                component_starts.append(a)
+            else:
+                component_starts.append(b)
+        link._build_components(component_starts)
+    return success
 
 def possible_type_III_moves(link):
     """
@@ -144,20 +157,20 @@ def reidemeister_III(link, triple):
     A[a-1], B[b-1], C[c-1] = B[b+2], C[c+2], A[a+2]
     [S.fuse() for S in border_strands]
 
-def simplify(link, max_consecutive_failures=100):
+def simplify_via_level_type_III(link, max_consecutive_failures=100):
     """
     Applies a series of type III moves to the link, simplifying it via type
     I and II moves whenever possible.
     """
     failures, success = 0, False
-    if link.basic_simplify():
+    if basic_simplify(link):
         success = True
     while failures < max_consecutive_failures:
         poss_moves = possible_type_III_moves(link)
         if len(poss_moves) == 0:
             break
         reidemeister_III(link, random.choice(poss_moves))
-        if link.basic_simplify():
+        if basic_simplify(link):
             failures = 0
             success = True
         else:
@@ -245,7 +258,7 @@ def strand_pickup(link,overcrossingstrand):
     for overcross in overcrossingstrand:
         startcep = overcross[0]
         length = overcross[1]
-        G = Link.dual_graph(link)
+        G = link.dual_graph()
 
         #finding all crosses traversed by the overcrossing, accounting for possible self-intersection
         endpoint = startcep.next()
@@ -280,8 +293,7 @@ def strand_pickup(link,overcrossingstrand):
             crossgraph.add_edge(edgescrossed[i][0],edgescrossed[i][1])
 
 
-        components = nx.connected_components(crossgraph)
-
+        components = list(nx.connected_components(crossgraph))
 
         #collapse the connected components in original dual graph
         Gx = G.to_networkx()
@@ -501,5 +513,45 @@ def relabel_crossings(link):
     """
     for i,cr in enumerate(link.crossings):
         cr.label = str(i)
+
+    
+def pickup_simplify(link, type_III=0):
+    """
+    Performs optimize_overcrossings on a diagram, flips, and performs the
+    same process on the other side of the diagram, simplifying in between
+    until the process stabilizes. The boolean full_simplify indicates 
+    whether or not to perform a simplification that includes Reidemeister III
+    type moves.
+    """
+    L = link
+    init_num_crossings = len(L.crossings)
+    stabilized = init_num_crossings == 0
+
+    def intermediate_simplify(a_link):
+        if type_III:
+            simplify_via_level_type_III(a_link, type_III)
+        else:
+            basic_simplify(a_link)
+
+    intermediate_simplify(link)
+
+    while not stabilized:
+        L, overcrossingsremoved = L.optimize_overcrossings()
+        intermediate_simplify(L)
+
+        if len(L.crossings) == 0:
+            break
+        mirror = L.mirror()
+        mirror, undercrossingsremoved = mirror.optimize_overcrossings()
+        L = mirror.mirror()
+        intermediate_simplify(L)
+        stabilized = ((overcrossingsremoved == 0) and (undercrossingsremoved == 0)) or (len(L.crossings) == 0)
+
+    link.crossings = L.crossings
+    link.labels = L.labels
+    link.link_components = L.link_components
+    link.name = L.name
+    return len(L.crossings) != init_num_crossings
+
 
     

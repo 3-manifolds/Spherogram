@@ -39,6 +39,8 @@ cdef extern from 'PMdef.h':
         pm_edge *root
         long e, v, f, i
 
+    void set_pmRandom_callback(long (*function)(long))
+
 cdef extern from 'PMplanmap.h':
     extern int pmMemoryInit(pmSize *S, pmMethod *Meth, pmMemory *M)
     extern int pmPlanMap(pmSize *S, pmMethod *Meth,
@@ -47,8 +49,19 @@ cdef extern from 'PMplanmap.h':
 
 cdef extern from 'stats.h':
     extern long pmStatGauss(pmMap *Map)
+
+# We want Planarmap to use the same pseudo-random number generator as Python.
+
+cdef long randrange_callback(long n):
+    return random.randrange(n) + 1
+
+set_pmRandom_callback(randrange_callback)
+
+
+# The main function 
         
-def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):
+def random_map(num_vertices, int edge_connectivity=4,
+               int num_link_comps=0, int max_tries=100):
     """
     Use Gilles Schaeffer's "Planarmap program" to generate
     a random 4-valent planar graph with the given number
@@ -59,7 +72,10 @@ def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):
     of *less than* k edges disconnects the graph.  In particular,
     for 4-valent graphs, being 2-connected is just the same as
     being connected.  In particuar, a 2-connected graph can
-    (and frequently do) have looped edges. 
+    (and frequently do) have looped edges.
+
+    Under the hood, it uses Python's pseudo-random number
+    generator.
     """
     cdef pmSize size
     cdef pmMethod method
@@ -83,14 +99,18 @@ def random_map(num_vertices, edge_connectivity=4, int num_link_comps=0):
     size.dgArr = NULL
 
     method.core, method.pic = 0, 0
-    method.seed = random.getrandbits(8*sizeof(long) - 1)
     method.verbose = 0
     pmMemoryInit(&size, &method, &memory)
     pmPlanMap(&size, &method, &memory, &the_map)
     if num_link_comps > 0:
-        while pmStatGauss(&the_map) != num_link_comps:
+        tries = 0
+        while pmStatGauss(&the_map) != num_link_comps and tries < max_tries:
             pmFreeMap(&the_map)
             pmPlanMap(&size, &method, &memory, &the_map)
+            tries += 1
+
+        if tries==max_tries:
+            return 
 
     ans = []
     vert = the_map.root.c_from
