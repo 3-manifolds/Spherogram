@@ -6,16 +6,20 @@ and Jennet Dickinson.
 
 from . import links_base
 from .links_base import Crossing, Strand
+from ..sage_helper import _within_sage, sage_method
 
-import sage.all
-import sage.graphs.graph
-from sage.matrix.constructor import matrix
-from sage.symbolic.ring import SR
-from sage.groups.free_group import FreeGroup
-import sage.graphs.graph as graph
-from sage.symbolic.ring import var
-from sage.groups.braid import Braid, BraidGroup
-from sage.all import ZZ
+if _within_sage:
+    import sage.all
+    import sage.graphs.graph
+    from sage.matrix.constructor import matrix
+    from sage.symbolic.ring import SR
+    from sage.groups.free_group import FreeGroup
+    import sage.graphs.graph as graph
+    from sage.symbolic.ring import var
+    from sage.groups.braid import Braid, BraidGroup
+    from sage.all import ZZ
+else:
+    pass 
 
 def normalize_alex_poly(p,t):
     # Normalize the sign of the leading coefficient 
@@ -114,31 +118,37 @@ class Link(links_base.Link):
     >>> Link('L12n123')
     <Link L12n123: 2 comp; 12 cross>
 
-    You can also create links from a Sage braid:
+    You can also create links from a Sage braid.
 
-    >>> B = BraidGroup(4)
-    >>> a, b, c = B.gens()
-    >>> Link( (a**-3) * (b**4) * (c**2) * a * b * c )
+    >>> B = BraidGroup(4)   # doctest: +SKIP
+    >>> a, b, c = B.gens()    # doctest: +SKIP
+    >>> Link( (a**-3) * (b**4) * (c**2) * a * b * c )   # doctest: +SKIP
     <Link: 2 comp; 12 cross>
     """
     def __init__(self, crossings, check_planarity=True, build=True):
-        if isinstance(crossings, Braid):
-            crossings = braidword_to_crossings(crossings)
-        if isinstance(crossings, str) and crossings.startswith('T('):
-            p, q = map(int, crossings[2:-1].split(','))
-            B = BraidGroup(p)
-            b = B([i+1 for i in range(0,p-1)]*q)
-            crossings = braidword_to_crossings(b)
+        if _within_sage:
+            crossings = self._from_braid(crossings)
         
         links_base.Link.__init__(self, crossings, check_planarity, build)
 
-    
+    @sage_method
+    def _from_braid(self, crossings):
+        """
+         >>> B = BraidGroup(4)
+         >>> a, b, c = B.gens()
+         >>> Link( (a**-3) * (b**4) * (c**2) * a * b * c )
+         <Link: 2 comp; 12 cross>
+         """
+        if isinstance(crossings, Braid):
+            crossings = braidword_to_crossings(crossings)
+        return crossings
+
+    @sage_method
     def linking_matrix(self):
         """
         Calcluates the linking number for each pair of link components.
-        
-        Returns a linking matrix, in which the (i,j)th component is the linking                                    
-        number of the ith and jth link components.
+        Returns a linking matrix, in which the (i,j)th component is the
+        linking number of the ith and jth link components.
         """
         matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
         for n1, comp1 in enumerate(self.link_components):
@@ -160,6 +170,7 @@ class Link(links_base.Link):
                 matrix[i1][i2] = int(matrix[i1][i2])
         return matrix
 
+    @sage_method
     def knot_group(self):
         """
         Computes the knot group using the Wirtinger presentation. 
@@ -191,6 +202,7 @@ class Link(links_base.Link):
         G = F/rels
         return G
 
+    @sage_method
     def alexander_matrix(self, mv=True):
         """
         Returns the alexander matrix of self.
@@ -239,7 +251,8 @@ class Link(links_base.Link):
                     C[j,i] = C[j,i] + x[1]*x[0](g)
 
         return (C,g)
-    
+
+    @sage_method
     def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
         """
         Calculates the alexander polynomial of self. For links with one component,
@@ -302,7 +315,7 @@ class Link(links_base.Link):
                 return p.factor()
             else:
                 return p.expand()
-
+        
     def _edge_sign(K, edge):
         "Returns the sign (+/- 1) associated to given edge in the black graph."
         crossing = edge[2]
@@ -324,6 +337,7 @@ class Link(links_base.Link):
             if total.issubset(s):
                 return self.crossings[x]
 
+    @sage_method
     def black_graph(self):
         """
         Returns the black graph of K. If the black graph is disconnected (which
@@ -362,7 +376,7 @@ class Link(links_base.Link):
         return G
 
 
-            
+    @sage_method      
     def goeritz_matrix(self):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
@@ -385,6 +399,7 @@ class Link(links_base.Link):
         m=m.delete_columns([0])
         return m
 
+    @sage_method
     def signature(self):
         """
         Returns the signature of the link.       
@@ -414,6 +429,7 @@ class Link(links_base.Link):
         sig=pos-neg+answer
         return sig
 
+    @sage_method
     def colorability_matrix(self):
         """Auxiliary function used by determinant. Returns 'colorability matrix'."""
         edges = self.pieces()
@@ -430,6 +446,7 @@ class Link(links_base.Link):
                         break
         return m
 
+    @sage_method
     def determinant(self, method='goeritz'):
         """Returns the determinant of the knot K, a non-negative integer.                
 
@@ -454,6 +471,7 @@ class Link(links_base.Link):
         else:
             return abs(self.alexander_poly(multivar=False, v=[-1], norm = False))
 
+    @sage_method
     def morse_number(self, solver='GLPK'):
         """
         The *Morse number* of a planar link diagram D is
@@ -477,6 +495,7 @@ class Link(links_base.Link):
         from . import morse
         return morse.morse_via_LP(self, solver)[0]
 
+    @sage_method
     def morse_diagram(self):
         """
         Returns a MorseLinkDiagram of this link diagram, that is a choice
@@ -495,6 +514,7 @@ class Link(links_base.Link):
         from . import morse
         return morse.MorseLinkDiagram(self)
 
+    @sage_method
     def jones_poly(self, variable=None):
         """
         Returns the Jones polynomial of the link.

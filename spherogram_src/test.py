@@ -1,18 +1,23 @@
 import spherogram, spherogram.links.test, spherogram.links.simplify
+from spherogram.sage_helper import _within_sage, clear_sage_methods_docstrings
 import snappy, doctest
 
 snappy.number.Number._accuracy_for_testing = 8
 modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
            spherogram.links.links, spherogram.links.links_base,
            spherogram.links.random_links, spherogram.links.orthogonal,
-           spherogram.links.simplify]
+           spherogram.links.simplify, spherogram.links.invariants]
 
-if snappy.SnapPy._within_sage:
+spherogram.links.links_base.Link.exterior = snappy._link_exterior
+
+
+if _within_sage:
     snappy.Manifold.use_field_conversion('snappy')
     snappy.ManifoldHP.use_field_conversion('snappy')
-    spherogram.links.links_base.Link.exterior = snappy._link_exterior
     import spherogram.links.morse, spherogram.links.invariants
-    modules += [spherogram.links.invariants, spherogram.links.morse]
+    modules += [spherogram.links.morse]
+else:
+    clear_sage_methods_docstrings(spherogram.Link)
 
 for module in modules:
     results = doctest.testmod(module)
