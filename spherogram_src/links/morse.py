@@ -33,22 +33,24 @@ known to be.  The issue is that [DP] creates a very special kind of ILP
 reduced to using a generic ILP solver.  
 """
 
-from sage.numerical.mip import MixedIntegerLinearProgram
+from ..sage_helper import _within_sage
 from ..graphs import CyclicList, Digraph
 from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
 from .tangles import RationalTangle
+if _within_sage:
+    from sage.numerical.mip import MixedIntegerLinearProgram
 
 def morse_via_LP(link, solver='GLPK'):
     """
     An integer linear program which computes the Morse number of the given
     link diagram.
 
-    >>> K = RationalTangle(23, 43).denominator_closure()
-    >>> morse, details = morse_via_LP(K)
-    >>> morse
+    sage: K = RationalTangle(23, 43).denominator_closure()
+    sage: morse, details = morse_via_LP(K)
+    sage: morse
     2
-    >>> morse_via_LP(Link('8_20'))[0]
+    sage: morse_via_LP(Link('8_20'))[0]
     3
     """
     LP = MixedIntegerLinearProgram(maximization=False, solver=solver)
@@ -165,14 +167,14 @@ class MorseLinkDiagram(object):
         Orients the edges of the link (that is, its CrossingStrands) with
         respect to the height function.
 
-        >>> L = Link('K3a1')
-        >>> D = MorseLinkDiagram(L)
-        >>> orients = D.orientations.values()
-        >>> len(orients) == 4*len(L.crossings)
+        sage: L = Link('K3a1')
+        sage: D = MorseLinkDiagram(L)
+        sage: orients = D.orientations.values()
+        sage: len(orients) == 4*len(L.crossings)
         True
-        >>> sorted(orients)
+        sage: sorted(orients)
         ['down', 'down', 'max', 'max', 'max', 'max', 'min', 'min', 'min', 'min', 'up', 'up']
-        >>> orients.count('max') == 2*D.morse_number
+        sage: orients.count('max') == 2*D.morse_number
         True
         """
         def expand_orientation(cs, kind):
@@ -234,10 +236,10 @@ class MorseLinkDiagram(object):
         function together with the crossings, and where the edges come from
         the link and are directed upwards with respect to the height function.
 
-        >>> L = Link('K4a1')
-        >>> D = MorseLinkDiagram(L)
-        >>> G = D.digraph()
-        >>> len(G.vertices)
+        sage: L = Link('K4a1')
+        sage: D = MorseLinkDiagram(L)
+        sage: G = D.digraph()
+        sage: len(G.vertices)
         8
         """
         G = Digraph()
@@ -270,8 +272,8 @@ class MorseLinkDiagram(object):
         resulting pieces are the UpwardSnakes.  For a diagram in bridge position,
         the number of snakes is just twice the bridge number.
 
-        >>> D = MorseLinkDiagram(Link('8a1'))
-        >>> len(D.snakes)
+        sage: D = MorseLinkDiagram(Link('8a1'))
+        sage: len(D.snakes)
         4
         """
         kinds = self.orientations
