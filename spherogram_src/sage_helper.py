@@ -2,7 +2,6 @@
 Helper code for dealing with additional functionality when Sage is
 present.
 """
-
 try:
     import sage.all
     _within_sage = True
@@ -40,7 +39,5 @@ def sage_methods(obj):
             pass
     return ans
 
-def clear_sage_methods_docstrings(obj):
-    for method in sage_methods(obj):
-        method.__func__.__doc__ = None
-            
+
+
