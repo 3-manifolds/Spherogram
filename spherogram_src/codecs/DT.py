@@ -1,7 +1,11 @@
 from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
 from spherogram.links.links import CrossingEntryPoint
+import string, sys
 
-import string
+python_major_version = sys.version_info[0]
+if python_major_version == 3:
+    unicode = str
+
 
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0

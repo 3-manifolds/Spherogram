@@ -114,7 +114,8 @@ class OrthogonalFace(CyclicList):
     pairs (edge, vertex) where vertex is gives the *clockwise* orientation
     of edge.
     """
-    def __init__(self, graph, (edge, vertex)):
+    def __init__(self, graph, edge_and_vertex):
+        edge, vertex = edge_and_vertex
         self.append( (edge, vertex) )
         while True:
             edge, vertex = self[-1]
@@ -667,7 +668,7 @@ if __name__ == '__main__':
         PM = snappy.Manifold()
         while 1:
             M = snappy.HTLinkExteriors.random()
-            print 'Testing Manifold:', M
+            print('Testing Manifold: ' + M.name())
             ans = test(M, PM)
 
     from .tangles import RationalTangle
