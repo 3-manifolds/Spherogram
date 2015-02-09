@@ -88,7 +88,7 @@ def random_link(crossings,
                 num_components = 'any', 
                 initial_map_gives_link = False,
                 alternating = False,
-                consistient_twist_regions = False,
+                consistent_twist_regions = False,
                 simplify = 'basic',
                 prime_decomposition = True,
                 return_all_pieces = False, 
@@ -153,7 +153,7 @@ def random_link(crossings,
     >>> K
     <Link: 1 comp; 25 cross>
 
-    >>> L= random_link(30, consistient_twist_regions=True, \
+    >>> L= random_link(30, consistent_twist_regions=True, \
               simplify = 'global')
     >>> type(random_link(30, return_all_pieces=True))
     <type 'list'>
@@ -190,7 +190,7 @@ def random_link(crossings,
         link = link.alternating()
         return link
 
-    if consistient_twist_regions:
+    if consistent_twist_regions:
         twist.make_twist_regions_consistent(link)
 
     # Initial simplification, if any.
@@ -222,5 +222,5 @@ def random_link(crossings,
 #                initial_map_gives_knot=True, 
 #                return_all_pieces=False, 
 #                prime_decomposition=prime_decomposition,
-#                consistient_twist_regions=True)
+#                consistent_twist_regions=True)
 
