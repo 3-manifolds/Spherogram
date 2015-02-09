@@ -269,7 +269,7 @@ class Graph(object):
         for vertex in edge:
             try:
                 self.incidence_dict[vertex].remove(edge)
-            except KeyError, ValueError:
+            except (KeyError, ValueError):
                 pass
         self.edges.remove(edge)
 
@@ -538,13 +538,12 @@ class Graph(object):
 
     def to_networkx(self):
         """
-	Return a copy of the graph in the networkx format
-	"""
-	G = nx.Graph()
-	G.add_nodes_from(self.vertices)
-	G.add_edges_from(self.edges)
-	
-	return G
+        Return a copy of the graph in the networkx format
+        """
+        G = nx.Graph()
+        G.add_nodes_from(self.vertices)
+        G.add_edges_from(self.edges)
+        return G
 
 class ReducedGraph(Graph):
     """

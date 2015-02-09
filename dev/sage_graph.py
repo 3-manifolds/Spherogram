@@ -25,5 +25,5 @@ def convert(G):
 #print G
 R = G.reduced()
 #print R
-print G.is_planar()
-print R.embedding()
+print(G.is_planar())
+print(R.embedding())

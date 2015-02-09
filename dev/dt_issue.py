@@ -58,7 +58,7 @@ def fill_vols(M):
         fill[i] = (0,0)
         N.dehn_fill(fill)
         N = N.filled_triangulation().with_hyperbolic_structure()
-        print N.num_cusps()
+        print(N.num_cusps())
         vols.append(N.volume())
     return vols
 
