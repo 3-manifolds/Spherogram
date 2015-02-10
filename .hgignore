@@ -6,6 +6,8 @@ ogdf_library/
 ogdf/graphs/
 dev/References
 dev/orthogonal/ogdf/ortho
+planarity_src/planarity.c
+planarmap_src/planarmap.c
 syntax: glob
 *.pyc
 planarity_src/c/*.o
