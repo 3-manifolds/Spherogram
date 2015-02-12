@@ -65,7 +65,7 @@ if _within_sage:
             string = re.subn('([\n\A]\s*)sage:', '\g<1>>>>', string)[0]
             return doctest.DocTestParser.parse(self, string, name)
 
-    globs = {'PSL':sage.all.PSL}
+    globs = {'PSL':sage.all.PSL, 'BraidGroup':sage.all.BraidGroup}
 else:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):

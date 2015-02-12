@@ -1,3 +1,4 @@
+from __future__ import print_function
 import snappy
 import spherogram, spherogram.links, spherogram.links.test
 import spherogram.links.simplify, spherogram.links.morse
@@ -13,15 +14,16 @@ modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
 
 spherogram.links.links_base.Link.exterior = snappy._link_exterior
 
-def doctest_modules(verbose=False):
+def run_doctests(verbose=False, print_info=True):
     snappy.number.Number._accuracy_for_testing = 8
     if sage_helper._within_sage:
         snappy.Manifold.use_field_conversion('snappy')
         snappy.ManifoldHP.use_field_conversion('snappy')
-    return sage_helper.doctest_modules(modules, verbose)
+    return sage_helper.doctest_modules(modules, verbose, print_info)
 
 if __name__ == '__main__':
     optlist, args = getopt.getopt(sys.argv[1:], 'v', ['verbose'])
     verbose = len(optlist) > 0
-    doctest_modules(verbose)
+    run_doctests(verbose)
+    print()
     spherogram.links.test.run()

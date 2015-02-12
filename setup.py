@@ -72,7 +72,7 @@ long_description = long_description.split('\nDeveloped')[0]
 
 setup( name = 'spherogram',
        version = version,
-       install_requires = ['networkx>=1.3'],
+       install_requires = ['networkx>=1.3', 'decorator'],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',
