@@ -274,10 +274,9 @@ class Link(links_base.Link):
         # positive. 
         if method == 'snappy':
             try:
-                import snappy
-                return snappy.snap.alexander_polynomial(self.exterior())
+                return self.exterior().alexander_polynomial()
             except ImportError:
-                raise RunTimeError('this method for alexander_poly '+no_snappy_msg)
+                raise RuntimeError('this method for alexander_poly '+no_snappy_msg)
         else:
             comp = len(self.link_components)
             if comp < 2:

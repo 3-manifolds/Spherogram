@@ -336,7 +336,7 @@ class Link(object):
                     crossings = ans.crossings
                     self.link_components = ans.link_components
                 except ImportError:
-                    raise RunTimeError('creating a Link object with argument of type str '+no_snappy_msg)
+                    raise RuntimeError('creating a Link object with argument of type str '+no_snappy_msg)
         
         #If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
