@@ -1,8 +1,9 @@
-import spherogram, snappy
+import spherogram
 import unittest
 import doctest
 from random import randrange
 from . import test_montesinos
+from ...sage_helper import _within_sage
 
 class TestLinkFunctions(unittest.TestCase):
     
@@ -254,7 +255,7 @@ class TestLinkFunctions(unittest.TestCase):
 
 def run():
     test_montesinos.test(15)
-    if snappy.SnapPy._within_sage:
+    if _within_sage:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
         unittest.TextTestRunner(verbosity=2).run(suite)
 

@@ -1,8 +1,9 @@
+import snappy
 import spherogram, spherogram.links, spherogram.links.test
 import spherogram.links.simplify, spherogram.links.morse
 
 import spherogram.sage_helper as sage_helper
-import snappy, re, getopt, sys
+import re, getopt, sys
 
 
 modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
