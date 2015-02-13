@@ -81,50 +81,8 @@ def braidword_to_crossings(braidword):
 
 
 class Link(links_base.Link):
-    """
-    Links are made from Crossings.  The general model is that of a PD
-    diagram as described in
-
-    http://katlas.org/wiki/Planar_Diagrams
-
-    See the file "doc.pdf" for the conventions, which can be accessed
-    via "spherogram.pdf_docs()", and the file "test.py" for some
-    examples of creating links.
-
-    Here are two ways of creating the figure-8 knot, first via a PD code
-
-    >>> K1 = Link([[8,3,1,4],[2,6,3,5],[6,2,7,1],[4,7,5,8]])
-
-    and by directly gluing up Crossings:
-
-    >>> a, b, c, d = [Crossing(x) for x in 'abcd']
-    >>> a[0], a[1], a[2], a[3] = c[1], d[0], b[1], b[0]
-    >>> b[2], b[3] = d[3], c[2]
-    >>> c[3], c[0] = d[2], d[1]
-    >>> K2 = Link([a,b,c,d])
-
-    Some families of named links are available, such a torus knots
-
-    >>> Link('T(4, 2)')
-    <Link: 2 comp; 6 cross>
-
-    and if you have SnapPy installed also the Rolfsen and Hoste-Thistlethwaite
-    tables:
-
-    >>> Link('8_20')
-    <Link 8_20: 1 comp; 8 cross>
-    >>> Link('K12a123')
-    <Link K12a123: 1 comp; 12 cross>
-    >>> Link('L12n123')
-    <Link L12n123: 2 comp; 12 cross>
-
-    You can also create links from a Sage braid.
-
-    sage: B = BraidGroup(4)
-    sage: a, b, c = B.gens()
-    sage: Link( (a**-3) * (b**4) * (c**2) * a * b * c )
-    <Link: 2 comp; 12 cross>
-    """
+    __doc__ = links_base.Link.__doc__
+    
     def __init__(self, crossings, check_planarity=True, build=True):
         if _within_sage:
             crossings = self._from_braid(crossings)
@@ -174,7 +132,13 @@ class Link(links_base.Link):
     def knot_group(self):
         """
         Computes the knot group using the Wirtinger presentation. 
-        Returns a finitely presented group.
+        Returns a finitely presented group::
+
+           sage: K = Link('3_1')
+           sage: G = K.knot_group()
+           sage: type(G)
+           <class 'sage.groups.finitely_presented.FinitelyPresentedGroup_with_category'>
+
         """
         n = len(self.crossings)
         F = FreeGroup(n)
@@ -205,17 +169,17 @@ class Link(links_base.Link):
     @sage_method
     def alexander_matrix(self, mv=True):
         """
-        Returns the alexander matrix of self.
+        Returns the Alexander matrix of the link::
 
-        sage: L = Link('3_1')
-        sage: L.alexander_matrix()
-        ([      -1 -1/t + 1      1/t]
-        [     1/t       -1 -1/t + 1]
-        [-1/t + 1      1/t       -1], [t, t, t])
-        sage: L = Link([(4,1,3,2),(1,4,2,3)])
-        sage: L.alexander_matrix()    #doctest: +SKIP
-        ([ t1 - 1 -t2 + 1]
-        [-t1 + 1  t2 - 1], [t2, t1])
+            sage: L = Link('3_1')
+            sage: L.alexander_matrix()
+            ([      -1 -1/t + 1      1/t]
+            [     1/t       -1 -1/t + 1]
+            [-1/t + 1      1/t       -1], [t, t, t])
+            sage: L = Link([(4,1,3,2),(1,4,2,3)])
+            sage: L.alexander_matrix()    #doctest: +SKIP
+            ([ t1 - 1 -t2 + 1]
+            [-t1 + 1  t2 - 1], [t2, t1])
         """
         comp = len(self.link_components)
         if comp < 2:
@@ -255,18 +219,18 @@ class Link(links_base.Link):
     @sage_method
     def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
         """
-        Calculates the alexander polynomial of self. For links with one component,
-        can evaluate the alexander polynomial at v.
+        Calculates the Alexander polynomial of the link. For links with one component,
+        can evaluate the alexander polynomial at v::
 
-        sage: K = Link('4_1')
-        sage: K.alexander_poly()
-        t + 1/t - 3
-        sage: K.alexander_poly(v=[4])
-        5/4
-
-        sage: K = Link('L7n1')
-        sage: K.alexander_poly(norm=False)
-        (t1*t2^3 + 1)/(t1*t2^4)
+            sage: K = Link('4_1')
+            sage: K.alexander_poly()
+            t + 1/t - 3
+            sage: K.alexander_poly(v=[4])
+            5/4
+            
+            sage: K = Link('L7n1')
+            sage: K.alexander_poly(norm=False)
+            (t1*t2^3 + 1)/(t1*t2^4)
         """
 
         # sign normalization still missing, but when "norm=True" the
@@ -339,14 +303,14 @@ class Link(links_base.Link):
     @sage_method
     def black_graph(self):
         """
-        Returns the black graph of K. If the black graph is disconnected (which
-        can only happen for a split link diagram), returns one connected component.
+        Returns the black graph of K. If the black graph is disconnected
+        (which can only happen for a split link diagram), returns one
+        connected component. The edges are labeled by the crossings
+        they correspond to.  Example::
 
-        The edges are labeled by the crossings they correspond to.
-
-        sage: K=Link('5_1')                                                                                
-        sage: K.black_graph()
-        Subgraph of (): Multi-graph on 2 vertices
+            sage: K=Link('5_1')                                                                                
+            sage: K.black_graph()
+            Subgraph of (): Multi-graph on 2 vertices
         """
 
         faces = []
@@ -378,11 +342,12 @@ class Link(links_base.Link):
     @sage_method      
     def goeritz_matrix(self):
         """
-        Finds the black graph of a knot, and from that, returns the Goeritz matrix of that knot.
-       
-        sage: K=Link('4_1')
-        sage: K.goeritz_matrix().det()
-        5
+        Finds the black graph of a knot, and from that, returns the Goeritz
+        matrix of that knot::
+        
+            sage: K=Link('4_1')
+            sage: K.goeritz_matrix().det()
+            5
         """
         g=self.black_graph()
         l=g.vertices()
@@ -401,15 +366,15 @@ class Link(links_base.Link):
     @sage_method
     def signature(self):
         """
-        Returns the signature of the link.
+        Returns the signature of the link.  Examples::
         
-        sage: K = Link('4a1')                                                                               
-        sage: K.signature()          
-        0
-        sage: L = Link('9^3_12')
-        sage: Lbar = L.mirror()
-        sage: L.signature() + Lbar.signature()
-        0
+            sage: K = Link('4a1')                                                                               
+            sage: K.signature()          
+            0
+            sage: L = Link('9^3_12')
+            sage: Lbar = L.mirror()
+            sage: L.signature() + Lbar.signature()
+            0
         """
         answer=0
         G = self.black_graph()
@@ -430,8 +395,8 @@ class Link(links_base.Link):
         return sig
 
     @sage_method
-    def colorability_matrix(self):
-        """Auxiliary function used by determinant. Returns 'colorability matrix'."""
+    def _colorability_matrix(self):
+        """Auxiliary function used by determinant."""
         edges = self.pieces()
         m=matrix(len(self.crossings), len(edges))
         for c in self.crossings:
@@ -448,18 +413,19 @@ class Link(links_base.Link):
 
     @sage_method
     def determinant(self, method='goeritz'):
-        """Returns the determinant of the knot K, a non-negative integer.                
+        """
+        Returns the determinant of the link, a non-negative integer.                
 
         Possible methods are 'wirt', using the Wirtinger presentation; 'goeritz',
         using the Goeritz matrix, and 'color', using the 'colorability matrix', or
-        anything else, to compute the Alexander polynomial at -1.
+        anything else, to compute the Alexander polynomial at -1.  Example::
         
-        sage: K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
-        sage: K.determinant()
-        5
+            sage: K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+            sage: K.determinant()
+            5
         """
         if method=='color':
-            M = self.colorability_matrix()
+            M = self._colorability_matrix()
             size = len(self.crossings)-1
             N = matrix(size, size)
             for i in range(size):
@@ -479,18 +445,16 @@ class Link(links_base.Link):
             m(D) = min { # of maxima of h on D }
 
         where h is a height function on R^2 which is generic on D; alternatively,
-        this is the minimum number of cups/caps in a "MorseLink" presentation:
-
-           http://katlas.math.toronto.edu/wiki/MorseLink_Presentations
-
+        this is the minimum number of cups/caps in a `MorseLink presentation
+        <http://katlas.math.toronto.edu/wiki/MorseLink_Presentations>`_
         of the diagram D.  The Morse number is very closely related to the more
-        traditional bridge number.
+        traditional bridge number.   Examples::
 
-        sage: K = Link('5_2')
-        sage: K.morse_number()
-        2
-        sage: Link('6^3_2').morse_number()
-        3
+            sage: K = Link('5_2')
+            sage: K.morse_number()
+            2
+            sage: Link('6^3_2').morse_number()
+            3
         """
         from . import morse
         return morse.morse_via_LP(self, solver)[0]
@@ -499,17 +463,17 @@ class Link(links_base.Link):
     def morse_diagram(self):
         """
         Returns a MorseLinkDiagram of this link diagram, that is a choice
-        of height function which realizes the Morse number.
+        of height function which realizes the Morse number::
 
-        sage: L = Link('L8n2')
-        sage: D = L.morse_diagram()
-        sage: D.morse_number == L.morse_number()
-        True
-        sage: D.is_bridge()
-        True
-        sage: B = D.bridge()
-        sage: len(B.bohua_code())
-        64
+            sage: L = Link('L8n2')
+            sage: D = L.morse_diagram()
+            sage: D.morse_number == L.morse_number()
+            True
+            sage: D.is_bridge()
+            True
+            sage: B = D.bridge()
+            sage: len(B.bohua_code())
+            64
         """
         from . import morse
         return morse.MorseLinkDiagram(self)
@@ -517,11 +481,11 @@ class Link(links_base.Link):
     @sage_method
     def jones_poly(self, variable=None):
         """
-        Returns the Jones polynomial of the link.
+        Returns the Jones polynomial of the link::
 
-        sage: L = Link('8_5')
-        sage: L.jones_poly()
-        q^8 - 2*q^7 + 3*q^6 - 4*q^5 + 3*q^4 - 3*q^3 + 3*q^2 - q + 1
+            sage: L = Link('8_5')
+            sage: L.jones_poly()
+            q^8 - 2*q^7 + 3*q^6 - 4*q^5 + 3*q^4 - 3*q^3 + 3*q^2 - q + 1
         """
         from . import jones
         return jones.Jones_poly(self, variable)
