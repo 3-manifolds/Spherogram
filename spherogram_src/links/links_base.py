@@ -7,7 +7,6 @@ a PD diagram as described in
 
 See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
-
 """
 
 no_snappy_msg = 'requires that SnapPy be installed.'
@@ -283,14 +282,13 @@ def enumerate_lists(lists, n=0, filter=lambda x:True):
 
 class Link(object):
     """
-    Links are made from Crossings.  The general model is that of a PD
-    diagram as described in
-    
-    http://katlas.org/wiki/Planar_Diagrams
+    Links are made from Crossings.  The general model is that of the PD
+    diagrams used in `KnotTheory <http://katlas.org/wiki/Planar_Diagrams>`_.
     
     See the file "doc.pdf" for the conventions, which can be accessed
-    via "spherogram.pdf_docs()", and the file "test.py" for some
-    examples of creating links.
+    via "spherogram.pdf_docs()", and the `Spherogram tutorial
+    <http://www.math.uic.edu/t3m/SnapPy/spherogram.html>`_
+    for some examples of creating links.
 
     Here are two ways of creating the figure-8 knot, first via a PD code
 
@@ -482,6 +480,19 @@ class Link(object):
         return pickle.loads(pickle.dumps(self))
     
     def is_planar(self):
+        """
+        Whether the 4-valent graph underlying the link projection is planar.
+        Should always be True for any actual Link.
+
+        >>> L = Link('5^2_1')
+        >>> L.is_planar()
+        True
+        >>> c = Crossing()
+        >>> c[0], c[1] = c[2], c[3]   # Punctured torus gluing
+        >>> bad = Link([c], check_planarity=False)
+        >>> bad.is_planar()
+        False
+        """
         G = self.digraph()
         if not G.is_weakly_connected():
             return False
@@ -680,6 +691,9 @@ class Link(object):
         return len(self.crossings)
 
     def PD_code(self, KnotTheory=False, min_strand_index=0):
+        """
+        The planar diagram code for the link.  
+        """
         PD = []
         for c in self.crossings:
             PD.append([s + min_strand_index for s in c.strand_labels[:]])
@@ -690,6 +704,10 @@ class Link(object):
         return PD
 
     def DT_code(self, DT_alpha=False):
+        """
+        The Dowker-Thistlethwaite code for the link in either numerical or
+        alphabetical form.
+        """
         DT_dict = dict( [ c.DT_info() for c in self.crossings] )
         odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
         DT = [ tuple([DT_dict[x] for x in component]) for component in odd_labels]
@@ -834,12 +852,16 @@ class Link(object):
 
     def copy(self):
         """
-        Returns a copy of the knot.
+        Returns a copy of the link.  
 
         >>> K=Link('4_1')
         >>> copy=K.copy()
         >>> K.PD_code() == copy.PD_code()
         True
+
+        If the link is very large (100s of crossings), you may get a
+        recursion limit exception; to get around this, call e.g.
+        ``sys.setrecursionlimit(10000)``.
         """
         return copy.deepcopy(self)
 

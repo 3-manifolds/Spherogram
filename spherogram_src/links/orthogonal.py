@@ -604,6 +604,13 @@ class OrthogonalLinkDiagram(list):
 #---------------------------------------------------
 
 def orthogonal_draw(self, link_editor=None):
+    """
+    Opens a Plink link editor window with displaying the current link.
+    The strands of the links are unions of edges in the standard
+    integer grid, following the work of `Tamassia
+    <http://dx.doi.org/10.1137/0216030>`_ and `Bridgeman
+    et. al. <ftp://ftp.cs.brown.edu/pub/techreports/99/cs99-04.pdf>`_
+    """
     if link_editor is None:
         import plink
         link_editor = plink.LinkEditor()

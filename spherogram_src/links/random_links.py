@@ -96,7 +96,8 @@ def random_link(crossings,
     """
     Generates a random link from a model that starts with a random
     4-valent planar graph sampled with the uniform distribution by
-    Schaeffer's `PlanarMap`_ program.
+    Schaeffer's `PlanarMap program.
+    <http://www.lix.polytechnique.fr/~schaeffe/PagesWeb/PlanarMap/index-en.html>`_ 
 
     The ``crossings`` argument specifies the number of vertices of the
     initial planar graph G; the number of crossing in the returned knot
@@ -148,13 +149,11 @@ def random_link(crossings,
 
     Some examples:
     
-    >>> K = random_link(25, num_components=1,          \
-              initial_map_gives_link=True, alternating=True)
+    >>> K = random_link(25, num_components=1, initial_map_gives_link=True, alternating=True)
     >>> K
     <Link: 1 comp; 25 cross>
 
-    >>> L= random_link(30, consistent_twist_regions=True, \
-              simplify = 'global')
+    >>> L= random_link(30, consistent_twist_regions=True, simplify = 'global')
     >>> type(random_link(30, return_all_pieces=True))
     <type 'list'>
     """
