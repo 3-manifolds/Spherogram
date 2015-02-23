@@ -29,7 +29,7 @@ def normalize_alex_poly(p,t):
     if l < 0:
         p = -p            
     for i in range(0,len(t)):
-        exps = [x[1] for x in p.coeffs(t[i])]
+        exps = [x[1] for x in p.coefficients(t[i])]
         a = max(exps)
         b = min(exps)
         c = -1*(a+b)/ZZ(2)
@@ -333,7 +333,7 @@ class Link(links_base.Link):
                     if total.issubset(s):
                         coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
 
-        G=graph.Graph(coords)
+        G=graph.Graph(coords, multiedges=True)
         component=G.connected_components()[1]
         G=G.subgraph(component)
         return G
