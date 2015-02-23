@@ -135,6 +135,6 @@ def Jones_poly(K,variable=None):
     answer = answer.expand()
     #Python doesn't deal well with rational powers, so renormalizing (divide exponents by 4) is a pain. (Sage would do this fine.)
     ans = 0
-    for [coeff, exp] in answer.coeffs():
+    for [coeff, exp] in answer.coefficients():
         ans = ans + coeff*(variable**(exp/4))
     return ans
