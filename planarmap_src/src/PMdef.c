@@ -1,19 +1,20 @@
 
 /* ici on definit les types et leurs gestions dont on a besoin. */
 
-
 #include<stdio.h>
 #include<stdlib.h>
-#include<unistd.h>
 #include<math.h>
 
-#include "PMdef.h"
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif
 
 #ifdef __MINGW32__
  #define srand48 srand
  #define lrand48 rand
 #endif
 
+#include "PMdef.h"
 /****************************************/
 /* data utility functions */
 /****************************************/
@@ -35,7 +36,8 @@ void pmFreeWrd(char *Wrd)
 }
 
 /* gestion des sommets */
-pm_vertex *pmVtxSet; long pmNxtVtxNbr=-1;           
+pm_vertex *pmVtxSet;
+long pmNxtVtxNbr=-1;           
 
 void pmCreateVtx(long n)
 {

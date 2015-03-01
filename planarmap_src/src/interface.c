@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include "PMdef.h"
 
