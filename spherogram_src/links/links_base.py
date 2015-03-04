@@ -670,7 +670,7 @@ class Link(object):
             indices.append(c)
 
         def keep(C):
-            return {i in indices for i in C.strand_components} == {True}
+            return set([i in indices for i in C.strand_components]) == set([True])
         
         L = self.copy()
         final_crossings = []
