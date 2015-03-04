@@ -199,7 +199,7 @@ class Link(links_base.Link):
         eq = [y(g) == 1 for y in G.relations()]
         solns = rel.solve(eq,g, solution_dict=True)
         r = list(set([solns[0][h] for h in g]))
-        dict1 = {r[i]:t[i] for i in range(len(t))}
+        dict1 = dict([(r[i],t[i]) for i in range(len(t))])
 
         for i in range(len(g)):
             g[i] = g[i].subs(solns[0]).subs(dict1)
@@ -271,7 +271,7 @@ class Link(links_base.Link):
                 p = normalize_alex_poly(p.expand(),t)
 
             if v != 'no':
-                dict1 = {t[i]:v[i] for i in range(len(t))}
+                dict1 = dict([(t[i],v[i]) for i in range(len(t))])
                 return p.subs(dict1)
                 
             if multivar: # it's easier to view this way

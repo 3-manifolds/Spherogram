@@ -66,7 +66,7 @@ class TwistRegion:
         return len(self.crossings)
     
 def is_end_of_twist_region(crossing):
-    return len( {C for (C, i) in crossing.adjacent} ) == 3
+    return len(set([C for (C, i) in crossing.adjacent])) == 3
 
 def make_twist_regions_consistent(link):
     """
