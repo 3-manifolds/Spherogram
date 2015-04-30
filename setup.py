@@ -44,7 +44,9 @@ ext_modules.append(Planarmap)
 try:
     from Cython.Build import cythonize
     if 'clean' not in sys.argv:
-        cythonize(['planarity_src/planarity.pyx', pmap_dir + 'planarmap.pyx'])
+        targets = ['planarity_src/planarity.pyx', pmap_dir + 'planarmap.pyx']
+        targets = [file for file in targets if os.path.exists(file)]
+        cythonize(targets)
 except ImportError:
     pass 
 
