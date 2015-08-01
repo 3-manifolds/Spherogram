@@ -30,46 +30,16 @@ else:
     def sage_method(function):
         return decorator.decorator(_sage_method, function)
 
-
-# Not currently used, but could be exploited by an interpeter to hide
-# sage_methods when in plain Python.
-
-def sage_methods(obj):
-    ans = []
-    for attr in dir(obj):
-        try:
-            methods = getattr(obj, attr)
-            if methods._sage_method == True:
-                ans.append(methods)
-        except AttributeError:
-            pass
-    return ans
-
-# Used for doctesting
-
-def cyopengl_replacement():
-    """
-    Have to run this late to avoid (circular?) import issues.
-    """
-    try:
-        import snappy.CyOpenGL as CyOpenGL
-        CYOPENGL = ''
-    except ImportError:
-        CYOPENGL = '#doctest: +SKIP'
-    return CYOPENGL
-
 if _within_sage:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
-            string = re.subn('#doctest: \+CYOPENGL', cyopengl_replacement(), string)[0]
             string = re.subn('([\n\A]\s*)sage:', '\g<1>>>>', string)[0]
             return doctest.DocTestParser.parse(self, string, name)
 
-    globs = {'PSL':sage.all.PSL, 'BraidGroup':sage.all.BraidGroup}
+    globs = dict()
 else:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
-            string = re.subn('#doctest: \+CYOPENGL', cyopengl_replacement(), string)[0]
             return doctest.DocTestParser.parse(self, string, name)
         
     globs = dict()
