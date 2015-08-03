@@ -116,7 +116,7 @@ class DrorDatum(object):
     """
     def __init__(self, link, ordered_crossings):
         self.strand_indices = StrandIndices(link, ordered_crossings)
-        self.ring = R = PolynomialRing(ZZ, 't').fraction_field()
+        self.ring = R = PolynomialRing(ZZ, 'a').fraction_field()
         self.omega = R.one()        
         self.A = matrix(R, 0, 0)
 
@@ -318,5 +318,12 @@ def test_knots():
 
 def time_test_knot(i):
     K = knot(i)
-    E = Exhaustion(K)
-    E.alexander_polynomial()
+    alexander(K)
+
+def alexander(K):
+    c = len(K.crossings)
+    if c < 100:
+        E = Exhaustion(K)
+    else:
+        E = good_exhaustion(K, max(20, 0.15*c))
+    return E.alexander_polynomial()
