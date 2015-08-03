@@ -1,21 +1,29 @@
-import spherogram, snappy
-from spherogram.links.links import CrossingEntryPoint
+"""
+This file implement's Dror Bar-Natan's fast tangle-based algorithm for computing the Alexander polynomial of a knot in S^3, as described in 
+
+http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
+
+with some additional details drawn from conversations with him at said
+conference.
+"""
+
 import random
-import sys
-sys.path.append('/Users/dunfield/r')
-import knot_sample
-knot = knot_sample.knot_db.knot
-from sage.all import (PolynomialRing, LaurentPolynomialRing,
-                      matrix, block_diagonal_matrix, block_matrix, ZZ, QQ, var)
+from spherogram.links.links import CrossingEntryPoint
+from sage.all import (PolynomialRing, matrix, block_diagonal_matrix, ZZ, QQ)
 
 class ClosedComponentCreated(Exception):
-    pass
-
-def num_overlap(crossing, frontier):
-    neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
-    return len(neighbor_strands.intersection(frontier))
+    """
+    We never want to create closed link components; the final answer
+    is derived from when one has a created the "long knot" string
+    link.
+    """
 
 def cep(crossing_strand):
+    """
+    Returns the CrossingEntryPoint corresponding to the given
+    CrossingStrand in the same crossing; that is, it orients the
+    CrossingStrand without changing the crossing.
+    """
     if crossing_strand == crossing_strand.oriented():
         return crossing_strand
     else:
@@ -24,7 +32,7 @@ def cep(crossing_strand):
 def entry_pts_ab(crossing):
     """
     The two entry points of a crossing with Dror's convention that the
-    overcrossing ("b") is first and the undercrossing ("b") is second. 
+    overcrossing ("a") is first and the undercrossing ("b") is second. 
     """
     verts = [1, 0] if crossing.sign == -1 else [3, 0]
     return [CrossingEntryPoint(crossing, v) for v in verts]
@@ -62,6 +70,10 @@ class StrandIndices(object):
         self.indices[cep(cs)] = val
 
 def strand_matrix_merge(A, a, b):
+    """
+    The main computations all happen in this method.  Here A is a
+    square matrix and a and b are row (equivalently column) indices.
+    """
     assert a != b
     alpha, beta = A[a, a], A[a, b]
     gamma, delta = A[b, a], A[b, b]
@@ -77,9 +89,30 @@ def strand_matrix_merge(A, a, b):
     A = A.delete_columns([j])
     return A
 
+def test_meta_associativity():
+    """
+    Tests strand_matrix_merge for required invariance properties. 
+    """
+    def eval_merges(merges):
+        R = PolynomialRing(QQ, 'x', 49).fraction_field()
+        A = matrix(7, 7, R.gens())
+        for a, b in merges:
+            A = strand_matrix_merge(A, a, b)
+        return A
+
+    associative_merges =  [
+        ([(0,1), (0,1)], [(1,2), (0,1)]),
+        ([(0,1), (0,2)], [(1,3), (0,1)]),
+        ([(2,5), (2,3)], [(5,3), (2,3)])
+        ]
+    for m1, m2 in associative_merges:
+        assert eval_merges(m1) == eval_merges(m2)
+    
+
 class DrorDatum(object):
     """
-    The (omega, A) pair.
+    The (omega, A) pair which is the invariant defined in the first column of 
+    http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
     """
     def __init__(self, link, ordered_crossings):
         self.strand_indices = StrandIndices(link, ordered_crossings)
@@ -108,6 +141,11 @@ class DrorDatum(object):
         indices.merge(cs_a, cs_b)
 
 
+
+def num_overlap(crossing, frontier):
+    neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
+    return len(neighbor_strands.intersection(frontier))
+        
 class Exhaustion(object):
     """
     An exhaustion of a link where crossings are added in one-by-one
@@ -174,23 +212,20 @@ class Exhaustion(object):
         for a, b in self.gluings[-1][:-1]:
             D.merge(a, b)
 
-    
         alex = D.omega
         p, q = alex.numerator(), alex.denominator()
         # make sure the denominator is +/- t^n
         assert [abs(c) for c in q.coefficients()] == [1]
         if p.leading_coefficient() < 0:
             p = -p
-        t = p.parent().gen()
-        e = min(p.exponents())
-        p = p/t**e
-        return p
-        
-        
-
+        t, e = p.parent().gen(), min(p.exponents())
+        return p/t**e
         
 
 def good_exhaustion(link, max_failed_tries=20):
+    """
+    Uses a random search to try to find an Exhaustion with small width. 
+    """
     crossings = list(link.crossings)
     C = random.choice(crossings)
     crossings.remove(C)
@@ -206,30 +241,22 @@ def good_exhaustion(link, max_failed_tries=20):
     return E
 
 
+
+# --- code which will be removed in final version ---- 
+
+
+import spherogram, snappy
+import sys
+sys.path.append('/Users/dunfield/r')
+import knot_sample
+knot = knot_sample.knot_db.knot
+
 def get_data():
     file = open('knot_widths.csv', 'w')
     for i in range(3, 1001):
         width = good_exhaustion(knot(i))[0]//2
         file.write('%d, %d\n' % (i, width))
         file.flush()
-
-
-def test_meta_associativity():
-    def eval_merges(merges):
-        R = PolynomialRing(QQ, 'x', 49).fraction_field()
-        A = matrix(7, 7, R.gens())
-        for a, b in merges:
-            A = strand_matrix_merge(A, a, b)
-        return A
-
-    associative_merges =  [
-        ([(0,1), (0,1)], [(1,2), (0,1)]),
-        ([(0,1), (0,2)], [(1,3), (0,1)]),
-        ([(2,5), (2,3)], [(5,3), (2,3)])
-        ]
-    for m1, m2 in associative_merges:
-        assert eval_merges(m1) == eval_merges(m2)
-    
 
 def compare_one_knot(L):
     p0 = L.exterior().alexander_polynomial()
