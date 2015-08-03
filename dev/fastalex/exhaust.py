@@ -108,7 +108,7 @@ def test_meta_associativity():
     for m1, m2 in associative_merges:
         assert eval_merges(m1) == eval_merges(m2)
     
-
+        
 class DrorDatum(object):
     """
     The (omega, A) pair which is the invariant defined in the first column of 
@@ -140,7 +140,50 @@ class DrorDatum(object):
         self.A = strand_matrix_merge(A, a, b)
         indices.merge(cs_a, cs_b)
 
+# --- Alternate approach, which actually seems a bit slower --- 
 
+def strand_matrix_merge_alt(A, omega, a, b):
+    assert a != b
+    alpha, beta = A[a, a], A[a, b]
+    gamma, delta = A[b, a], A[b, b]
+    mu = 1 - beta/omega
+    theta, epsilon = A.row(a), A.row(b)
+    phi, psi = A.column(a), A.column(b)
+    A = mu*A + matrix(psi).transpose()*matrix(theta)/omega
+    i, j = min(a, b), max(a, b)
+    A[i] = mu*epsilon + delta*theta/omega
+    A[:, i] = mu*phi + alpha*psi/omega
+    A[i, i] = mu*gamma + alpha*delta/omega
+    A = A.delete_rows([j])
+    A = A.delete_columns([j])
+    return A
+
+class DrorDatumAlt(DrorDatum):
+    """
+    Store the pair (omega, A*omega) instead so that the matrix has
+    Laurent entries.  
+    """
+    def add_crossing(self, crossing):
+        indices = self.strand_indices
+        t = self.ring.gen()
+        a, b = entry_pts_ab(crossing)
+        n = self.A.nrows()
+        assert indices[a] == n and indices[b] == n + 1
+        T = t if crossing.sign == 1 else t**-1
+        B = matrix([[1, 1 - T], [0, T]])
+        self.A = block_diagonal_matrix([self.A, self.omega*B])
+
+    def merge(self, cs_a, cs_b):
+        indices, A, omega = self.strand_indices, self.A, self.omega
+        a, b = indices[cs_a], indices[cs_b]
+        if a == b:
+            raise ClosedComponentCreated
+        mu = 1 - A[a, b]/omega
+        self.A = strand_matrix_merge_alt(A, omega, a, b)
+        self.omega *= mu
+        indices.merge(cs_a, cs_b)
+
+# --- End alternate approach --- 
 
 def num_overlap(crossing, frontier):
     neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
@@ -196,7 +239,6 @@ class Exhaustion(object):
         for a, b in all_gluings[:-1]:
             indices.merge(a, b)
             
-
     def alexander_polynomial(self):
         D = DrorDatum(self.link, self.crossings)
         gluings = self.gluings[:]
@@ -238,7 +280,7 @@ def good_exhaustion(link, max_failed_tries=20):
         if E.width < E_best.width:
             E_best = E
         tries += 1
-    return E
+    return E_best
 
 
 
