@@ -282,44 +282,6 @@ def good_exhaustion(link, max_failed_tries=20):
         tries += 1
     return E_best
 
-
-
-# --- code which will be removed in final version ---- 
-
-
-import spherogram, snappy
-import sys
-sys.path.append('/Users/dunfield/r')
-import knot_sample
-knot = knot_sample.knot_db.knot
-
-def get_data():
-    file = open('knot_widths.csv', 'w')
-    for i in range(3, 1001):
-        width = good_exhaustion(knot(i))[0]//2
-        file.write('%d, %d\n' % (i, width))
-        file.flush()
-
-def compare_one_knot(L):
-    p0 = L.exterior().alexander_polynomial()
-    E = Exhaustion(L)
-    p1 = E.alexander_polynomial()
-    p0 = p1.parent()(p0)
-    ans = p0 == p1
-    if not ans:
-        print p0
-        print p1
-        print
-    return ans
-
-def test_knots():
-    for M in snappy.LinkExteriors(cusps=1):
-        print M.name(), compare_one_knot(M.link())
-
-def time_test_knot(i):
-    K = knot(i)
-    alexander(K)
-
 def alexander(K):
     c = len(K.crossings)
     if c < 100:
@@ -327,3 +289,41 @@ def alexander(K):
     else:
         E = good_exhaustion(K, max(20, 0.15*c))
     return E.alexander_polynomial()
+
+
+# --- code which will be removed in final version ---- 
+
+def test():
+    import spherogram, snappy
+    import sys
+    sys.path.append('/Users/dunfield/r')
+    import knot_sample
+    knot = knot_sample.knot_db.knot
+
+    def get_data():
+        file = open('knot_widths.csv', 'w')
+        for i in range(3, 1001):
+            width = good_exhaustion(knot(i))[0]//2
+            file.write('%d, %d\n' % (i, width))
+            file.flush()
+
+    def compare_one_knot(L):
+        p0 = L.exterior().alexander_polynomial()
+        E = Exhaustion(L)
+        p1 = E.alexander_polynomial()
+        p0 = p1.parent()(p0)
+        ans = p0 == p1
+        if not ans:
+            print p0
+            print p1
+            print
+        return ans
+
+    def test_knots():
+        for M in snappy.LinkExteriors(cusps=1):
+            print M.name(), compare_one_knot(M.link())
+
+    def time_test_knot(i):
+        K = knot(i)
+        alexander(K)
+
