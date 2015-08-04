@@ -261,7 +261,7 @@ class Exhaustion(object):
         if p.leading_coefficient() < 0:
             p = -p
         t, e = p.parent().gen(), min(p.exponents())
-        return p/t**e
+        return p//t**e
         
 
 def good_exhaustion(link, max_failed_tries=20):
