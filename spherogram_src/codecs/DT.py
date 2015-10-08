@@ -1,5 +1,7 @@
 from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
 from spherogram.links.links import CrossingEntryPoint
+from spherogram.codecs.Base64LikeDT import (
+    decode_base64_like_DT_code, encode_base64_like_DT_code)
 import string, sys
 
 python_major_version = sys.version_info[0]
@@ -562,6 +564,8 @@ class DTcodec(object):
             elif ord(dt[-1]) & 1<<7:
                 dt_bytes = bytearray(dt)
                 self.code, self.flips = self.unpack_signed_DT(dt)
+            elif dt[0] in '123456789':
+                self.code, self.flips = decode_base64_like_DT_code(dt)
             else:
                 parts = dt.split('.')
                 self.code = self.convert_alpha(parts[0])
@@ -650,6 +654,8 @@ class DTcodec(object):
         whether to include the 'DT:' header, whether to use the
         numerical or alphabetical format, and whether to use the
         extended form, which adds flip information for each crossing.
+        If flips is set to "auto", only include flips in large links
+        (>26 crossings).
 
         >>> from snappy import Manifold
         >>> d = DTcodec([(-6,-8,-2,-4)])
@@ -673,20 +679,27 @@ class DTcodec(object):
         """
         code = self.code
         result = 'DT:' if header else ''
+        chunks = [len(component) for component in code]
+        num_crossings = sum(chunks)
+        is_large = (num_crossings > 26)
+        if flips == 'auto':
+            flips = is_large
         if alphabetical:
-            chunks = [len(component) for component in code]
-            num_crossings = sum(chunks)
-            prefix_ints = [num_crossings, len(code)]
-            prefix_ints += chunks
-            code_ints = [x for component in code for x in component]
-            if num_crossings > 26:
-                raise ValueError(
-                    'Alphabetical DT codes require fewer than 26 crossings.')
-            alphacode = ''.join(tuple([DT_alphabet[n>>1] for n in code_ints]))
-            prefix = ''.join(tuple([DT_alphabet[n] for n in prefix_ints]))
-            if flips:
-                alphacode += '.' + ''.join([str(int(f)) for f in self.flips])
-            result += (prefix + alphacode)
+            if is_large:
+                if flips:
+                    result += encode_base64_like_DT_code(code, self.flips)
+                else:
+                    result += encode_base64_like_DT_code(code)
+            else:
+                prefix_ints = [num_crossings, len(code)]
+                prefix_ints += chunks
+                code_ints = [x for component in code for x in component]
+                alphacode = ''.join(tuple([DT_alphabet[n>>1]
+                                           for n in code_ints]))
+                prefix = ''.join(tuple([DT_alphabet[n] for n in prefix_ints]))
+                if flips:
+                    alphacode += '.' + ''.join([str(int(f)) for f in self.flips])
+                result += (prefix + alphacode)
         else:
             result += str(code)
             if flips:
