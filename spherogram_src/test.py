@@ -7,7 +7,8 @@ import spherogram.sage_helper as sage_helper
 import re, getopt, sys
 
 
-modules = [spherogram.codecs.DT, spherogram.graphs, spherogram.presentations,
+modules = [spherogram.codecs.DT, spherogram.codecs.Base64LikeDT,
+           spherogram.graphs, spherogram.presentations,
            spherogram.links.links, spherogram.links.links_base,
            spherogram.links.random_links, spherogram.links.orthogonal,
            spherogram.links.simplify, spherogram.links.invariants, spherogram.links.morse]
