@@ -1,20 +1,23 @@
 """
 This file implements base64-like encoding of DT codes.
 
-We use the following DT code as example here::
+We use the following DT code as an example here::
 
    >>> code = [(6, -8), (-10, 12), (-2, 4)]
 
-Associated to a DT code are the flips, here, which (up to
-mirroring) contain information redundant with the DT code, but which help
-accelerate the algorithm for laying out a link from a DT code. Here, the
-associated flips are::
+(To see the link determined by this code, and the way that the crossings
+are numbered, run the command Link('DT:[(6,-8),(-10,12),(-2,4)]').view()
+in SnapPy and select the "Info->DT Labels" menu item from the PLink window.)
+
+Associated to a DT code are the flips, which contain information about the signs
+of the crossings.  The flips can be deduced from the DT code, but the algorithm
+for laying out a link projection from a DT code runs faster if the flips are
+known in advance. Here, the associated flips are::
   
    >>> from spherogram import DTcodec
    >>> flips = DTcodec(code).flips
    >>> flips
    [False, True, False, True, True, False]
-
 
 To use the base64-like encoding (without or with flips)::
 
@@ -34,27 +37,28 @@ The base64-like encoding of DT codes is based on base64-like encoding used in
 Burton's isomorphism signatures ("base64-like" because two of the characters
 differ from the base64 encoding specified in RFC 1521).
 
-To encode an integer, we write it in base 64 and translate each base 64-digit
-to an ASCII character (see _base64LikeEncoding). We use big endian (with groups
-of 6 bits instead of bytes) and zero's complement.
+To encode an integer, we write it in base 64 and translate each base 64-digit to
+an ASCII character (see _base64LikeEncoding). We use big endian (with groups of
+6 bits instead of bytes) and zero's complement.
 
-The very first character of a base64-like encoded DT code is always capital and
-specifies the number of ASCII characters used to encode each integer. I.e.,
-A = 1 character, B = 2 characters... For the example above, it is "A" because
-the integer with the highest absolute value still (12) fits into 5 bits.
+The very first character of a base64-like encoding of a DT code is always a
+digit 1-9 which specifies the number of ASCII characters used to encode each of
+the (even) integer crossing labels.  For the example above, the first character
+is "1" because the crossing label with the highest absolute value, namely 12,
+fits into 5 bits.
 
-The next integer encoded as described above is the number of components, here 3.
+The next integer in the encoding specifies the number of components, here 3.
 
-This is followed by the encoding of each component which each consists of the
-length of each component followed by the numbers of the component itself.
+This is followed by the encodings of the components, each of which consists of
+the length of the component followed by the crossing labels associated to
+the component.
 
-So the integers encoded following the first letter "A" here are
-3 2 6 -8 2 -10 12 -2 4.
+In this example the encoded integers following the first character "1" are::
+3 2 6 -8 2 -10 12 2 -2 4.
 
-If there are flips, they are simply stored as bit field following the encoded
-integers above.
+If there are flips, they are simply stored as bit fields following the encoding
+of the last component.
 """
-
 
 _base64LikeEncoding = (
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-')
