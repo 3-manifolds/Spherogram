@@ -8,9 +8,6 @@ a PD diagram as described in
 See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
-
-no_snappy_msg = 'requires that SnapPy be installed.'
-
 from .. import graphs
 CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
@@ -278,8 +275,6 @@ def enumerate_lists(lists, n=0, filter=lambda x:True):
         n += len(L)
     return ans
 
-
-
 class Link(object):
     """
     Links are made from Crossings.  The general model is that of the PD
@@ -326,17 +321,10 @@ class Link(object):
                 from . import torus
                 crossings = torus.torus_knot(crossings).crossings
             else:
-                try:
-                    import snappy
-                    self.name = crossings
-                    ans = snappy.Manifold(self.name).link()
-                    build = False
-                    crossings = ans.crossings
-                    self.link_components = ans.link_components
-                except ImportError:
-                    raise RuntimeError('creating a Link object with argument of type str '+no_snappy_msg)
+                self.name = crossings
+                crossings = self._lookup_DT(crossings).PD_code()
         
-        #If crossings is just a PD code rather than a list of Crossings,
+        # If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
         if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
             gluings = collections.defaultdict(list)
@@ -371,6 +359,10 @@ class Link(object):
         if False not in [X.label is None for X in self.crossings]:
             for c, X in enumerate(self.crossings):
                 X.label = c
+
+    def _lookup_DT(self, name):
+        # This method is monkey-patched by snappy
+        raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
@@ -639,7 +631,7 @@ class Link(object):
         >>> L
         <Link L14n64110: 5 comp; 14 cross>
         >>> L.sublink([1,2,3,4])
-        <Link: 4 comp; 10 cross>
+        <Link: 4 comp; 6 cross>
         >>> comps = L.link_components
         >>> L.sublink([comps[0], comps[1]])
         <Link: 2 comp; 2 cross>
@@ -647,9 +639,9 @@ class Link(object):
         If you just want one component you can do this:
 
         >>> L = Link('L11a127')
-        >>> L.sublink(1)
+        >>> L.sublink(0)
         <Link: 1 comp; 7 cross>
-        >>> L.sublink(L.link_components[0])
+        >>> L.sublink(L.link_components[1])
         <Link: 0 comp; 0 cross>
 
         The last answer is because the second component is unknotted
@@ -762,6 +754,7 @@ class Link(object):
         return simplify.deconnect_sum(link)
     
     def exterior(self):
+        # This method is monkey-patched by snappy
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def __repr__(self):
