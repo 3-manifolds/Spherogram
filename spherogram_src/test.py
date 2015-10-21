@@ -13,7 +13,9 @@ modules = [spherogram.codecs.DT, spherogram.codecs.Base64LikeDT,
            spherogram.links.random_links, spherogram.links.orthogonal,
            spherogram.links.simplify, spherogram.links.invariants, spherogram.links.morse]
 
+# Apply the monkey-patches that snappy applies when it is imported.
 spherogram.links.links_base.Link.exterior = snappy._link_exterior
+spherogram.links.links_base.Link._lookup_DT = snappy._link_lookup_DT
 
 def run_doctests(verbose=False, print_info=True):
     snappy.number.Number._accuracy_for_testing = 8
