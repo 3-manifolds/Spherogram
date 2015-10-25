@@ -286,20 +286,6 @@ class Link(links_base.Link):
             return +1
         return -1
         
-    def _find_crossing(self, e):
-        """
-        Auxiliary function used by signature to find which
-        crossing corresponds to an edge in the black graph.
-        """
-        a=set(e[0])
-        b=set(e[1])
-        s=a.union(b)
-        for x in range(len(self.crossings)):
-            crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
-            total=set(crossings)
-            if total.issubset(s):
-                return self.crossings[x]
-
     @sage_method
     def black_graph(self):
         """
