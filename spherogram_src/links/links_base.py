@@ -107,7 +107,7 @@ class Crossing(object):
         return [CrossingEntryPoint(self, v) for v in verts]
 
     def crossing_strands(self):
-        return [CrossingEntryPoint(self, v) for v in range(4)]
+        return [CrossingStrand(self, v) for v in range(4)]
     
     def __setitem__(self, i, other):
         o, j = other
@@ -139,23 +139,23 @@ class Crossing(object):
 
         return ans
 
-BasicCrossingStrand = collections.namedtuple('BasicCrossingStrand', ['crossing', 'entry_point'])
+BasicCrossingStrand = collections.namedtuple('BasicCrossingStrand', ['crossing', 'strand_index'])
 
 class CrossingStrand(BasicCrossingStrand):
     """
-    One of the four incoming strands at a crossing.
+    One of the four strands of a crossing.
     """
     def rotate(self, s=1):
         """
         The CrossingStrand *counter-clockwise* from self.
         """
-        return CrossingStrand(self.crossing, (self.entry_point + s) % len(self.crossing.adjacent))
+        return CrossingStrand(self.crossing, (self.strand_index + s) % len(self.crossing.adjacent))
 
     def opposite(self):
         """
         The CrossingStrand at the other end of the edge from self
         """
-        return CrossingStrand(* self.crossing.adjacent[self.entry_point] )
+        return CrossingStrand(* self.crossing.adjacent[self.strand_index] )
 
     def next_corner(self):
         return self.rotate().opposite()
@@ -164,40 +164,40 @@ class CrossingStrand(BasicCrossingStrand):
         return self.opposite().rotate(-1)
 
     def strand_label(self):
-        return self.crossing.strand_labels[self.entry_point]
+        return self.crossing.strand_labels[self.strand_index]
 
     def oriented(self):
         """
         Returns the one of {self, opposite} which is the *head* of the
         corresponding oriented edge of the link.
         """
-        c, e = self.crossing, self.entry_point
+        c, e = self.crossing, self.strand_index
         if (c.sign == 1 and e in [0, 3]) or (c.sign == -1 and e in [0, 1]):
             return self
         return self.opposite()
 
     def __repr__(self):
-        return "<CS %s, %s>" % (self.crossing, self.entry_point)
+        return "<CS %s, %s>" % (self.crossing, self.strand_index)
     
 class CrossingEntryPoint(CrossingStrand):
     """
     One of the two entry points of an oriented crossing
     """    
     def next(self):
-        c, e = self.crossing, self.entry_point
+        c, e = self.crossing, self.strand_index
         s = 1 if isinstance(c, Strand) else 2
         return CrossingEntryPoint(*c.adjacent[ (e + s) % (2*s)])
 
     def other(self):
         nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
-        other = nonzero_entry_point if self.entry_point == 0 else 0
+        other = nonzero_entry_point if self.strand_index == 0 else 0
         return CrossingEntryPoint(self.crossing, other)
 
     def is_under_crossing(self):
-        return self.entry_point == 0
+        return self.strand_index == 0
 
     def is_over_crossing(self):
-        return self.entry_point != 0
+        return self.strand_index != 0
         
     def component(self):
         ans = [self]
@@ -211,16 +211,16 @@ class CrossingEntryPoint(CrossingStrand):
         return ans
 
     def component_label(self):
-        return self.crossing.strand_components[self.entry_point]      
+        return self.crossing.strand_components[self.strand_index]      
 
     def label_crossing(self, comp, labels):
-        c, e = self.crossing, self.entry_point
+        c, e = self.crossing, self.strand_index
         f = (e + 2) % 4
         c.strand_labels[e], c.strand_components[e] = labels[self], comp
         c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
 
     def __repr__(self):
-        return "<CEP %s, %s>" % (self.crossing, self.entry_point)
+        return "<CEP %s, %s>" % (self.crossing, self.strand_index)
         
 
 class LinkComponents(list):
@@ -463,7 +463,7 @@ class Link(object):
         G = graphs.Digraph()
         for component in self.link_components:
             for c in component:
-                cs0 = CrossingStrand(c.crossing, c.entry_point)
+                cs0 = CrossingStrand(c.crossing, c.strand_index)
                 cs1 = cs0.opposite()
                 e = G.add_edge(cs0.crossing, cs1.crossing)
         return G
@@ -881,7 +881,7 @@ class Link(object):
             return new_crossings[C], (c + C.sign) % 4
 
         for A in self.crossings:
-            entry_points = [CEP.entry_point for CEP in A.entry_points()]
+            entry_points = [CEP.strand_index for CEP in A.entry_points()]
             for a in entry_points:
                 B, b = A.adjacent[a]
                 B_new, b_new = convert(B, b)

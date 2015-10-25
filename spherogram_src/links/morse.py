@@ -76,7 +76,7 @@ def morse_via_LP(link, solver='GLPK'):
     for c in link.crossings:
         LP.add_constraint(hor_cross[c] + vert_cross[c] == 1)
         for ce in c.entry_points():
-            s = CrossingStrand(c, ce.entry_point)
+            s = CrossingStrand(c, ce.strand_index)
             t = s.opposite()
             LP.add_constraint( flat_edge[s] == flat_edge[t] )
             LP.add_constraint( flat_edge[s] + large_edge[s] + large_edge[t] == 1 )
@@ -84,7 +84,7 @@ def morse_via_LP(link, solver='GLPK'):
     for i, face in enumerate(faces):
         eqn = 0
         for cs in face:
-            flat = hor_cross if cs.entry_point % 2 == 0 else vert_cross
+            flat = hor_cross if cs.strand_index % 2 == 0 else vert_cross
             eqn += flat[cs.crossing] + flat_edge[cs] + 2*large_edge[cs]
         LP.add_constraint(eqn == (2*len(face) - 2 + 4*exterior[i]))
 
@@ -341,7 +341,7 @@ class MorseLinkDiagram(object):
             a, b = self.strands_below(c)
             i, j = to_index(a), to_index(b)
             assert i < j
-            cross = (i, j) if a.entry_point % 2 == 1 else (j, i)
+            cross = (i, j) if a.strand_index % 2 == 1 else (j, i)
             cross_data.append( (self.heights[c], cross) )
         cross_data.sort()
         

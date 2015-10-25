@@ -127,7 +127,7 @@ def possible_type_III_moves(link):
     ans = []
     for face in link.faces():
         if len(face) == 3:
-            if sum(ce.entry_point % 2 for ce in face) in [1, 2]:
+            if sum(ce.strand_index % 2 for ce in face) in [1, 2]:
                 while(face[1][1]% 2 != 0 or face[2][1]% 2 != 1):    # renumber face_list
                     face = [face[1], face[2], face[0]]
                 if len(set([e.crossing for e in face])) == 3:  # No repeated crossings
@@ -146,7 +146,7 @@ def reidemeister_III(link, triple):
     update its lists of link components.
     """
     A, B, C = [t.crossing for t in triple]
-    a, b, c =  [t.entry_point for t in triple]
+    a, b, c =  [t.strand_index for t in triple]
     # We insert Strands around the border of the triple to make the code more
     # transparent and eliminate some special cases.
     old_border =  [(C, c-1), (C, c-2), (A, a-1), (A, a-2), (B, b-1), (B, b-2)]
@@ -337,13 +337,13 @@ def strand_pickup(link,overcrossingstrand):
             loose1 = toremove.rotate(1).opposite()
             loose2 = toremove.rotate(3).opposite()
 
-            lc1, lc1ep = loose1.crossing, loose1.entry_point
-            lc2, lc2ep = loose2.crossing, loose2.entry_point
+            lc1, lc1ep = loose1.crossing, loose1.strand_index
+            lc2, lc2ep = loose2.crossing, loose2.strand_index
 
             while lc1 not in newcrossings:
-                lc1, lc1ep = lc1.rotate(2).opposite().crossing, lc1.rotate(2).opposite().entry_point
+                lc1, lc1ep = lc1.rotate(2).opposite().crossing, lc1.rotate(2).opposite().strand_index
             while lc2 not in newcrossings:
-                lc2, lc2ep = lc2.rotate(2).opposite().crossing, lc2.rotate(2).opposite().entry_point
+                lc2, lc2ep = lc2.rotate(2).opposite().crossing, lc2.rotate(2).opposite().strand_index
             lc1[lc1ep] = lc2[lc2ep]
             newcrossings.remove(toremove.crossing)
             toremove = toremove.next()
@@ -374,16 +374,16 @@ def strand_pickup(link,overcrossingstrand):
 
             for i in first:
                 if i == nextedge.interface[0] or i == nextedge.interface[1]:
-                    lec, lecep = looseend.crossing, looseend.entry_point
+                    lec, lecep = looseend.crossing, looseend.strand_index
                     crossingtoadd[1] = lec[lecep]
-                    ic,icep = i.crossing,i.entry_point
-                    ico,icoep = i.opposite().crossing, i.opposite().entry_point
+                    ic,icep = i.crossing,i.strand_index
+                    ico,icoep = i.opposite().crossing, i.opposite().strand_index
                     while ic not in newcrossings:
                         temp = ic.crossing_strands()[icep]
-                        ic,icep = temp.rotate(2).opposite().crossing,temp.rotate(2).opposite().entry_point
+                        ic,icep = temp.rotate(2).opposite().crossing,temp.rotate(2).opposite().strand_index
                     while ico not in newcrossings:
                         temp = ico.crossing_strands()[icoep]
-                        ico,icoep = temp.rotate(2).opposite().crossing,temp.rotate(2).opposite().entry_point
+                        ico,icoep = temp.rotate(2).opposite().crossing,temp.rotate(2).opposite().strand_index
 
                     crossingtoadd[2] = ic[icep]
                     crossingtoadd[0] = ico[icoep]
@@ -393,8 +393,8 @@ def strand_pickup(link,overcrossingstrand):
             looseend = crossingtoadd.crossing_strands()[3]
             newcrossings.append(crossingtoadd)
 
-        lec, lecep = looseend.crossing, looseend.entry_point
-        ec, ecep = endpoint.crossing, endpoint.entry_point
+        lec, lecep = looseend.crossing, looseend.strand_index
+        ec, ecep = endpoint.crossing, endpoint.strand_index
         ec[ecep] = lec[lecep]
         return Link(newcrossings), crossingsremoved
 
@@ -428,9 +428,9 @@ def random_reverse_type_I(link,label):
 
     cs2 = cs1.opposite()
     D[2] = D[3]
-    cs1ec, cs1cep = cs1.crossing, cs1.entry_point
+    cs1ec, cs1cep = cs1.crossing, cs1.strand_index
     D[0] = cs1ec[cs1cep]
-    cs2ec, cs2cep = cs2.crossing, cs2.entry_point
+    cs2ec, cs2cep = cs2.crossing, cs2.strand_index
     D[1] = cs2ec[cs2cep]
     
     D.rotate(random.randint(0,1)) #choose whether over or under crossing
@@ -447,10 +447,10 @@ def random_reverse_type_II(link, label1, label2):
             break
     c, d = random.sample(face,2)
     new1, new2 = Crossing(label1), Crossing(label2)    
-    c_cross, c_ep = c.crossing, c.entry_point
-    cop_cross, cop_ep = c.opposite().crossing, c.opposite().entry_point
-    d_cross, d_ep = d.crossing, d.entry_point
-    dop_cross, dop_ep = d.opposite().crossing, d.opposite().entry_point
+    c_cross, c_ep = c.crossing, c.strand_index
+    cop_cross, cop_ep = c.opposite().crossing, c.opposite().strand_index
+    d_cross, d_ep = d.crossing, d.strand_index
+    dop_cross, dop_ep = d.opposite().crossing, d.opposite().strand_index
     new1[2], new1[3] = new2[0], new2[3]
     new1[0], new1[1] = dop_cross[dop_ep], c_cross[c_ep]
     new2[1], new2[2] = cop_cross[cop_ep], d_cross[d_ep]

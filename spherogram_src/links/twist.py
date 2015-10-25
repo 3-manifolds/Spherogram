@@ -10,7 +10,7 @@ class  TwistRegionCap:
         self.cs = crossing_strand
 
     def sign(self):
-        return self.cs.entry_point % 2
+        return self.cs.strand_index % 2
 
     def swap_crossing(self):
         self.cs.crossing.rotate_by_90()

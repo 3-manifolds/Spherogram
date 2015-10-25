@@ -421,10 +421,10 @@ def subdivide_edge(crossing_strand, n):
         head = head.opposite()
     tail = head.opposite()
     strands = [Strand() for i in range(n)]
-    strands[0][0] = tail.crossing[tail.entry_point]
+    strands[0][0] = tail.crossing[tail.strand_index]
     for i in range(n - 1):
         strands[i][1] = strands[i+1][0]
-    strands[-1][1] = head.crossing[head.entry_point]
+    strands[-1][1] = head.crossing[head.strand_index]
 
         
 class OrthogonalLinkDiagram(list):
