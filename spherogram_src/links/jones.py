@@ -102,10 +102,47 @@ def _edge_sign(K, edge):
         return +1
     return -1
 
-def _Jones_contrib_edge(K, G, T, e, A):
+def _old_Jones_contrib_edge(K, G, T, e, A):
     "Returns the contribution to the Jones polynomial of the specified tree T and edge e."
     #Need to also take crossing sign into account -- A -> 1/A in negative case.
     s = _edge_sign(K,e)
+    if is_internally_active(G,T,e):
+        return -A**(-3*s)
+    if (e in T.edges()) and (not is_internally_active(G,T,e)):
+        return A**s
+    if is_externally_active(G,T,e):
+        return -A**(3*s)
+    if (not e in T.edges()) and (not is_externally_active(G,T,e)):
+        return A**(-1*s)
+    
+def _old_Jones_contrib(K, G, T, A):
+    "Returns the contribution to the Jones polynomial of the tree T. G should be self.black_graph()."
+    answer = 1
+    # 2 loops, edges in T and edges not in T
+    for e in G.edges():
+        answer = answer*_old_Jones_contrib_edge(K,G,T,e,A)
+    return answer
+
+def old_Jones_poly(K,variable=None):
+    if not variable:
+        variable = var('q')
+    answer = 0
+    A = var('A')
+    G = K.black_graph()
+    for T in G.spanning_trees():
+        answer = answer + _old_Jones_contrib(K,G,T,A)
+    answer = answer * (-A)**(3*K.writhe())
+    answer = answer.expand()
+    #Python doesn't deal well with rational powers, so renormalizing (divide exponents by 4) is a pain. (Sage would do this fine.)
+    ans = 0
+    for [coeff, exp] in answer.coefficients():
+        ans = ans + coeff*(variable**(exp/4))
+    return ans
+
+def _Jones_contrib_edge(K, G, T, e, A):
+    "Returns the contribution to the Jones polynomial of the specified tree T and edge e."
+    #Need to also take crossing sign into account -- A -> 1/A in negative case.
+    s = e[2]['sign']
     if is_internally_active(G,T,e):
         return -A**(-3*s)
     if (e in T.edges()) and (not is_internally_active(G,T,e)):
@@ -128,7 +165,7 @@ def Jones_poly(K,variable=None):
         variable = var('q')
     answer = 0
     A = var('A')
-    G = K.black_graph()
+    G = K.white_graph()
     for T in G.spanning_trees():
         answer = answer + _Jones_contrib(K,G,T,A)
     answer = answer * (-A)**(3*K.writhe())
