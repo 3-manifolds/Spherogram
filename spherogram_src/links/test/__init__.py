@@ -240,17 +240,17 @@ class TestLinkFunctions(unittest.TestCase):
         self.assertEqual(self.L7a3.determinant(method='color'),   16)
         self.assertEqual(self.L7a3.determinant(method='goeritz'), 16)
 
-    def testBlackGraph(self):
+    def testWhiteGraph(self):
         repeat = 3
         while repeat > 0:
             k1 = self.random_knot()
-            self.assert_(k1.black_graph().is_planar())
+            self.assert_(k1.white_graph().is_planar())
             repeat-=1
 
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
-            self.assert_(k2.black_graph().is_planar())
+            self.assert_(k2.white_graph().is_planar())
             repeat-=1
 
 def run():
