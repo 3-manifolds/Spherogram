@@ -411,11 +411,12 @@ class Link(links_base.Link):
         Goeritz matrix of the white graph.
 
             sage: K=Link('5_1')           
-            sage: K.black_graph()
+            sage: K.white_graph()
             Subgraph of (): Multi-graph on 2 vertices
         """
         # Map corners (i.e. CrossingStrands) to faces.
         face_of = dict((corner, n) for n, face in enumerate(self.faces()) for corner in face) 
+
         # Create the edges, labeled with crossing and sign.
         edges = []
         for c in self.crossings:
@@ -423,6 +424,7 @@ class Link(links_base.Link):
                           {'crossing':c, 'sign':1}))
             edges.append((face_of[CrossingStrand(c, 1)], face_of[CrossingStrand(c, 3)],
                           {'crossing':c, 'sign':-1}))
+
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
@@ -446,7 +448,7 @@ class Link(links_base.Link):
         for e in G.edges():
             i, j = vertex[e[0]], vertex[e[1]]
             m[(i,j)] = m[(j,i)] = m[(i,j)] + e[2]['sign']
-        for i in range(N):
+        for i in xrange(N):
             m[(i,i)] = -sum(m.column(i))
         m = m.delete_rows([0]).delete_columns([0])
         if return_graph:
