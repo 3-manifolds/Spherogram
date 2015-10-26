@@ -383,6 +383,8 @@ class Link(links_base.Link):
     @sage_method
     def white_graph(self):
         """
+        Return the white graph of a non-split link projection.
+
         This method generates a multigraph whose vertices correspond
         to the faces of the diagram, with an edge joining two
         vertices whenever the corresponding faces contain opposite
@@ -390,25 +392,22 @@ class Link(links_base.Link):
         vertex corresponding to a face is the index of the face in the
         list returned by Link.faces().
 
-        This method *should* follow the conventions of "Gordon,
-        C. McA. and Litherland, R. A, 'On the signature of a link',
-        Inventiones math. 47, 23-69 (1978)". Doing so would mean that
-        in a checkerboard coloring of a link diagram the unbounded
-        region is always the first white region. Thus this method
-        *should* return the component containing the unbounded region.
+        According to the conventions of "Gordon, C. McA. and
+        Litherland, R. A, 'On the signature of a link', Inventiones
+        math. 47, 23-69 (1978)", in a checkerboard coloring of a link
+        diagram the unbounded region is always the first white region.
+        Of course, the choice of which region is unbounded is
+        arbitrary; it is just a matter of which region on S^2 contains
+        the point at infinity.  In this method an equivalent arbitrary
+        choice is made by just returning the second component of the
+        multigraph, as determined by Graph.connected_components().
+        (Empirically, the second component tends to be smaller than
+        the first.)
 
-        What the method actually does is to return the subgraph
-        corresponding to the second component in the list of all
-        components, as produced by Graph.components().  The resulting
-        component may (e.g. for 5_1) or may not (e.g. for 8_2) contain
-        the vertex corresponding to the unbounded component.  If the
-        diagram is split this method will return either the white
-        graph for the entire diagram or the black graph for an
-        arbitrarily chosen component.  So it is not reliable for split
-        diagrams.  It is OK for computing the signature of a non-split
-        diagram since the Gordon-Litherland algorithm produces the same
-        value from the Goeritz matrix of the black graph as from the
-        Goeritz matrix of the white graph.
+        Note that this may produce a meaningless result in the case of
+        a split link diagram.  Consequently if the diagram is split,
+        i.e if the multigraph has more than 2 components, a ValueError
+        is raised.
 
             sage: K=Link('5_1')           
             sage: K.white_graph()
@@ -428,6 +427,8 @@ class Link(links_base.Link):
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
+        if len(components) > 2:
+            raise ValueError, 'The link diagram is split.'
         return G.subgraph(components[1])
 
     @sage_method      
