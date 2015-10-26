@@ -5,7 +5,7 @@ and Jennet Dickinson.
 """
 
 from . import links_base
-from .links_base import Crossing, Strand
+from .links_base import Crossing, Strand, CrossingStrand
 from ..sage_helper import _within_sage, sage_method
 
 if _within_sage:
@@ -17,7 +17,8 @@ if _within_sage:
     import sage.graphs.graph as graph
     from sage.symbolic.ring import var
     from sage.groups.braid import Braid, BraidGroup
-    from sage.all import ZZ
+    from sage.all import ZZ, QQ
+    from sage.quadratic_forms.quadratic_form import QuadraticForm
 else:
     pass 
 
@@ -324,9 +325,8 @@ class Link(links_base.Link):
         G=G.subgraph(component)
         return G
 
-
     @sage_method      
-    def goeritz_matrix(self):
+    def old_goeritz_matrix(self):
         """
         Finds the black graph of a knot, and from that, returns the Goeritz
         matrix of that knot::
@@ -350,7 +350,7 @@ class Link(links_base.Link):
         return m
 
     @sage_method
-    def signature(self):
+    def old_signature(self):
         """
         Returns the signature of the link.  Examples::
         
@@ -368,7 +368,7 @@ class Link(links_base.Link):
             v = e[2]
             if self._edge_sign(e) == v.sign:
                 answer = answer + v.sign
-        m=self.goeritz_matrix()
+        m=self.old_goeritz_matrix()
         vals=m.eigenvalues()
         pos=0
         neg=0
@@ -379,6 +379,99 @@ class Link(links_base.Link):
                 neg+=1
         sig=pos-neg+answer
         return sig
+
+    @sage_method
+    def white_graph(self):
+        """
+        This method generates a multigraph whose vertices correspond
+        to the faces of the diagram, with an edge joining two
+        vertices whenever the corresponding faces contain opposite
+        corners at some crossing.  To avoid hashability issues, the
+        vertex corresponding to a face is the index of the face in the
+        list returned by Link.faces().
+
+        This method *should* follow the conventions of "Gordon,
+        C. McA. and Litherland, R. A, 'On the signature of a link',
+        Inventiones math. 47, 23-69 (1978)". Doing so would mean that
+        in a checkerboard coloring of a link diagram the unbounded
+        region is always the first white region. Thus this method
+        *should* return the component containing the unbounded region.
+
+        What the method actually does is to return the subgraph
+        corresponding to the second component in the list of all
+        components, as produced by Graph.components().  The resulting
+        component may (e.g. for 5_1) or may not (e.g. for 8_2) contain
+        the vertex corresponding to the unbounded component.  If the
+        diagram is split this method will return either the white
+        graph for the entire diagram or the black graph for an
+        arbitrarily chosen component.  So it is not reliable for split
+        diagrams.  It is OK for computing the signature of a non-split
+        diagram since the Gordon-Litherland algorithm produces the same
+        value from the Goeritz matrix of the black graph as from the
+        Goeritz matrix of the white graph.
+
+            sage: K=Link('5_1')           
+            sage: K.black_graph()
+            Subgraph of (): Multi-graph on 2 vertices
+        """
+        # Map corners (i.e. CrossingStrands) to faces.
+        face_of = dict((corner, n) for n, face in enumerate(self.faces()) for corner in face) 
+        # Create the edges, labeled with crossing and sign.
+        edges = []
+        for c in self.crossings:
+            edges.append((face_of[CrossingStrand(c, 0)], face_of[CrossingStrand(c, 2)],
+                          {'crossing':c, 'sign':1}))
+            edges.append((face_of[CrossingStrand(c, 1)], face_of[CrossingStrand(c, 3)],
+                          {'crossing':c, 'sign':-1}))
+        # Build the graph.
+        G = graph.Graph(edges, multiedges=True)
+        components = G.connected_components()
+        return G.subgraph(components[1])
+
+    @sage_method      
+    def goeritz_matrix(self, return_graph=False):
+        """
+        Call self.white_graph() and return the Goeritz matrix of the result.
+        If the return_graph flag is set, also return the graph.
+        
+            sage: K=Link('4_1')
+            sage: abs(K.goeritz_matrix().det())
+            5
+        """
+        G = self.white_graph()
+        V = G.vertices()
+        N = len(V)
+        m = matrix(N,N)
+        vertex = dict((v, n) for n, v in enumerate(V))
+        for e in G.edges():
+            i, j = vertex[e[0]], vertex[e[1]]
+            m[(i,j)] = m[(j,i)] = m[(i,j)] + e[2]['sign']
+        for i in range(N):
+            m[(i,i)] = -sum(m.column(i))
+        m = m.delete_rows([0]).delete_columns([0])
+        if return_graph:
+            return m, G
+        else:
+            return m
+
+    @sage_method
+    def signature(self):
+        """
+        Returns the signature of the link, computed from the Goeritz matrix using
+        the algorithm of Gordon and Litherland.
+
+            sage: K = Link('4a1')            
+            sage: K.signature()          
+            0
+            sage: L = Link('9^3_12')
+            sage: Lbar = L.mirror()
+            sage: L.signature() + Lbar.signature()
+            0
+        """
+        m, G = self.goeritz_matrix(return_graph=True)
+        correction = sum([e[2]['sign'] for e in G.edges()
+                          if e[2]['sign'] == e[2]['crossing'].sign])
+        return QuadraticForm(QQ, m).signature() + correction
 
     @sage_method
     def _colorability_matrix(self):
