@@ -26,11 +26,6 @@ else:
 
 def normalize_alex_poly(p,t):
     # Normalize the sign of the leading coefficient 
-#    l = p
-#    for v in t:
-#        l = l.leading_coefficient(v)
-#        leading_exponents = max(
-#        l = l.coefficient(v)
 
     if len(t)==1:
         l = p.coefficients()[-1]
@@ -49,11 +44,10 @@ def normalize_alex_poly(p,t):
         p = p*(t[0]**c)
     else:
         for i in range(len(t)):
-            #        exps = [x[1] for x in p.coefficients(t[i])]
             exps = map(lambda x: x[i], p.exponents())
             a = max(exps)
             b = min(exps)
-            c = -1*(a+b)/ZZ(2)
+            c = ZZ(-1*(a+b)/2)
             p = p*(t[i]**c)
     return p
 
@@ -210,23 +204,17 @@ class Link(links_base.Link):
         num_gens = len(G.gens())
 
         L_g = LaurentPolynomialRing(QQ,['g%d' % (i+1) for i in range(num_gens)])
-#        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
         g = list(L_g.gens())
 
         if(mv):
             L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
             t = list(L_t.gens())
-#            t = list(var('t%d' % (i+1)) for i in range(0,comp))
         else:
             L_t = LaurentPolynomialRing(QQ,'t')
             t = L_t.gen()
-#            t = [var('t')]*comp
 
-#        import sage.symbolic.relation as rel
-
-#        eq = [y(g) == 1 for y in G.relations()]
         #substitute in laurent variables into relations of G, get ratios 
-        reduced_rels = [y(g) for y in G.relations()]
+        reduced_rels = [y(g) for y in G.relations() if y(g) != 1]
         #shows which variables are equal
         var_pairs = map(lambda x: x.variables(), reduced_rels)
         #grouping variables into groups by equality, by making into conn comp
@@ -234,29 +222,28 @@ class Link(links_base.Link):
         var_graph = Graph(var_pairs)
         conn_comps = var_graph.connected_components()
         g_to_t_dict = {}
+
         for n,conn_comp in enumerate(conn_comps):
             for v in conn_comp:
                 if mv:
                     g_to_t_dict[v]=t[n]
                 else:
                     g_to_t_dict[v]=t
-            
+        n = len(conn_comps)
         
-#        solns = rel.solve(eq,g, solution_dict=True)
-#        r = list(set([solns[0][h] for h in g]))
-#        dict1 = dict([(r[i],t[i]) for i in range(len(t))])
-
-#        for i in range(len(g)):
-#            g[i] = g[i].subs(solns[0]).subs(dict1)
         for i in range(len(g)):
-            g[i] = g_to_t_dict[g[i]]
+            if g[i] in g_to_t_dict:
+                g[i] = g_to_t_dict[g[i]]
+            else:
+                g[i] = t[n]
+                n += 1
 
         B = G.alexander_matrix(g)
 
         return (B,g)
 
     @sage_method
-    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
+    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True, factored = True):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
@@ -292,12 +279,6 @@ class Link(links_base.Link):
                 L = LaurentPolynomialRing(QQ,'t')
                 t = [L.gen()]
 
-
-#            if(multivar):
-#                t = list(var('t%d' % (i+1)) for i in range(0,comp))
-#            else:
-#                t = [var('t')]
-
             M = self.alexander_matrix(mv=multivar)
             C = M[0]
             m = C.nrows()
@@ -309,7 +290,7 @@ class Link(links_base.Link):
                 
             subMatrix = C[0:k,0:k]
             p = subMatrix.determinant()
-
+            if p == 0: return 0
             if multivar:
                 t_i = M[1][-1]
                 p = (p.factor())/(t_i-1)
@@ -317,13 +298,12 @@ class Link(links_base.Link):
 
             if(norm):
                 p = normalize_alex_poly(p,t)
-#                p = p/(p.coefficients()[-1])
 
             if v != 'no':
                 dict1 = dict([(t[i],v[i]) for i in range(len(t))])
                 return p.subs(dict1)
                 
-            if multivar: # it's easier to view this way
+            if multivar and factored: # it's easier to view this way
                 return p.factor()
             else:
                 return p
