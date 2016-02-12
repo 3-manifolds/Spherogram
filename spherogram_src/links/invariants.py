@@ -18,23 +18,43 @@ if _within_sage:
     from sage.symbolic.ring import var
     from sage.groups.braid import Braid, BraidGroup
     from sage.all import ZZ, QQ
+    from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
+    from sage.graphs.graph import Graph 
     from sage.quadratic_forms.quadratic_form import QuadraticForm
 else:
     pass 
 
 def normalize_alex_poly(p,t):
     # Normalize the sign of the leading coefficient 
-    l = p
-    for v in t:
-        l = l.leading_coefficient(v)
+#    l = p
+#    for v in t:
+#        l = l.leading_coefficient(v)
+#        leading_exponents = max(
+#        l = l.coefficient(v)
+
+    if len(t)==1:
+        l = p.coefficients()[-1]
+    else:
+        leading_exponents = max(p.exponents())
+        leading_monomial = reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
+        l = p.monomial_coefficient(leading_monomial)
+    
     if l < 0:
-        p = -p            
-    for i in range(0,len(t)):
-        exps = [x[1] for x in p.coefficients(t[i])]
+        p = -p
+    if len(t) == 1:
+        exps = p.exponents()
         a = max(exps)
         b = min(exps)
         c = -1*(a+b)/ZZ(2)
-        p = p*(t[i]**c)
+        p = p*(t[0]**c)
+    else:
+        for i in range(len(t)):
+            #        exps = [x[1] for x in p.coefficients(t[i])]
+            exps = map(lambda x: x[i], p.exponents())
+            a = max(exps)
+            b = min(exps)
+            c = -1*(a+b)/ZZ(2)
+            p = p*(t[i]**c)
     return p
 
 def braidword_to_crossings(braidword):
@@ -187,35 +207,53 @@ class Link(links_base.Link):
             mv = False
 
         G = self.knot_group()
-        B = G.alexander_matrix()
-        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
+        num_gens = len(G.gens())
+
+        L_g = LaurentPolynomialRing(QQ,['g%d' % (i+1) for i in range(num_gens)])
+#        g = list(var('g%d' % (i+1)) for i in range(len(G.gens())))
+        g = list(L_g.gens())
 
         if(mv):
-            t = list(var('t%d' % (i+1)) for i in range(0,comp))
+            L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
+            t = list(L_t.gens())
+#            t = list(var('t%d' % (i+1)) for i in range(0,comp))
         else:
-            t = [var('t')]*comp
+            L_t = LaurentPolynomialRing(QQ,'t')
+            t = L_t.gen()
+#            t = [var('t')]*comp
 
-        import sage.symbolic.relation as rel
+#        import sage.symbolic.relation as rel
 
-        eq = [y(g) == 1 for y in G.relations()]
-        solns = rel.solve(eq,g, solution_dict=True)
-        r = list(set([solns[0][h] for h in g]))
-        dict1 = dict([(r[i],t[i]) for i in range(len(t))])
+#        eq = [y(g) == 1 for y in G.relations()]
+        #substitute in laurent variables into relations of G, get ratios 
+        reduced_rels = [y(g) for y in G.relations()]
+        #shows which variables are equal
+        var_pairs = map(lambda x: x.variables(), reduced_rels)
+        #grouping variables into groups by equality, by making into conn comp
+        #of the graph of pairs of variables
+        var_graph = Graph(var_pairs)
+        conn_comps = var_graph.connected_components()
+        g_to_t_dict = {}
+        for n,conn_comp in enumerate(conn_comps):
+            for v in conn_comp:
+                if mv:
+                    g_to_t_dict[v]=t[n]
+                else:
+                    g_to_t_dict[v]=t
+            
+        
+#        solns = rel.solve(eq,g, solution_dict=True)
+#        r = list(set([solns[0][h] for h in g]))
+#        dict1 = dict([(r[i],t[i]) for i in range(len(t))])
 
+#        for i in range(len(g)):
+#            g[i] = g[i].subs(solns[0]).subs(dict1)
         for i in range(len(g)):
-            g[i] = g[i].subs(solns[0]).subs(dict1)
+            g[i] = g_to_t_dict[g[i]]
 
-        m = B.nrows()
-        n = B.ncols()
-        C = matrix(SR,m,n)
+        B = G.alexander_matrix(g)
 
-        for i in range(n):
-            for j in range(m):
-                for k in B[j,i].terms():
-                    x = k.leading_item()
-                    C[j,i] = C[j,i] + x[1]*x[0](g)
-
-        return (C,g)
+        return (B,g)
 
     @sage_method
     def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True):
@@ -248,9 +286,17 @@ class Link(links_base.Link):
                 multivar = False
 
             if(multivar):
-                t = list(var('t%d' % (i+1)) for i in range(0,comp))
+                L = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
+                t = list(L.gens())
             else:
-                t = [var('t')]
+                L = LaurentPolynomialRing(QQ,'t')
+                t = [L.gen()]
+
+
+#            if(multivar):
+#                t = list(var('t%d' % (i+1)) for i in range(0,comp))
+#            else:
+#                t = [var('t')]
 
             M = self.alexander_matrix(mv=multivar)
             C = M[0]
@@ -267,9 +313,11 @@ class Link(links_base.Link):
             if multivar:
                 t_i = M[1][-1]
                 p = (p.factor())/(t_i-1)
+                p = p.expand()
 
             if(norm):
-                p = normalize_alex_poly(p.expand(),t)
+                p = normalize_alex_poly(p,t)
+#                p = p/(p.coefficients()[-1])
 
             if v != 'no':
                 dict1 = dict([(t[i],v[i]) for i in range(len(t))])
@@ -278,7 +326,7 @@ class Link(links_base.Link):
             if multivar: # it's easier to view this way
                 return p.factor()
             else:
-                return p.expand()
+                return p
         
     def _edge_sign(K, edge):
         "Returns the sign (+/- 1) associated to given edge in the black graph."
