@@ -219,7 +219,7 @@ class Link(links_base.Link):
         var_pairs = map(lambda x: x.variables(), reduced_rels)
         #grouping variables into groups by equality, by making into conn comp
         #of the graph of pairs of variables
-        var_graph = Graph(var_pairs)
+        var_graph = Graph(var_pairs, multiedges=True)
         conn_comps = var_graph.connected_components()
         g_to_t_dict = {}
 
@@ -243,14 +243,14 @@ class Link(links_base.Link):
         return (B,g)
 
     @sage_method
-    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True, factored = True):
+    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True, factored = False):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
 
             sage: K = Link('4_1')
             sage: K.alexander_poly()
-            t + 1/t - 3
+            t^-1 - 3 + t
             sage: K.alexander_poly(v=[4])
             5/4
             
