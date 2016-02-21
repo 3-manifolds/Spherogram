@@ -25,30 +25,30 @@ else:
     pass 
 
 def normalize_alex_poly(p,t):
-    # Normalize the sign of the leading coefficient 
+    # Normalize the sign of the leading coefficient and make all exponents
+    #positive
 
-    if len(t)==1:
-        l = p.coefficients()[-1]
-    else:
-        leading_exponents = max(p.exponents())
-        leading_monomial = reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
-        l = p.monomial_coefficient(leading_monomial)
+
+    if len(t) == 1:
+        p = p*(t[0]**(-min(p.exponents())))
+        if p.coefficients()[-1]<0:
+            p = -p
+        return p
+   
+
+    max_degree = max([sum(x) for x in p.exponents()])
+    highest_monomial_exps = [x for x in p.exponents() if sum(x)==max_degree]
+    leading_exponents = max(highest_monomial_exps)
+    leading_monomial = reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
+    l = p.monomial_coefficient(leading_monomial)
     
     if l < 0:
         p = -p
-    if len(t) == 1:
-        exps = p.exponents()
-        a = max(exps)
-        b = min(exps)
-        c = -1*(a+b)/ZZ(2)
-        p = p*(t[0]**c)
-    else:
-        for i in range(len(t)):
-            exps = map(lambda x: x[i], p.exponents())
-            a = max(exps)
-            b = min(exps)
-            c = ZZ(-1*(a+b)/2)
-            p = p*(t[i]**c)
+
+    for i in range(len(t)):
+        exps = map(lambda x: x[i], p.exponents())
+        min_exp = min(exps)
+        p = p*(t[i]**(-min_exp))
     return p
 
 def braidword_to_crossings(braidword):
@@ -209,41 +209,22 @@ class Link(links_base.Link):
         if(mv):
             L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
             t = list(L_t.gens())
+            #determine the component to which each variable corresponds
+            g_component = [c.strand_components[2] for c in self.crossings]
+            for i in range(len(g)):
+                g[i] = t[g_component[i]]
+            
         else:
             L_t = LaurentPolynomialRing(QQ,'t')
             t = L_t.gen()
-
-        #substitute in laurent variables into relations of G, get ratios 
-        reduced_rels = [y(g) for y in G.relations() if y(g) != 1]
-        #shows which variables are equal
-        var_pairs = map(lambda x: x.variables(), reduced_rels)
-        #grouping variables into groups by equality, by making into conn comp
-        #of the graph of pairs of variables
-        var_graph = Graph(var_pairs)
-        conn_comps = var_graph.connected_components()
-        g_to_t_dict = {}
-
-        for n,conn_comp in enumerate(conn_comps):
-            for v in conn_comp:
-                if mv:
-                    g_to_t_dict[v]=t[n]
-                else:
-                    g_to_t_dict[v]=t
-        n = len(conn_comps)
-        
-        for i in range(len(g)):
-            if g[i] in g_to_t_dict:
-                g[i] = g_to_t_dict[g[i]]
-            else:
-                g[i] = t[n]
-                n += 1
+            g = [t]*len(g)
 
         B = G.alexander_matrix(g)
 
         return (B,g)
 
     @sage_method
-    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True, factored = True):
+    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True, factored = False):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
