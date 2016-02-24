@@ -9,6 +9,7 @@ See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
 from .. import graphs
+from ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
 try:
@@ -327,11 +328,14 @@ class Link(object):
         # If crossings is just a PD code rather than a list of Crossings,
         # we create the corresponding Crossings.
         if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
-            gluings = collections.defaultdict(list)
+            gluings = collections.OrderedDict()
+
             for c, X in enumerate(crossings):
                 for i, x in enumerate(X):
-                    gluings[x].append( (c,i) )
-
+                    if x in gluings:
+                        gluings[x].append( (c,i) )
+                    else:
+                        gluings[x] = [(c,i)]
             if set([len(v) for v in gluings.values()]) != set([2]):
                 raise ValueError("PD code isn't consistent")
              
@@ -381,7 +385,7 @@ class Link(object):
         if self.all_crossings_oriented():
             return
         
-        remaining = set( [ (c, i) for c in self.crossings for i in range(4)] )
+        remaining = OrderedSet( [ (c, i) for c in self.crossings for i in range(4)] )
         while len(remaining):
             c, i = start = remaining.pop()
             finished = False
@@ -414,7 +418,7 @@ class Link(object):
         oriented edges) is compatible with the DT convention that each
         crossing has both an odd and and even incoming strand.
         """
-        remaining, components = set( self.crossing_entries() ), LinkComponents()
+        remaining, components = OrderedSet( self.crossing_entries() ), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
@@ -452,7 +456,7 @@ class Link(object):
                 if o.component_label() is None:
                     others.append(o)
             other_crossing_entries.append(others)
-            remaining = remaining - set(component)
+            remaining = remaining - OrderedSet(component)
 
         self.link_components = components
 
@@ -504,7 +508,7 @@ class Link(object):
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.
         """
-        corners = set([ CrossingStrand(c,i) for c in self.crossings for i in range(4) ])
+        corners = OrderedSet([ CrossingStrand(c,i) for c in self.crossings for i in range(4) ])
         faces = []
         while len(corners):
             face = [corners.pop()]
@@ -631,7 +635,7 @@ class Link(object):
         >>> L
         <Link L14n64110: 5 comp; 14 cross>
         >>> L.sublink([1,2,3,4])
-        <Link: 4 comp; 6 cross>
+        <Link: 4 comp; 10 cross>
         >>> comps = L.link_components
         >>> L.sublink([comps[0], comps[1]])
         <Link: 2 comp; 2 cross>

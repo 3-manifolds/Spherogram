@@ -4,7 +4,8 @@ import doctest
 from random import randrange
 from . import test_montesinos
 from ...sage_helper import _within_sage
-
+from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
+from sage.all import QQ
 class TestLinkFunctions(unittest.TestCase):
     
     def setUp(self):
@@ -117,18 +118,20 @@ class TestLinkFunctions(unittest.TestCase):
        
     def testAlexanderPoly(self):
         from sage.all import var, sqrt
-        t = var('t')
+        L = LaurentPolynomialRing(QQ,'t')
+        t = L.gen()
         a = var('a')
-
+        L3v = LaurentPolynomialRing(QQ,['t1','t2','t3'])
+        t1, t2, t3 = L3v.gens()
         # method = 'wirt'
-        self.assertEqual(self.Tref.alexander_poly(),       t - 1 + t**-1)
-        self.assertEqual(self.K3_1.alexander_poly(),       t - 1 + t**-1)
-        self.assertEqual(self.K7_2.alexander_poly(),       3*t - 5 + 3*t**-1)
-        self.assertEqual(self.K8_3.alexander_poly(),       4*t - 9 + 4*t**-1)
-        self.assertEqual(self.K8_13.alexander_poly(),      2*t**2 - 7*t + 11 - 7*t**-1 + 2*t**-2)
-        self.assertEqual(self.L2a1.alexander_poly(multivar=False), sqrt(t) - 1/sqrt(t))
-        self.assertEqual(self.Borr.alexander_poly(multivar=False),       -(-t**2 + 4*t + 4*t**-1 - t**-2 - 6))
-        self.assertEqual(self.L6a4.alexander_poly(multivar=False),       -(-t**2 + 4*t + 4*t**-1 - t**-2 - 6))
+        self.assertEqual(self.Tref.alexander_poly(),       1 - t + t**2)
+        self.assertEqual(self.K3_1.alexander_poly(),       1 - t + t**2)
+        self.assertEqual(self.K7_2.alexander_poly(),       3 - 5*t + 3*t**2)
+        self.assertEqual(self.K8_3.alexander_poly(),       4 - 9*t + 4*t**2)
+        self.assertEqual(self.K8_13.alexander_poly(),      2 - 7*t + 11*t**2 - 7*t**3 + 2*t**4)
+        self.assertEqual(self.L2a1.alexander_poly(),       1)
+        self.assertEqual(self.Borr.alexander_poly(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
+        self.assertEqual(self.L6a4.alexander_poly(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
 
         # method = 'snappy'
         self.assertEqual(self.Tref.alexander_poly(method='snappy'),       a**2 - a + 1)
