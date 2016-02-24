@@ -188,9 +188,10 @@ class Link(links_base.Link):
 
             sage: L = Link('3_1')
             sage: L.alexander_matrix()
-            ([      -1 -1/t + 1      1/t]
-            [     1/t       -1 -1/t + 1]
-            [-1/t + 1      1/t       -1], [t, t, t])
+            ([       -1      t^-1 -t^-1 + 1]
+            [-t^-1 + 1        -1      t^-1]
+            [     t^-1 -t^-1 + 1        -1], [t, t, t])
+
             sage: L = Link([(4,1,3,2),(1,4,2,3)])
             sage: L.alexander_matrix()    #doctest: +SKIP
             ([ t1 - 1 -t2 + 1]
@@ -231,13 +232,13 @@ class Link(links_base.Link):
 
             sage: K = Link('4_1')
             sage: K.alexander_poly()
-            t + 1/t - 3
+            1 - 3*t + t^2
             sage: K.alexander_poly(v=[4])
-            5/4
+            5
             
             sage: K = Link('L7n1')
             sage: K.alexander_poly(norm=False)
-            (t1*t2^3 + 1)/(t1*t2^4)
+            -t2 - t1*t2^-2
         """
 
         # sign normalization still missing, but when "norm=True" the
