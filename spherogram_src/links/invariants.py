@@ -433,7 +433,7 @@ class Link(links_base.Link):
                           {'crossing':c, 'sign':1}))
             edges.append((face_of[CrossingStrand(c, 1)], face_of[CrossingStrand(c, 3)],
                           {'crossing':c, 'sign':-1}))
-
+                
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
