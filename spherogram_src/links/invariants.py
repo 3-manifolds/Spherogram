@@ -220,6 +220,33 @@ class Link(links_base.Link):
             t = L_t.gen()
             g = [t]*len(g)
 
+
+        #substitute in laurent variables into relations of G, get ratios 
+        reduced_rels = [y(g) for y in G.relations() if y(g) != 1]
+        #shows which variables are equal
+        var_pairs = map(lambda x: x.variables(), reduced_rels)
+        #grouping variables into groups by equality, by making into conn comp
+        #of the graph of pairs of variables
+        var_graph = Graph(var_pairs, multiedges=True)
+        conn_comps = var_graph.connected_components()
+        g_to_t_dict = {}
+
+        for n,conn_comp in enumerate(conn_comps):
+            for v in conn_comp:
+                if mv:
+                    g_to_t_dict[v]=t[n]
+                else:
+                    g_to_t_dict[v]=t
+        n = len(conn_comps)
+        
+        for i in range(len(g)):
+            if g[i] in g_to_t_dict:
+                g[i] = g_to_t_dict[g[i]]
+            else:
+                g[i] = t[n]
+                n += 1
+>>>>>>> other
+
         B = G.alexander_matrix(g)
 
         return (B,g)
