@@ -417,35 +417,46 @@ def merge_vertices(graph,vertices):
     return
 
 
-def random_reverse_type_I(link,label):
+def reverse_type_I(link,crossing_strand,label,hand,rebuild=False):
+    """
+    Add a loop on the strand at crossing_strand with a given label and
+    'handedness' hand (twisting left or right).
+    """
+    D = Crossing(label)
+    link.crossings.append(D)
+    cs1 = crossing_strand
+    cs2 = cs1.opposite()
+
+    if hand == 'left':
+        D[1] = D[2]
+        cs1ec, cs1cep = cs1.crossing, cs1.strand_index
+        D[0] = cs1ec[cs1cep]
+        cs2ec, cs2cep = cs2.crossing, cs2.strand_index
+        D[3] = cs2ec[cs2cep]
+    else:
+        D[2] = D[3]
+        cs1ec, cs1cep = cs1.crossing, cs1.strand_index
+        D[0] = cs1ec[cs1cep]
+        cs2ec, cs2cep = cs2.crossing, cs2.strand_index
+        D[1] = cs2ec[cs2cep]
+    if rebuild:
+        comp_sts = [comp[0] for comp in link.link_components]
+        link._rebuild(component_starts=comp_sts)
+
+def random_reverse_type_I(link,label,rebuild=False):
     """
     Randomly adds a loop in a strand, adding one crossing with given label
     """
     
-    cs1 = random.choice(link.crossing_strands())
-    D = Crossing(label)
-    link.crossings.append(D)
+    cs = random.choice(link.crossing_strands())
+    lr = random.choice(['left','right'])
+    reverse_type_I(link,cs,label,lr,rebuild=rebuild)
 
-    cs2 = cs1.opposite()
-    D[2] = D[3]
-    cs1ec, cs1cep = cs1.crossing, cs1.strand_index
-    D[0] = cs1ec[cs1cep]
-    cs2ec, cs2cep = cs2.crossing, cs2.strand_index
-    D[1] = cs2ec[cs2cep]
-    
-    D.rotate(random.randint(0,1)) #choose whether over or under crossing
-
-def random_reverse_type_II(link, label1, label2):
+def reverse_type_II(link, c, d, label1, label2, rebuild=False):
     """
-    Randomly crosses two strands, adding two crossings, with labels label1 and label2
+    Cross two strands defined by two crossing strands c and d in the same face.
     """
 
-    G = DualGraphOfFaces(link)
-    while True:
-        face = random.choice(list(G.vertices))
-        if len(face)>1:
-            break
-    c, d = random.sample(face,2)
     new1, new2 = Crossing(label1), Crossing(label2)    
     c_cross, c_ep = c.crossing, c.strand_index
     cop_cross, cop_ep = c.opposite().crossing, c.opposite().strand_index
@@ -457,6 +468,25 @@ def random_reverse_type_II(link, label1, label2):
 
     link.crossings.append(new1)
     link.crossings.append(new2)
+
+    if rebuild:
+        comp_sts = [comp[0] for comp in link.link_components]
+        link._rebuild(component_starts = comp_sts)
+
+
+def random_reverse_type_II(link, label1, label2, rebuild=False):
+    """
+    Randomly crosses two strands, adding two crossings, with labels 
+    label1 and label2
+    """
+
+    faces = link.faces()
+    while True:
+        face = random.choice(faces)
+        if len(face)>1:
+            break
+    c, d = random.sample(face,2)
+    reverse_type_II(link,c,d,label1,label2,rebuild=rebuild)
 
 def random_reverse_move(link,t,n):
     """
@@ -488,14 +518,8 @@ def backtrack(link, num_steps = 10):
         n += t%3
 
         random_reverse_move(link,t,n)
-        
-        clear_orientations(link)
 
-        L = Link(link.crossings)
-        link = L
-    clear_orientations(link)
-    relabel_crossings(link)
-    return Link(link.crossings)
+    link._rebuild(same_components_and_orientations=True)
     
 
 def clear_orientations(link):
