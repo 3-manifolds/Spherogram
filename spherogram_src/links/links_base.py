@@ -230,7 +230,7 @@ class LinkComponents(list):
         self.append(component)
         return component
 
-class Labels(dict):
+class Labels(collections.OrderedDict):
     def add(self, x):
         self[x] = len(self)
 
@@ -371,23 +371,32 @@ class Link(object):
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
 
-    def _build(self):
-        self._orient_crossings()
-        self._build_components()
+    def _build(self,start_orientations=[],component_starts = None):
+        self._orient_crossings(start_orientations = start_orientations)
+        self._build_components(component_starts = component_starts)
 
-    def _rebuild(self):
+    def _rebuild(self,same_components_and_orientations=False):
+        if same_components_and_orientations:
+            start_css = [comp[0] for comp in self.link_components]
         self.link_components = None
         for c in self.crossings:
             c._clear()
-        self._build()
+        if same_components_and_orientations:
+            self._build(start_orientations=start_css,component_starts=start_css)
+        else:
+            self._build()
         
-    def _orient_crossings(self):
+    def _orient_crossings(self, start_orientations = list()):
         if self.all_crossings_oriented():
             return
         
         remaining = OrderedSet( [ (c, i) for c in self.crossings for i in range(4)] )
         while len(remaining):
-            c, i = start = remaining.pop()
+            if len(start_orientations)>0:
+                c, i = start = start_orientations.pop()
+            else:
+                c, i = start = remaining.pop()
+
             finished = False
             while not finished:
                 d, j = c.adjacent[i]
@@ -614,11 +623,7 @@ class Link(object):
         True
         """
         from . import simplify
-        L = simplify.backtrack(self,num_steps = steps)
-        self.crossings = L.crossings
-        self.labels = L.labels
-        self.link_components = L.link_components
-        self.name = L.name
+        simplify.backtrack(self,num_steps = steps)
 
 
     def sublink(self, components):
