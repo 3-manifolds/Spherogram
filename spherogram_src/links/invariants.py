@@ -245,7 +245,7 @@ class Link(links_base.Link):
             else:
                 g[i] = t[n]
                 n += 1
->>>>>>> other
+
 
         B = G.alexander_matrix(g)
 
