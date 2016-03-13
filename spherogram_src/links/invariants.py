@@ -221,32 +221,6 @@ class Link(links_base.Link):
             g = [t]*len(g)
 
 
-        #substitute in laurent variables into relations of G, get ratios 
-        reduced_rels = [y(g) for y in G.relations() if y(g) != 1]
-        #shows which variables are equal
-        var_pairs = map(lambda x: x.variables(), reduced_rels)
-        #grouping variables into groups by equality, by making into conn comp
-        #of the graph of pairs of variables
-        var_graph = Graph(var_pairs, multiedges=True)
-        conn_comps = var_graph.connected_components()
-        g_to_t_dict = {}
-
-        for n,conn_comp in enumerate(conn_comps):
-            for v in conn_comp:
-                if mv:
-                    g_to_t_dict[v]=t[n]
-                else:
-                    g_to_t_dict[v]=t
-        n = len(conn_comps)
-        
-        for i in range(len(g)):
-            if g[i] in g_to_t_dict:
-                g[i] = g_to_t_dict[g[i]]
-            else:
-                g[i] = t[n]
-                n += 1
-
-
         B = G.alexander_matrix(g)
 
         return (B,g)
@@ -604,7 +578,7 @@ class Link(links_base.Link):
 
             sage: L = Link('8_5')
             sage: L.jones_poly()
-            q^8 - 2*q^7 + 3*q^6 - 4*q^5 + 3*q^4 - 3*q^3 + 3*q^2 - q + 1
+            1 - q + 3*q^2 - 3*q^3 + 3*q^4 - 4*q^5 + 3*q^6 - 2*q^7 + q^8
         """
         from . import jones
         return jones.Jones_poly(self, variable)
