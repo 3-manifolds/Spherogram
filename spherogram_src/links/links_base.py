@@ -158,6 +158,13 @@ class CrossingStrand(BasicCrossingStrand):
         """
         return CrossingStrand(* self.crossing.adjacent[self.strand_index] )
 
+    def next(self):
+        """
+        The CrossingStrand obtained by moving in the direction of self for
+        one crossing
+        """
+        return self.rotate(2).opposite()
+
     def next_corner(self):
         return self.rotate().opposite()
 
@@ -188,6 +195,10 @@ class CrossingEntryPoint(CrossingStrand):
         c, e = self.crossing, self.strand_index
         s = 1 if isinstance(c, Strand) else 2
         return CrossingEntryPoint(*c.adjacent[ (e + s) % (2*s)])
+
+    def previous(self):
+        s = 1 if isinstance(self.crossing, Strand) else 2
+        return CrossingEntryPoint(*self.opposite().rotate(s))
 
     def other(self):
         nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
@@ -390,7 +401,7 @@ class Link(object):
         if self.all_crossings_oriented():
             return
         
-        remaining = OrderedSet( [ (c, i) for c in self.crossings for i in range(4)] )
+        remaining = OrderedSet( [ (c, i) for c in self.crossings for i in range(4) if c.sign == 0] )
         while len(remaining):
             if len(start_orientations)>0:
                 c, i = start = start_orientations.pop()
@@ -609,7 +620,7 @@ class Link(object):
         elif mode == 'global':
             return simplify.pickup_simplify(self, type_III_limit)
 
-    def backtrack(self, steps=10):
+    def backtrack(self, steps=10, prob_type_1 = .3, prob_type_2 = .3):
         """
         Performs a sequence of Reidemeister moves which increase or maintain
         the number of crossings in a diagram.  The number of such
@@ -623,7 +634,7 @@ class Link(object):
         True
         """
         from . import simplify
-        simplify.backtrack(self,num_steps = steps)
+        simplify.backtrack(self,num_steps = steps, prob_type_1 = prob_type_1, prob_type_2 = prob_type_2)
 
 
     def sublink(self, components):
@@ -939,43 +950,38 @@ class Link(object):
         reduces the number of crossings.
         """
         from . import simplify
-        return simplify.strand_pickup(self, self.overcrossings())
+        return simplify.strand_pickup(self, self.overstrands())
 
-    def overcrossings(self):
+    def overstrands(self):
         """
         Returns a list of the sequences of overcrossings of the link,
         sorted in descending order of length
         """
-        comp = self.link_components
-        overcrosses = []
-        for c in comp:
-            origin = None
-            for i in c:
-                if i.is_under_crossing():
-                    origin = i
+        ceps = OrderedSet([cep for cep in self.crossing_entries() if cep.is_over_crossing()])        
+        strands = []
+        while ceps:
+            cep = ceps.pop()
+            start_crossing = cep.crossing
+            is_loop = False
+            forward_strand = [cep]
+            forward_cep = cep.next()
+            while forward_cep.is_over_crossing():
+                if forward_cep.crossing == start_crossing:
+                    is_loop = True
                     break
-            start = origin
-            end = start.next()
-            circled_around = False
-            while True:
-                length = 0
-                alreadyseen = []
-                while (end.is_over_crossing() or (end.crossing in alreadyseen)) and (end.crossing != start.crossing):
-                    alreadyseen.append(end.crossing)
-                    length += 1
-                    end = end.next()
-                    if end == origin:
-                        circled_around = True
-                if length >= 1:
-                    overcrosses.append([start,length])
-                start = end
-                end = start.next()
-                circled_around = circled_around or (start == origin)
-                if circled_around:
-                    break
-        return sorted(overcrosses, key=lambda overcross: overcross[1], reverse=True)
-
-
+                forward_strand.append(forward_cep)
+                forward_cep = forward_cep.next()
+            backwards_strand = []
+            backwards_cep = cep.previous()
+            if not is_loop:
+                while backwards_cep.is_over_crossing():
+                    backwards_strand.append(backwards_cep)
+                    backwards_cep = backwards_cep.previous()
+                strand = backwards_strand[::-1]
+                strand.extend(forward_strand)
+                strands.append(strand)
+                ceps = ceps - OrderedSet(strand)
+        return sorted(strands, key = len, reverse=True)
 
 
 

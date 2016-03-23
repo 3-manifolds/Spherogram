@@ -35,6 +35,9 @@ def remove_crossings(link, eliminate):
                 new_components.append(component)
         link.link_components = new_components
         
+def add_crossings(link, crossings_to_add, tail_dict):
+    return
+
 def reidemeister_I(link, C):
     """
     Does a type-1 simplification on the given crossing C if possible.
@@ -234,6 +237,7 @@ class DualGraphOfFaces(graphs.Graph):
                             cycles.append( (common_element(face0, dual_edge0.interface),
                                             common_element(face0, dual_edge1.interface)))
         return cycles
+
         
 def deconnect_sum(link):
     """
@@ -249,156 +253,199 @@ def deconnect_sum(link):
     link._build_components()
     return link.split_link_diagram(destroy_original=True)
         
+
+def dual_edges(overstrand, graph):
+    """
+    Find the set of crossings and edges of the dual graph encountered
+    by moving along the link starting at startcep for length crossings.
+    Also returns the next crossing entry point immediately after.
+    """
+
+    edges_crossed = []
+    for cep in overstrand:
+        f1 = graph.edge_to_face[cep]
+        f2 = graph.edge_to_face[cep.opposite()]
+        edges_crossed.append( graph.edges_between(f1,f2).pop() )
+
+    #want one more edge
+    endpoint = overstrand[-1].next()
+    final_f1 = graph.edge_to_face[endpoint]
+    final_f2 = graph.edge_to_face[endpoint.opposite()]
+    edges_crossed.append( graph.edges_between(final_f1,final_f2).pop() )
+
+    return edges_crossed
+
+def extend_overstrand_forward(overstrand,end_cep):
+    cep = end_cep.next()
+    overstrand.append(end_cep)
+    while cep.is_over_crossing():
+        overstrand.append(cep)
+        cep = cep.next()
+        if cep == overstrand[0]:
+            break
+
+def extend_overstrand_backward(overstrand, start_cep):
+    cep = start_cep.previous()
+    overstrand.insert(0,start_cep)
+    while start_cep.is_over_crossing():
+        overstrand.insert(0,cep)
+        cep = cep.previous()
+        if cep == overstrand[-1]:
+            break
+
+def pickup_overstrand(link,overstrand):
+    startcep = overstrand[0].previous()
+    #Totally overcrossing loop, must be totally unlinked and unknotted
+    if startcep == overstrand[-1]: 
+        remove_overstrand(overstrand)
+        return link, len(overstrand)
+    length = len(overstrand)
+    G = link.dual_graph()
+    crossing_set = set([cep.crossing for cep in overstrand])
+    endpoint = overstrand[-1].next()
+
+    if endpoint.crossing in crossing_set:
+        #strand crosses itself underneath
+        extend_overstrand_forward(overstrand,endpoint)
+        return pickup_overstrand(link,overstrand)
+    if startcep.crossing in crossing_set:
+        #strand crosses itself over
+        extend_overstrand_backward(overstrand,startcep)
+        return pickup_overstrand(link,overstrand)
         
-def strand_pickup(link,overcrossingstrand):
+    edges_crossed = dual_edges(overstrand, G)
+
+    #create a networkx graph with these edges, and find the connected components
+    cross_graph = nx.Graph()
+    cross_graph.add_edges_from(edges_crossed)
+    components = list(nx.connected_components(cross_graph))
+
+    #collapse the connected components in original dual graph
+    Gx = G.to_networkx()
+    component_dict = {}
+    for i,comp in enumerate(components):
+        merge_vertices(Gx,comp)
+        for vert in comp:
+            component_dict[vert]=tuple(comp)
+    Gx_nodes = Gx.nodes()
+
+    #get components which are the start and end nodes in Gx
+    source = component_dict[edges_crossed[0][0]]
+    dest = component_dict[edges_crossed[-1][0]]
+
+    path = nx.shortest_path(Gx,source,dest)
+
+    crossingsremoved = len(crossing_set) - (len(path) - 1)
+
+    if crossingsremoved == 0:
+        return link, 0
+
+    #force all elements of path to be represented as tuples (to account for single elements)
+    for i in range(len(path)):
+        if(not type(path[i]) == tuple):
+            path[i] = path[i],
+
+
+    #creating a new list of crossings from which to rebuild the link, remove old overcross
+    newcrossings = link.crossings
+
+    cr = remove_overstrand(link, overstrand)
+    loose_end = startcep.rotate(2)
+    #find new sequence of overcrossings to create
+    for i in range(len(path)-1):
+        label = 'new%d' % i
+
+        for f1 in path[i]:
+            for f2 in path[i+1]:
+                if G.edges_between(f1,f2):
+                    current_face = f1
+                    next_edge = G.edges_between(f1,f2).pop()
+
+        nextedge = next_edge
+        if next_edge.interface[0] in current_face:
+            cep_to_cross = next_edge.interface[0]
+        else:
+            cep_to_cross = next_edge.interface[1]
+
+        new_crossing, loose_end = cross_over(link, cep_to_cross, loose_end, label)
+        newcrossings.append(new_crossing)
+
+    lec, lecep = loose_end.crossing, loose_end.strand_index
+    ec, ecep = endpoint.crossing, endpoint.strand_index
+    ec[ecep] = lec[lecep]
+
+    link._rebuild()
+
+    return link, crossingsremoved
+
+
+def strand_pickup(link,overstrands):
     """
     Simplifies link by optimizing the path of the longest sequence of overcrossings.
     Returns a new link and the number of crossings removed.
     """
-    for overcross in overcrossingstrand:
-        startcep = overcross[0]
-        length = overcross[1]
-        G = link.dual_graph()
-
-        #finding all crosses traversed by the overcrossing, accounting for possible self-intersection
-        endpoint = startcep.next()
-        crossingset = set([endpoint.crossing])
-        for i in range(1,length):
-            endpoint = endpoint.next()
-            crossingset.add(endpoint.crossing)
-        endpoint = endpoint.next()
-
-        #creating list of edges of the dual graph corresponding to segments of the strand overcross
-        crossgraph = nx.Graph()
-        edgescrossed = []
-        s = startcep
-
-
-        for i in range(length+1):
-            edge = (s.rotate(2),s.next())
-            listOfEdges = list(G.edges)
-            for j in range(len(listOfEdges)):
-                edgereverse = (edge[1],edge[0])
-                if(listOfEdges[j].interface == edge or listOfEdges[j].interface == edgereverse ):
-                    edge = listOfEdges[j]
-                    break
-
-            edgescrossed.append(edge)
-            s = s.next()
-
-
-
-        #create a networkx graph with these edges, and find the connected components
-        for i in range(len(edgescrossed)):
-            crossgraph.add_edge(edgescrossed[i][0],edgescrossed[i][1])
-
-
-        components = list(nx.connected_components(crossgraph))
-
-        #collapse the connected components in original dual graph
-        Gx = G.to_networkx()
-        for i in range(len(components)):
-            merge_vertices(Gx,components[i])
-        Gx_nodes = Gx.nodes()
-
-        #find shortest path between start and end points
-        source = None
-        dest = None
-
-        for i in range(len(Gx)):
-            for j in range(len((Gx_nodes[i]))):
-
-                if Gx_nodes[i][j] == edgescrossed[0][0]:
-
-                    source = Gx_nodes[i]
-
-                if Gx_nodes[i][j] == edgescrossed[-1][0]:
-
-                    dest = Gx_nodes[i]
-        path = nx.shortest_path(Gx,source,dest)
-
-        crossingsremoved = length - (len(path) - 1)
-
-        if crossingsremoved == 0:
-            continue
-
-        #force all elements of path to be represented as tuples (to account for single elements)
-        for i in range(len(path)):
-            if(not type(path[i]) == tuple):
-                path[i] = path[i],
-
-        #creating a new list of crossings from which to rebuild the link, remove old overcross
-        newcrossings = list(link.crossings)
-        for i in newcrossings:   #remove old orientations
-            i.sign = 0
-            i.directions.clear()
-        toremove = startcep.next()
-        for i in range(len(crossingset)):
-            loose1 = toremove.rotate(1).opposite()
-            loose2 = toremove.rotate(3).opposite()
-
-            lc1, lc1ep = loose1.crossing, loose1.strand_index
-            lc2, lc2ep = loose2.crossing, loose2.strand_index
-
-            while lc1 not in newcrossings:
-                lc1, lc1ep = lc1.rotate(2).opposite().crossing, lc1.rotate(2).opposite().strand_index
-            while lc2 not in newcrossings:
-                lc2, lc2ep = lc2.rotate(2).opposite().crossing, lc2.rotate(2).opposite().strand_index
-            lc1[lc1ep] = lc2[lc2ep]
-            newcrossings.remove(toremove.crossing)
-            toremove = toremove.next()
-
-
-        looseend = startcep.rotate(2)
-
-        #find new sequence of overcrossings to create
-        for i in range(len(path)-1):
-            nextedge = None
-            label = 'new%d' % i
-            crossingtoadd = Crossing(label)
-            first = None
-            for j in range(len(path[i])):
-                found = False
-                idict = G.incidence_dict[path[i][j]]
-                for l in range(len(idict)):
-                    if(idict[l][0] != path[i][j]):
-                        totest = idict[l][0]
-                    else:
-                        totest = idict[l][1]
-
-                    if(totest in path[i+1]):
-                        found = True
-                        nextedge = idict[l]
-                        first = path[i][j]
-
-
-            for i in first:
-                if i == nextedge.interface[0] or i == nextedge.interface[1]:
-                    lec, lecep = looseend.crossing, looseend.strand_index
-                    crossingtoadd[1] = lec[lecep]
-                    ic,icep = i.crossing,i.strand_index
-                    ico,icoep = i.opposite().crossing, i.opposite().strand_index
-                    while ic not in newcrossings:
-                        temp = ic.crossing_strands()[icep]
-                        ic,icep = temp.rotate(2).opposite().crossing,temp.rotate(2).opposite().strand_index
-                    while ico not in newcrossings:
-                        temp = ico.crossing_strands()[icoep]
-                        ico,icoep = temp.rotate(2).opposite().crossing,temp.rotate(2).opposite().strand_index
-
-                    crossingtoadd[2] = ic[icep]
-                    crossingtoadd[0] = ico[icoep]
-
-
-
-            looseend = crossingtoadd.crossing_strands()[3]
-            newcrossings.append(crossingtoadd)
-
-        lec, lecep = looseend.crossing, looseend.strand_index
-        ec, ecep = endpoint.crossing, endpoint.strand_index
-        ec[ecep] = lec[lecep]
-        return Link(newcrossings), crossingsremoved
-
+    for overstrand in overstrands:
+        if len(overstrand) == 1: continue
+        link, crossings_removed = pickup_overstrand(link,overstrand)
+        if crossings_removed != 0:
+            return link, crossings_removed
     return link, 0
+
+
+def remove_overstrand(link,overstrand):
+    #only add bridge strands for the places where the strand doesn't cross itself
+    crossings_seen = [s.crossing for s in overstrand]
+    crossing_set = set()
+    for c in crossings_seen:
+        if c in crossing_set:
+            crossing_set.remove(c)
+        else:
+            crossing_set.add(c)
+
+    start_cep = overstrand[0].previous()
+    end_cep = overstrand[-1].next()
+    bridge_strands = {c: Strand('strand'+str(c.label)) for c in crossing_set}
+    for cep in overstrand:
+        c = cep.crossing
+        if c not in crossing_set:
+            continue
+        strand_index = cep.strand_index
+        right_cs = cep.rotate(1).opposite()
+        left_cs = cep.rotate(3).opposite()
+        if right_cs.crossing in crossing_set:
+            signs_equal = (c.sign == right_cs.crossing.sign)
+            bridge_strands[c][0] = bridge_strands[right_cs.crossing][signs_equal]
+        else:
+            bridge_strands[c][0] = right_cs.crossing[right_cs.strand_index]
+        if left_cs.crossing in crossing_set:
+            signs_equal = (c.sign == left_cs.crossing.sign)
+            bridge_strands[c][1] = bridge_strands[left_cs.crossing][1-signs_equal]
+        else:
+            bridge_strands[c][1] = left_cs.crossing[left_cs.strand_index]
+    remove_crossings(link,set(crossings_seen))
+
+    for s in bridge_strands.values():
+        s.fuse()
+
+    return len(crossing_set)
+
+def cross_over(link, cep_to_cross, loose_end, label):
+    e = cep_to_cross
+    new_crossing = Crossing(label)
+    lec, lecep = loose_end.crossing, loose_end.strand_index
+    new_crossing[1] = lec[lecep]
+    ic,icep = e.crossing,e.strand_index
+    ico,icoep = e.opposite().crossing, e.opposite().strand_index
+    while ic not in link.crossings:
+        temp = ic.crossing_strands()[icep]
+        ic,icep = temp.next().crossing,temp.next().strand_index
+    while ico not in link.crossings:
+        temp = ico.crossing_strands()[icoep]
+        ico,icoep = temp.next().crossing,temp.next().strand_index
+    new_crossing[2] = ic[icep]
+    new_crossing[0] = ico[icoep]
+    
+    return new_crossing, new_crossing.crossing_strands()[3]
 
 def merge_vertices(graph,vertices):
     """
@@ -503,7 +550,7 @@ def random_reverse_move(link,t,n):
             reidemeister_III(link, random.choice(poss_moves))
 
 
-def backtrack(link, num_steps = 10):
+def backtrack(link, num_steps = 10, prob_type_1 = .3, prob_type_2 = .3):
     """
     Randomly perform a series of Reidemeister moves which increase or preserve the
     number of crossings of a link diagram, with the number of such moves num_steps
@@ -513,8 +560,19 @@ def backtrack(link, num_steps = 10):
         return link
 
     n = 0
+    if prob_type_1 + prob_type_2 >= 1:
+        raise Exception("Probabilities add to more than 1")
+    p1 = prob_type_1
+    p2 = p1 + prob_type_2
     for i in range(num_steps):
-        t = random.randint(1,3)
+        x = random.uniform(0,1)
+        if x < p1:
+            t = 1
+        elif p1 < x < p2:
+            t = 2
+        else:
+            t = 3
+
         n += t%3
 
         random_reverse_move(link,t,n)
@@ -577,5 +635,3 @@ def pickup_simplify(link, type_III=0):
     link.name = L.name
     return len(L.crossings) != init_num_crossings
 
-
-    

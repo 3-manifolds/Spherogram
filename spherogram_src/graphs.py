@@ -245,6 +245,9 @@ class Graph(object):
         """
         return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
 
+    def edges_between(self,vertex1,vertex2):
+        return self.incident(vertex1).intersection(self.incident(vertex2))
+    
     # Allow flows to go in either direction across an edge.
     flow_incident = incident
 
