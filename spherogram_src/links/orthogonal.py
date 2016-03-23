@@ -443,10 +443,6 @@ class OrthogonalLinkDiagram(list):
         self.orient_edges()
         self.edges = sum([F for F in self], [])
         self.repair_components()
-        for i, c in enumerate(link.crossings):
-            c.label = i
-        for j, ce in enumerate(self.strand_CEPs):
-            ce.crossing.label = j
         
     def flow_networkx(faces):
         """
@@ -564,7 +560,7 @@ class OrthogonalLinkDiagram(list):
         for i, arrow in enumerate(arrows):
             for a in arrow[1:-1]:
                 if a.is_over_crossing():
-                    crossings.append( (undercrossings[a.other()], i, False) )
+                    crossings.append( (undercrossings[a.other()], i, False, a.crossing.label) )
             
         return arrows, crossings
 
