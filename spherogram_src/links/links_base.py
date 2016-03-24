@@ -280,6 +280,9 @@ class Strand(object):
             return (a[0].label, a[1]) if a else None
         print( "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent]) )
     
+    def is_loop(self):
+        return self == self.adjacent[0][0]
+    
 def enumerate_lists(lists, n=0, filter=lambda x:True):
     ans = []
     for L in lists:
@@ -360,7 +363,13 @@ class Link(object):
 
         # Fuse the strands.  If there any components made up
         # only of strands, these are thrown out here.
-        [s.fuse() for s in crossings if isinstance(s, Strand)]
+
+        self.unlinked_unknot_components = 0
+        for s in crossings:
+            if isinstance(s, Strand):
+                if s.is_loop:
+                    self.unlinked_unknot_components += 1
+                s.fuse()
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
 
         if build:

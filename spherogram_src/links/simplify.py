@@ -33,6 +33,8 @@ def remove_crossings(link, eliminate):
                         pass
             if len(component):
                 new_components.append(component)
+        components_removed = len(link.link_components)-len(new_components) 
+        link.unlinked_unknot_components += components_removed
         link.link_components = new_components
         
 def add_crossings(link, crossings_to_add, tail_dict):
@@ -295,8 +297,9 @@ def extend_overstrand_backward(overstrand, start_cep):
 
 def pickup_overstrand(link,overstrand):
     startcep = overstrand[0].previous()
-    #Totally overcrossing loop, must be totally unlinked and unknotted
-    if startcep == overstrand[-1]: 
+
+    if startcep == overstrand[-1]:
+        #Totally overcrossing loop, must be totally unlinked and unknotted
         remove_overstrand(overstrand)
         return link, len(overstrand)
     length = len(overstrand)
