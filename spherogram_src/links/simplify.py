@@ -278,6 +278,10 @@ def dual_edges(overstrand, graph):
     return edges_crossed
 
 def extend_overstrand_forward(overstrand,end_cep):
+    """
+    Starting at a crossing (under or over), extend overstrand until you hit
+    the next undercrossing.
+    """
     cep = end_cep.next()
     overstrand.append(end_cep)
     while cep.is_over_crossing():
@@ -287,6 +291,10 @@ def extend_overstrand_forward(overstrand,end_cep):
             break
 
 def extend_overstrand_backward(overstrand, start_cep):
+    """
+    Starting at a crossing (under or over), extend overstrand in the backwards
+    direction until you hit another undercrossing.
+    """
     cep = start_cep.previous()
     overstrand.insert(0,start_cep)
     while start_cep.is_over_crossing():
@@ -296,12 +304,17 @@ def extend_overstrand_backward(overstrand, start_cep):
             break
 
 def pickup_overstrand(link,overstrand):
+    """
+    Simplify the given overcrossing strand by erasing from the diagram and
+    then finding a path that minimizes the number of edges it has to cross
+    over to connect the same endpoints. Returns number of crossings removed.
+    """
     startcep = overstrand[0].previous()
 
     if startcep == overstrand[-1]:
         #Totally overcrossing loop, must be totally unlinked and unknotted
         remove_overstrand(overstrand)
-        return link, len(overstrand)
+        return len(overstrand)
     length = len(overstrand)
     G = link.dual_graph()
     crossing_set = set([cep.crossing for cep in overstrand])
@@ -341,7 +354,7 @@ def pickup_overstrand(link,overstrand):
     crossingsremoved = len(crossing_set) - (len(path) - 1)
 
     if crossingsremoved == 0:
-        return link, 0
+        return 0
 
     #force all elements of path to be represented as tuples (to account for single elements)
     for i in range(len(path)):
@@ -379,7 +392,7 @@ def pickup_overstrand(link,overstrand):
 
     link._rebuild()
 
-    return link, crossingsremoved
+    return crossingsremoved
 
 
 def strand_pickup(link,overstrands):
@@ -389,13 +402,20 @@ def strand_pickup(link,overstrands):
     """
     for overstrand in overstrands:
         if len(overstrand) == 1: continue
-        link, crossings_removed = pickup_overstrand(link,overstrand)
+        crossings_removed = pickup_overstrand(link,overstrand)
         if crossings_removed != 0:
-            return link, crossings_removed
-    return link, 0
+            return crossings_removed
+    return 0
 
 
 def remove_overstrand(link,overstrand):
+    """
+    Delete an overstrand from a link.  If the overstrand is a loop, it doesn't
+    leave any loose strands and removes the loop. Otherwise, there will be 
+    two strands left in the link not attached to anything.  This function
+    assumes that the start and end of the overstrand are not places where 
+    overstrands crosses itself.
+    """
     #only add bridge strands for the places where the strand doesn't cross itself
     crossings_seen = [s.crossing for s in overstrand]
     crossing_set = set()
@@ -433,6 +453,10 @@ def remove_overstrand(link,overstrand):
     return len(crossing_set)
 
 def cross_over(link, cep_to_cross, loose_end, label):
+    """
+    Create a new crossing crossing over the edge defined by cep_to_cross
+    and its opposite, and attach one side to a given position loose_end.
+    """
     e = cep_to_cross
     new_crossing = Crossing(label)
     lec, lecep = loose_end.crossing, loose_end.strand_index
@@ -555,15 +579,17 @@ def random_reverse_move(link,t,n):
 
 def backtrack(link, num_steps = 10, prob_type_1 = .3, prob_type_2 = .3):
     """
-    Randomly perform a series of Reidemeister moves which increase or preserve the
-    number of crossings of a link diagram, with the number of such moves num_steps
-    Use the method backtrack in the Link class.
+    Randomly perform a series of Reidemeister moves which increase or preserve
+    the number of crossings of a link diagram, with the number of such moves 
+    num_steps.  Can set the probability of type I or type II moves, so the
+    remainder is then the probability of type III. Use the method backtrack
+    in the Link class.
     """
     if len(link) == 0:
-        return link
+        return
 
     n = 0
-    if prob_type_1 + prob_type_2 >= 1:
+    if prob_type_1 + prob_type_2 > 1:
         raise Exception("Probabilities add to more than 1")
     p1 = prob_type_1
     p2 = p1 + prob_type_2
@@ -621,13 +647,13 @@ def pickup_simplify(link, type_III=0):
     intermediate_simplify(link)
 
     while not stabilized:
-        L, overcrossingsremoved = L.optimize_overcrossings()
+        overcrossingsremoved = L.optimize_overcrossings()
         intermediate_simplify(L)
 
         if len(L.crossings) == 0:
             break
         mirror = L.mirror()
-        mirror, undercrossingsremoved = mirror.optimize_overcrossings()
+        undercrossingsremoved = mirror.optimize_overcrossings()
         L = mirror.mirror()
         intermediate_simplify(L)
         stabilized = ((overcrossingsremoved == 0) and (undercrossingsremoved == 0)) or (len(L.crossings) == 0)
