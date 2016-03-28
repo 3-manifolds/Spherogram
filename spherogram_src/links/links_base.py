@@ -642,6 +642,7 @@ class Link(object):
         >>> len(K.crossings)
         19
         >>> K.backtrack(steps = 5, prob_type_1 = 0, prob_type_2 = 1)
+        >>> len(K.crossings)
         29
         """
         from . import simplify
