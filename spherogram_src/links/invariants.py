@@ -35,6 +35,8 @@ def normalize_alex_poly(p,t):
         p = p*(t[0]**(-min(p.exponents())))
         if p.coefficients()[-1]<0:
             p = -p
+        p, e = p.polynomial_construction()
+        assert e == 0
         return p
    
 
@@ -53,11 +55,7 @@ def normalize_alex_poly(p,t):
         p = p*(t[i]**(-min_exp))
 
     R = p.parent()
-    if R.ngens() == 1:
-        p, e = p.polynomial_construction()
-        assert e == 0
-    else:
-        p = R.polynomial_ring()(p)
+    p = R.polynomial_ring()(p)
     return p
 
 def braidword_to_crossings(braidword):
@@ -242,7 +240,7 @@ class Link(links_base.Link):
 
             sage: K = Link('4_1')
             sage: K.alexander_poly()
-            1 - 3*t + t^2
+            t^2 - 3*t + 1
             sage: K.alexander_poly(v=[4])
             5
             
@@ -292,8 +290,7 @@ class Link(links_base.Link):
                 p = normalize_alex_poly(p,t)
 
             if v != 'no':
-                dict1 = dict([(t[i],v[i]) for i in range(len(t))])
-                return p.subs(dict1)
+                return p(*v)
                 
             if multivar and factored: # it's easier to view this way
                 return p.factor()
