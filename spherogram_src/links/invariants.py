@@ -25,9 +25,11 @@ else:
     pass 
 
 def normalize_alex_poly(p,t):
-    # Normalize the sign of the leading coefficient and make all exponents
-    #positive
-
+    """
+    Normalize the sign of the leading coefficient and make all
+    exponents positive, then return as an ordinary rather than Laurent
+    polynomial.
+    """
 
     if len(t) == 1:
         p = p*(t[0]**(-min(p.exponents())))
@@ -49,6 +51,13 @@ def normalize_alex_poly(p,t):
         exps = map(lambda x: x[i], p.exponents())
         min_exp = min(exps)
         p = p*(t[i]**(-min_exp))
+
+    R = p.parent()
+    if R.ngens() == 1:
+        p, e = p.polynomial_construction()
+        assert e == 0
+    else:
+        p = R.polynomial_ring()(p)
     return p
 
 def braidword_to_crossings(braidword):
