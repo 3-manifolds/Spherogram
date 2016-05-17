@@ -503,7 +503,7 @@ class Link(object):
 
     def copy(self):
         return pickle.loads(pickle.dumps(self))
-    
+
     def is_planar(self):
         """
         Whether the 4-valent graph underlying the link projection is planar.
@@ -875,7 +875,7 @@ class Link(object):
             first.crossings.append(c)
         return type(self)(first.crossings)
 
-    def copy(self):
+    def copy(self, recursively=False):
         """
         Returns a copy of the link.  
 
@@ -888,7 +888,22 @@ class Link(object):
         recursion limit exception; to get around this, call e.g.
         ``sys.setrecursionlimit(10000)``.
         """
-        return copy.deepcopy(self)
+
+        if recursively:
+            return copy.deepcopy(self)
+        else:
+            crossings = [Crossing(c.label) for c in self.crossings]
+            loose_strands = set([(n,i) for n in range(len(crossings)) for i in range(4)])
+            while loose_strands:
+                n, i = loose_strands.pop()
+                adj_c, adj_i  = self.crossings[n].adjacent[i]
+                adj_n = self.crossings.index(adj_c)
+                crossings[n][i] = crossings[adj_n][adj_i] 
+                loose_strands.remove((adj_n,adj_i))
+                
+            link = Link(crossings)
+            return link
+
 
     def mirror(self):
         """
