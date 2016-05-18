@@ -117,7 +117,7 @@ def basic_knot_test():
         print(M.name())
         R = PolynomialRing(ZZ, 't')
         K = M.link()
-        V = matrix(seifert_matrix(K)[0])
+        V = matrix(seifert_matrix(K))
         p0 = R(M.alexander_polynomial())
         p1 = R(K.alexander_poly())
         p2 = alexander_poly_from_seifert(V)
@@ -131,4 +131,4 @@ def basic_knot_test():
     
     
 K = spherogram.Link('K12n123')
-V = matrix(ZZ, seifert_matrix(K)[0])
+V = matrix(ZZ, seifert_matrix(K))
