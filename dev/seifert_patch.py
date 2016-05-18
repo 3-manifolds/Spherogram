@@ -92,18 +92,11 @@ def remove_admissible_move(link):
     found_move = False
     for e1, e2 in combinations(tree,2):
         if e1[0] == e2[0]: #edges start at same point
-#            if e1[1] in tails or e2[1] in tails:
-#                continue #don't perform move in middle of tree
             circles = set([tree.index(e1), tree.index(e2)])
             found_move = True
-#            break
         elif e1[1] == e2[1]: #edges end at same point
-#            if e1[0] in heads or e2[0] in heads:
-#                continue
             circles = set([tree.index(e1), tree.index(e2)])
             found_move = True
-#            break
-
         if found_move:
             move_possible = False
             for n, pair in enumerate(circle_pairs):
@@ -124,7 +117,8 @@ def remove_admissible_move(link):
 def isotope_to_braid(link):
     """
     Performs Reidemester II moves until the Seifert tree becomes a chain, i.e.
-    the Seifert circles are all nested and compatibly oriented.
+    the Seifert circles are all nested and compatibly oriented, following
+    P. Vogel, "Representation of links by braids, a new algorithm"
     """
     while remove_admissible_move(link):
         pass
@@ -211,11 +205,11 @@ def braid_arrows(link):
         arrow.pop(1) #start and end positions are now the same
     return arrows
 
-def seifert_matrix(link):
+def seifert_matrix(link, return_type_matrix = False):
     """
     Returns the Seifert matrix of a link by first making it isotopic to a braid
     closure, and using the algorithm described in:
-    Collins, Julia. "An algorithm for computing the Seifert matrix of a link 
+    J. Collins, "An algorithm for computing the Seifert matrix of a link 
     from a braid representation." (2007).
     """
     arrows = braid_arrows(link)
@@ -258,8 +252,11 @@ def seifert_matrix(link):
                     elif gen[0] < next_gen[0] < gen[1] < next_gen[1]:
                         matrix[entries.index((n+1,l))][entries.index((n,m))] = -1
                         type_matrix[entries.index((n+1,l))][entries.index((n,m))] = 6
-    return matrix, type_matrix
-
+    
+    if return_type_matrix:
+        return matrix, type_matrix
+    else:
+        return matrix
 
 def cyclic_permute(l,n):
     return [l[(i+n)%len(l)] for i in range(len(l))]
