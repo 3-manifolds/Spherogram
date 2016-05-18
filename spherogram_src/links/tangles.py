@@ -7,6 +7,8 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 """
 
 from .links import Crossing, Strand, Link
+#import planar_isotopy
+from . import planar_isotopy
 
 try:
     import cPickle as pickle
@@ -113,6 +115,53 @@ class Tangle(object):
         for i in range(0, self.n):
             join_strands(T.adjacent[i], T.adjacent[i + self.n])
         return Link(T.crossings, check_planarity=False)
+
+
+    def circular_rotate(self,n):
+        """
+        Rotate a tangle in a circular fashion.
+        """
+        tangle_copy = self.copy()
+        tangle_copy._fuse_strands()
+        adj = tangle_copy.adjacent
+        #reverse second half
+        adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
+        rotated_adj = rotate_list(adj,n)
+        #undo reversal of second half
+        rotated_adj[len(rotated_adj)/2:] = reversed(rotated_adj[len(rotated_adj)/2:])
+        tangle_copy.adjacent = rotated_adj
+        return tangle_copy
+
+    def circular_sum(self,other,n):
+        """
+        Glue two tangles together.  There are many ways to do this.  Choice
+        is given by the choice of integer n
+        """
+        if len(self.adjacent) != len(other.adjacent):
+            raise Exception("Tangles do not have the same number of strands")
+        return (self*(other.circular_rotate(n))).denominator_closure()
+
+    def isosig(self,root = None, over_or_under = False):
+        """
+        Return a bunch of data which encodes the planar isotopy class of the
+        tangle.  Of course, this is just up to isotopy of the plane
+        (no Reidemeister moves).  A root can be specified with a CrossingStrand
+        and over_or_under toggles whether only the underlying shadow (4-valent
+        planar map) is considered or the tangle with the over/under data at 
+        each crossing.
+        """
+        copy = self.copy()
+        copy._fuse_strands()
+        return planar_isotopy.min_isosig(copy, root, over_or_under)
+
+    def is_planar_isotopic(self, other, root = None, over_or_under = False):
+        return self.isosig() == other.isosig()
+
+    def _fuse_strands(self):
+        for s in reversed(self.crossings):
+            if isinstance(s,Strand):
+                s.fuse()
+                self.crossings.remove(s)
 
     def __repr__(self):
         return "<Tangle: %s>" % self.label
