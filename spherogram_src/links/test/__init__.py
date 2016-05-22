@@ -4,8 +4,10 @@ import doctest
 from random import randrange
 from . import test_montesinos
 from ...sage_helper import _within_sage
-from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
-from sage.all import QQ
+if _within_sage:
+    from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
+    from sage.all import QQ
+    
 class TestLinkFunctions(unittest.TestCase):
     
     def setUp(self):
