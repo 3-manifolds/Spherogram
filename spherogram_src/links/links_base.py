@@ -326,40 +326,35 @@ class Link(object):
     <Link K12a123: 1 comp; 12 cross>
     >>> Link('L12n123')
     <Link L12n123: 2 comp; 12 cross>
+
+    You can also construct a link by taking the closure of a braid. 
+
+    >>> Link(braid_closure=[1, 2, -1, -2])
+    <Link: 1 comp; 4 cross>
     """
     
-    def __init__(self, crossings, check_planarity=True, build=True):
-        # We check if crossings is a string
+    def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
         self.name = None
-        if isinstance(crossings, str):
-            if crossings.startswith('T(' ):
-                from . import torus
-                crossings = torus.torus_knot(crossings).crossings
-            else:
-                self.name = crossings
-                crossings = self._lookup_DT(crossings).PD_code()
-        
-        # If crossings is just a PD code rather than a list of Crossings,
-        # we create the corresponding Crossings.
-        if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
-            gluings = collections.OrderedDict()
 
-            for c, X in enumerate(crossings):
-                for i, x in enumerate(X):
-                    if x in gluings:
-                        gluings[x].append( (c,i) )
-                    else:
-                        gluings[x] = [(c,i)]
-            if set([len(v) for v in gluings.values()]) != set([2]):
-                raise ValueError("PD code isn't consistent")
-             
-            crossings = [Crossing() for d in crossings]
-            for (c,i), (d,j) in gluings.itervalues():
-                crossings[c][i] = crossings[d][j]
+        if crossings is not None and braid_closure is not None:
+            raise ValueError('Specified *both* crossings and braid_closure')
+        
+        if crossings is not None:
+            if isinstance(crossings, str):
+                crossings = self._crossings_from_string(crossings)
+        
+            # Crossings can be a PD code rather than a list of actual crossings
+            if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
+                crossings = self._crossings_from_DT_code(crossings)
+
+        elif braid_closure is not None:
+            crossings = self._crossings_from_braid_closure(braid_closure)
+        else:
+            crossings = []  # empty link
 
         # Make sure everything is tied up. 
         if True in [ None in c.adjacent for c in crossings]:
-            raise ValueError("No loose strands allowed")
+            raise ValueError('No loose strands allowed')
 
         # Fuse the strands.  If there any components made up
         # only of strands, these are thrown out here.
@@ -383,6 +378,82 @@ class Link(object):
         if False not in [X.label is None for X in self.crossings]:
             for c, X in enumerate(self.crossings):
                 X.label = c
+
+    def _crossings_from_string(self, spec):
+        if spec.startswith('T(' ):
+            from . import torus
+            crossings = torus.torus_knot(spec).crossings
+        else:
+            self.name = spec
+            crossings = self._lookup_DT(spec).PD_code()
+        return crossings
+                          
+    def _crossings_from_DT_code(self, code):
+        gluings = collections.OrderedDict()
+        for c, X in enumerate(code):
+            for i, x in enumerate(X):
+                if x in gluings:
+                    gluings[x].append( (c,i) )
+                else:
+                    gluings[x] = [(c,i)]
+
+        if set([len(v) for v in gluings.values()]) != set([2]):
+            raise ValueError("PD code isn't consistent")
+             
+        crossings = [Crossing() for d in code]
+        for (c,i), (d,j) in gluings.itervalues():
+            crossings[c][i] = crossings[d][j]
+        return crossings
+    
+    def _crossings_from_braid_closure(self, word, num_strands=None):
+        """
+        Compute the braid closure of a word given in the form of a list of
+        integers, where 1, 2, 3, etc correspond to the generators
+        sigma_1, sigma_2, sigma_3, and so on, and negative numbers to
+        their inverses.
+
+        Conventions follow Birman's book; if one views braid
+        vertically, so that [a, b, c] corresponds to
+
+        a
+        b
+        c
+
+        then sigma_i corresponds to the rational tangle +1 in our
+        conventions.
+
+        The components of the resulting link are will be oriented
+        consistently with the braid.  
+        """
+        if num_strands is None:
+            num_strands = max([abs(a) for a in word]) + 1
+
+        strands = [Strand('s'+repr(i)) for i in range(num_strands)]
+        current = [(x,1) for x in strands]
+        crossings = []
+        
+        for i, a in enumerate(word):
+            C = Crossing('x'+repr(i))
+            crossings.append(C)
+            if a > 0:
+                t0, t1 = 1, 0
+                b0, b1 = 2, 3
+            else:
+                t0, t1 = 0, 3
+                b0, b1 = 1, 2
+            j0, j1 = abs(a) - 1, abs(a)
+            C.make_tail(t0)
+            C.make_tail(t1)
+            C.orient()
+            C[t0] = current[j0]
+            C[t1] = current[j1]
+            current[j0] = C[b0]
+            current[j1] = C[b1]
+
+        for i in range(num_strands):
+            strands[i][0] = current[i]
+                
+        return crossings + strands
 
     def _lookup_DT(self, name):
         # This method is monkey-patched by snappy
@@ -880,7 +951,8 @@ class Link(object):
         Returns a copy of the link.  
 
         >>> K = Link('L14n467')
-        >>> copy = K.copy()
+        >>> copy = K.copy(); copy
+        <Link L14n467: 2 comp; 14 cross>
         >>> K.PD_code() == copy.PD_code()
         True
         """
@@ -914,6 +986,7 @@ class Link(object):
                 
             link = self.__class__(crossings, check_planarity=False, build=False)
             link._build(component_starts=component_starts)
+            link.name = self.name
             return link
 
 
