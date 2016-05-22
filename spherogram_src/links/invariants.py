@@ -4,7 +4,7 @@ standard invariants.  Much of this code was contributed by Robert Lipshitz
 and Jennet Dickinson.  
 """
 
-from . import links_base
+from . import links_base, alexander
 from .links_base import Crossing, Strand, CrossingStrand
 from ..sage_helper import _within_sage, sage_method
 
@@ -233,7 +233,7 @@ class Link(links_base.Link):
         return (B,g)
 
     @sage_method
-    def alexander_poly(self, multivar=True, v='no', method='wirt', norm = True, factored = False):
+    def alexander_poly(self, multivar=True, v='no', method='default', norm = True, factored = False):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
@@ -247,6 +247,14 @@ class Link(links_base.Link):
             sage: K = Link('L7n1')
             sage: K.alexander_poly(norm=False)
             -t2 - t1*t2^-2
+
+        The default algorithm for *knots* is Bar-Natan's super-fast
+        "local" algorithm.  For links, we apply Fox calculus to a
+        Wirtinger presentation for the link.
+
+            sage: L = Link('K13n123')
+            sage: L.alexander_poly() == L.alexander_poly(method='wirtinger')
+            True
         """
 
         # sign normalization still missing, but when "norm=True" the
@@ -262,32 +270,39 @@ class Link(links_base.Link):
             if comp < 2:
                 multivar = False
 
-            if(multivar):
-                L = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
-                t = list(L.gens())
-            else:
-                L = LaurentPolynomialRing(QQ,'t')
-                t = [L.gen()]
-
-            M = self.alexander_matrix(mv=multivar)
-            C = M[0]
-            m = C.nrows()
-            n = C.ncols()
-            if n>m:
-                k = m-1
-            else:
-                k = n-1
+            # If single variable, use the super-fast method of Bar-Natan.
+            if comp == 1 and method == 'default' and norm:
+                p = alexander.alexander(self)
+            else: # Use a simple method based on the Wirtinger presentation.
+                if method not in ['default', 'wirtinger']:
+                    raise ValueError("Available methods are 'default' and 'wirtinger'")
                 
-            subMatrix = C[0:k,0:k]
-            p = subMatrix.determinant()
-            if p == 0: return 0
-            if multivar:
-                t_i = M[1][-1]
-                p = (p.factor())/(t_i-1)
-                p = p.expand()
+                if(multivar):
+                    L = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
+                    t = list(L.gens())
+                else:
+                    L = LaurentPolynomialRing(QQ,'t')
+                    t = [L.gen()]
 
-            if(norm):
-                p = normalize_alex_poly(p,t)
+                M = self.alexander_matrix(mv=multivar)
+                C = M[0]
+                m = C.nrows()
+                n = C.ncols()
+                if n>m:
+                    k = m-1
+                else:
+                    k = n-1
+                
+                subMatrix = C[0:k,0:k]
+                p = subMatrix.determinant()
+                if p == 0: return 0
+                if multivar:
+                    t_i = M[1][-1]
+                    p = (p.factor())/(t_i-1)
+                    p = p.expand()
+
+                if(norm):
+                    p = normalize_alex_poly(p,t)
 
             if v != 'no':
                 return p(*v)
@@ -341,61 +356,6 @@ class Link(links_base.Link):
         component=G.connected_components()[1]
         G=G.subgraph(component)
         return G
-
-    @sage_method      
-    def old_goeritz_matrix(self):
-        """
-        Finds the black graph of a knot, and from that, returns the Goeritz
-        matrix of that knot::
-        
-            sage: K=Link('4_1')
-            sage: K.goeritz_matrix().det()
-            5
-        """
-        g=self.black_graph()
-        l=g.vertices()
-        m=matrix(len(g.vertices()),len(g.vertices()))
-        for e in g.edges():
-            i=l.index(e[0])
-            j=l.index(e[1])
-            m[(i,j)]=m[(i,j)]+self._edge_sign(e)
-            m[(j,i)]=m[(j,i)]+self._edge_sign(e)
-        for i in range(len(g.vertices())):
-            m[(i,i)]=sum(m.column(i))*(-1)
-        m=m.delete_rows([0])
-        m=m.delete_columns([0])
-        return m
-
-    @sage_method
-    def old_signature(self):
-        """
-        Returns the signature of the link.  Examples::
-        
-            sage: K = Link('4a1')                                                                               
-            sage: K.signature()          
-            0
-            sage: L = Link('9^3_12')
-            sage: Lbar = L.mirror()
-            sage: L.signature() + Lbar.signature()
-            0
-        """
-        answer=0
-        G = self.black_graph()
-        for e in G.edges():
-            v = e[2]
-            if self._edge_sign(e) == v.sign:
-                answer = answer + v.sign
-        m=self.old_goeritz_matrix()
-        vals=m.eigenvalues()
-        pos=0
-        neg=0
-        for v in vals:
-            if v>0:
-                pos+=1
-            elif v<0:
-                neg+=1
-        sig=pos-neg+answer
-        return sig
 
     @sage_method
     def white_graph(self):

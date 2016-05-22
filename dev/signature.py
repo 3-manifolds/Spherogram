@@ -113,6 +113,7 @@ def signature_function_of_integral_matrix(V, prec=53):
     
 
 def basic_knot_test():
+    # All passed!
     for M in snappy.HTLinkExteriors(cusps=1):
         print(M.name())
         R = PolynomialRing(ZZ, 't')
