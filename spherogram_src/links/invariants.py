@@ -58,70 +58,51 @@ def normalize_alex_poly(p,t):
     p = R.polynomial_ring()(p)
     return p
 
-def braidword_to_crossings(braidword):
-    """
-    Initialize a link from a sage braid word.
-    """
-    braidgens = list(braidword.parent().gens())
-    strands = [Strand('s'+repr(i)) for i in range(len(braidgens)+1)]
- 
-    s = [(x,0) for x in strands] # start                                                               
-    l = [(x,1) for x in strands] # loose ends     
-                                                     
-    braidsylls = []
-    for b in braidword.syllables():
-        if b[1]>0:
-            braidsylls = braidsylls+[b[0]]*abs(b[1])
-        if b[1]<0:
-            braidsylls = braidsylls+[b[0]**-1]*abs(b[1])
-    xings = [0]*len(braidsylls)
 
-    for i, b in enumerate(braidsylls): 
-        # for each syllable, there is a single crossing               
-        label = "x"+repr(i)
-        xings[i] = Crossing(label)
-        for j, a in enumerate(braidgens): 
-            # j tells us which two strands are crossing                
+def sage_braid_as_int_word(braid):
+    G = braid.parent()
+    gen_idx = dict([(g, i + 1) for i, g in enumerate(G.gens())])
+    ans = []
+    for g, e in braid.syllables():
+        if e > 0:
+            ans += e*[gen_idx[g]]
+        else:
+            ans += abs(e)*[-gen_idx[g]]
 
-            if b == a: # if crossing is negative  
-                xings[i][1] = l[j][0][l[j][1]]
-                xings[i][0] = l[j+1][0][l[j+1][1]]
-                l[j]   = (xings[i],2)
-                l[j+1] = (xings[i],3)
-                    
-            if b**-1 == a: # if crossing is positive      
-                xings[i][0] = l[j][0][l[j][1]]
-                xings[i][3] = l[j+1][0][l[j+1][1]]
-                l[j]   = (xings[i],1)
-                l[j+1] = (xings[i],2)
-                    
-    for i in range(len(s)):
-        s[i][0][s[i][1]] = l[i][0][l[i][1]]
+    n = G.ngens()
+    if max([abs(a) for a in ans]) < n:
+        ans += [n, -n]
+    return ans
 
-    crossings = xings+strands
-    return crossings
 
+extra_docstr_for_sage = """
+Can also convert to and from SageMath braid and link types::
+    
+   sage: B = BraidGroup(4)
+   sage: a, b, c = B.gens()
+   sage: Link(braid_closure=(a**-3) * (b**4) * (c**2) * a * b * c )
+   <Link: 2 comp; 12 cross>
+   sage: Link(a * b * c)
+   <Link: 1 comp; 3 cross>
+
+"""
+
+extra_docstring = extra_docstr_for_sage if _within_sage else ''
 
 class Link(links_base.Link):
-    __doc__ = links_base.Link.__doc__
+    __doc__ = links_base.Link.__doc__  + extra_docstring 
     
-    def __init__(self, crossings, check_planarity=True, build=True):
+    def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
         if _within_sage:
-            crossings = self._from_braid(crossings)
-        
-        links_base.Link.__init__(self, crossings, check_planarity, build)
+            if isinstance(crossings, Braid):
+                assert braid_closure is None
+                braid_closure = crossings
+                crossings = None
+            if isinstance(braid_closure, Braid):
+                braid_closure = sage_braid_as_int_word(braid_closure)
+                
+        links_base.Link.__init__(self, crossings, braid_closure, check_planarity, build)
 
-    @sage_method
-    def _from_braid(self, crossings):
-        """
-         sage: B = BraidGroup(4)
-         sage: a, b, c = B.gens()
-         sage: Link( (a**-3) * (b**4) * (c**2) * a * b * c )
-         <Link: 2 comp; 12 cross>
-         """
-        if isinstance(crossings, Braid):
-            crossings = braidword_to_crossings(crossings)
-        return crossings
 
     @sage_method
     def linking_matrix(self):
@@ -574,18 +555,34 @@ class Link(links_base.Link):
             ans = matrix(ans)
         return ans
 
-    def braid_word(self):
+    def braid_word(self, as_sage_braid=False):
         """
         Return a list of integers which defines a braid word whose closure is the 
         given link.  The natural numbers 1, 2, 3, etc are the generators and the
         negatives are the inverses.
         
-        >>> word = Link('L10n10').braid_word()
-        >>> word
-        [-1, 2, -3, 2, -3, 2, -1, -2, 1, -2]
+        >>> L = Link('K8n1')
+        >>> word = L.braid_word(); word
+        [-1, 2, -3, -2, -4, 3, -2, 1, -2, -2, -3, -2, 4, 3, 2, 2]
+        >>> Link(braid_closure=word).exterior().identify()
+        [m222(0,0), 8_20(0,0), K5_12(0,0), K8n1(0,0)]
 
+        Within Sage, you can get the answer as an element of the
+        appropriate BraidGroup::
+
+            sage: Link('K6a2').braid_word(as_sage_braid=True)
+            (s0^-1*s1)^2*s1^2
+        
         Implementation follows P. Vogel, "Representation of links by
         braids, a new algorithm".
         """
         from . import seifert
-        return seifert.braid_word(self)
+        word = seifert.braid_word(self)
+        if as_sage_braid:
+            if not _within_sage:
+                raise ValueError('Requested Sage braid outside of Sage.')
+            n = max([abs(a) for a in word]) + 1
+            word = BraidGroup(n)(word)
+        return word
+            
+        
