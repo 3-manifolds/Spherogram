@@ -2,6 +2,7 @@ from __future__ import print_function
 import snappy
 import spherogram, spherogram.links, spherogram.links.test
 import spherogram.links.simplify, spherogram.links.morse
+import spherogram.links.seifert
 
 import spherogram.sage_helper as sage_helper
 import re, getopt, sys
@@ -11,7 +12,8 @@ modules = [spherogram.codecs.DT, spherogram.codecs.Base64LikeDT,
            spherogram.graphs, spherogram.presentations,
            spherogram.links.links, spherogram.links.links_base,
            spherogram.links.random_links, spherogram.links.orthogonal,
-           spherogram.links.simplify, spherogram.links.invariants, spherogram.links.morse]
+           spherogram.links.simplify, spherogram.links.invariants,
+           spherogram.links.morse, spherogram.links.seifert]
 
 # Apply the monkey-patches that snappy applies when it is imported.
 spherogram.links.links_base.Link.exterior = snappy._link_exterior

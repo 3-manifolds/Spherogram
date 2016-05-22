@@ -548,3 +548,44 @@ class Link(links_base.Link):
         """
         from . import jones
         return jones.Jones_poly(self, variable)
+
+    def seifert_matrix(self):
+        """
+        Returns the Seifert matrix of the link::
+
+            sage: L = Link('K10n11')
+            sage: A = L.seifert_matrix()
+            sage: alex = L.alexander_poly()
+            sage: t = alex.parent().gen()
+            sage: B = t*A - A.transpose()
+            sage: t**4 * alex == -B.det()
+            True
+
+        Uses the algorithm described in
+
+        J. Collins, "An algorithm for computing the Seifert matrix of a link 
+        from a braid representation." (2007).
+
+        after first making the link isotopic to a braid closure. 
+        """
+        from . import seifert
+        ans = seifert.seifert_matrix(self)
+        if _within_sage:
+            ans = matrix(ans)
+        return ans
+
+    def braid_word(self):
+        """
+        Return a list of integers which defines a braid word whose closure is the 
+        given link.  The natural numbers 1, 2, 3, etc are the generators and the
+        negatives are the inverses.
+        
+        >>> word = Link('L10n10').braid_word()
+        >>> word
+        [-1, 2, -3, 2, -3, 2, -1, -2, 1, -2]
+
+        Implementation follows P. Vogel, "Representation of links by
+        braids, a new algorithm".
+        """
+        from . import seifert
+        return seifert.braid_word(self)
