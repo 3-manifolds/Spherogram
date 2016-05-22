@@ -391,18 +391,18 @@ class Link(object):
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
 
-    def _build(self,start_orientations=[],component_starts = None):
+    def _build(self, start_orientations=[], component_starts = None):
         self._orient_crossings(start_orientations = start_orientations)
         self._build_components(component_starts = component_starts)
 
-    def _rebuild(self,same_components_and_orientations=False):
+    def _rebuild(self, same_components_and_orientations=False):
         if same_components_and_orientations:
             start_css = [comp[0] for comp in self.link_components]
         self.link_components = None
         for c in self.crossings:
             c._clear()
         if same_components_and_orientations:
-            self._build(start_orientations=start_css,component_starts=start_css)
+            self._build(start_orientations=start_css, component_starts=start_css)
         else:
             self._build()
         
@@ -879,20 +879,17 @@ class Link(object):
         """
         Returns a copy of the link.  
 
-        >>> K=Link('4_1')
-        >>> copy=K.copy()
+        >>> K = Link('L14n467')
+        >>> copy = K.copy()
         >>> K.PD_code() == copy.PD_code()
         True
-
-        If the link is very large (100s of crossings), you may get a
-        recursion limit exception; to get around this, call e.g.
-        ``sys.setrecursionlimit(10000)``.
         """
 
         if recursively:
             return copy.deepcopy(self)
         else:
             crossings = [Crossing(c.label) for c in self.crossings]
+            old_to_new = dict(zip(self.crossings, crossings))
             loose_strands = set([(n,i) for n in range(len(crossings)) for i in range(4)])
             while loose_strands:
                 n, i = loose_strands.pop()
@@ -900,8 +897,23 @@ class Link(object):
                 adj_n = self.crossings.index(adj_c)
                 crossings[n][i] = crossings[adj_n][adj_i] 
                 loose_strands.remove((adj_n,adj_i))
+
+            # Orient the new crossings.
+            for old, new in old_to_new.items():
+                new.make_tail(0)
+                e = 3 if old.sign == 1 else 1
+                new.make_tail(e)
+                new.orient()
+                    
+            component_starts = []
+            for component in self.link_components:
+                old_crossing, entry_point = component[0]
+                crossing = old_to_new[old_crossing]
+                component_starts.append(
+                    CrossingEntryPoint(crossing, entry_point))
                 
-            link = Link(crossings)
+            link = self.__class__(crossings, check_planarity=False, build=False)
+            link._build(component_starts=component_starts)
             return link
 
 
