@@ -126,21 +126,21 @@ class TestLinkFunctions(unittest.TestCase):
         L3v = LaurentPolynomialRing(QQ,['t1','t2','t3'])
         t1, t2, t3 = L3v.gens()
         # method = 'wirt'
-        self.assertEqual(self.Tref.alexander_poly(),       1 - t + t**2)
-        self.assertEqual(self.K3_1.alexander_poly(),       1 - t + t**2)
-        self.assertEqual(self.K7_2.alexander_poly(),       3 - 5*t + 3*t**2)
-        self.assertEqual(self.K8_3.alexander_poly(),       4 - 9*t + 4*t**2)
-        self.assertEqual(self.K8_13.alexander_poly(),      2 - 7*t + 11*t**2 - 7*t**3 + 2*t**4)
-        self.assertEqual(self.L2a1.alexander_poly(),       1)
-        self.assertEqual(self.Borr.alexander_poly(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
-        self.assertEqual(self.L6a4.alexander_poly(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
+        self.assertEqual(self.Tref.alexander_polynomial(),       1 - t + t**2)
+        self.assertEqual(self.K3_1.alexander_polynomial(),       1 - t + t**2)
+        self.assertEqual(self.K7_2.alexander_polynomial(),       3 - 5*t + 3*t**2)
+        self.assertEqual(self.K8_3.alexander_polynomial(),       4 - 9*t + 4*t**2)
+        self.assertEqual(self.K8_13.alexander_polynomial(),      2 - 7*t + 11*t**2 - 7*t**3 + 2*t**4)
+        self.assertEqual(self.L2a1.alexander_polynomial(),       1)
+        self.assertEqual(self.Borr.alexander_polynomial(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
+        self.assertEqual(self.L6a4.alexander_polynomial(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
 
         # method = 'snappy'
-        self.assertEqual(self.Tref.alexander_poly(method='snappy'),       a**2 - a + 1)
-        self.assertEqual(self.K3_1.alexander_poly(method='snappy'), a**2 - a + 1)
-        self.assertEqual(self.K7_2.alexander_poly(method='snappy'),       3*a**2 - 5*a + 3)
-        self.assertEqual(self.K8_3.alexander_poly(method='snappy'),       4*a**2 - 9*a + 4)
-        self.assertEqual(self.K8_13.alexander_poly(method='snappy'),      2*a**4 - 7*a**3 + 11*a**2 - 7*a + 2)
+        self.assertEqual(self.Tref.alexander_polynomial(method='snappy'),       a**2 - a + 1)
+        self.assertEqual(self.K3_1.alexander_polynomial(method='snappy'), a**2 - a + 1)
+        self.assertEqual(self.K7_2.alexander_polynomial(method='snappy'),       3*a**2 - 5*a + 3)
+        self.assertEqual(self.K8_3.alexander_polynomial(method='snappy'),       4*a**2 - 9*a + 4)
+        self.assertEqual(self.K8_13.alexander_polynomial(method='snappy'),      2*a**4 - 7*a**3 + 11*a**2 - 7*a + 2)
         
     def testConnectedSum(self):
         repeat = 3
@@ -148,7 +148,7 @@ class TestLinkFunctions(unittest.TestCase):
             k1 = self.random_knot()
             k2 = self.random_knot()
             Sum = k1.connected_sum(k2)
-            self.assertEqual(Sum.alexander_poly(), k1.alexander_poly()*k2.alexander_poly())
+            self.assertEqual(Sum.alexander_polynomial(), k1.alexander_polynomial()*k2.alexander_polynomial())
             self.assertEqual(Sum.signature(),      k1.signature()+k2.signature())
             self.assertEqual(Sum.determinant(),    k1.determinant()*k2.determinant())
             repeat -=1
@@ -173,7 +173,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k1.determinant(),    k1_prime.determinant())
             self.assertEqual(k1.writhe(),         k1_prime.writhe())
             self.assertEqual(k1.signature(),      k1_prime.signature())
-            self.assertEqual(k1.alexander_poly(), k1_prime.alexander_poly())
+            self.assertEqual(k1.alexander_polynomial(), k1_prime.alexander_polynomial())
             repeat-=1
 
         repeat = 3
@@ -183,7 +183,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k2.determinant(),    k2_prime.determinant())
             self.assertEqual(k2.writhe(),         k2_prime.writhe())
             self.assertEqual(k2.signature(),      k2_prime.signature())
-            self.assertEqual(k2.alexander_poly(), k2_prime.alexander_poly())
+            self.assertEqual(k2.alexander_polynomial(), k2_prime.alexander_polynomial())
             repeat-=1
 
     def testMirror(self):
