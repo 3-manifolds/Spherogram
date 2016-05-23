@@ -80,23 +80,10 @@ def sage_braid_as_int_word(braid):
     return ans
 
 
-extra_docstr_for_sage = """
-Can also convert to and from SageMath braid and link types::
-    
-   sage: B = BraidGroup(4)
-   sage: a, b, c = B.gens()
-   sage: Link(braid_closure=(a**-3) * (b**4) * (c**2) * a * b * c )
-   <Link: 2 comp; 12 cross>
-   sage: L = Link(a * b * c); L
-   <Link: 1 comp; 3 cross>
-   sage: S = L.sage_link(); S
-   Knot represented by 3 crossings
-   sage: Link(S) 
-   <Link: 1 comp; 3 cross>
-
+extra_docstring = """
+    You can also convert to and from SageMath braid and link types, 
+    see the documentation for the "sage_link" method for details.
 """
-
-extra_docstring = extra_docstr_for_sage if _within_sage else ''
 
 class Link(links_base.Link):
     __doc__ = links_base.Link.__doc__  + extra_docstring 
@@ -241,8 +228,8 @@ class Link(links_base.Link):
             -t2 - t1*t2^-2
 
         The default algorithm for *knots* is Bar-Natan's super-fast
-        "local" algorithm.  For links, we apply Fox calculus to a
-        Wirtinger presentation for the link.
+        tangle-based algorithm.  For links, we apply Fox calculus to a
+        Wirtinger presentation for the link::
 
             sage: L = Link('K13n123')
             sage: L.alexander_poly() == L.alexander_poly(method='wirtinger')
@@ -376,7 +363,7 @@ class Link(links_base.Link):
         Note that this may produce a meaningless result in the case of
         a split link diagram.  Consequently if the diagram is split,
         i.e if the multigraph has more than 2 components, a ValueError
-        is raised.
+        is raised::
 
             sage: K=Link('5_1')           
             sage: K.white_graph()
@@ -404,7 +391,7 @@ class Link(links_base.Link):
     def goeritz_matrix(self, return_graph=False):
         """
         Call self.white_graph() and return the Goeritz matrix of the result.
-        If the return_graph flag is set, also return the graph.
+        If the return_graph flag is set, also return the graph::
         
             sage: K=Link('4_1')
             sage: abs(K.goeritz_matrix().det())
@@ -430,7 +417,7 @@ class Link(links_base.Link):
     def signature(self):
         """
         Returns the signature of the link, computed from the Goeritz matrix using
-        the algorithm of Gordon and Litherland.
+        the algorithm of Gordon and Litherland::
 
             sage: K = Link('4a1')            
             sage: K.signature()          
@@ -608,7 +595,19 @@ class Link(links_base.Link):
            -t^3
            sage: L.signature(), K.signature()
            (4, 4)
-        
+
+        Can also go the other way::
+
+            sage: B = BraidGroup(4)
+            sage: a, b, c = B.gens()
+            sage: Link(braid_closure=(a**-3) * (b**4) * (c**2) * a * b * c )
+            <Link: 2 comp; 12 cross>
+            sage: L = Link(a * b * c); L
+            <Link: 1 comp; 3 cross>
+            sage: S = L.sage_link(); S
+            Knot represented by 3 crossings
+            sage: Link(S) 
+            <Link: 1 comp; 3 cross>
         """
         if SageKnot is None:
             raise ValueError('Your SageMath does not seem to have a native link type')
