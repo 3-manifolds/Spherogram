@@ -8,7 +8,7 @@ from . import links_base, alexander
 from .links_base import Crossing, Strand, CrossingStrand
 from ..sage_helper import _within_sage, sage_method
 
-depreciation_warnings_issued = set()
+deprecation_warnings_issued = set()
 
 if _within_sage:
     import sage.all
@@ -218,9 +218,9 @@ class Link(links_base.Link):
         """
         Please use the "alexander_polynomial" method instead.
         """
-        if 'alexander_poly' not in depreciation_warnings_issued:
-            depreciation_warnings_issued.add('alexander_poly')
-            print('DepreciationWarning: use "alexander_polynomial" instead of "alexander_poly".')
+        if 'alexander_poly' not in deprecation_warnings_issued:
+            deprecation_warnings_issued.add('alexander_poly')
+            print('Deprecation Warning: use "alexander_polynomial" instead of "alexander_poly".')
         return self.alexander_polynomial(*args, **kwargs)
                   
     @sage_method
@@ -533,9 +533,9 @@ class Link(links_base.Link):
         """
         Please use the "jones_polynomial" method instead.
         """
-        if 'jones_poly' not in depreciation_warnings_issued:
-            depreciation_warnings_issued.add('jones_poly')
-            print('DepreciationWarning: use "jones_polynomial" instead of "jones_poly".')
+        if 'jones_poly' not in deprecation_warnings_issued:
+            deprecation_warnings_issued.add('jones_poly')
+            print('Deprecation Warning: use "jones_polynomial" instead of "jones_poly".')
         return self.jones_polynomial(*args, **kwargs)
     
     @sage_method
