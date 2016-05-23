@@ -64,5 +64,5 @@ def fill_vols(M):
 
 def plink_component_order_test(N):
     M2 = snappy.Manifold()
-    return {test_DT(dt, M2) for dt in asymmetric_link_DTs(N)}
+    return set([test_DT(dt, M2) for dt in asymmetric_link_DTs(N)])
 

@@ -145,7 +145,7 @@ class DrorDatum(object):
         indices.merge(cs_a, cs_b)
 
 def num_overlap(crossing, frontier):
-    neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
+    neighbor_strands = set([cs.opposite() for cs in crossing.crossing_strands()])
     return len(neighbor_strands.intersection(frontier))
         
 class Exhaustion(object):

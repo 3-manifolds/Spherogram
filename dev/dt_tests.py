@@ -54,13 +54,13 @@ class TestObject(object):
     pass
 
 def test5():
-    D = { TestObject():i for i in range(10) }
+    D = dict([(TestObject(),i) for i in range(10)])
     k = D.keys()[0]
     for i in xrange(10000000):
         D[k]
 
 def test6():
-    D = { i:TestObject() for i in range(10) }
+    D = dict([(i, TestObject()) for i in range(10)])
     k = D.keys()[0]
     for i in xrange(10000000):
         D[k]
