@@ -8,6 +8,8 @@ from . import links_base, alexander
 from .links_base import Crossing, Strand, CrossingStrand
 from ..sage_helper import _within_sage, sage_method
 
+depreciation_warnings_issued = set()
+
 if _within_sage:
     import sage.all
     import sage.graphs.graph
@@ -212,19 +214,29 @@ class Link(links_base.Link):
         return (B,g)
 
     @sage_method
-    def alexander_poly(self, multivar=True, v='no', method='default', norm = True, factored = False):
+    def alexander_poly(self, *args, **kwargs):
+        """
+        Please use the "alexander_polynomial" method instead.
+        """
+        if 'alexander_poly' not in depreciation_warnings_issued:
+            depreciation_warnings_issued.add('alexander_poly')
+            print('DepreciationWarning: use "alexander_polynomial" instead of "alexander_poly".')
+        return self.alexander_polynomial(*args, **kwargs)
+                  
+    @sage_method
+    def alexander_polynomial(self, multivar=True, v='no', method='default', norm = True, factored = False):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
 
             sage: K = Link('4_1')
-            sage: K.alexander_poly()
+            sage: K.alexander_polynomial()
             t^2 - 3*t + 1
-            sage: K.alexander_poly(v=[4])
+            sage: K.alexander_polynomial(v=[4])
             5
             
             sage: K = Link('L7n1')
-            sage: K.alexander_poly(norm=False)
+            sage: K.alexander_polynomial(norm=False)
             -t2 - t1*t2^-2
 
         The default algorithm for *knots* is Bar-Natan's super-fast
@@ -232,7 +244,7 @@ class Link(links_base.Link):
         Wirtinger presentation for the link::
 
             sage: L = Link('K13n123')
-            sage: L.alexander_poly() == L.alexander_poly(method='wirtinger')
+            sage: L.alexander_polynomial() == L.alexander_polynomial(method='wirtinger')
             True
         """
 
@@ -243,7 +255,7 @@ class Link(links_base.Link):
             try:
                 return self.exterior().alexander_polynomial()
             except ImportError:
-                raise RuntimeError('this method for alexander_poly '+no_snappy_msg)
+                raise RuntimeError('this method for alexander_polynomial '+no_snappy_msg)
         else:
             comp = len(self.link_components)
             if comp < 2:
@@ -473,7 +485,7 @@ class Link(links_base.Link):
         elif method=='goeritz':
             return abs(self.goeritz_matrix().determinant())
         else:
-            return abs(self.alexander_poly(multivar=False, v=[-1], norm = False))
+            return abs(self.alexander_polynomial(multivar=False, v=[-1], norm = False))
 
     @sage_method
     def morse_number(self, solver='GLPK'):
@@ -517,12 +529,22 @@ class Link(links_base.Link):
         return morse.MorseLinkDiagram(self)
 
     @sage_method
-    def jones_poly(self, variable=None):
+    def jones_poly(self, *args, **kwargs):
+        """
+        Please use the "jones_polynomial" method instead.
+        """
+        if 'jones_poly' not in depreciation_warnings_issued:
+            depreciation_warnings_issued.add('jones_poly')
+            print('DepreciationWarning: use "jones_polynomial" instead of "jones_poly".')
+        return self.jones_polynomial(*args, **kwargs)
+    
+    @sage_method
+    def jones_polynomial(self, variable=None):
         """
         Returns the Jones polynomial of the link::
 
             sage: L = Link('8_5')
-            sage: L.jones_poly()
+            sage: L.jones_polynomial()
             1 - q + 3*q^2 - 3*q^3 + 3*q^4 - 4*q^5 + 3*q^6 - 2*q^7 + q^8
         """
         from . import jones
@@ -534,7 +556,7 @@ class Link(links_base.Link):
 
             sage: L = Link('K10n11')
             sage: A = L.seifert_matrix()
-            sage: alex = L.alexander_poly()
+            sage: alex = L.alexander_polynomial()
             sage: t = alex.parent().gen()
             sage: B = t*A - A.transpose()
             sage: t**4 * alex == -B.det()
@@ -591,7 +613,7 @@ class Link(links_base.Link):
            sage: L = Link('K10n11')   # Spherogram link
            sage: K = L.sage_link(); K
            Knot represented by 10 crossings
-           sage: L.alexander_poly()/K.alexander_polynomial()  # Agree up to units
+           sage: L.alexander_polynomial()/K.alexander_polynomial()  # Agree up to units
            -t^3
            sage: L.signature(), K.signature()
            (4, 4)
