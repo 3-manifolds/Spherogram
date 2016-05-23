@@ -21,6 +21,11 @@ if _within_sage:
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
     from sage.graphs.graph import Graph 
     from sage.quadratic_forms.quadratic_form import QuadraticForm
+    try:
+        from sage.knots.knot import Knot as SageKnot
+        from sage.knots.link import Link as SageLink
+    except ImportError:  # Sage older than 7.2
+        SageKnot, SageLink = None, None
 else:
     pass 
 
@@ -82,7 +87,11 @@ Can also convert to and from SageMath braid and link types::
    sage: a, b, c = B.gens()
    sage: Link(braid_closure=(a**-3) * (b**4) * (c**2) * a * b * c )
    <Link: 2 comp; 12 cross>
-   sage: Link(a * b * c)
+   sage: L = Link(a * b * c); L
+   <Link: 1 comp; 3 cross>
+   sage: S = L.sage_link(); S
+   Knot represented by 3 crossings
+   sage: Link(S) 
    <Link: 1 comp; 3 cross>
 
 """
@@ -100,6 +109,8 @@ class Link(links_base.Link):
                 crossings = None
             if isinstance(braid_closure, Braid):
                 braid_closure = sage_braid_as_int_word(braid_closure)
+            if crossings is not None and isinstance(crossings, (SageKnot, SageLink)):
+                crossings = crossings.pd_code()
                 
         links_base.Link.__init__(self, crossings, braid_closure, check_planarity, build)
 
@@ -563,7 +574,7 @@ class Link(links_base.Link):
         
         >>> L = Link('K8n1')
         >>> word = L.braid_word(); word
-        [-1, 2, -3, -2, -4, 3, -2, 1, -2, -2, -3, -2, 4, 3, 2, 2]
+        [1, -2, 3, 2, 4, -3, 2, -1, 2, 2, 3, 2, -4, -3, -2, -2]
         >>> Link(braid_closure=word).exterior().identify()
         [m222(0,0), 8_20(0,0), K5_12(0,0), K8n1(0,0)]
 
@@ -571,7 +582,7 @@ class Link(links_base.Link):
         appropriate BraidGroup::
 
             sage: Link('K6a2').braid_word(as_sage_braid=True)
-            (s0^-1*s1)^2*s1^2
+            (s0*s1^-1)^2*s1^-2
         
         Implementation follows P. Vogel, "Representation of links by
         braids, a new algorithm".
@@ -584,5 +595,23 @@ class Link(links_base.Link):
             n = max([abs(a) for a in word]) + 1
             word = BraidGroup(n)(word)
         return word
-            
+
+    @sage_method
+    def sage_link(self):
+        """
+        Convert to a SageMath Knot or Link::
+
+           sage: L = Link('K10n11')   # Spherogram link
+           sage: K = L.sage_link(); K
+           Knot represented by 10 crossings
+           sage: L.alexander_poly()/K.alexander_polynomial()  # Agree up to units
+           -t^3
+           sage: L.signature(), K.signature()
+           (4, 4)
         
+        """
+        if SageKnot is None:
+            raise ValueError('Your SageMath does not seem to have a native link type')
+        sage_type = SageKnot if len(self.link_components) == 1 else SageLink
+        code = [list(x) for x in self.PD_code(min_strand_index=1)]
+        return sage_type(code)

@@ -170,7 +170,6 @@ def straighten_arrows(arrows):
                     other_arrow[1] += diff
                 totally_straightened = False
             elif head < tail: #need to move head down
-
                 diff = tail-head
                 same_end_strand = [x for x in arrows if x[2] == arrow[2] and x[1]>=head]
                 for other_arrow in same_end_strand:
@@ -231,7 +230,6 @@ def braid_arrows(link):
         arrow.pop(1) #start and end positions are now the same
     return arrows
 
-
 def braid_word(link):
     """
     Return a list of integers which defines a braid word whose closure is the 
@@ -239,15 +237,15 @@ def braid_word(link):
     negatives are the inverses.
 
     >>> braid_word(Link('L13n1234'))
-    [1, -2, 3, -2, 4, 3, -2, -2, 1, 3, -2, -4, -3, 2, -3]
+    [-1, 2, -3, 2, -4, -3, 2, 2, -1, -3, 2, 4, 3, -2, 3]
 
     Implementation follows P. Vogel, "Representation of links by
     braids, a new algorithm".
     """
     arrows = braid_arrows(link)
     word = []
-    for position, strand,over_or_under in arrows:
-        if over_or_under == 0:
+    for position, strand, over_or_under in arrows:
+        if over_or_under != 0:
             word.append(-strand-1)
         else:
             word.append(strand+1)
