@@ -19,6 +19,11 @@ except ImportError: # Python 3
 
 import copy
 
+if sys.version_info >= (2, 7):
+    OrderedDict = collections.OrderedDict
+else: # Hack for Python 2.6
+    OrderedDict = dict
+
 def is_iterable(obj):
     try:
         iter(obj)
@@ -240,8 +245,8 @@ class LinkComponents(list):
         component = c.component()
         self.append(component)
         return component
-
-class Labels(collections.OrderedDict):
+    
+class Labels(OrderedDict):
     def add(self, x):
         self[x] = len(self)
 
@@ -389,7 +394,7 @@ class Link(object):
         return crossings
                           
     def _crossings_from_DT_code(self, code):
-        gluings = collections.OrderedDict()
+        gluings = OrderedDict()
         for c, X in enumerate(code):
             for i, x in enumerate(X):
                 if x in gluings:

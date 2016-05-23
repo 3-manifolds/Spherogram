@@ -427,7 +427,7 @@ def remove_overstrand(link,overstrand):
 
     start_cep = overstrand[0].previous()
     end_cep = overstrand[-1].next()
-    bridge_strands = {c: Strand('strand'+str(c.label)) for c in crossing_set}
+    bridge_strands = dict([(c, Strand('strand'+str(c.label))) for c in crossing_set])
     for cep in overstrand:
         c = cep.crossing
         if c not in crossing_set:
