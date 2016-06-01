@@ -636,3 +636,14 @@ class Link(links_base.Link):
         sage_type = SageKnot if len(self.link_components) == 1 else SageLink
         code = [list(x) for x in self.PD_code(min_strand_index=1)]
         return sage_type(code)
+
+    @sage_method
+    def _sage_(self):
+        """
+        A quick test:
+        
+            sage: L = Link('K13n100')
+            sage: L._sage_()
+            Knot represented by 13 crossings
+        """
+        return self.sage_link()
