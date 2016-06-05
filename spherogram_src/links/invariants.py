@@ -27,7 +27,7 @@ if _within_sage:
         from sage.knots.knot import Knot as SageKnot
         from sage.knots.link import Link as SageLink
     except ImportError:  # Sage older than 7.2
-        SageKnot, SageLink = None, None
+        SageKnot, SageLink = type(None), type(None)
 else:
     pass 
 
