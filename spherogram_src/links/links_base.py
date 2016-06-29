@@ -350,7 +350,7 @@ class Link(object):
         
             # Crossings can be a PD code rather than a list of actual crossings
             if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
-                crossings = self._crossings_from_DT_code(crossings)
+                crossings = self._crossings_from_PD_code(crossings)
 
         elif braid_closure is not None:
             crossings = self._crossings_from_braid_closure(braid_closure)
@@ -393,7 +393,7 @@ class Link(object):
             crossings = self._lookup_DT(spec).PD_code()
         return crossings
                           
-    def _crossings_from_DT_code(self, code):
+    def _crossings_from_PD_code(self, code):
         gluings = OrderedDict()
         for c, X in enumerate(code):
             for i, x in enumerate(X):
