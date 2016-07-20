@@ -374,13 +374,12 @@ class Link(object):
 
         if build:
             self._build()
+            if check_planarity and not self.is_planar():
+                raise ValueError("Link isn't planar")
 
-        if check_planarity and not self.is_planar():
-            raise ValueError("Link isn't planar")
-
-        # If the crossings aren't labeled the label them for
+        # If the crossings aren't labeled then label them for
         # debugging purposes.
-        if False not in [X.label is None for X in self.crossings]:
+        if all(X.label is None for X in self.crossings):
             for c, X in enumerate(self.crossings):
                 X.label = c
 
