@@ -376,22 +376,11 @@ class Link(object):
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
 
         if build:
-<<<<<<< local
             self._build(start_orientations, component_starts)
-                
-        if check_planarity and not self.is_planar():
-            raise ValueError("Link isn't planar")
-=======
-            self._build()
             if check_planarity and not self.is_planar():
                 raise ValueError("Link isn't planar")
->>>>>>> other
 
-<<<<<<< local
-        # If the crossings aren't labeled the label them for
-=======
         # If the crossings aren't labeled then label them for
->>>>>>> other
         # debugging purposes.
         if all(X.label is None for X in self.crossings):
             for c, X in enumerate(self.crossings):
