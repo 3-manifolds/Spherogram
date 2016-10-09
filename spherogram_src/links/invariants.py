@@ -176,9 +176,9 @@ class Link(links_base.Link):
 
             sage: L = Link('3_1')
             sage: L.alexander_matrix()
-            ([       -1      t^-1 -t^-1 + 1]
-            [-t^-1 + 1        -1      t^-1]
-            [     t^-1 -t^-1 + 1        -1], [t, t, t])
+            ([   -1 1 - t     t]
+            [    t    -1 1 - t]
+            [1 - t     t    -1], [t, t, t])
 
             sage: L = Link([(4,1,3,2),(1,4,2,3)])
             sage: L.alexander_matrix()    #doctest: +SKIP
