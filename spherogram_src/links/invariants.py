@@ -396,7 +396,7 @@ class Link(links_base.Link):
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
         if len(components) > 2:
-            raise ValueError, 'The link diagram is split.'
+            raise ValueError('The link diagram is split.')
         return G.subgraph(components[1])
 
     @sage_method      
