@@ -27,7 +27,7 @@ if _within_sage:
         from sage.knots.knot import Knot as SageKnot
         from sage.knots.link import Link as SageLink
     except ImportError:  # Sage older than 7.2
-        SageKnot, SageLink = None, None
+        SageKnot, SageLink = type(None), type(None)
 else:
     pass 
 
@@ -176,9 +176,9 @@ class Link(links_base.Link):
 
             sage: L = Link('3_1')
             sage: L.alexander_matrix()
-            ([       -1      t^-1 -t^-1 + 1]
-            [-t^-1 + 1        -1      t^-1]
-            [     t^-1 -t^-1 + 1        -1], [t, t, t])
+            ([   -1 1 - t     t]
+            [    t    -1 1 - t]
+            [1 - t     t    -1], [t, t, t])
 
             sage: L = Link([(4,1,3,2),(1,4,2,3)])
             sage: L.alexander_matrix()    #doctest: +SKIP
@@ -396,7 +396,7 @@ class Link(links_base.Link):
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
         if len(components) > 2:
-            raise ValueError, 'The link diagram is split.'
+            raise ValueError('The link diagram is split.')
         return G.subgraph(components[1])
 
     @sage_method      
@@ -637,6 +637,17 @@ class Link(links_base.Link):
         code = [list(x) for x in self.PD_code(min_strand_index=1)]
         return sage_type(code)
 
+    @sage_method
+    def _sage_(self):
+        """
+        A quick test:
+        
+            sage: L = Link('K13n100')
+            sage: L._sage_()
+            Knot represented by 13 crossings
+        """
+        return self.sage_link()
+
 class ClosedBraid(Link):
     """
     This is a convenience class for constructing closed braids.
@@ -665,4 +676,3 @@ class ClosedBraid(Link):
 
     def __repr__(self):
         return 'ClosedBraid%s'%str(self.braid_word)
-
