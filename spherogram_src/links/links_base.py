@@ -988,8 +988,7 @@ class Link(object):
                 crossing = old_to_new[old_crossing]
                 component_starts.append(
                     CrossingEntryPoint(crossing, entry_point))
-                
-            link = self.__class__(crossings, check_planarity=False, build=False)
+            link = self.__class__(crossings=crossings, check_planarity=False, build=False)
             link._build(component_starts=component_starts)
             link.name = self.name
             return link
@@ -1117,8 +1116,6 @@ class Link(object):
                 strands.append(strand)
                 ceps = ceps - OrderedSet(strand)
         return sorted(strands, key = len, reverse=True)
-
-
 
 # ---- building the link exterior if SnapPy is present --------
 
