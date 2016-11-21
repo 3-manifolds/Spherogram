@@ -636,3 +636,35 @@ class Link(links_base.Link):
         sage_type = SageKnot if len(self.link_components) == 1 else SageLink
         code = [list(x) for x in self.PD_code(min_strand_index=1)]
         return sage_type(code)
+
+class ClosedBraid(Link):
+    """
+    Helper class for constructing closed braids.
+
+    The constructor accepts either a single argument which should be a list of
+    integers, to be passed to the Link constructor as the braid_closure
+    parameter, or one or more integers which will be packaged as a list and used
+    as the braid_closure parameter.
+
+    >>> B = ClosedBraid(1,-2,3)
+    >>> B
+    ClosedBraid(1, -2, 3)
+    >>> B = ClosedBraid([1,-2,3]*3)
+    >>> B
+    ClosedBraid(1, -2, 3, 1, -2, 3, 1, -2, 3)
+    """
+    def __init__(self, *args, **kwargs):
+        if 'braid_closure' not in kwargs and 'crossings' not in kwargs:
+            if not args:
+                # Possibly reasonable default
+                args = [1]
+            elif len(args) == 1:
+                # Let the Link constructor deal with invalid arguments
+                args = args[0]
+            kwargs['braid_closure'] = args
+        Link.__init__(self, **kwargs)
+        self.word = tuple(args)
+
+    def __repr__(self):
+        return 'ClosedBraid%s'%str(self.word)
+

@@ -13,7 +13,7 @@ def version():
     return _version.version
 __version__ = version()
 
-__all__ = ['ABC', 'CyclicList', 'CyclicWord', 'DTcodec', 'Digraph',
+__all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord', 'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
