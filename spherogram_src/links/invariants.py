@@ -654,17 +654,15 @@ class ClosedBraid(Link):
     ClosedBraid(1, -2, 3, 1, -2, 3, 1, -2, 3)
     """
     def __init__(self, *args, **kwargs):
-        if 'braid_closure' not in kwargs and 'crossings' not in kwargs:
-            if not args:
-                # Possibly reasonable default
-                args = [1]
-            elif len(args) == 1:
-                # Let the Link constructor deal with invalid arguments
-                args = args[0]
-            kwargs['braid_closure'] = args
-        Link.__init__(self, **kwargs)
-        self.word = tuple(args)
+        if args and 'braid_closure' not in kwargs:
+            if len(args) == 1:
+                self.braid_word = kwargs['braid_closure'] = tuple(args[0])
+                args = []
+            elif isinstance(args[0], int):
+                self.braid_word = kwargs['braid_closure'] = args
+                args = []
+        Link.__init__(self, *args, **kwargs)
 
     def __repr__(self):
-        return 'ClosedBraid%s'%str(self.word)
+        return 'ClosedBraid%s'%str(self.braid_word)
 
