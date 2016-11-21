@@ -639,12 +639,12 @@ class Link(links_base.Link):
 
 class ClosedBraid(Link):
     """
-    Helper class for constructing closed braids.
+    This is a convenience class for constructing closed braids.
 
-    The constructor accepts either a single argument which should be a list of
-    integers, to be passed to the Link constructor as the braid_closure
-    parameter, or one or more integers which will be packaged as a list and used
-    as the braid_closure parameter.
+    The constructor accepts either a single argument, which should be a list of
+    integers to be passed to the Link constructor as the braid_closure
+    parameter, or one or more integer arguments which will be packaged as a list
+    and used as the braid_closure parameter.
 
     >>> B = ClosedBraid(1,-2,3)
     >>> B
