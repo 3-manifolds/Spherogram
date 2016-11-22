@@ -668,10 +668,10 @@ class ClosedBraid(Link):
         if args and 'braid_closure' not in kwargs:
             if len(args) == 1:
                 self.braid_word = kwargs['braid_closure'] = tuple(args[0])
-                args = []
+                args = ()
             elif isinstance(args[0], int):
                 self.braid_word = kwargs['braid_closure'] = args
-                args = []
+                args = ()
         Link.__init__(self, *args, **kwargs)
 
     def __repr__(self):
