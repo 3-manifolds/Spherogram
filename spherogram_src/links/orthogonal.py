@@ -20,7 +20,7 @@ representations.  http://dx.doi.org/10.1016/j.amc.2005.03.007
 As all vertices (=crossings) of the underlying graph are 4-valent, things simpify; 
 the associated network N(P) has A_V empty and A_F has no self-loops.
 """
-
+from future.utils import iteritems, itervalues
 import networkx, random, string
 from .links import CrossingStrand, CrossingEntryPoint, Strand
 from ..graphs import CyclicList, Graph, Digraph
@@ -51,7 +51,7 @@ def basic_topological_numbering(G):
     """
     in_valences = dict( (v,G.indegree(v)) for v in G.vertices  )
     numbering = {}
-    curr_sources = [v for v,i in in_valences.iteritems() if i == 0]
+    curr_sources = [v for v,i in iteritems(in_valences) if i == 0]
     curr_number = 0
     while len(in_valences):
         new_sources = []
@@ -323,13 +323,13 @@ class OrthogonalRep(Digraph):
     def show(self, unit=10, labels=True):
         from sage.all import circle, text, line,  Graphics
         pos = self.basic_grid_embedding()
-        for v, (a,b) in pos.iteritems():
+        for v, (a,b) in iteritems(pos):
             pos[v] = (unit*a, unit*b)
         if not labels:
-            verts = [ circle(p, 1, fill=True) for p in pos.itervalues() ]
+            verts = [ circle(p, 1, fill=True) for p in itervalues(pos) ]
         else:
-            verts =  [ text(repr(v), p, fontsize=20, color='black') for v, p in pos.iteritems() ]
-            verts += [ circle(p, 1.5, fill=False) for p in pos.itervalues() ]
+            verts =  [ text(repr(v), p, fontsize=20, color='black') for v, p in iteritems(pos) ]
+            verts += [ circle(p, 1.5, fill=False) for p in itervalues(pos) ]
         edges = [ line( [pos[e.tail], pos[e.head]] ) for e in
                   self.edges if not e in self.dummy]
         G = sum(verts + edges, Graphics())
@@ -482,8 +482,8 @@ class OrthogonalLinkDiagram(list):
         """
         N = self.face_network
         flow = networkx.min_cost_flow(N)
-        for a, flows in flow.iteritems():
-            for b, w_a in flows.iteritems():
+        for a, flows in iteritems(flow):
+            for b, w_a in iteritems(flows):
                 if w_a and set(['s', 't']).isdisjoint(set([a, b])):
                     w_b = flow[b][a]
                     A, B = self[a], self[b]
@@ -521,10 +521,10 @@ class OrthogonalLinkDiagram(list):
         for i in G.depth_first_search(0):
             F = self[i]
             for edge in F:
-                if orientations.has_key(edge):
+                if edge in orientations:
                     new_orientations = F.orient_edges(edge, orientations[edge])
-                    for e, dir in new_orientations.iteritems():
-                        if orientations.has_key(e):
+                    for e, dir in iteritems(new_orientations):
+                        if e in orientations:
                             assert orientations[e] == dir
                         else:
                             orientations[e] = dir

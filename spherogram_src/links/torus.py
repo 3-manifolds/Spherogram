@@ -76,7 +76,7 @@ def torus_knot(name, method='calc'):
                 for j in range (q-1):
                     our_crossings[(j, i)][2]=our_crossings[(j+1, i-1)][0]	
         
-        crossings_list=our_crossings.values()
+        crossings_list = list(our_crossings.values())
         
         if to_mirror:
             return Link(crossings_list).mirror()

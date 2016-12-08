@@ -55,7 +55,11 @@ import operator
 
 class CyclicList(list):
     def __getitem__(self, n):
-        return list.__getitem__(self, n%len(self))
+        if isinstance(n, int):
+            return list.__getitem__(self, n%len(self))
+        elif isinstance(n, slice):
+            # Python3 only: in python2, __getslice__ gets called instead.
+            return list.__getitem__(self, n)
     def succ(self, x):
         return self[(self.index(x)+1)%len(self)]
     def pred(self, x):
@@ -278,7 +282,7 @@ class Graph(object):
 
     def add_vertex(self, hashable):
         self.vertices.add(hashable)
-        if not self.incidence_dict.has_key(hashable):
+        if hashable not in self.incidence_dict:
             self.incidence_dict[hashable] = []
 
     def remove_vertex(self, hashable):
@@ -411,12 +415,12 @@ class Graph(object):
         >>> G = Graph(caps.keys())
         >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
         >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges)]
+        >>> [flow[e] for e in sorted(G.edges, key=str)]
         [-1, 4, 1, 3, 2]
         >>> G = Digraph(caps.keys())
         >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
         >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges)]
+        >>> [flow[e] for e in sorted(G.edges, key=str)]
         [0, 3, 1, 3, 1]
         """
         if sink == source:
@@ -561,7 +565,7 @@ class ReducedGraph(Graph):
         Graph.__init__(self, pairs, singles) 
 
     def add_edge(self, x, y):
-        if self.find_edge.has_key((x,y)):
+        if (x,y) in self.find_edge:
             edge = self.find_edge[(x, y)]
             edge.multiplicity += 1
         else:
