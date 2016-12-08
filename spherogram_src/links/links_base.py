@@ -9,7 +9,7 @@ See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
 from .. import graphs
-from ordered_set import OrderedSet
+from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
 try:
