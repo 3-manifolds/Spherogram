@@ -32,7 +32,7 @@ known to be.  The issue is that [DP] creates a very special kind of ILP
 (a network flow) which can be solved in polynomial time, but below we're
 reduced to using a generic ILP solver.  
 """
-
+from future.utils import iteritems
 from ..sage_helper import _within_sage
 from ..graphs import CyclicList, Digraph
 from .links import CrossingStrand, Crossing, Strand, Link
@@ -95,11 +95,11 @@ def morse_via_LP(link, solver='GLPK'):
 
 
 def have_positive_value(D):
-    return [k for k, v in D.iteritems() if v > 0]
+    return [k for k, v in iteritems(D) if v > 0]
 
 class ImmutableValueDict(dict):
     def __setitem__(self, index, value):
-        if self.has_key(index):
+        if index in self:
             if self[index] != value:
                 raise ValueError("Can't change an assigned value")
         else:
@@ -201,7 +201,7 @@ class MorseLinkDiagram(object):
                     co = cn.opposite()
                     if cn in self.bends or co in self.bends:
                         kind = {'up':'min', 'down':'max'}[kind]
-                    if not orientations.has_key(co):
+                    if co not in orientations:
                         new.append(co)
                     orientations[cn] = kind
                     orientations[co] = {'up':'down', 'down':'up', 'max':'max', 'min':'min'}[kind]
@@ -251,7 +251,7 @@ class MorseLinkDiagram(object):
             elif kinds[cs] == 'max':
                 G.add_edge(c, cs), G.add_edge(d, cs)
                 
-        for cs, kind in kinds.iteritems():
+        for cs, kind in iteritems(kinds):
             if kind == 'up':
                 c, d  = cs.crossing, cs.opposite().crossing
                 G.add_edge(d, c)
