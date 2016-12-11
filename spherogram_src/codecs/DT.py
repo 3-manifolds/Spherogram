@@ -938,7 +938,7 @@ class DTcodec(object):
             a0, a1 = slot_dict[v0][s0], slot_dict[v1][s1]
             c0, c1 = crossing_dict[v0], crossing_dict[v1]
             c0[a0] = c1[a1]
-        link = Link(crossing_dict.values(), check_planarity=False, build=False)
+        link = Link(list(crossing_dict.values()), check_planarity=False, build=False)
         assert link.all_crossings_oriented()
         component_starts = []
         i = 1
