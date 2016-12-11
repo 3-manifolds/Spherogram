@@ -154,8 +154,8 @@ def random_link(crossings,
     <Link: 1 comp; 25 cross>
 
     >>> L= random_link(30, consistent_twist_regions=True, simplify = 'global')
-    >>> type(random_link(30, return_all_pieces=True))
-    <type 'list'>
+    >>> isinstance(random_link(30, return_all_pieces=True), list)
+    True
     """
 
     # This means no trivial loops.  PlanarMap accepts 6, which means
