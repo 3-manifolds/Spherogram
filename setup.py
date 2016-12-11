@@ -79,7 +79,7 @@ else:
 
 setup( name = 'spherogram',
        version = version,
-       install_requires = [networkx, 'decorator'],
+       install_requires = [networkx, 'decorator', 'future'],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',
