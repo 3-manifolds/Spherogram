@@ -7,6 +7,7 @@ Code written by Malik Obeidin.
 from .ordered_set import OrderedSet
 from .simplify import reverse_type_II
 from .links_base import Link  # Used for testing only
+from .. import ClosedBraid    # Used for testing only
 from itertools import combinations
 
 def cyclic_permute(l,n):
@@ -66,8 +67,9 @@ def seifert_tree(link):
     The oriented tree corresponding to the complementary regions of
     the Seifert circles.
 
-    >>> seifert_tree(Link('K5a2'))
-    [(frozenset([0]), frozenset([0, 1])), (frozenset([0, 1]), frozenset([1]))]
+    >>> T = seifert_tree(Link('K5a2'))
+    >>> T == [(frozenset([0]), frozenset([0, 1])), (frozenset([0, 1]), frozenset([1]))]
+    True
     """
     circles = seifert_circles(link)
     edges = [[set([n]),set([n])] for n in range(len(circles))]
@@ -236,8 +238,10 @@ def braid_word(link):
     given link.  The natural numbers 1, 2, 3, etc are the generators and the
     negatives are the inverses.
 
-    >>> braid_word(Link('L13n1234'))
-    [-1, 2, -3, 2, -4, -3, 2, 2, -1, -3, 2, 4, 3, -2, 3]
+    >>> w = braid_word(Link('13n1234'))
+    >>> M = ClosedBraid(w).exterior()
+    >>> M.identify()
+    [K13n1234(0,0)]
 
     Implementation follows P. Vogel, "Representation of links by
     braids, a new algorithm".
