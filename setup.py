@@ -11,11 +11,17 @@ except ImportError:
     planarity_ui_sources = glob.glob(planarity_dir + 'planarity*.c')
     planarity_sources = [file for file in glob.glob('planarity_src/c/*.c')
                          if not file in planarity_ui_sources]
+
+    if sys.platform.startswith('win'):
+        extra_compile_args = ['-D_CRT_SECURE_NO_WARNINGS']
+    else:
+        extra_compile_args = []
     
     Planarity = Extension(
         name = 'spherogram.planarity',
         sources = ['planarity_src/planarity.c'] + planarity_sources, 
-        include_dirs = [planarity_dir], 
+        include_dirs = [planarity_dir],
+        extra_compile_args = extra_compile_args
         )
 
     ext_modules = [Planarity]
