@@ -1,6 +1,13 @@
 import sys, os, glob
 from setuptools import setup, Command, Extension
 
+# Defensive linker flags for Linux:
+if sys.platform.startswith('linux'):
+    extra_link_args=['-Wl,-Bsymbolic-functions', '-Wl,-Bsymbolic']
+else:
+    extra_link_args=[]
+
+
 # The planarity extension
 
 try:
@@ -21,7 +28,8 @@ except ImportError:
         name = 'spherogram.planarity',
         sources = ['planarity_src/planarity.c'] + planarity_sources, 
         include_dirs = [planarity_dir],
-        extra_compile_args = extra_compile_args
+        extra_compile_args = extra_compile_args,
+        extra_link_args = extra_link_args
         )
 
     ext_modules = [Planarity]
@@ -37,9 +45,9 @@ pmap_src_files = [pmap_src_dir + file for file in
 
 Planarmap = Extension(
     name = 'spherogram.planarmap',
-
     sources =  [pmap_dir + 'planarmap.c'] + pmap_src_files, 
-    include_dirs = [pmap_src_dir]
+    include_dirs = [pmap_src_dir],
+    extra_link_args = extra_link_args
     )
 
 ext_modules.append(Planarmap)
