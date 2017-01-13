@@ -1,4 +1,4 @@
-import sys, os, glob
+import sys, os, glob, sysconfig
 from setuptools import setup, Command, Extension
 
 # Defensive linker flags for Linux:
@@ -34,6 +34,22 @@ except ImportError:
 
     ext_modules = [Planarity]
 
+class SpherogramTest(Command):
+    user_options = []
+    def initialize_options(self):
+        pass 
+    def finalize_options(self):
+        pass
+    def run(self):
+        build_lib_dir = os.path.join(
+            'build',
+            'lib.{platform}-{version_info[0]}.{version_info[1]}'.format(
+                platform=sysconfig.get_platform(),
+                version_info=sys.version_info)
+        )
+        sys.path.insert(0, build_lib_dir)
+        from spherogram.test import run_all_tests
+        sys.exit(run_all_tests())
 
 # The planarmap extension
 
@@ -67,7 +83,7 @@ except ImportError:
 
 # A real clean
 
-class clean(Command):
+class SpherogramClean(Command):
     user_options = []
     def initialize_options(self):
         pass 
@@ -101,7 +117,7 @@ setup( name = 'spherogram',
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = ext_modules,
-       cmdclass =  {'clean':clean},
+       cmdclass =  {'clean': SpherogramClean, 'test': SpherogramTest},
        zip_safe = False,
 
        description= 'Spherical diagrams for 3-manifold topology', 
