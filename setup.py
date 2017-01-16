@@ -1,4 +1,5 @@
-import sys, os, glob, sysconfig
+import os, shutil, sys, sysconfig 
+from glob import glob
 from setuptools import setup, Command, Extension
 
 # Defensive linker flags for Linux:
@@ -15,8 +16,8 @@ try:
     ext_modules = []
 except ImportError:    
     planarity_dir = 'planarity_src/c/'
-    planarity_ui_sources = glob.glob(planarity_dir + 'planarity*.c')
-    planarity_sources = [file for file in glob.glob('planarity_src/c/*.c')
+    planarity_ui_sources = glob(planarity_dir + 'planarity*.c')
+    planarity_sources = [file for file in glob('planarity_src/c/*.c')
                          if not file in planarity_ui_sources]
 
     if sys.platform.startswith('win'):
@@ -34,6 +35,32 @@ except ImportError:
 
     ext_modules = [Planarity]
 
+# A real clean
+
+class SpherogramClean(Command):
+    user_options = []
+    def initialize_options(self):
+        pass 
+    def finalize_options(self):
+        pass
+    def run(self):
+        junkdirs = (glob('build/lib*') +
+                    glob('build/bdist*') +
+                    glob('snappy*.egg-info') +
+                    ['__pycache__', os.path.join('python', 'doc')]
+        )
+        for dir in junkdirs:
+            try:
+                shutil.rmtree(dir)
+            except OSError:
+                pass
+        junkfiles = glob('*/*.so*') + glob('*/*.pyc') + glob('*/*.c') 
+        for file in junkfiles:
+            try:
+                os.remove(file)
+            except OSError:
+                pass
+        
 class SpherogramTest(Command):
     user_options = []
     def initialize_options(self):
@@ -80,19 +107,6 @@ try:
 except ImportError:
     pass 
 
-
-# A real clean
-
-class SpherogramClean(Command):
-    user_options = []
-    def initialize_options(self):
-        pass 
-    def finalize_options(self):
-        pass
-    def run(self):
-        os.system('rm -rf build dist')
-        os.system('rm -rf spherogram*.egg-info')
-        
 # Main module
 
 exec(open('spherogram_src/version.py').read())
