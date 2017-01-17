@@ -8,8 +8,9 @@ a PD diagram as described in
 See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
+from future.utils import itervalues
 from .. import graphs
-from ordered_set import OrderedSet
+from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
 import  string, os, sys, re, collections
 try:
@@ -413,10 +414,11 @@ class Link(object):
         if set([len(v) for v in gluings.values()]) != set([2]):
             raise ValueError("PD code isn't consistent")
 
+
         component_starts = self._component_starts_from_PD(code, labels, gluings)
 
         crossings = [Crossing(i) for i,d in enumerate(code)]
-        for (c,i), (d,j) in gluings.itervalues():
+        for (c,i), (d,j) in itervalues(gluings):
             crossings[c][i] = crossings[d][j]
 
         component_starts = [crossings[c].crossing_strands()[i] for (c,i) in component_starts]
@@ -1068,8 +1070,7 @@ class Link(object):
                 crossing = old_to_new[old_crossing]
                 component_starts.append(
                     CrossingEntryPoint(crossing, entry_point))
-                
-            link = self.__class__(crossings, check_planarity=False, build=False)
+            link = self.__class__(crossings=crossings, check_planarity=False, build=False)
             link._build(component_starts=component_starts)
             link.name = self.name
             return link
@@ -1104,7 +1105,7 @@ class Link(object):
                 B_new, b_new = convert(B, b)
                 B_new[b_new] = convert(A, a)
 
-        new_link = type(self)(new_crossings.values(),
+        new_link = type(self)(list(new_crossings.values()),
                         check_planarity=False, build=False)
 
         # Build the link components, starting in the same place as
@@ -1197,8 +1198,6 @@ class Link(object):
                 strands.append(strand)
                 ceps = ceps - OrderedSet(strand)
         return sorted(strands, key = len, reverse=True)
-
-
 
 # ---- building the link exterior if SnapPy is present --------
 

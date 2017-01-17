@@ -1,5 +1,13 @@
-import sys, os, glob
+import os, shutil, sys, sysconfig 
+from glob import glob
 from setuptools import setup, Command, Extension
+
+# Defensive linker flags for Linux:
+if sys.platform.startswith('linux'):
+    extra_link_args=['-Wl,-Bsymbolic-functions', '-Wl,-Bsymbolic']
+else:
+    extra_link_args=[]
+
 
 # The planarity extension
 
@@ -8,18 +16,67 @@ try:
     ext_modules = []
 except ImportError:    
     planarity_dir = 'planarity_src/c/'
-    planarity_ui_sources = glob.glob(planarity_dir + 'planarity*.c')
-    planarity_sources = [file for file in glob.glob('planarity_src/c/*.c')
+    planarity_ui_sources = glob(planarity_dir + 'planarity*.c')
+    planarity_sources = [file for file in glob('planarity_src/c/*.c')
                          if not file in planarity_ui_sources]
+
+    if sys.platform.startswith('win'):
+        extra_compile_args = ['-D_CRT_SECURE_NO_WARNINGS']
+    else:
+        extra_compile_args = []
     
     Planarity = Extension(
         name = 'spherogram.planarity',
         sources = ['planarity_src/planarity.c'] + planarity_sources, 
-        include_dirs = [planarity_dir], 
+        include_dirs = [planarity_dir],
+        extra_compile_args = extra_compile_args,
+        extra_link_args = extra_link_args
         )
 
     ext_modules = [Planarity]
 
+# A real clean
+
+class SpherogramClean(Command):
+    user_options = []
+    def initialize_options(self):
+        pass 
+    def finalize_options(self):
+        pass
+    def run(self):
+        junkdirs = (glob('build/lib*') +
+                    glob('build/bdist*') +
+                    glob('snappy*.egg-info') +
+                    ['__pycache__', os.path.join('python', 'doc')]
+        )
+        for dir in junkdirs:
+            try:
+                shutil.rmtree(dir)
+            except OSError:
+                pass
+        junkfiles = glob('*/*.so*') + glob('*/*.pyc') + glob('*/*.c') 
+        for file in junkfiles:
+            try:
+                os.remove(file)
+            except OSError:
+                pass
+        
+class SpherogramTest(Command):
+    user_options = []
+    def initialize_options(self):
+        pass 
+    def finalize_options(self):
+        pass
+    def run(self):
+        build_lib_dir = os.path.join(
+            'build',
+            'lib.{platform}-{version_info[0]}.{version_info[1]}'.format(
+                platform=sysconfig.get_platform(),
+                version_info=sys.version_info)
+        )
+        sys.path.insert(0, build_lib_dir)
+        from spherogram.test import run_all_tests
+        sys.exit(run_all_tests())
 
 # The planarmap extension
 
@@ -31,9 +88,9 @@ pmap_src_files = [pmap_src_dir + file for file in
 
 Planarmap = Extension(
     name = 'spherogram.planarmap',
-
     sources =  [pmap_dir + 'planarmap.c'] + pmap_src_files, 
-    include_dirs = [pmap_src_dir]
+    include_dirs = [pmap_src_dir],
+    extra_link_args = extra_link_args
     )
 
 ext_modules.append(Planarmap)
@@ -50,19 +107,6 @@ try:
 except ImportError:
     pass 
 
-
-# A real clean
-
-class clean(Command):
-    user_options = []
-    def initialize_options(self):
-        pass 
-    def finalize_options(self):
-        pass
-    def run(self):
-        os.system('rm -rf build dist')
-        os.system('rm -rf spherogram*.egg-info')
-        
 # Main module
 
 exec(open('spherogram_src/version.py').read())
@@ -79,7 +123,7 @@ else:
 
 setup( name = 'spherogram',
        version = version,
-       install_requires = [networkx, 'decorator'],
+       install_requires = [networkx, 'decorator', 'future'],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',
@@ -87,7 +131,7 @@ setup( name = 'spherogram',
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = ext_modules,
-       cmdclass =  {'clean':clean},
+       cmdclass =  {'clean': SpherogramClean, 'test': SpherogramTest},
        zip_safe = False,
 
        description= 'Spherical diagrams for 3-manifold topology', 

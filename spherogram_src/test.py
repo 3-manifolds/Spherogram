@@ -26,9 +26,13 @@ def run_doctests(verbose=False, print_info=True):
         snappy.ManifoldHP.use_field_conversion('snappy')
     return sage_helper.doctest_modules(modules, verbose, print_info)
 
-if __name__ == '__main__':
+def run_all_tests():
     optlist, args = getopt.getopt(sys.argv[1:], 'v', ['verbose'])
     verbose = len(optlist) > 0
-    run_doctests(verbose)
+    results = run_doctests(verbose)
     print()
     spherogram.links.test.run()
+    return results.failed
+
+if __name__ == '__main__':
+    run_all_tests()

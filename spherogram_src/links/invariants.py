@@ -176,9 +176,9 @@ class Link(links_base.Link):
 
             sage: L = Link('3_1')
             sage: L.alexander_matrix()
-            ([       -1      t^-1 -t^-1 + 1]
-            [-t^-1 + 1        -1      t^-1]
-            [     t^-1 -t^-1 + 1        -1], [t, t, t])
+            ([   -1 1 - t     t]
+            [    t    -1 1 - t]
+            [1 - t     t    -1], [t, t, t])
 
             sage: L = Link([(4,1,3,2),(1,4,2,3)])
             sage: L.alexander_matrix()    #doctest: +SKIP
@@ -396,7 +396,7 @@ class Link(links_base.Link):
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
         if len(components) > 2:
-            raise ValueError, 'The link diagram is split.'
+            raise ValueError('The link diagram is split.')
         return G.subgraph(components[1])
 
     @sage_method      
@@ -647,3 +647,32 @@ class Link(links_base.Link):
             Knot represented by 13 crossings
         """
         return self.sage_link()
+
+class ClosedBraid(Link):
+    """
+    This is a convenience class for constructing closed braids.
+
+    The constructor accepts either a single argument, which should be a list of
+    integers to be passed to the Link constructor as the braid_closure
+    parameter, or one or more integer arguments which will be packaged as a list
+    and used as the braid_closure parameter.
+
+    >>> B = ClosedBraid(1,-2,3)
+    >>> B
+    ClosedBraid(1, -2, 3)
+    >>> B = ClosedBraid([1,-2,3]*3)
+    >>> B
+    ClosedBraid(1, -2, 3, 1, -2, 3, 1, -2, 3)
+    """
+    def __init__(self, *args, **kwargs):
+        if args and 'braid_closure' not in kwargs:
+            if len(args) == 1:
+                self.braid_word = kwargs['braid_closure'] = tuple(args[0])
+                args = ()
+            elif isinstance(args[0], int):
+                self.braid_word = kwargs['braid_closure'] = args
+                args = ()
+        Link.__init__(self, *args, **kwargs)
+
+    def __repr__(self):
+        return 'ClosedBraid%s'%str(self.braid_word)
