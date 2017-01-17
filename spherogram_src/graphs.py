@@ -55,7 +55,11 @@ import operator
 
 class CyclicList(list):
     def __getitem__(self, n):
-        return list.__getitem__(self, n%len(self))
+        if isinstance(n, int):
+            return list.__getitem__(self, n%len(self))
+        elif isinstance(n, slice):
+            # Python3 only: in python2, __getslice__ gets called instead.
+            return list.__getitem__(self, n)
     def succ(self, x):
         return self[(self.index(x)+1)%len(self)]
     def pred(self, x):
@@ -278,7 +282,7 @@ class Graph(object):
 
     def add_vertex(self, hashable):
         self.vertices.add(hashable)
-        if not self.incidence_dict.has_key(hashable):
+        if hashable not in self.incidence_dict:
             self.incidence_dict[hashable] = []
 
     def remove_vertex(self, hashable):
@@ -347,12 +351,12 @@ class Graph(object):
         incident to them.
 
         >>> G = Graph([(0,1),(1,2),(2,0),(2,3),(3,4),(4,2)])
-        >>> G.components()
-        [frozenset([0, 1, 2, 3, 4])]
-        >>> sorted(G.components(deleted_vertices=[2]))
-        [frozenset([0, 1]), frozenset([3, 4])]
-        >>> G.components(deleted_vertices=[0])
-        [frozenset([1, 2, 3, 4])]
+        >>> G.components() == [frozenset([0, 1, 2, 3, 4])]
+        True
+        >>> sorted(G.components(deleted_vertices=[2])) == [frozenset([0, 1]), frozenset([3, 4])]
+        True
+        >>> G.components(deleted_vertices=[0]) == [frozenset([1, 2, 3, 4])]
+        True
         """
         forbidden = set()
         for vertex in deleted_vertices:
@@ -411,12 +415,12 @@ class Graph(object):
         >>> G = Graph(caps.keys())
         >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
         >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges)]
+        >>> [flow[e] for e in sorted(G.edges, key=str)]
         [-1, 4, 1, 3, 2]
         >>> G = Digraph(caps.keys())
         >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
         >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges)]
+        >>> [flow[e] for e in sorted(G.edges, key=str)]
         [0, 3, 1, 3, 1]
         """
         if sink == source:
@@ -507,10 +511,10 @@ class Graph(object):
         >>> G = Graph([(0,1),(1,2),(2,0)]).mergeable()
         >>> F = lambda x: frozenset([x])
         >>> G.merge(F(1),F(2))
-        >>> sorted(G.vertices)
-        [frozenset([1, 2]), frozenset([0])]
-        >>> sorted(G.edges)[0]
-        frozenset([0]) --- frozenset([1, 2])
+        >>> sorted(G.vertices) == [frozenset([1, 2]), frozenset([0])]
+        True
+        >>> tuple(sorted(G.edges)[0]) == (frozenset([0]), frozenset([1, 2]))
+        True
         """
         new_vertex = V1|V2
         if new_vertex in self.vertices:
@@ -561,7 +565,7 @@ class ReducedGraph(Graph):
         Graph.__init__(self, pairs, singles) 
 
     def add_edge(self, x, y):
-        if self.find_edge.has_key((x,y)):
+        if (x,y) in self.find_edge:
             edge = self.find_edge[(x, y)]
             edge.multiplicity += 1
         else:
@@ -757,10 +761,10 @@ class Digraph(Graph):
         ...
     ValueError: Not meaningful for Digraphs.
     Use weak_components() or strong_components()
-    >>> G.weak_components()
-    [frozenset([0, 1, 2, 3, 4])]
-    >>> G.strong_components()
-    [frozenset([1, 2, 3]), frozenset([0]), frozenset([4])]
+    >>> G.weak_components() == [frozenset([0, 1, 2, 3, 4])]
+    True
+    >>> G.strong_components() == [frozenset([1, 2, 3]), frozenset([0]), frozenset([4])]
+    True
     """
 
     edge_class = DirectedEdge
@@ -832,11 +836,11 @@ class Digraph(Graph):
         Return the vertex sets of the strongly connected components.
 
         >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(3,1)])
-        >>> G.strong_components()
-        [frozenset([1, 2, 3]), frozenset([0])]
+        >>> G.strong_components() == [frozenset([1, 2, 3]), frozenset([0])]
+        True
         >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(1,3)])
-        >>> G.strong_components()
-        [frozenset([3]), frozenset([2]), frozenset([1]), frozenset([0])]
+        >>> G.strong_components() == [frozenset([3]), frozenset([2]), frozenset([1]), frozenset([0])]
+        True
         """
         return StrongConnector(self).components
 
@@ -856,12 +860,11 @@ class Digraph(Graph):
         other.
 
         >>> G = Digraph([(0,1),(0,2),(1,2),(2,3),(3,1)])
-        >>> G.component_DAG()
-        Vertices:
-          frozenset([1, 2, 3])
-          frozenset([0])
-        Edges:
-          frozenset([0]) --> frozenset([1, 2, 3])
+        >>> C = G.component_DAG()
+        >>> sorted(C.vertices) == [frozenset([1, 2, 3]), frozenset([0])]
+        True
+        >>> [tuple(e) for e in C.edges] == [(frozenset([0]), frozenset([1, 2, 3]))]
+        True
         """
         return StrongConnector(self).DAG()
         

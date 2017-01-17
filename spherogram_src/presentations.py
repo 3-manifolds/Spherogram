@@ -407,24 +407,13 @@ class Presentation(object):
         Generator for non-trivial level transformations.
 
         >>> P = Presentation(['AABCaBacAcbabC'])
+        >>> relators = []
         >>> for x, X in P.level_transformations():
         ...   P = Presentation(['AABCaBacAcbabC'])
         ...   P = P.whitehead_move(x, X)
-        ...   print(P, len(P))
-        ...
-        generators: [A, B, C]
-        relators: [AABCaBaaccbbAC] 14
-        generators: [A, B, C]
-        relators: [ABCaaBacAcbbAC] 14
-        generators: [A, B, C]
-        relators: [AAABCBaaccbabC] 14
-        generators: [A, B, C]
-        relators: [ABCaaBcAAcbabC] 14
-        generators: [A, B, C]
-        relators: [AACaBacBAcabbC] 14
-        generators: [A, B, C]
-        relators: [AABaBcacAbaCbC] 14
-
+        ...   relators += P.relators
+        >>> sorted(relators)
+        [AAABCBaaccbabC, AABaBcacAbaCbC, AABCaBaaccbbAC, AACaBacBAcabbC, ABCaaBcAAcbabC, ABCaaBacAcbbAC]
         """
 
 #        For each generator x we find one minimal (x,x^-1)-cut.  We
