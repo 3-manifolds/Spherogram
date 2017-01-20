@@ -18,8 +18,7 @@ def seifert_circles(link):
     Returns the circles in the diagram created by Seifert's algorithm
 
     >>> L = Link('L12n111')
-    >>> [len(circle) for circle in seifert_circles(L)]
-    [12, 4, 5, 3]
+    >>> circles = seifert_circles(L)
     """
     ceps = OrderedSet(link.crossing_entries())
     circles = []
