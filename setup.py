@@ -1,6 +1,8 @@
 import os, shutil, sys, sysconfig, subprocess
 from glob import glob
+from distutils.util import get_platform
 from setuptools import setup, Command, Extension
+
 
 # Defensive linker flags for Linux:
 if sys.platform.startswith('linux'):
