@@ -599,7 +599,7 @@ class OrthogonalLinkDiagram(list):
 #
 #---------------------------------------------------
 
-def orthogonal_draw(self, link_editor=None):
+def orthogonal_draw(self, link_editor=None, show_crossing_labels=False):
     """
     Opens a Plink link editor window with displaying the current link.
     The strands of the links are unions of edges in the standard
@@ -609,7 +609,7 @@ def orthogonal_draw(self, link_editor=None):
     """
     if link_editor is None:
         import plink
-        link_editor = plink.LinkEditor()
+        link_editor = plink.LinkEditor(show_crossing_labels=show_crossing_labels)
     diagram = OrthogonalLinkDiagram(self)
     link_editor.unpickle(*diagram.plink_data())
     try:

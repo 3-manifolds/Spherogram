@@ -1,6 +1,8 @@
-import os, shutil, sys, sysconfig 
+import os, shutil, sys, sysconfig, subprocess
 from glob import glob
+from distutils.util import get_platform
 from setuptools import setup, Command, Extension
+
 
 # Defensive linker flags for Linux:
 if sys.platform.startswith('linux'):
@@ -78,6 +80,51 @@ class SpherogramTest(Command):
         from spherogram.test import run_all_tests
         sys.exit(run_all_tests())
 
+def check_call(args):
+    try:
+        subprocess.check_call(args)
+    except subprocess.CalledProcessError:
+        executable = args[0]
+        command = [a for a in args if not a.startswith('-')][-1]
+        raise RuntimeError(command + ' failed for ' + executable)
+        
+class SpherogramRelease(Command):
+    user_options = [('install', 'i', 'install the release into each Python')]
+    def initialize_options(self):
+        self.install = False
+    def finalize_options(self):
+        pass
+    def run(self):
+        if os.path.exists('build'):
+            shutil.rmtree('build')
+        if os.path.exists('dist'):
+            shutil.rmtree('dist')
+
+        pythons = os.environ.get('RELEASE_PYTHONS', sys.executable).split(',')
+        for python in pythons:
+            check_call([python, 'setup.py', 'build'])
+            # Don't run the tests as this assumes snappy is *also* installed
+            # check_call([python, 'setup.py', 'test'])
+            if sys.platform.startswith('linux'):
+                plat = get_platform().replace('linux', 'manylinux1')
+                plat = plat.replace('-', '_')
+                check_call([python, 'setup.py', 'bdist_wheel', '-p', plat])
+                check_call([python, 'setup.py', 'bdist_egg'])
+            else:
+                check_call([python, 'setup.py', 'bdist_wheel'])
+
+            if self.install:
+                check_call([python, 'setup.py', 'install'])
+
+        # Build sdist using the *first* specified Python
+        check_call([pythons[0], 'setup.py', 'sdist'])
+
+        # Double-check the Linux wheels
+        if sys.platform.startswith('linux'):
+            for name in os.listdir('dist'):
+                if name.endswith('.whl'):
+                    subprocess.check_call(['auditwheel', 'repair', os.path.join('dist', name)])
+
 # The planarmap extension
 
 pmap_dir = 'planarmap_src/'
@@ -131,7 +178,10 @@ setup( name = 'spherogram',
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
        package_data = {'spherogram.links'  :  ['doc.pdf']}, 
        ext_modules = ext_modules,
-       cmdclass =  {'clean': SpherogramClean, 'test': SpherogramTest},
+       cmdclass =  {'clean': SpherogramClean,
+                    'test': SpherogramTest,
+                    'release': SpherogramRelease,
+       },
        zip_safe = False,
 
        description= 'Spherical diagrams for 3-manifold topology', 
