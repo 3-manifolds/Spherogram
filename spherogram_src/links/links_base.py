@@ -983,7 +983,7 @@ class Link(object):
         n = n/4
         return n
 
-    def pieces(self):
+    def _pieces(self):
         """
         Auxiliary function used by knot_group. Constructs the strands 
         of the knot from under-crossing to under-crossing. Needed for the
