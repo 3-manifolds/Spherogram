@@ -342,6 +342,9 @@ class Link(object):
     def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
         self.name = None
 
+        component_starts = None
+        start_orientations = None
+
         if crossings is not None and braid_closure is not None:
             raise ValueError('Specified *both* crossings and braid_closure')
         
@@ -351,8 +354,8 @@ class Link(object):
         
             # Crossings can be a PD code rather than a list of actual crossings
             if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
-                crossings = self._crossings_from_PD_code(crossings)
-
+                crossings, component_starts = self._crossings_from_PD_code(crossings)
+                start_orientations = component_starts[:]
         elif braid_closure is not None:
             crossings = self._crossings_from_braid_closure(braid_closure)
         else:
@@ -374,7 +377,7 @@ class Link(object):
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
 
         if build:
-            self._build()
+            self._build(start_orientations, component_starts)
             if check_planarity and not self.is_planar():
                 raise ValueError("Link isn't planar")
 
@@ -394,7 +397,13 @@ class Link(object):
         return crossings
                           
     def _crossings_from_PD_code(self, code):
-        gluings = OrderedDict()
+        labels = set()
+        for X in code:
+            for i in X:
+                labels.add(i)
+
+        gluings = OrderedDict()                
+
         for c, X in enumerate(code):
             for i, x in enumerate(X):
                 if x in gluings:
@@ -404,12 +413,54 @@ class Link(object):
 
         if set([len(v) for v in gluings.values()]) != set([2]):
             raise ValueError("PD code isn't consistent")
-             
-        crossings = [Crossing() for d in code]
+
+
+        component_starts = self._component_starts_from_PD(code, labels, gluings)
+
+        crossings = [Crossing(i) for i,d in enumerate(code)]
         for (c,i), (d,j) in itervalues(gluings):
             crossings[c][i] = crossings[d][j]
-        return crossings
-    
+
+        component_starts = [crossings[c].crossing_strands()[i] for (c,i) in component_starts]
+        return crossings, component_starts
+
+    def _component_starts_from_PD(self, code, labels, gluings):
+        starts = []
+        while labels:
+            m = min(labels)
+            labels.remove(m)
+            (c1, index1), (c2, index2) = gluings[m]
+            if c1 == c2:
+                #loop at strand, take next strand to be next smallest label
+                #on crossing
+                next_label = min(set(code[c1])-set([m]))
+                direction = (c1, code[c1].index(next_label))
+                starts.append(direction)
+            else:
+                #strand connects two different crossings, take next strand to
+                #be next smallest label on two 'opposite' strands
+                other_labels = [code[c1][(index1+2)%4],code[c2][(index2+2)%4]]
+                if other_labels[0] < other_labels[1]:
+                    next_label = other_labels[0]
+                    direction = (c1, (index1+2)%4)
+                elif other_labels[1] < other_labels[0]:
+                    next_label = other_labels[1]
+                    direction = (c2, (index2+2)%4) 
+                else:
+                    #have a component of length 2, no good choice for direction
+                    next_label = other_labels[0]
+                    direction = (c1, (index1+2)%4)
+
+                starts.append(direction)
+            while next_label != m:
+                labels.remove(next_label)
+                g = gluings[next_label]
+                other_direction = g[1-g.index(direction)]
+                direction = (other_direction[0], (other_direction[1]+2)%4)
+                next_label = code[direction[0]][direction[1]]
+
+        return starts
+
     def _crossings_from_braid_closure(self, word, num_strands=None):
         """
         Compute the braid closure of a word given in the form of a list of
@@ -467,7 +518,7 @@ class Link(object):
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
 
-    def _build(self, start_orientations=[], component_starts = None):
+    def _build(self, start_orientations=None, component_starts = None):
         self._orient_crossings(start_orientations = start_orientations)
         self._build_components(component_starts = component_starts)
 
@@ -482,10 +533,11 @@ class Link(object):
         else:
             self._build()
         
-    def _orient_crossings(self, start_orientations = list()):
+    def _orient_crossings(self, start_orientations = None):
         if self.all_crossings_oriented():
             return
-        
+        if start_orientations == None:
+            start_orientations = list()
         remaining = OrderedSet( [ (c, i) for c in self.crossings for i in range(4) if c.sign == 0] )
         while len(remaining):
             if len(start_orientations)>0:
@@ -523,6 +575,9 @@ class Link(object):
         oriented edges) is compatible with the DT convention that each
         crossing has both an odd and and even incoming strand.
         """
+        if component_starts:
+            component_starts = [cs.crossing.entry_points()[cs.strand_index % 2] 
+                                for cs in component_starts]
         remaining, components = OrderedSet( self.crossing_entries() ), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
@@ -562,7 +617,6 @@ class Link(object):
                     others.append(o)
             other_crossing_entries.append(others)
             remaining = remaining - OrderedSet(component)
-
         self.link_components = components
 
     def digraph(self):
@@ -792,11 +846,39 @@ class Link(object):
 
     def PD_code(self, KnotTheory=False, min_strand_index=0):
         """
-        The planar diagram code for the link.  
+        The planar diagram code for the link.  When constructing a link from
+        a PD code, it should not change the ordering of the components, but
+        it might change the orientations.
+
+        >>> L = Link('L13n11308')
+        >>> [len(c) for c in L.link_components]
+        [4, 4, 4, 6, 8]
+        >>> L2 = Link(L.PD_code())
+        >>> [len(c) for c in L2.link_components]
+        [4, 4, 4, 6, 8]
+        
         """
         PD = []
+
         for c in self.crossings:
             PD.append([s + min_strand_index for s in c.strand_labels[:]])
+        if KnotTheory:
+            PD = "PD" + repr(PD).replace('[', 'X[')[1:]
+        else:
+            PD = [tuple(x) for x in PD ]
+        return PD
+
+    def _oriented_PD_code(self, KnotTheory=False, min_strand_index=0):
+        PD = {c: [-1,-1,-1,-1] for c in self.crossings}
+
+        label = min_strand_index
+        for comp in self.link_components:
+            for cep in comp:
+                op_cep = cep.opposite()
+                PD[cep.crossing][cep.strand_index] = label
+                PD[op_cep.crossing][op_cep.strand_index] = label
+                label += 1
+        PD = PD.values()
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         else:
@@ -901,7 +983,7 @@ class Link(object):
         n = n/4
         return n
 
-    def pieces(self):
+    def _pieces(self):
         """
         Auxiliary function used by knot_group. Constructs the strands 
         of the knot from under-crossing to under-crossing. Needed for the
