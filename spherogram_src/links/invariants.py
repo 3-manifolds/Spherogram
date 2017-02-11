@@ -147,7 +147,7 @@ class Link(links_base.Link):
         F = FreeGroup(n)
         g = list(F.gens())
         rels = []
-        pieces = self.pieces()
+        pieces = self._pieces()
 
         for z in self.crossings:
             for m, p in enumerate(pieces):
@@ -447,7 +447,7 @@ class Link(links_base.Link):
     @sage_method
     def _colorability_matrix(self):
         """Auxiliary function used by determinant."""
-        edges = self.pieces()
+        edges = self._pieces()
         m=matrix(len(self.crossings), len(edges))
         for c in self.crossings:
             for i in range(4):
