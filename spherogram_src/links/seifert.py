@@ -17,8 +17,10 @@ def seifert_circles(link):
     """
     Returns the circles in the diagram created by Seifert's algorithm
 
-    >>> L = Link('L12n111')
-    >>> circles = seifert_circles(L)
+    >>> fig8 = [(1,7,2,6),(5,3,6,2),(7,4,0,5),(3,0,4,1)]
+    >>> L = Link(fig8)
+    >>> sorted(len(C) for C in seifert_circles(L))
+    [2, 2, 4]
     """
     ceps = OrderedSet(link.crossing_entries())
     circles = []
@@ -66,7 +68,8 @@ def seifert_tree(link):
     The oriented tree corresponding to the complementary regions of
     the Seifert circles.
 
-    >>> T = seifert_tree(Link('K5a2'))
+    >>> K5a2 = [(7,3,8,2),(9,5,0,4),(1,7,2,6),(3,9,4,8),(5,1,6,0)]
+    >>> T = seifert_tree(Link(K5a2))
     >>> T == [(frozenset([0]), frozenset([0, 1])), (frozenset([0, 1]), frozenset([1]))]
     True
     """
@@ -237,10 +240,16 @@ def braid_word(link):
     given link.  The natural numbers 1, 2, 3, etc are the generators and the
     negatives are the inverses.
 
-    >>> w = braid_word(Link('13n1234'))
-    >>> M = ClosedBraid(w).exterior()
-    >>> M.identify()
-    [K13n1234(0,0)]
+    >>> from spherogram.links.seifert import braid_word
+    >>> fig8 = [(1,7,2,6),(5,3,6,2),(7,4,0,5),(3,0,4,1)]
+    >>> L = Link(fig8)
+    >>> braid_word(L)
+    [-1, 2, -1, 2]
+
+    | >>> w = braid_word(Link('13n1234'))
+    | >>> M = ClosedBraid(w).exterior()
+    | >>> M.identify()
+    | [K13n1234(0,0)]
 
     Implementation follows P. Vogel, "Representation of links by
     braids, a new algorithm".
@@ -259,7 +268,9 @@ def seifert_matrix(link, return_matrix_of_types=False):
     Returns the Seifert matrix of a link by first making it isotopic to a braid
     closure.
 
-    >>> L = Link('K8n1')
+    >>> K8n1 = [(8,6,9,5),(12,8,13,7),(1,4,2,5),(13,2,14,3),(3,14,4,15),
+    ...         (15,10,0,11),(6,12,7,11),(9,0,10,1)]
+    >>> L = Link(K8n1)
     >>> seifert_matrix(L)  # doctest: +NORMALIZE_WHITESPACE
     [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
