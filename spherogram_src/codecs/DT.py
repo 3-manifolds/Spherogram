@@ -657,7 +657,6 @@ class DTcodec(object):
         If flips is set to "auto", only include flips in large links
         (>26 crossings).
 
-        >>> from snappy import Manifold
         >>> d = DTcodec([(-6,-8,-2,-4)])
         >>> A = d.encode()
         >>> A in ['DT:dadCDAB.0110', 'DT:dadCDAB.1001']
@@ -666,14 +665,8 @@ class DTcodec(object):
         >>> N in ['DT:[(-6,-8,-2,-4)], [0,1,1,0]',
         ...  'DT:[(-6,-8,-2,-4)], [1,0,0,1]']
         True
-        >>> M = Manifold(d.encode())
-        >>> M.volume()
-        2.02988321
         >>> d.encode(flips=False)
         'DT:dadCDAB'
-        >>> M = Manifold(d.encode(flips=False))
-        >>> M.volume()
-        2.02988321
         >>> d.encode(alphabetical=False, flips=False)
         'DT:[(-6,-8,-2,-4)]'
         """

@@ -323,20 +323,20 @@ class Link(object):
     >>> Link('T(4, 2)')
     <Link: 2 comp; 6 cross>
 
-    and if you have SnapPy installed also the Rolfsen and Hoste-Thistlethwaite
-    tables:
-
-    >>> Link('8_20')
-    <Link 8_20: 1 comp; 8 cross>
-    >>> Link('K12a123')
-    <Link K12a123: 1 comp; 12 cross>
-    >>> Link('L12n123')
-    <Link L12n123: 2 comp; 12 cross>
-
     You can also construct a link by taking the closure of a braid. 
 
     >>> Link(braid_closure=[1, 2, -1, -2])
     <Link: 1 comp; 4 cross>
+
+    and if you have SnapPy installed, you can access the links from
+    the Rolfsen and Hoste-Thistlethwaite tables:
+
+    | >>> Link('8_20')
+    | <Link 8_20: 1 comp; 8 cross>
+    | >>> Link('K12a123')
+    | <Link K12a123: 1 comp; 12 cross>
+    | >>> Link('L12n123')
+    | <Link L12n123: 2 comp; 12 cross>
     """
     
     def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
@@ -585,14 +585,15 @@ class Link(object):
         Whether the 4-valent graph underlying the link projection is planar.
         Should always be True for any actual Link.
 
-        >>> L = Link('5^2_1')
-        >>> L.is_planar()
-        True
         >>> c = Crossing()
         >>> c[0], c[1] = c[2], c[3]   # Punctured torus gluing
         >>> bad = Link([c], check_planarity=False)
         >>> bad.is_planar()
         False
+
+        >>> L = Link([(1,7,2,6), (7,4,8,5), (3,8,0,9), (5,3,6,2), (9,0,4,1)])
+        >>> L.is_planar()
+        True
         """
         G = self.digraph()
         if not G.is_weakly_connected():
@@ -666,8 +667,8 @@ class Link(object):
 
         Some examples:
 
-        >>> K = Link([(13,10,14,11),(11,5,12,4),(3,13,4,12),  \
-                 (9,14,10,1),(1,7,2,6),(2,7,3,8),(5,9,6,8)])
+        >>> K = Link([(13,10,14,11), (11,5,12,4), (3,13,4,12),
+        ... (9,14,10,1), (1,7,2,6), (2,7,3,8), (5,9,6,8)])
         >>> K
         <Link: 1 comp; 7 cross>
         >>> K.simplify('basic')
@@ -677,8 +678,8 @@ class Link(object):
         >>> K.simplify('basic')  # Already done all it can
         False
 
-        >>> L = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11), \
-                (17,0,14,9), (12,9,13,8), (3,13,4,10), (1,16,2,15), (16,6,17,7)])
+        >>> L = Link([(5,0,6,1), (14,5,15,4), (10,2,11,3), (7,12,8,11),
+        ... (17,0,14,9), (12,9,13,8), (3,13,4,10), (1,16,2,15), (16,6,17,7)])
         >>> L
         <Link: 3 comp; 9 cross>
         >>> L.simplify('basic')
@@ -688,7 +689,10 @@ class Link(object):
         >>> L    # Trivial unlinked component has been discarded!
         <Link: 2 comp; 2 cross>
 
-        >>> K = Link('K14n2345')
+        >>> K14n2345 = [(10,4,11,3), (16,8,17,7), (20,18,21,17), (4,10,5,9),
+        ... (26,13,27,14), (24,20,25,19), (2,12,3,11), (12,6,13,5), (8,16,9,15),
+        ... (6,2,7,1), (27,22,0,23), (18,24,19,23), (14,25,15,26), (21,0,22,1)]
+        >>> K = Link(K14n2345)
         >>> K.backtrack(30) 
         >>> K.simplify('global')
         True
@@ -711,9 +715,12 @@ class Link(object):
         the number of crossings in a diagram.  The number of such
         moves is the parameter steps.  The diagram is modified in place. 
 
-        >>> K = Link('L14a7689')
+        >>> L14a7689 = [(13,8,14,9), (15,3,16,2), (9,4,10,5), (19,11,20,10),
+        ... (3,15,4,14), (7,24,8,25), (25,6,26,7), (21,27,0,26), (27,19,22,18),
+        ... (23,16,24,17), (1,22,2,23), (11,21,12,20), (5,12,6,13), (17,0,18,1)]
+        >>> K = Link(L14a7689)
         >>> K
-        <Link L14a7689: 2 comp; 14 cross>
+        <Link: 2 comp; 14 cross>
         >>> K.backtrack(steps = 5, prob_type_1 = 1, prob_type_2 = 0)
         >>> len(K.crossings)
         19
@@ -735,9 +742,12 @@ class Link(object):
         components in the sublink need not correspond to their order
         in the original link.
 
-        >>> L = Link('L14n64110')
+        >>> L14n64110 = [(19,3,12,2), (18,26,19,25), (24,16,25,15), (23,4,20,5),
+        ... (8,17,9,18), (21,15,22,14), (26,9,27,10), (6,27,7,24), (3,10,0,11),
+        ... (13,23,14,22), (5,20,6,21), (16,7,17,8), (1,13,2,12), (11,0,4,1)]
+        >>> L = Link(L14n64110)
         >>> L
-        <Link L14n64110: 5 comp; 14 cross>
+        <Link: 5 comp; 14 cross>
         >>> L.sublink([1,2,3,4])
         <Link: 4 comp; 10 cross>
         >>> comps = L.link_components
@@ -746,14 +756,16 @@ class Link(object):
 
         If you just want one component you can do this:
 
-        >>> L = Link('L11a127')
+        >>> L11a127 = [(17,9,0,8), (7,12,8,13), (9,17,10,16), (11,3,12,2),
+        ... (19,14,20,15), (21,4,18,5), (5,18,6,19), (15,20,16,21), (3,11,4,10),
+        ... (1,6,2,7), (13,0,14,1)]
+        >>> L = Link(L11a127)
         >>> L.sublink(0)
         <Link: 1 comp; 7 cross>
         >>> L.sublink(L.link_components[1])
         <Link: 0 comp; 0 cross>
 
-        The last answer is because the second component is unknotted
-        and so thown away.
+        The last answer is empty because the second component is unknotted.
         """
 
         if components in self.link_components or not is_iterable(components):
@@ -837,7 +849,7 @@ class Link(object):
         Breaks the given link diagram into pieces, one for each connected
         component of the underlying 4-valent graph.
 
-        >>> L = Link([(2,1,1,2),(4,3,3,4)], check_planarity=False)
+        >>> L = Link([(2,1,1,2), (4,3,3,4)], check_planarity=False)
         >>> L.split_link_diagram()
         [<Link: 1 comp; 1 cross>, <Link: 1 comp; 1 cross>]
         """
@@ -851,7 +863,8 @@ class Link(object):
         i.e. those where there is a circle which meets the projection
         in two points.
 
-        >>> K = Link('5_2')
+        >>> K5a1 = [(9,7,0,6), (3,9,4,8), (1,5,2,4), (7,3,8,2), (5,1,6,0)]
+        >>> K = Link(K5a1)
         >>> L = K.connected_sum(K); L
         <Link: 1 comp; 10 cross>
         >>> L.deconnect_sum()
@@ -873,7 +886,7 @@ class Link(object):
         """
         Finds the writhe of a knot.
 
-        >>> K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
+        >>> K = Link( [(4,1,5,2), (6,4,7,3), (8,5,1,6), (2,8,3,7)] )  # Figure 8 knot
         >>> K.writhe()
         0
         """
@@ -930,10 +943,11 @@ class Link(object):
 
     def connected_sum(self, other_knot):
         """
-        Returns the connected sum of two knots.                                                       
+        Returns the connected sum of two knots.
        
-        >>> K = Link('4_1')
-        >>> K.connected_sum(K)                                                                         
+        >>> fig8 = [(1,7,2,6), (5,3,6,2), (7,4,0,5), (3,0,4,1)]
+        >>> K = Link(fig8)
+        >>> K.connected_sum(K)
         <Link: 1 comp; 8 cross>
         """
         first=self.copy()
@@ -955,9 +969,12 @@ class Link(object):
         """
         Returns a copy of the link.  
 
-        >>> K = Link('L14n467')
+        >>> L14n467 = [(3,15,4,14), (21,11,22,10), (15,3,16,2), (25,22,26,23),
+        ... (8,14,9,13), (19,5,20,4), (7,16,8,17), (26,11,27,12), (1,6,2,7),
+        ... (12,0,13,23), (5,19,6,18), (9,24,10,25), (20,27,21,24), (17,0,18,1)]
+        >>> K = Link(L14n467)
         >>> copy = K.copy(); copy
-        <Link L14n467: 2 comp; 14 cross>
+        <Link: 2 comp; 14 cross>
         >>> K.PD_code() == copy.PD_code()
         True
         """
@@ -1044,10 +1061,10 @@ class Link(object):
         that the DT code of the result has all positive entries (as
         opposed to all negative).
 
-        >>> L = Link('L14n12345')
-        >>> A = L.alternating()
-        >>> A.exterior().identify()
-        [L14a5150(0,0)(0,0)]
+        | >>> L = Link('L14n12345')
+        | >>> A = L.alternating()
+        | >>> A.exterior().identify()
+        | [L14a5150(0,0)(0,0)]
         """
         L = self.copy()
         for C in L.crossings:
@@ -1086,10 +1103,12 @@ class Link(object):
         Returns a list of the sequences of overcrossings (which are lists of 
         CrossingEntryPoints), sorted in descending order of length.
 
-        >>> L = Link('L14n1000')
-        >>> L.overstrands()[0]
-        [<CEP 12, 1>, <CEP 1, 1>, <CEP 9, 1>]
-
+        >>> L14n1000 = [(23,14,0,15), (24,21,25,22), (9,16,10,17), (19,26,20,27),
+        ... (11,2,12,3), (17,8,18,9), (3,12,4,13), (27,5,24,4), (15,10,16,11),
+        ... (13,22,14,23), (6,26,7,25), (1,19,2,18), (5,20,6,21), (7,1,8,0)]
+        >>> L = Link(L14n1000)
+        >>> len(L.overstrands()[0])
+        3
         """
         ceps = OrderedSet([cep for cep in self.crossing_entries() if cep.is_over_crossing()])        
         strands = []
