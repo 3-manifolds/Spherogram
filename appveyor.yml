@@ -23,6 +23,7 @@ build: none
   
 test_script:
   # Put your test command here.
+  - "%PYTHON%\\python.exe setup.py test"
 
 after_test:
   - "%PYTHON%\\python.exe setup.py bdist_wheel"
