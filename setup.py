@@ -103,8 +103,7 @@ class SpherogramRelease(Command):
         pythons = os.environ.get('RELEASE_PYTHONS', sys.executable).split(',')
         for python in pythons:
             check_call([python, 'setup.py', 'build'])
-            # Don't run the tests as this assumes snappy is *also* installed
-            # check_call([python, 'setup.py', 'test'])
+            check_call([python, 'setup.py', 'test'])
             if sys.platform.startswith('linux'):
                 plat = get_platform().replace('linux', 'manylinux1')
                 plat = plat.replace('-', '_')

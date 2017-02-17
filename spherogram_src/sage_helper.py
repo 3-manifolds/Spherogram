@@ -6,6 +6,9 @@ Any method which works only in Sage should be decorated with
 "@sage_method" and any doctests (in Sage methods or not) which should
 be run only in Sage should be styled with input prompt "sage:" rather
 than the usual ">>>".
+
+Similarly, doctests which require SnapPy should be styled in a block
+where the first non-whitespace character is | followed by a space.
 """
 try:
     import sage.all
@@ -14,6 +17,13 @@ except:
     _within_sage = False
     import decorator
 
+try:
+    import snappy
+    _have_snappy = True
+except ImportError:
+    print('Could not import snappy in sage_helper.py.')
+    _have_snappy = False
+    
 import doctest, re, types
 
 class SageNotAvailable(Exception):
@@ -34,12 +44,16 @@ if _within_sage:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
             string = re.subn('([\n\A]\s*)sage:', '\g<1>>>>', string)[0]
+            if _have_snappy:
+                string = re.subn('(^\s*)\| ', '\g<1>', string, flags=re.M)[0]
             return doctest.DocTestParser.parse(self, string, name)
 
     globs = dict()
 else:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
+            if _have_snappy:
+                string = re.subn('(^\s*)\| ', '\g<1>', string, flags=re.M)[0]
             return doctest.DocTestParser.parse(self, string, name)
         
     globs = dict()
