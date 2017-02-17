@@ -198,6 +198,7 @@ class Link(links_base.Link):
         if(mv):
             L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
             t = list(L_t.gens())
+
             #determine the component to which each variable corresponds
             g_component = [c.strand_components[2] for c in self.crossings]
             for i in range(len(g)):
@@ -207,7 +208,6 @@ class Link(links_base.Link):
             L_t = LaurentPolynomialRing(QQ,'t')
             t = L_t.gen()
             g = [t]*len(g)
-
 
         B = G.alexander_matrix(g)
 
@@ -237,7 +237,7 @@ class Link(links_base.Link):
             
             sage: K = Link('L7n1')
             sage: K.alexander_polynomial(norm=False)
-            -t2 - t1*t2^-2
+            t2^-1 + t1^-1*t2^-4
 
         The default algorithm for *knots* is Bar-Natan's super-fast
         tangle-based algorithm.  For links, we apply Fox calculus to a
@@ -594,7 +594,7 @@ class Link(links_base.Link):
         appropriate BraidGroup::
 
             sage: Link('K6a2').braid_word(as_sage_braid=True)
-            (s0*s1^-1)^2*s1^-2
+            (s0^-1*s1)^2*s0^-2
         
         Implementation follows P. Vogel, "Representation of links by
         braids, a new algorithm".
