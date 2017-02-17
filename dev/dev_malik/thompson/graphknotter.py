@@ -2,6 +2,8 @@ import spherogram as spherogram
 from spherogram.graphs import FatGraph
 from collections import defaultdict
 from spherogram.dev.tangle_patch import *
+from spherogram.links.simplify import reverse_type_I
+import random
 
 def faces(G):
     i_dict = G.incidence_dict
@@ -218,6 +220,20 @@ def whitehead_double(link):
     L = T1.circular_sum(T2,1)
     L._rebuild()
     return L
+
+def make_writhe_zero(link):
+    writhe = link.writhe()
+    if writhe>0:
+        hand = 'left'
+    else:
+        hand = 'right'
+    writhe = abs(writhe)
+    for i in range(writhe):
+        cs = random.choice(link.crossing_strands())
+        reverse_type_I(link,cs, i, hand, False)
+        link._rebuild()
+        print(link.writhe())
+
 
 def clear_orientations(link):
     for c in link.crossings:
