@@ -1,6 +1,5 @@
 import spherogram
 import snappy
-from seifert_patch import seifert_matrix
 import numpy as np
 import mpmath
 
@@ -110,6 +109,21 @@ def signature_function_of_integral_matrix(V, prec=53):
 
     assert list(reversed(values)) == values
     return partition, values
+
+def signature_function(L, prec=53):
+    """
+    Computes the signature function sigma of K via numerical methods.
+    Returns two lists, the first representing a partition of [0, 1]:
+
+         x_0 = 0 < x_1 < x_2 < ... < x_n = 1
+
+    and the second list consisting of the values [v_0, ... , v_(n-1)]
+    of sigma on the interval (x_i, x_(i+1)).  Currently, the value of
+    sigma *at* x_i is not computed.
+    """
+    V = L.seifert_matrix()
+    return signature_function_of_integral_matrix(V)
+        
     
 
 def basic_knot_test():
@@ -118,9 +132,9 @@ def basic_knot_test():
         print(M.name())
         R = PolynomialRing(ZZ, 't')
         K = M.link()
-        V = matrix(seifert_matrix(K))
+        V = matrix(K.seifert_matrix())
         p0 = R(M.alexander_polynomial())
-        p1 = R(K.alexander_poly())
+        p1 = R(K.alexander_polynomial())
         p2 = alexander_poly_from_seifert(V)
         assert p0 == p1 == p2
         partition, values = signature_function_of_integral_matrix(V)
@@ -130,6 +144,8 @@ def basic_knot_test():
         assert K.signature() == values[m]
     
     
-    
-K = spherogram.Link('K12n123')
-V = matrix(ZZ, seifert_matrix(K))
+
+if __name__ == '__main__':
+    K = spherogram.Link('K12n123')
+    V = matrix(ZZ, K.seifert_matrix())
+    basic_knot_test()
