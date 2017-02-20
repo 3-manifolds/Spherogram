@@ -862,13 +862,12 @@ class Link(object):
         a PD code, it should not change the ordering of the components, but
         it might change the orientations.
 
-        >>> L = Link('L13n11308')
-        >>> [len(c) for c in L.link_components]
-        [4, 4, 4, 6, 8]
-        >>> L2 = Link(L.PD_code())
-        >>> [len(c) for c in L2.link_components]
-        [4, 4, 4, 6, 8]
-        
+        |>>> L = Link('L13n11308')
+        |>>> [len(c) for c in L.link_components]
+        |[4, 4, 4, 6, 8]
+        |>>> L_copy = Link(L.PD_code())
+        |>>> [len(c) for c in L_copy.link_components]
+        |[4, 4, 4, 6, 8]
         """
         PD = []
 
