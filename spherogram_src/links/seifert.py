@@ -246,10 +246,10 @@ def braid_word(link):
     >>> braid_word(L)
     [-1, 2, -1, 2]
 
-    | >>> w = braid_word(Link('13n1234'))
-    | >>> M = ClosedBraid(w).exterior()
-    | >>> M.identify()
-    | [K13n1234(0,0)]
+    >>> w = braid_word(Link('13n1234'))    # doctest: +SNAPPY
+    >>> M = ClosedBraid(w).exterior()      # doctest: +SNAPPY
+    >>> M.identify()                       # doctest: +SNAPPY
+    [K13n1234(0,0)]
 
     Implementation follows P. Vogel, "Representation of links by
     braids, a new algorithm".
