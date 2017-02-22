@@ -7,8 +7,8 @@ Any method which works only in Sage should be decorated with
 be run only in Sage should be styled with input prompt "sage:" rather
 than the usual ">>>".
 
-Similarly, doctests which require SnapPy should be styled in a block
-where the first non-whitespace character is | followed by a space.
+Additionally, doctests which require SnapPy marked with the "+SNAPPY"
+flag.
 """
 try:
     import sage.all
@@ -40,21 +40,33 @@ else:
     def sage_method(function):
         return decorator.decorator(_sage_method, function)
 
+
+SNAPPY_FLAG = doctest.register_optionflag('SNAPPY')
+
+def filter_out_snappy(pieces):
+    ans = []
+    for piece in pieces:
+        if _have_snappy or not isinstance(piece, doctest.Example):
+            ans.append(piece)
+        elif not piece.options.get(SNAPPY_FLAG, False):
+            ans.append(piece)
+    return ans
+            
+        
 if _within_sage:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
             string = re.subn('([\n\A]\s*)sage:', '\g<1>>>>', string)[0]
-            if _have_snappy:
-                string = re.subn('(^\s*)\| ', '\g<1>', string, flags=re.M)[0]
-            return doctest.DocTestParser.parse(self, string, name)
+            pieces = doctest.DocTestParser.parse(self, string, name)
+            return filter_out_snappy(pieces)
 
     globs = dict()
 else:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
-            if _have_snappy:
-                string = re.subn('(^\s*)\| ', '\g<1>', string, flags=re.M)[0]
-            return doctest.DocTestParser.parse(self, string, name)
+            pieces = doctest.DocTestParser.parse(self, string, name)
+            return filter_out_snappy(pieces)
+
         
     globs = dict()
 

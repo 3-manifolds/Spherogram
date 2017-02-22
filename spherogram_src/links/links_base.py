@@ -329,14 +329,14 @@ class Link(object):
     <Link: 1 comp; 4 cross>
 
     and if you have SnapPy installed, you can access the links from
-    the Rolfsen and Hoste-Thistlethwaite tables:
+    the Rolfsen and Hoste-Thistlethwaite tables.
 
-    | >>> Link('8_20')
-    | <Link 8_20: 1 comp; 8 cross>
-    | >>> Link('K12a123')
-    | <Link K12a123: 1 comp; 12 cross>
-    | >>> Link('L12n123')
-    | <Link L12n123: 2 comp; 12 cross>
+    >>> Link('8_20')                  # doctest: +SNAPPY 
+    <Link 8_20: 1 comp; 8 cross>
+    >>> Link('K12a123')               # doctest: +SNAPPY     
+    <Link K12a123: 1 comp; 12 cross>
+    >>> Link('L12n123')               # doctest: +SNAPPY 
+    <Link L12n123: 2 comp; 12 cross>
     """
     
     def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
@@ -858,16 +858,17 @@ class Link(object):
 
     def PD_code(self, KnotTheory=False, min_strand_index=0):
         """
-        The planar diagram code for the link.  When constructing a link from
-        a PD code, it should not change the ordering of the components, but
-        it might change the orientations.
+        The planar diagram code for the link.  When reconstructing a link
+        from its PD code, it will not change the ordering of the
+        components, and will preserve their orientation except
+        possibly for components with only two crossings.
 
-        |>>> L = Link('L13n11308')
-        |>>> [len(c) for c in L.link_components]
-        |[4, 4, 4, 6, 8]
-        |>>> L_copy = Link(L.PD_code())
-        |>>> [len(c) for c in L_copy.link_components]
-        |[4, 4, 4, 6, 8]
+        >>> L = Link('L13n11308')                       # doctest: +SNAPPY
+        >>> [len(c) for c in L.link_components]         # doctest: +SNAPPY
+        [4, 4, 4, 6, 8]
+        >>> L_copy = Link(L.PD_code())                  # doctest: +SNAPPY
+        >>> [len(c) for c in L_copy.link_components]    # doctest: +SNAPPY
+        [4, 4, 4, 6, 8]
         """
         PD = []
 
@@ -1142,10 +1143,10 @@ class Link(object):
         that the DT code of the result has all positive entries (as
         opposed to all negative).
 
-        | >>> L = Link('L14n12345')
-        | >>> A = L.alternating()
-        | >>> A.exterior().identify()
-        | [L14a5150(0,0)(0,0)]
+        >>> L = Link('L14n12345')      # doctest: +SNAPPY
+        >>> A = L.alternating()        # doctest: +SNAPPY
+        >>> A.exterior().identify()    # doctest: +SNAPPY
+        [L14a5150(0,0)(0,0)]
         """
         L = self.copy()
         for C in L.crossings:
