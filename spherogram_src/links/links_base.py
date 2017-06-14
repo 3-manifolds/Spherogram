@@ -648,10 +648,28 @@ class Link(object):
         >>> L = Link([(1,7,2,6), (7,4,8,5), (3,8,0,9), (5,3,6,2), (9,0,4,1)])
         >>> L.is_planar()
         True
+
+        A valid split link:
+        >>> S = Link([(1, 1, 2, 2), (3, 3, 4, 4)])
+        >>> S.is_planar()
+        True
+        >>> len(S.split_link_diagram())
+        2
+        
+        A split link with one component planar and the other nonplanar
+        >>> a, b = Crossing(), Crossing()
+        >>> a[0], a[2] = a[1], a[3]
+        >>> b[0], b[1] = b[2], b[3]
+        >>> N = Link([a, b], check_planarity=False)
+        >>> N.is_planar()
+        False
+        >>> sorted(C.is_planar() for C in N.split_link_diagram())
+        [False, True]
         """
         G = self.digraph()
         if not G.is_weakly_connected():
-            return False
+            components = self.split_link_diagram()
+            return all(C.is_planar() for C in components)
         v = len(self.crossings)
         assert 2*v == len(G.edges)
         euler = -v + len(self.faces())
