@@ -31,7 +31,7 @@ try:
     import plink
     assert parse_version(plink.__version__) > parse_version('2.0.1')
 except (ImportError, AssertionError):
-    plink == None
+    plink = None
 #---------------------------------------------------
 #
 # Utility code
