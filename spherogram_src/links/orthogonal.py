@@ -25,7 +25,13 @@ import networkx, random, string
 from .links import CrossingStrand, CrossingEntryPoint, Strand
 from ..graphs import CyclicList, Graph, Digraph
 from collections import *
+from pkg_resources import parse_version
 
+try:
+    import plink
+    assert parse_version(plink.__version__) > parse_version('2.0.1')
+except (ImportError, AssertionError):
+    plink == None
 #---------------------------------------------------
 #
 # Utility code
@@ -599,25 +605,26 @@ class OrthogonalLinkDiagram(list):
 #
 #---------------------------------------------------
 
-def orthogonal_draw(self, link_editor=None, show_crossing_labels=False):
+def orthogonal_draw(self, viewer=None, show_crossing_labels=False):
     """
-    Opens a Plink link editor window with displaying the current link.
+    Opens a Plink link viewer window displaying the current link.
     The strands of the links are unions of edges in the standard
     integer grid, following the work of `Tamassia
     <http://dx.doi.org/10.1137/0216030>`_ and `Bridgeman
     et. al. <ftp://ftp.cs.brown.edu/pub/techreports/99/cs99-04.pdf>`_
     """
-    if link_editor is None:
-        import plink
-        link_editor = plink.LinkEditor(show_crossing_labels=show_crossing_labels)
+    if not plink:
+        print('To view links install PLink version 2.0.2 or higher.')
+        return
+    if viewer is None:
+        viewer = plink.LinkDisplay(show_crossing_labels=show_crossing_labels)
     diagram = OrthogonalLinkDiagram(self)
-    link_editor.unpickle(*diagram.plink_data())
+    viewer.unpickle(*diagram.plink_data())
     try:
-        link_editor.zoom_to_fit()
-        link_editor.goto_start_state()
+        viewer.zoom_to_fit()
     except AttributeError:  # Have been passed just a LinkManager which has no Tk canvas
         pass
-    return link_editor
+    return viewer
 
 #---------------------------------------------------
 #
