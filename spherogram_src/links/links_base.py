@@ -12,18 +12,14 @@ from future.utils import itervalues
 from .. import graphs
 from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
-import  string, os, sys, re, collections
+import  string, os, sys, re
+from collections import OrderedDict, namedtuple
 try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
 
 import copy
-
-if sys.version_info >= (2, 7):
-    OrderedDict = collections.OrderedDict
-else: # Hack for Python 2.6
-    OrderedDict = dict
 
 def is_iterable(obj):
     try:
@@ -146,7 +142,7 @@ class Crossing(object):
 
         return ans
 
-BasicCrossingStrand = collections.namedtuple('BasicCrossingStrand', ['crossing', 'strand_index'])
+BasicCrossingStrand = namedtuple('BasicCrossingStrand', ['crossing', 'strand_index'])
 
 class CrossingStrand(BasicCrossingStrand):
     """
