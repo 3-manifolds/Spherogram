@@ -191,14 +191,9 @@ long_description = open('README').read()
 long_description = long_description.split('==\n')[1]
 long_description = long_description.split('\nDeveloped')[0]
 
-if sys.version_info >= (2, 7):
-    networkx = 'networkx>=1.3'
-else:
-    networkx = 'networkx<1.10'
-
 setup( name = 'spherogram',
        version = version,
-       install_requires = [networkx, 'decorator', 'future'],
+       install_requires = ['networkx>=1.3', 'decorator', 'future', 'snappy_manifolds'],
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',

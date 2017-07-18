@@ -2,10 +2,10 @@ from .graphs import *
 from .presentations import *
 from .links import * 
 from .codecs import *
-try:
-    import snappy
-except ImportError:
-    pass
+#try:
+#    import snappy
+#except ImportError:
+#    pass
 
 # Make the module version number easily accessible.
 from . import version as _version
