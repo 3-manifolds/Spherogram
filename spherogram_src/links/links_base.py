@@ -12,21 +12,42 @@ from future.utils import itervalues
 from .. import graphs
 from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
-import  string, os, sys, re
+import  string, os, sys, re, copy
 from collections import OrderedDict, namedtuple
 try:
     import cPickle as pickle
 except ImportError: # Python 3
     import pickle
 
-import copy
-
+# Helper function.
 def is_iterable(obj):
     try:
         iter(obj)
         return True
     except TypeError:
         return False
+
+# Looking up links in SnapPy's databases
+import snappy_manifolds
+DT_tables = snappy_manifolds.get_DT_tables()
+
+def lookup_DT_code_by_name(name):
+    """
+    >>> lookup_DT_code_by_name('K12n123')
+    'lalbdFaihCjlkge'
+    >>> lookup_DT_code_by_name('8_20')
+    'hahDeHFgCaB.01010001'
+    >>> lookup_DT_code_by_name('8a1')
+    'hahbdegahcf'
+    >>> lookup_DT_code_by_name('garbage')
+    """
+    if re.match('\d+[an]\d+$', name):
+        name = 'K' + name 
+    for table in DT_tables:
+        try:
+            return table[name]
+        except IndexError:
+            continue
 
 class Crossing(object):
     """
@@ -324,14 +345,14 @@ class Link(object):
     >>> Link(braid_closure=[1, 2, -1, -2])
     <Link: 1 comp; 4 cross>
 
-    and if you have SnapPy installed, you can access the links from
-    the Rolfsen and Hoste-Thistlethwaite tables.
+    You can also access the links from the Rolfsen and
+    Hoste-Thistlethwaite tables by name.
 
-    >>> Link('8_20')                  # doctest: +SNAPPY 
+    >>> Link('8_20')
     <Link 8_20: 1 comp; 8 cross>
-    >>> Link('K12a123')               # doctest: +SNAPPY     
+    >>> Link('K12a123')
     <Link K12a123: 1 comp; 12 cross>
-    >>> Link('L12n123')               # doctest: +SNAPPY 
+    >>> Link('L12n123')
     <Link L12n123: 2 comp; 12 cross>
     """
     
@@ -388,8 +409,13 @@ class Link(object):
             from . import torus
             crossings = torus.torus_knot(spec).crossings
         else:
+            from .. import codecs
             self.name = spec
-            crossings = self._lookup_DT(spec).PD_code()
+            DT_string = lookup_DT_code_by_name(spec)
+            if DT_string is None:
+                raise ValueError('No link by that name known')
+            crossings = codecs.DTcodec(DT_string).PD_code()
+
         return crossings
                           
     def _crossings_from_PD_code(self, code):
@@ -506,10 +532,6 @@ class Link(object):
             strands[i][0] = current[i]
                 
         return crossings + strands
-
-    def _lookup_DT(self, name):
-        # This method is monkey-patched by snappy
-        raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
@@ -877,11 +899,11 @@ class Link(object):
         components, and will preserve their orientation except
         possibly for components with only two crossings.
 
-        >>> L = Link('L13n11308')                       # doctest: +SNAPPY
-        >>> [len(c) for c in L.link_components]         # doctest: +SNAPPY
+        >>> L = Link('L13n11308')
+        >>> [len(c) for c in L.link_components]
         [4, 4, 4, 6, 8]
-        >>> L_copy = Link(L.PD_code())                  # doctest: +SNAPPY
-        >>> [len(c) for c in L_copy.link_components]    # doctest: +SNAPPY
+        >>> L_copy = Link(L.PD_code())
+        >>> [len(c) for c in L_copy.link_components]
         [4, 4, 4, 6, 8]
         """
         PD = []
@@ -1157,8 +1179,8 @@ class Link(object):
         that the DT code of the result has all positive entries (as
         opposed to all negative).
 
-        >>> L = Link('L14n12345')      # doctest: +SNAPPY
-        >>> A = L.alternating()        # doctest: +SNAPPY
+        >>> L = Link('L14n12345')
+        >>> A = L.alternating()
         >>> A.exterior().identify()    # doctest: +SNAPPY
         [L14a5150(0,0)(0,0)]
         """

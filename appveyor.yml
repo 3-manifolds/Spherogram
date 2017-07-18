@@ -17,6 +17,8 @@ environment:
 install:
   - "%PYTHON%\\python.exe -m pip install --upgrade pip setuptools"
   - "%PYTHON%\\python.exe -m pip install Cython wheel"
+  # Next line temporary
+  - "%PYTHON%\\python.exe -m pip install hg+https://bitbucket.org/mobeidin/snappy_core_manifolds" 
   - "%PYTHON%\\python.exe setup.py install"
   
 build: none
