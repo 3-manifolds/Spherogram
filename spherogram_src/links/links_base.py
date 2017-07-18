@@ -45,7 +45,7 @@ def lookup_DT_code_by_name(name):
         name = 'K' + name 
     for table in DT_tables:
         try:
-            return table[name]
+            return str(table[name])
         except IndexError:
             continue
 
