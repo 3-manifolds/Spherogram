@@ -18,7 +18,6 @@ modules = [spherogram.codecs.DT, spherogram.codecs.Base64LikeDT,
 if test_helper._have_snappy:
     import snappy
     spherogram.links.links_base.Link.exterior = snappy._link_exterior
-    spherogram.links.links_base.Link._lookup_DT = snappy._link_lookup_DT
 
 def run_doctests(verbose=False, print_info=True):
     if test_helper._have_snappy:
