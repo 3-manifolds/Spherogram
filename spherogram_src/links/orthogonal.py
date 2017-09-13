@@ -23,7 +23,7 @@ the associated network N(P) has A_V empty and A_F has no self-loops.
 from future.utils import iteritems, itervalues
 import networkx, random, string
 from .links import CrossingStrand, CrossingEntryPoint, Strand
-from ..graphs import CyclicList, Graph, Digraph
+from ..graphs import CyclicList, Digraph
 from collections import *
 from pkg_resources import parse_version
 
@@ -521,10 +521,9 @@ class OrthogonalLinkDiagram(list):
         "left", "right", "up", "down".
         """
         orientations = {self[0][0]:'right'}
-        N = self.face_network.to_undirected()
-        G = Graph(N.edges())
-        G.remove_vertex('s'), G.remove_vertex('t')
-        for i in G.depth_first_search(0):
+        G = self.face_network.to_undirected()
+        G.remove_node('s'), G.remove_node('t')
+        for i in networkx.dfs_preorder_nodes(G, 0):
             F = self[i]
             for edge in F:
                 if edge in orientations:
