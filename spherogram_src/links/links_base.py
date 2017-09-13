@@ -147,10 +147,24 @@ class Crossing(object):
         print( "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions) )
 
     def DT_info(self):
+        """
+        Returns (first label, second label, flip)
+        """
         labels = self.strand_labels
         over = labels[3]+1 if self.sign == 1 else labels[1] + 1
         under = labels[0]+1
-        return (under, -over) if over % 2 == 0 else (over, under)
+        if over % 2 == 0:
+            first, second = under, -over
+
+        else:
+            first, second = over, under
+
+        
+        if self.sign == 1:
+            flip = 1 if labels[0] < labels[3] else 0
+        else:
+            flip = 0 if labels[0] < labels[1] else 1
+        return (under, -over, flip) if over % 2 == 0 else (over, under, flip)
 
     def peer_info(self):
         labels = self.strand_labels
@@ -933,12 +947,18 @@ class Link(object):
             PD = [tuple(x) for x in PD ]
         return PD
 
-    def DT_code(self, DT_alpha=False):
+    def DT_code(self, DT_alpha=False, flips=False):
         """
         The Dowker-Thistlethwaite code for the link in either numerical or
         alphabetical form.
+
+        >>> L = Link('K13n123')
+        >>> L.DT_code(DT_alpha=True, flips=True)
+        'DT[mamDMhABjlcfeigk.0110010100110]'
         """
-        DT_dict = dict( [ c.DT_info() for c in self.crossings] )
+        DT_info = [c.DT_info() for c in self.crossings]
+        the_flips = [flip for _, _, flip in DT_info]
+        DT_dict = {first:second for first, second, _ in DT_info}
         odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
         DT = [ tuple([DT_dict[x] for x in component]) for component in odd_labels]
 
@@ -948,6 +968,8 @@ class Link(object):
             DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
             init_data = [len(self), len(DT)] +  [len(c) for c in DT]
             DT = ''.join([DT_alphabet[x] for x in init_data] + [DT_alphabet[x>>1] for x in sum(DT, tuple())])
+            if flips:
+                DT += '.' + ''.join([repr(flip) for flip in the_flips])
             DT = "DT[" + DT + "]"
 
         return DT
@@ -1186,7 +1208,7 @@ class Link(object):
         """
         L = self.copy()
         for C in L.crossings:
-            a, b = C.DT_info()
+            a, b, c = C.DT_info()
             if a*b < 0:
                 C.rotate_by_90()
         L._rebuild()
