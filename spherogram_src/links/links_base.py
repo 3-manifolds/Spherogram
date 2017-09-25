@@ -943,9 +943,9 @@ class Link(object):
         The Dowker-Thistlethwaite code for the link in either numerical or
         alphabetical form.
 
-        >>> L = Link('K13n123')
+        >>> L = Link('K8n1')
         >>> L.DT_code(DT_alpha=True, flips=True)
-        'DT[mamDMhABjlcfeigk.0110010100110]'
+        'DT[hahCHeAgbdf.10001110]'
         """
         DT_info = [c.DT_info() for c in self.crossings]
         the_flips = [flip for _, _, flip in DT_info]
