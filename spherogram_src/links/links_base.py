@@ -793,10 +793,7 @@ class Link(object):
         >>> L    # Trivial unlinked component has been discarded!
         <Link: 2 comp; 2 cross>
 
-        >>> K14n2345 = [(10,4,11,3), (16,8,17,7), (20,18,21,17), (4,10,5,9),
-        ... (26,13,27,14), (24,20,25,19), (2,12,3,11), (12,6,13,5), (8,16,9,15),
-        ... (6,2,7,1), (27,22,0,23), (18,24,19,23), (14,25,15,26), (21,0,22,1)]
-        >>> K = Link(K14n2345)
+        >>> K = Link('K14n2345')
         >>> K.backtrack(30) 
         >>> K.simplify('global')
         True
@@ -819,12 +816,9 @@ class Link(object):
         the number of crossings in a diagram.  The number of such
         moves is the parameter steps.  The diagram is modified in place. 
 
-        >>> L14a7689 = [(13,8,14,9), (15,3,16,2), (9,4,10,5), (19,11,20,10),
-        ... (3,15,4,14), (7,24,8,25), (25,6,26,7), (21,27,0,26), (27,19,22,18),
-        ... (23,16,24,17), (1,22,2,23), (11,21,12,20), (5,12,6,13), (17,0,18,1)]
-        >>> K = Link(L14a7689)
+        >>> K = Link('L14a7689')
         >>> K
-        <Link: 2 comp; 14 cross>
+        <Link L14a7689: 2 comp; 14 cross>
         >>> K.backtrack(steps = 5, prob_type_1 = 1, prob_type_2 = 0)
         >>> len(K.crossings)
         19
@@ -846,12 +840,9 @@ class Link(object):
         components in the sublink need not correspond to their order
         in the original link.
 
-        >>> L14n64110 = [(19,3,12,2), (18,26,19,25), (24,16,25,15), (23,4,20,5),
-        ... (8,17,9,18), (21,15,22,14), (26,9,27,10), (6,27,7,24), (3,10,0,11),
-        ... (13,23,14,22), (5,20,6,21), (16,7,17,8), (1,13,2,12), (11,0,4,1)]
-        >>> L = Link(L14n64110)
+        >>> L = Link('L14n64110')
         >>> L
-        <Link: 5 comp; 14 cross>
+        <Link L14n64110: 5 comp; 14 cross>
         >>> L.sublink([1,2,3,4])
         <Link: 4 comp; 10 cross>
         >>> comps = L.link_components
@@ -1109,12 +1100,9 @@ class Link(object):
         """
         Returns a copy of the link.  
 
-        >>> L14n467 = [(3,15,4,14), (21,11,22,10), (15,3,16,2), (25,22,26,23),
-        ... (8,14,9,13), (19,5,20,4), (7,16,8,17), (26,11,27,12), (1,6,2,7),
-        ... (12,0,13,23), (5,19,6,18), (9,24,10,25), (20,27,21,24), (17,0,18,1)]
-        >>> K = Link(L14n467)
+        >>> K = Link('L14n467')
         >>> copy = K.copy(); copy
-        <Link: 2 comp; 14 cross>
+        <Link L14n467: 2 comp; 14 cross>
         >>> K.PD_code() == copy.PD_code()
         True
         """
@@ -1243,10 +1231,7 @@ class Link(object):
         Returns a list of the sequences of overcrossings (which are lists of 
         CrossingEntryPoints), sorted in descending order of length.
 
-        >>> L14n1000 = [(23,14,0,15), (24,21,25,22), (9,16,10,17), (19,26,20,27),
-        ... (11,2,12,3), (17,8,18,9), (3,12,4,13), (27,5,24,4), (15,10,16,11),
-        ... (13,22,14,23), (6,26,7,25), (1,19,2,18), (5,20,6,21), (7,1,8,0)]
-        >>> L = Link(L14n1000)
+        >>> L = Link('L14n1000')
         >>> len(L.overstrands()[0])
         3
         """
