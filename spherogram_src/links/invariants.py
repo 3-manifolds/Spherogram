@@ -581,9 +581,7 @@ class Link(links_base.Link):
         given link.  The natural numbers 1, 2, 3, etc are the generators and the
         negatives are the inverses.
         
-        >>> K8n1 = [(8,6,9,5),(12,8,13,7),(1,4,2,5),(13,2,14,3),(3,14,4,15),
-        ...         (15,10,0,11),(6,12,7,11),(9,0,10,1)]
-        >>> L = Link(K8n1)
+        >>> L = Link('K8n1')
         >>> word = L.braid_word(); word
         [1, -2, 3, 2, 4, -3, 2, -1, 2, 2, 3, 2, -4, -3, -2, -2]
 
