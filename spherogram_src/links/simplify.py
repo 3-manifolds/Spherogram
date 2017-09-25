@@ -484,7 +484,7 @@ def merge_vertices(graph,vertices):
     v = tuple(vertices)
     graph.add_node(v)
     for i in range(len(v)):
-        edgelist = graph.edges(v[i])
+        edgelist = list(graph.edges(v[i]))
         for j in range(len(edgelist)):
             graph.add_edge(v,edgelist[j][0])
             graph.add_edge(v,edgelist[j][1])
