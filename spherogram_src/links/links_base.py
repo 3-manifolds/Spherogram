@@ -707,6 +707,37 @@ class Link(object):
         euler = -v + len(self.faces())
         return euler == 2 or v == 0
 
+    def is_alternating(self):
+        """
+        Returns whether or not this link diagram is alternating.
+
+        >>> K = Link('K9a1')
+        >>> L = Link('K10n1')
+        >>> K.is_alternating(), L.is_alternating()
+        (True, False)
+
+        Of course, this is a property of the *diagram* not the isotopy
+        class.  Here is the Hopf link with two silly extra crossings:
+
+        >>> T = Link([(4,8,1,5),(3,6,4,5),(6,3,7,2),(1,8,2,7)])
+        >>> T.is_alternating()
+        False
+        >>> T.simplify()
+        True
+        >>> T.is_alternating()
+        True
+        """
+        for component in self.link_components:
+            assert len(component) % 2 == 0
+            over = component[0].is_over_crossing()
+            for c in component[1:]:
+                next_over = c.is_over_crossing()
+                if next_over == over:
+                    return False
+                over = next_over
+        return True
+    
+
     def faces(self):
         """
         The faces are the complementary regions of the link diagram. Each face
