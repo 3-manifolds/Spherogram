@@ -153,13 +153,6 @@ class Crossing(object):
         labels = self.strand_labels
         over = labels[3]+1 if self.sign == 1 else labels[1] + 1
         under = labels[0]+1
-        if over % 2 == 0:
-            first, second = under, -over
-
-        else:
-            first, second = over, under
-
-        
         if self.sign == 1:
             flip = 1 if labels[0] < labels[3] else 0
         else:
@@ -1022,13 +1015,14 @@ class Link(object):
 
         >>> L = Link('K8n1')
         >>> L.DT_code(DT_alpha=True, flips=True)
-        'DT[hahCHeAgbdf.10001110]'
+        'DT[hahCHeAgbdf.11101000]'
         """
         DT_info = [c.DT_info() for c in self.crossings]
-        the_flips = [flip for _, _, flip in DT_info]
-        DT_dict = {first:second for first, second, _ in DT_info}
+        first_to_second = {first:second for first, second, _ in DT_info}
+        first_to_flip = {first:flip for first, _, flip in DT_info}
         odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
-        DT = [ tuple([DT_dict[x] for x in component]) for component in odd_labels]
+        DT = [ tuple([first_to_second[x] for x in component]) for component in odd_labels]
+        the_flips = [first_to_flip[x] for x in sum(odd_labels, [])]
 
         if DT_alpha:
             if len(self) > 52:

@@ -556,6 +556,8 @@ class DTcodec(object):
 
         This method constructs a planar FatGraph from its input data.
         """
+        if flips is not None:
+            flips = [bool(flip) for flip in flips]
         self.flips = flips
         if isinstance(dt, (str, unicode)):
             if dt[:2] == '0x':
