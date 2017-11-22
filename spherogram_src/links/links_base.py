@@ -34,11 +34,11 @@ DT_tables = snappy_manifolds.get_DT_tables()
 def lookup_DT_code_by_name(name):
     """
     >>> lookup_DT_code_by_name('K12n123')
-    'lalbdFaihCjlkge'
+    'lalbdFaihCjlkge.001101000111'
     >>> lookup_DT_code_by_name('8_20')
     'hahDeHFgCaB.01010001'
     >>> lookup_DT_code_by_name('8a1')
-    'hahbdegahcf'
+    'hahbdegahcf.01000011'
     >>> lookup_DT_code_by_name('garbage')
     """
     if re.match('\d+[an]\d+$', name):
