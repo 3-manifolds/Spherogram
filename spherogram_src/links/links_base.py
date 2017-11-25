@@ -867,8 +867,8 @@ class Link(object):
         >>> K.backtrack(30) 
         >>> K.simplify('global')
         True
-        >>> K
-        <Link: 1 comp; 14 cross>
+        >>> K   #doctest: +ELLIPSIS
+        <Link: 1 comp; ... cross>
         """
         from . import simplify
         if mode == 'basic':
