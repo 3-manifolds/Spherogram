@@ -511,7 +511,7 @@ class Graph(object):
         >>> G = Graph([(0,1),(1,2),(2,0)]).mergeable()
         >>> F = lambda x: frozenset([x])
         >>> G.merge(F(1),F(2))
-        >>> sorted(G.vertices) == [frozenset([1, 2]), frozenset([0])]
+        >>> set(G.vertices) == {frozenset([1, 2]), frozenset([0])}
         True
         >>> tuple(sorted(G.edges)[0]) == (frozenset([0]), frozenset([1, 2]))
         True
