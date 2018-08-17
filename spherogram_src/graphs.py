@@ -513,8 +513,6 @@ class Graph(object):
         >>> G.merge(F(1),F(2))
         >>> set(G.vertices) == {frozenset([1, 2]), frozenset([0])}
         True
-        >>> tuple(sorted(G.edges)[0]) == (frozenset([0]), frozenset([1, 2]))
-        True
         """
         new_vertex = V1|V2
         if new_vertex in self.vertices:
