@@ -167,7 +167,7 @@ class Exhaustion(object):
         frontier_lengths = [4]
         while len(crossings) < len(link.crossings):
             choices = [(num_overlap(cs.opposite()[0], frontier), cs) for cs in frontier]
-            overlap, cs = max(choices)
+            overlap, cs = max(choices, key=lambda x:x[0])
             C = cs.opposite().crossing
             assert C not in crossings
             crossings.append(C)
@@ -203,7 +203,7 @@ class Exhaustion(object):
         gluings = self.gluings[:]
         # The last crossing is special because we need to end at a
         # string link.
-        for C, gluings in zip(self.crossings, gluings)[:-1]:
+        for C, gluings in list(zip(self.crossings, gluings))[:-1]:
             D.add_crossing(C)
             for a, b in gluings:
                 D.merge(a, b)

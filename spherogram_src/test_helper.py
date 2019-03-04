@@ -56,7 +56,7 @@ def filter_out_snappy(pieces):
 if _within_sage:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
-            string = re.subn('([\n\A]\s*)sage:', '\g<1>>>>', string)[0]
+            string = re.subn('(\n\s*)sage:|(\A\s*)sage:', '\g<1>>>>', string)[0]
             pieces = doctest.DocTestParser.parse(self, string, name)
             return filter_out_snappy(pieces)
 
