@@ -174,7 +174,7 @@ class MorseLinkDiagram(object):
         True
         sage: sorted(orients)
         ['down', 'down', 'max', 'max', 'max', 'max', 'min', 'min', 'min', 'min', 'up', 'up']
-        sage: orients.count('max') == 2*D.morse_number
+        sage: list(orients).count('max') == 2*D.morse_number
         True
         """
         def expand_orientation(cs, kind):
