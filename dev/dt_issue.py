@@ -1,4 +1,4 @@
-import snappy, spherogram, plink
+import snappy, spherogram
 import spherogram.links.orthogonal
 from nsnappytools import appears_hyperbolic
 from sage.all import *
@@ -8,11 +8,10 @@ links = snappy.HTLinkExteriors()
 for i in range(1):
     dt = links.random().DT_code()
     dtm = [tuple([-d for d in comp]) for comp in dt]
-    dtm = dtm
     for d in [dt, dtm]:
         dtc = spherogram.DTcodec(d)
         L = dtc.link()
-        assert d==L.DT_code()
+        assert d == L.DT_code()
 
 dt = [(8, -10, 14), (12, -20, 18, 22, 4, 24, -2, 6, 26, 16)]
 dtc = spherogram.DTcodec(dt)
@@ -64,5 +63,4 @@ def fill_vols(M):
 
 def plink_component_order_test(N):
     M2 = snappy.Manifold()
-    return set([test_DT(dt, M2) for dt in asymmetric_link_DTs(N)])
-
+    return set(test_DT(dt, M2) for dt in asymmetric_link_DTs(N))
