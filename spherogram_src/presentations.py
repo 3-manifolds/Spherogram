@@ -125,7 +125,7 @@ class CyclicWord(Word):
             self.popleft()
             self.pop()
 
-    def __mul__(self):
+    def __mul__(self, other):
         raise ValueError('Cyclic words cannot be multiplied.')
 
     def __invert__(self):
@@ -510,7 +510,7 @@ class CanonizeNode(object):
         self.ordering = ordering
 
     def __repr__(self):
-        return '%s\n%s'%(self.presentation, self.ordering)
+        return '%s\n%s' % (self.presentation, self.ordering)
     
     def children(self):
         childlist = []
