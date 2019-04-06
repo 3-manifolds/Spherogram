@@ -191,9 +191,15 @@ long_description = open('README.rst').read()
 long_description = long_description.split('==\n')[1]
 long_description = long_description.split('\nDeveloped')[0]
 
+install_requires = ['decorator', 'future', 'snappy_manifolds>=1.0']
+if sys.version_info < (3, 5):
+    install_requires.append('networkx<=2.2.9,>=1.3')
+else:
+    install_requires.append('networkx>=1.3')
+
 setup( name = 'spherogram',
        version = version,
-       install_requires = ['networkx>=1.3', 'decorator', 'future', 'snappy_manifolds>=1.0'],
+       install_requires = install_requires,
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',
