@@ -2,10 +2,7 @@ from tangle_patch import *
 import snappy
 from sage.graphs.graph import Graph
 
-
-mutation_graph = Graph()
-
-links = snappy.HTLinkExteriors(crossings=12,knots_vs_links='knots')
+links = snappy.HTLinkExteriors(crossings=12, knots_vs_links='knots')
 
 """
 for M in links:
@@ -14,12 +11,13 @@ for M in links:
     ids = [str(K.exterior().identify()[-1]) for K in mutants]
     print(ids)
 """
-i=0
 
 """
+mutation_graph = Graph()
+i = 0
 for M in links:
     i += 1
-    print('%d / %d' %(i,len(links)))
+    print('%d / %d' % (i, len(links)))
     L = M.link()
     try:
         M_id = str(M.identify()[-1])
@@ -48,7 +46,7 @@ def mutant_neighborhood_graph(link):
     isosig = link.exterior().isometry_signature(of_link=True)
     isosig_to_link_dict = {isosig: link.PD_code()}
     links_boundary = [link]
-    while len(links_boundary)>0:
+    while links_boundary:
         new_links_boundary = []
         for L in links_boundary:
             L_iso = L.exterior().isometry_signature(of_link=True)
@@ -58,7 +56,7 @@ def mutant_neighborhood_graph(link):
                 if isosig not in isosig_to_link_dict:
                     new_links_boundary.append(M)
                     isosig_to_link_dict[isosig] = M.PD_code()
-                G.add_edge(L_iso,isosig)
+                G.add_edge(L_iso, isosig)
         links_boundary = new_links_boundary
 
     return G, isosig_to_link_dict
@@ -67,7 +65,7 @@ mutation_graph = Graph()
 isosig_dict = {}
 i = 0
 for link in links:
-    print('%d / %d' %(i,len(links)))
+    print('%d / %d' % (i, len(links)))
     i += 1
     try:
         isosig = link.isometry_signature(of_link=True)
@@ -80,12 +78,11 @@ for link in links:
     print(len(G.edges()))
     mutation_graph.add_edges(G.edges())
     for iso in d:
-        isosig_dict[iso]=d[iso]
+        isosig_dict[iso] = d[iso]
 
-f = open('mutation_graph_knots12.txt','w')
-f.write(str(mutation_graph.edges()))
-f.close()
+with pen('mutation_graph_knots12.txt', 'w') as f:
+    f.write(str(mutation_graph.edges()))
 
-g = open('isosig_to_PD_dict12.txt','w')
-g.write(str(isosig_dict))
-g.close()
+with open('isosig_to_PD_dict12.txt', 'w') as g:
+    g.write(str(isosig_dict))
+
