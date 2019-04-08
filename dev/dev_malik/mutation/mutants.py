@@ -80,7 +80,7 @@ for link in links:
     for iso in d:
         isosig_dict[iso] = d[iso]
 
-with pen('mutation_graph_knots12.txt', 'w') as f:
+with open('mutation_graph_knots12.txt', 'w') as f:
     f.write(str(mutation_graph.edges()))
 
 with open('isosig_to_PD_dict12.txt', 'w') as g:
