@@ -105,8 +105,8 @@ class TestLinkFunctions(unittest.TestCase):
         E = [[0, 0], [0, 0]]
         for k in self.knots:
             self.assertEqual(k.linking_matrix(),      A)
-        self.assert_(self.L2a1.linking_matrix() == B or self.L2a1.linking_matrix() == B2)
-        self.assert_(self.L6a2.linking_matrix() == C or self.L6a2.linking_matrix() == C2)
+        self.assertTrue(self.L2a1.linking_matrix() == B or self.L2a1.linking_matrix() == B2)
+        self.assertTrue(self.L6a2.linking_matrix() == C or self.L6a2.linking_matrix() == C2)
         self.assertEqual(self.Borr.linking_matrix(),       D)
         self.assertEqual(self.L6a4.linking_matrix(),       D)
         self.assertEqual(self.L7a3.linking_matrix(),       E)
@@ -192,16 +192,16 @@ class TestLinkFunctions(unittest.TestCase):
         while repeat > 0:
             k1 = self.random_knot()
             k1_prime = k1.mirror()
-            self.assert_(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for "+ repr(k1))
-            self.assert_(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for "+repr(k1))
+            self.assertTrue(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for "+ repr(k1))
+            self.assertTrue(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for "+repr(k1))
             repeat-=1
             
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
             k2_prime = k2.mirror()
-            self.assert_(k2.signature() == -1*k2_prime.signature(), msg="link signature failed for " + repr(k2))
-            self.assert_(k2.writhe() == -1*k2_prime.writhe(), msg="link writhe failed for " + repr(k2))
+            self.assertTrue(k2.signature() == -1*k2_prime.signature(), msg="link signature failed for " + repr(k2))
+            self.assertTrue(k2.writhe() == -1*k2_prime.writhe(), msg="link writhe failed for " + repr(k2))
             repeat-=1
 
     def testDet(self):
@@ -249,13 +249,13 @@ class TestLinkFunctions(unittest.TestCase):
         repeat = 3
         while repeat > 0:
             k1 = self.random_knot()
-            self.assert_(k1.white_graph().is_planar())
+            self.assertTrue(k1.white_graph().is_planar())
             repeat-=1
 
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
-            self.assert_(k2.white_graph().is_planar())
+            self.assertTrue(k2.white_graph().is_planar())
             repeat-=1
 
 def run():
