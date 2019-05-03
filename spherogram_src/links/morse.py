@@ -107,7 +107,7 @@ class ImmutableValueDict(dict):
 
 def pairing_to_permuation(pairing):
     points = sorted(sum(pairing, tuple()))
-    assert points == range(len(points))
+    assert points == list(range(len(points)))
     ans = len(points)*[None]
     for x, y in pairing:
         ans[x], ans[y] = y, x
@@ -327,7 +327,7 @@ class MorseLinkDiagram(object):
         Returns whether the link is in bridge position with respect to this
         height function.
         """
-        return sorted(self.snake_pos.values()) == range(len(self.snakes))
+        return sorted(self.snake_pos.values()) == list(range(len(self.snakes)))
 
     def bridge(self):
         if not self.is_bridge():
