@@ -28,6 +28,7 @@ if _within_sage:
         from sage.knots.link import Link as SageLink
     except ImportError:  # Sage older than 7.2
         SageKnot, SageLink = type(None), type(None)
+    import functools
 else:
     pass 
 
@@ -50,7 +51,7 @@ def normalize_alex_poly(p,t):
     max_degree = max([sum(x) for x in p.exponents()])
     highest_monomial_exps = [x for x in p.exponents() if sum(x)==max_degree]
     leading_exponents = max(highest_monomial_exps)
-    leading_monomial = reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
+    leading_monomial = functools.reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
     l = p.monomial_coefficient(leading_monomial)
     
     if l < 0:
@@ -321,6 +322,10 @@ class Link(links_base.Link):
             sage: K=Link('5_1')                                                                                
             sage: K.black_graph()
             Subgraph of (): Multi-graph on 2 vertices
+
+        WARNING: While there is also a "white_graph" method, it need
+        not be the case that these two graphs are complementary in the
+        expected way.
         """
 
         faces = []
@@ -344,7 +349,7 @@ class Link(links_base.Link):
                         coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
 
         G=graph.Graph(coords, multiedges=True)
-        component=G.connected_components()[1]
+        component=G.connected_components(sort=False)[1]
         G=G.subgraph(component)
         return G
 
@@ -380,6 +385,10 @@ class Link(links_base.Link):
             sage: K=Link('5_1')           
             sage: K.white_graph()
             Subgraph of (): Multi-graph on 2 vertices
+
+        WARNING: While there is also a "black_graph" method, it need
+        not be the case that these two graphs are complementary in the
+        expected way.
         """
         # Map corners (i.e. CrossingStrands) to faces.
         face_of = dict((corner, n) for n, face in enumerate(self.faces()) for corner in face) 
@@ -414,10 +423,10 @@ class Link(links_base.Link):
         N = len(V)
         m = matrix(N,N)
         vertex = dict((v, n) for n, v in enumerate(V))
-        for e in G.edges():
+        for e in G.edges(sort=False):
             i, j = vertex[e[0]], vertex[e[1]]
             m[(i,j)] = m[(j,i)] = m[(i,j)] + e[2]['sign']
-        for i in xrange(N):
+        for i in range(N):
             m[(i,i)] = -sum(m.column(i))
         m = m.delete_rows([0]).delete_columns([0])
         if return_graph:
@@ -440,7 +449,7 @@ class Link(links_base.Link):
             0
         """
         m, G = self.goeritz_matrix(return_graph=True)
-        correction = sum([e[2]['sign'] for e in G.edges()
+        correction = sum([e[2]['sign'] for e in G.edges(sort=False)
                           if e[2]['sign'] == e[2]['crossing'].sign])
         return QuadraticForm(QQ, m).signature() + correction
 
