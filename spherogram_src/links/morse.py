@@ -16,8 +16,9 @@ integer linear programming, using ideas from
 Undirected Planar Graphs. <http://jgaa.info/getPaper?id=68>
 
 To each corner of a face of D is classified into "large", "flat", or
-"small" (which is the default) as per [DP], which correspond to integers
-2, 1, and 0 respectively.  The geometric conditions are
+"small" (which is the default) as per Figure 3 of [DP], which
+correspond to integers 2, 1, and 0 respectively.  The geometric
+conditions are
 
 * Every vertex has either a single "large" angle or two "flat" ones which
 are opposite.
@@ -359,7 +360,7 @@ class MorseLinkDiagram(object):
         top = set(top_pairing(snake) for snake in self.snakes)
             
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
-                
+
 
 class BridgeDiagram(object):
     """
