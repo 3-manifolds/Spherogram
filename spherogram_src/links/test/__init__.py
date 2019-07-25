@@ -1,6 +1,7 @@
 import spherogram
 import unittest
 import doctest
+import sys
 from random import randrange
 from . import test_montesinos
 from ...sage_helper import _within_sage
@@ -278,7 +279,7 @@ def run():
     test_montesinos.test(15)
     if _within_sage:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
-        unittest.TextTestRunner(verbosity=2).run(suite)
+        unittest.TextTestRunner(verbosity=2, stream=sys.stdout).run(suite)
 
 
 
