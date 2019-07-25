@@ -538,19 +538,21 @@ class Link(links_base.Link):
         return morse.MorseLinkDiagram(self)
 
     @sage_method
-    def jones_poly(self, *args, **kwargs):
-        """
-        Please use the "jones_polynomial" method instead.
-        """
-        if 'jones_poly' not in deprecation_warnings_issued:
-            deprecation_warnings_issued.add('jones_poly')
-            print('Deprecation Warning: use "jones_polynomial" instead of "jones_poly".')
-        return self.jones_polynomial(*args, **kwargs)
-    
-    @sage_method
     def jones_polynomial(self, variable=None):
         """
-        Returns the Jones polynomial of the link::
+        Returns the Jones polynomial of the link, with the
+        following conventions:
+
+        * The skein relation is (THIS IS LIKELY WRONG!)::
+
+             q^2 P(L+) - q^-2 P(L_) = (q - q^-1) P(L_0)
+
+          where L+ corresponds to a positive crossing and L_ a
+          negative crossing with the conventions of the Spherogram
+          docs.
+
+        * P(unknot) = 1 and P(n-component unlink) = (-q - q^-1)^(n - 1)
+
 
             sage: L = Link('8_5')
             sage: L.jones_polynomial()
