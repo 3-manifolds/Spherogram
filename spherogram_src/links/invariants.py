@@ -538,28 +538,24 @@ class Link(links_base.Link):
         return morse.MorseLinkDiagram(self)
 
     @sage_method
-    def jones_polynomial(self, variable=None):
+    def jones_polynomial(self, variable=None, new_convention=False):
         """
         Returns the Jones polynomial of the link, with the
-        following conventions:
+        following conventions: TBA.  Here is a test case::
 
-        * The skein relation is (THIS IS LIKELY WRONG!)::
+          sage: L = Link('8_5')
+          sage: L.jones_polynomial()
+          1 - q + 3*q^2 - 3*q^3 + 3*q^4 - 4*q^5 + 3*q^6 - 2*q^7 + q^8
 
-             q^2 P(L+) - q^-2 P(L_) = (q - q^-1) P(L_0)
-
-          where L+ corresponds to a positive crossing and L_ a
-          negative crossing with the conventions of the Spherogram
-          docs.
-
-        * P(unknot) = 1 and P(n-component unlink) = (-q - q^-1)^(n - 1)
-
-
-            sage: L = Link('8_5')
-            sage: L.jones_polynomial()
-            1 - q + 3*q^2 - 3*q^3 + 3*q^4 - 4*q^5 + 3*q^6 - 2*q^7 + q^8
+          sage: U4 = Link(braid_closure=[1, -1, 2, -2, 3, -3])
+          sage: U5 = Link(braid_closure=[1, -1, 2, -2, 3, -3, 4, -4])
+          sage: U4.jones_polynomial(new_convention=True).factor()
+          (q^-3) * (1 + q^2)^3
+          sage: U5.jones_polynomial(new_convention=True).factor()
+          (q^-4) * (1 + q^2)^4
         """
         from . import jones
-        return jones.Jones_poly(self, variable)
+        return jones.Jones_poly(self, variable, new_convention)
 
     def seifert_matrix(self):
         """

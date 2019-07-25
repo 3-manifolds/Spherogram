@@ -129,7 +129,20 @@ def _Jones_contrib(K, G, T, A):
         answer = answer*_Jones_contrib_edge(K,G,T,e,A)
     return answer
 
-def Jones_poly(K,variable=None):
+def Jones_poly(K, variable=None, new_convention=False):
+    """
+    The old convention should really have powers of q^(1/2) for links
+    with an odd number of components, but it just multiplies the
+    answer by q^(1/2) to get rid of them.  Moroever, the choice of
+    value for the unlink is a little screwy, essentially::
+
+      (-q^(1/2) - q^(-1/2))^(n - 1).
+
+    In the new convention, powers of q^(1/2) never appear, i.e. the
+    new q is the old q^(1/2) and moreover the value for an n-component
+    unlink is (q + 1/q)^(n - 1).  This should match Bar-Natan's paper
+    on Khovanov homology.
+    """
     if not variable:
         L = LaurentPolynomialRing(QQ,'q')
         variable = L.gen()
@@ -143,12 +156,16 @@ def Jones_poly(K,variable=None):
     for T in spanning_trees(G):
         answer = answer + _Jones_contrib(K,G,T,A)
     answer = answer * (-A)**(3*writhe)
-    #Python doesn't deal well with rational powers, so renormalizing (divide exponents by 4) is a pain. (Sage would do this fine.)
     ans = 0
     for i in range(len(answer.coefficients())):
         coeff = answer.coefficients()[i]
         exp = answer.exponents()[i]
-        ans = ans + coeff*(variable**(exp//4))
+        if new_convention:
+            # Now do the substitution A = i q^(1/2) so A^2 = -q
+            assert exp % 2 == 0
+            ans = ans + coeff*((-variable)**(exp//2))
+        else:
+            ans = ans + coeff*(variable**(exp//4))
     return ans
 
 def spanning_trees(G):
