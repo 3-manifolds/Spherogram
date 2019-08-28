@@ -1,3 +1,12 @@
+NOTICE
+======
+
+*The Spherogram repository has moved to Github as of August 28, 2019.
+No changes will be committed to this Bitbucket repository after that date.*
+
+Please visit our `Github repository <https://github.com/3-manifolds/Spherogram/>`_
+for the current version of Spherogram.
+
 Spherogram
 ==========
 
@@ -7,16 +16,16 @@ Heegaard diagrams. It a component of the larger
 `SnapPy <http://snappy.computop.org>`_ project.  For some basic
 examples of using Spherogram to build links, 
 `see here <http://snappy.computop.org/spherogram.html>`_.  You can
-browse the `source code <https://bitbucket.org/t3m/spherogram>`_.
+browse the `source code <https://github.com/3-manifolds/Spherogram>`_.
 
 Developed by 
 
-* `Marc Culler <http://math.uic.edu/~culler>`_
+* `Marc Culler <https://marc-culler.info>`_
 * `Nathan Dunfield <http://dunfield.info>`_
 
 with contributions from 
 
-* `Robert Lipshitz <http://www.math.columbia.edu/~lipshitz/>`_
+* `Robert Lipshitz <https://pages.uoregon.edu/lipshitz/>`_
 * Jennet Dickinson
 * Malik Obeidin
 
