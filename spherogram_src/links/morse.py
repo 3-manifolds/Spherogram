@@ -121,21 +121,21 @@ class UpwardSnake(tuple):
     """
     def __new__(self, crossing_strand, link):
         cs, kind = crossing_strand, link.orientations
-        assert kind[cs] is 'min'
+        assert kind[cs] == 'min'
         snake = [cs]
         while True:
             ca, cb = cs.rotate(1).opposite(), cs.rotate(-1).opposite()
-            if kind[ca] is 'max' or kind[cb] is 'max':
+            if kind[ca] == 'max' or kind[cb] == 'max':
                 break
-            if kind[ca] is 'up':
+            if kind[ca] == 'up':
                 cs = ca
             else:
-                assert kind[cb] is 'up'
+                assert kind[cb] == 'up'
                 cs = cb
             snake.append(cs)
 
         ans = tuple.__new__(UpwardSnake, snake)
-        ans.final = ca if kind[ca] is 'max' else cb
+        ans.final = ca if kind[ca] == 'max' else cb
 
         heights = [link.heights[cs.crossing] for cs in ans]
         assert heights == sorted(heights)
@@ -280,7 +280,7 @@ class MorseLinkDiagram(object):
         kinds = self.orientations
         self.snakes = snakes = []
         for cs in self.bends:
-            if kinds[cs] is 'min':
+            if kinds[cs] == 'min':
                 snakes += [UpwardSnake(cs, self), UpwardSnake(cs.opposite(), self)]
 
         self.strand_to_snake = dict()

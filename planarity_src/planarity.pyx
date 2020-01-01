@@ -1,3 +1,4 @@
+#cython: language_level=3
 """
 Wrapper for Boyer's (C) planarity algorithm.
 """

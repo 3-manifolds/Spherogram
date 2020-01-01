@@ -589,9 +589,7 @@ class Link(links_base.Link):
         negatives are the inverses.
         
         >>> L = Link('K8n1')
-        >>> word = L.braid_word(); word
-        [1, -2, 3, 2, 4, -3, 2, -1, 2, 2, 3, 2, -4, -3, -2, -2]
-
+        >>> word = L.braid_word();
         >>> Link(braid_closure=word).exterior().identify()    # doctest: +SNAPPY
         [m222(0,0), 8_20(0,0), K5_12(0,0), K8n1(0,0)]
 
