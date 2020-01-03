@@ -1,12 +1,3 @@
-NOTICE
-======
-
-*The Spherogram repository has moved to Github as of August 28, 2019.
-No changes will be committed to this Bitbucket repository after that date.*
-
-Please visit our `Github repository <https://github.com/3-manifolds/Spherogram/>`_
-for the current version of Spherogram.
-
 Spherogram
 ==========
 
