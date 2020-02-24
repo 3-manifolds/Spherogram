@@ -41,7 +41,7 @@ def lookup_DT_code_by_name(name):
     'hahbdegahcf.01000011'
     >>> lookup_DT_code_by_name('garbage')
     """
-    if re.match('\d+[an]\d+$', name):
+    if re.match(r'\d+[an]\d+$', name):
         name = 'K' + name 
     for table in DT_tables:
         try:
