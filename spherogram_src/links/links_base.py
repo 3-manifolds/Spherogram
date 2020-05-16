@@ -31,6 +31,14 @@ def is_iterable(obj):
 import snappy_manifolds
 DT_tables = snappy_manifolds.get_DT_tables()
 
+try:
+    import snappy_15_knots
+    non_HT = [T for T in DT_tables if not T.name.startswith('HTLinkDTcodes')]
+    DT_tables = non_HT + snappy_15_knots.get_DT_tables()
+except ImportError:
+    pass
+
+
 def lookup_DT_code_by_name(name):
     """
     >>> lookup_DT_code_by_name('K12n123')
