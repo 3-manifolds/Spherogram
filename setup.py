@@ -180,7 +180,10 @@ try:
         targets = [file for file in targets if os.path.exists(file)]
         cythonize(targets)
 except ImportError:
-    pass 
+    needed_c_files = [pmap_dir + 'planarmap.c', 'planarity_src/planarity.c']
+    if not all(os.path.exists(file) for file in needed_c_files):
+        print("Error: The Python package Cython is missing so can't build Spherogram.")
+        sys.exit(1)
 
 # Main module
 
