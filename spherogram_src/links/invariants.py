@@ -177,14 +177,14 @@ class Link(links_base.Link):
 
             sage: L = Link('3_1')
             sage: L.alexander_matrix()
-            ([   -1 1 - t     t]
-            [    t    -1 1 - t]
-            [1 - t     t    -1], [t, t, t])
+            ([   -1     t 1 - t]
+            [1 - t    -1     t]
+            [    t 1 - t    -1], [t, t, t])
 
             sage: L = Link([(4,1,3,2),(1,4,2,3)])
-            sage: L.alexander_matrix()    #doctest: +SKIP
-            ([ t1 - 1 -t2 + 1]
-            [-t1 + 1  t2 - 1], [t2, t1])
+            sage: L.alexander_matrix()
+            ([      -1 + t1^-1 t1^-1*t2 - t1^-1]
+            [t1*t2^-1 - t2^-1       -1 + t2^-1], [t2, t1])
         """
         comp = len(self.link_components)
         if comp < 2:
@@ -238,7 +238,7 @@ class Link(links_base.Link):
             
             sage: K = Link('L7n1')
             sage: K.alexander_polynomial(norm=False)
-            t2^-1 + t1^-1*t2^-4
+            t1^-1*t2^-1 + t1^-2*t2^-4
 
         The default algorithm for *knots* is Bar-Natan's super-fast
         tangle-based algorithm.  For links, we apply Fox calculus to a

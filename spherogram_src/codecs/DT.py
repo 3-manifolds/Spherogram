@@ -1,7 +1,7 @@
-from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
-from spherogram.links.links import CrossingEntryPoint
-from spherogram.codecs.Base64LikeDT import (
-    decode_base64_like_DT_code, encode_base64_like_DT_code)
+from .. import FatGraph, FatEdge, CyclicList, Link, Crossing
+from ..links.links import CrossingEntryPoint
+from ..links.ordered_set import OrderedSet
+from .Base64LikeDT import (decode_base64_like_DT_code, encode_base64_like_DT_code)
 import string, sys
 
 python_major_version = sys.version_info[0]
@@ -158,8 +158,11 @@ class DTFatEdge(FatEdge):
 class DTFatGraph(FatGraph):
     edge_class = DTFatEdge
 
-    def __init__(self, pairs=[], singles=[]):
-        FatGraph.__init__(self, pairs, singles)
+    def __init__(self):
+        self.vertices = OrderedSet()
+        self.edges = OrderedSet()
+        self.incidence_dict = {}
+        self.Edge = self.__class__.edge_class
         self.marked_valences = dict( (v,0) for v in self.vertices )
         self.stack = []
         self.pushed = False
