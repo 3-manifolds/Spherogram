@@ -468,25 +468,28 @@ class Link(object):
             labels.remove(m)
             (c1, index1), (c2, index2) = gluings[m]
             if c1 == c2:
-                #loop at strand, take next strand to be next smallest label
-                #on crossing
+                # loop at strand, take next strand to be next smallest label
+                # on crossing
                 next_label = min(set(code[c1])-set([m]))
                 direction = (c1, code[c1].index(next_label))
                 starts.append(direction)
             else:
-                #strand connects two different crossings, take next strand to
-                #be next smallest label on two 'opposite' strands
-                other_labels = [code[c1][(index1+2)%4],code[c2][(index2+2)%4]]
-                if other_labels[0] < other_labels[1]:
-                    next_label = other_labels[0]
-                    direction = (c1, (index1+2)%4)
-                elif other_labels[1] < other_labels[0]:
-                    next_label = other_labels[1]
-                    direction = (c2, (index2+2)%4) 
+                # strand connects two different crossings, take next strand to
+                # be next smallest label on two 'opposite' strands
+                j1, j2 = (index1+2)%4, (index2+2)%4
+                l1, l2 = code[c1][j1], code[c2][j2]
+                if l1 < l2:
+                    next_label = l1
+                    direction = (c1, j1)
+                elif l2 < l1:
+                    next_label = l2
+                    direction = (c2, j2)
                 else:
-                    #have a component of length 2, no good choice for direction
-                    next_label = other_labels[0]
-                    direction = (c1, (index1+2)%4)
+                    # have a component of length 2, so now rely on the
+                    # convention that the first position at a PD
+                    # crossing is a directed entry point.
+                    next_label = l1
+                    direction = (c2, j2) if j2 % 2 == 1 else (c1, j1)
 
                 starts.append(direction)
             while next_label != m:

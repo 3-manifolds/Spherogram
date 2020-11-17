@@ -165,4 +165,4 @@ extern pm_edge *pmNextSeed(void);
 extern int pmInitRND(pmMethod *Meth);
 extern long pmRandom(long n);
 extern int pmIsBloc();
-
+extern void set_pmRandom_callback(long (*function)(long));

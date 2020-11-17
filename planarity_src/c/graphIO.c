@@ -300,7 +300,7 @@ int  _ReadLEDAGraph(graphP theGraph, FILE *Infile)
 {
 	char Line[256];
 	int N, M, m, u, v, ErrorCode;
-	int zeroBasedOffset = gp_GetFirstVertex(theGraph)==0 ? 1 : 0;
+	int zeroBasedOffset = gp_GetFirstVertex(theGraph)==(0) ? 1 : 0;
 
     /* Skip the lines that say LEDA.GRAPH and give the node and edge types */
     fgets(Line, 255, Infile);

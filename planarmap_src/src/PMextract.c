@@ -142,7 +142,7 @@ int pmCheck1(pm_edge *Edge){
 	  return(1);
 	}
     }
-    return(0);  printf("kes tu fous la dans check1 ??\n");
+    return(0);  /* printf("kes tu fous la dans check1 ??\n"); */
 }
 
 void pmC3kernel(pm_edge *Root){
@@ -420,7 +420,7 @@ int pmCheck3(pm_edge *Edge){
 	pmNewBloc(pmVide3cocycle(Edge,Edg1->oppo->face->root,Edg1));
 	return(1);
       }
-    return(0);  printf("kes tu fous la dans check3 ??\n");
+    return(0);  /* printf("kes tu fous la dans check3 ??\n"); */
 }
 
 void pmTri4kernel(pm_edge *Root){
