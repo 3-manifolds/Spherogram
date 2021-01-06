@@ -31,7 +31,7 @@ he will write a paper about this algorithm at some point.  The bit that
 annoys him is that [DP] is polynomial time, but the algorithm here is not
 known to be.  The issue is that [DP] creates a very special kind of ILP
 (a network flow) which can be solved in polynomial time, but below we're
-reduced to using a generic ILP solver.  
+reduced to using a generic ILP solver.
 """
 from future.utils import iteritems
 from ..sage_helper import _within_sage
@@ -41,6 +41,7 @@ from .orthogonal import basic_topological_numbering
 from .tangles import RationalTangle
 if _within_sage:
     from sage.numerical.mip import MixedIntegerLinearProgram
+
 
 def morse_via_LP(link, solver='GLPK'):
     """
@@ -58,13 +59,13 @@ def morse_via_LP(link, solver='GLPK'):
 
     # Near a crossing, the level sets of the height function are either
     # horizontal or vertical, and so there are two flat corners which
-    # must be opposite.  
+    # must be opposite.
     hor_cross = LP.new_variable(binary=True)
     vert_cross = LP.new_variable(binary=True)
 
     # We add a dummy vertex in the middle of each edge so it can bend.
     # The corners here must either both be flat or just one is large.  For
-    # the corner to large, *both* flat_edge and large_edge must be 1.  
+    # the corner to large, *both* flat_edge and large_edge must be 1.
     flat_edge = LP.new_variable(binary=True)
     large_edge = LP.new_variable(binary=True)
 
@@ -73,7 +74,7 @@ def morse_via_LP(link, solver='GLPK'):
     faces = link.faces()
     LP.add_constraint(sum(exterior[i] for i, F in enumerate(faces)) == 1)
 
-    # Now for the main constraints 
+    # Now for the main constraints
     for c in link.crossings:
         LP.add_constraint(hor_cross[c] + vert_cross[c] == 1)
         for ce in c.entry_points():
@@ -97,6 +98,7 @@ def morse_via_LP(link, solver='GLPK'):
 
 def have_positive_value(D):
     return [k for k, v in iteritems(D) if v > 0]
+
 
 class ImmutableValueDict(dict):
     def __setitem__(self, index, value):
@@ -142,11 +144,11 @@ class UpwardSnake(tuple):
         #assert heights[-1] == link.heights[ans.final.crossing]
         ans.heights = heights
         return ans
-        
+
 class MorseLinkDiagram(object):
     """
     A planar link diagram with a height function on R^2 which
-    is Morse on the link. 
+    is Morse on the link.
     """
     def __init__(self, link, solver='GLPK'):
         self.link = link = link.copy()
@@ -208,12 +210,12 @@ class MorseLinkDiagram(object):
                     orientations[co] = {'up':'down', 'down':'up', 'max':'max', 'min':'min'}[kind]
 
             current = new
-                    
+
         self.orientations = orientations
-        
+
     def strands_below(self, crossing):
         """
-        The two upward strands below the crossing.  
+        The two upward strands below the crossing.
         """
         kinds = self.orientations
         a = CrossingStrand(crossing, 0)
@@ -230,7 +232,7 @@ class MorseLinkDiagram(object):
         else:
             assert self.orientations[b] in ['up', 'min']
             return b
-                    
+
     def digraph(self):
         """
         The directed graph whose vertices are the mins/maxes of the height
@@ -251,7 +253,7 @@ class MorseLinkDiagram(object):
                 G.add_edge(cs, c), G.add_edge(cs, d)
             elif kinds[cs] == 'max':
                 G.add_edge(c, cs), G.add_edge(d, cs)
-                
+
         for cs, kind in iteritems(kinds):
             if kind == 'up':
                 c, d  = cs.crossing, cs.opposite().crossing
@@ -290,11 +292,10 @@ class MorseLinkDiagram(object):
             self.strand_to_snake[snake.final] = snake
 
         self.pack_snakes()
-        
 
     def pack_snakes(self):
         """
-        Give the snakes horizonal positions.
+        Give the snakes horizontal positions.
         """
         snakes, to_snake = self.snakes, self.strand_to_snake
         S = Digraph(singles=snakes)
@@ -305,7 +306,7 @@ class MorseLinkDiagram(object):
         for b in self.bends:
             a = b.opposite()
             S.add_edge(to_snake[a], to_snake[b])
-            
+
         snake_pos = basic_topological_numbering(S)
         self.S, self.snake_pos = S, snake_pos
         heights = self.heights
@@ -345,7 +346,7 @@ class MorseLinkDiagram(object):
             cross = (i, j) if a.strand_index % 2 == 1 else (j, i)
             cross_data.append( (self.heights[c], cross) )
         cross_data.sort()
-        
+
         def bottom_pairing(snake):
             cs = snake[0]
             return tuple(sorted([to_index(cs), to_index(cs.opposite())]))
@@ -358,20 +359,20 @@ class MorseLinkDiagram(object):
             return tuple(sorted([to_index(cs), to_index(cn)]))
 
         top = set(top_pairing(snake) for snake in self.snakes)
-            
+
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
 
 
 class BridgeDiagram(object):
     """
     A proper bridge diagram of a link, that is, a height function
-    where all the mins are below all the maxes.  
+    where all the mins are below all the maxes.
     """
     def __init__(self, bottom, crossings, top):
         self.bottom, self.crossings, self.top = bottom, crossings, top
         self.width = 2*len(bottom)
         self.name = 'None'
-        
+
     def link(self):
         crossings = []
         curr_endpoints = self.width*[None]
@@ -390,7 +391,7 @@ class BridgeDiagram(object):
             else:
                 ins, outs = (0, 1), (3,2)
                 a, b = b, a
-                        
+
             c[ins[0]] = curr_endpoints[a]
             c[ins[1]] = curr_endpoints[b]
             curr_endpoints[a] = (c, outs[0])

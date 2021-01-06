@@ -5,11 +5,11 @@ Code written as part of a 2013 Illinois Geometry Lab project by
 
 Nathan Dunfield, Alexander Ehrenberg, Shiladitya Bhattacharyya, and Dongming Lei
 
-Details to hopefullly appear in some paper or other.  I wouldn't hold
+Details to hopefully appear in some paper or other.  I wouldn't hold
 your breath, though.
 """
 
-import os, sys, re, gzip, random
+import random
 from .. import graphs
 from . import links, twist
 from spherogram.planarmap import random_map as raw_random_map

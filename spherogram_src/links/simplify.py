@@ -3,8 +3,8 @@ Simplifying link diagrams.
 
 Important notes:
 
-* The link diagram is modified in place.  All the relavent parts of the
-data structure are updated at each step.  
+* The link diagram is modified in place.  All the relevant parts of the
+data structure are updated at each step.
 
 * Unknot components which are also unlinked may be silently discarded.
 """
