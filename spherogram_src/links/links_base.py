@@ -8,7 +8,6 @@ a PD diagram as described in
 See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
-from future.utils import itervalues
 from .. import graphs
 from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
@@ -455,7 +454,7 @@ class Link(object):
         component_starts = self._component_starts_from_PD(code, labels, gluings)
 
         crossings = [Crossing(i) for i,d in enumerate(code)]
-        for (c,i), (d,j) in itervalues(gluings):
+        for (c,i), (d,j) in gluings.values():
             crossings[c][i] = crossings[d][j]
 
         component_starts = [crossings[c].crossing_strands()[i] for (c,i) in component_starts]

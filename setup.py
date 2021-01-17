@@ -148,7 +148,8 @@ class SpherogramPipInstall(Command):
         if os.path.exists(egginfo):
             shutil.rmtree(egginfo)
         wheels = glob('dist' + os.sep + '*.whl')
-        new_wheel = max(wheels, key=os.path.getmtime)            
+        new_wheel = max(wheels, key=os.path.getmtime)
+        check_call([python, '-m', 'pip', 'uninstall', '-y', 'spherogram'])
         check_call([python, '-m', 'pip', 'install', '--upgrade',
                     '--upgrade-strategy', 'only-if-needed',
                     new_wheel])
@@ -194,15 +195,12 @@ long_description = open('README.rst').read()
 long_description = long_description.split('==\n')[1]
 long_description = long_description.split('\nDeveloped')[0]
 
-install_requires = ['decorator', 'future', 'snappy_manifolds>=1.1']
-if sys.version_info < (3, 5):
-    install_requires.append('networkx<=2.2.9,>=1.3')
-else:
-    install_requires.append('networkx>=1.3')
+install_requires = ['decorator', 'snappy_manifolds>=1.1']
 
 setup( name = 'spherogram',
        version = version,
        install_requires = install_requires,
+       python_requires = '>=3',
        dependency_links = [],
        packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',

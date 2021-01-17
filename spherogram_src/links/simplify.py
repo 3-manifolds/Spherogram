@@ -9,7 +9,6 @@ data structure are updated at each step.
 * Unknot components which are also unlinked may be silently discarded.
 """
 
-from future.utils import iteritems
 from .links import Link, Strand, Crossing
 from .. import graphs
 import random
@@ -214,7 +213,7 @@ class DualGraphOfFaces(graphs.Graph):
             for edge in face:
                 to_face[edge] = face
 
-        for edge, face in iteritems(to_face):
+        for edge, face in to_face.items():
             neighbor = to_face[edge.opposite()]
             if face.label < neighbor.label:
                 dual_edge = self.add_edge(face, neighbor)

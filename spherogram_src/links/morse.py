@@ -33,7 +33,6 @@ known to be.  The issue is that [DP] creates a very special kind of ILP
 (a network flow) which can be solved in polynomial time, but below we're
 reduced to using a generic ILP solver.
 """
-from future.utils import iteritems
 from ..sage_helper import _within_sage
 from ..graphs import CyclicList, Digraph
 from .links import CrossingStrand, Crossing, Strand, Link
@@ -97,7 +96,7 @@ def morse_via_LP(link, solver='GLPK'):
 
 
 def have_positive_value(D):
-    return [k for k, v in iteritems(D) if v > 0]
+    return [k for k, v in D.items() if v > 0]
 
 
 class ImmutableValueDict(dict):
@@ -254,7 +253,7 @@ class MorseLinkDiagram(object):
             elif kinds[cs] == 'max':
                 G.add_edge(c, cs), G.add_edge(d, cs)
 
-        for cs, kind in iteritems(kinds):
+        for cs, kind in kinds.items():
             if kind == 'up':
                 c, d  = cs.crossing, cs.opposite().crossing
                 G.add_edge(d, c)
