@@ -104,8 +104,6 @@ class SpherogramRelease(Command):
         for python in pythons:
             check_call([python, 'setup.py', 'build'])
             check_call([python, 'setup.py', 'test'])
-            if sys.platform.startswith('linux'):
-                check_call([python, 'setup.py', 'bdist_egg'])
             if self.install:
                 check_call([python, 'setup.py', 'pip_install'])
             else:
