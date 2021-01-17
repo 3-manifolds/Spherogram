@@ -16,12 +16,14 @@ from ..sage_helper import _within_sage
 if _within_sage:
     from sage.all import (PolynomialRing, matrix, block_diagonal_matrix, ZZ, QQ)
 
+
 class ClosedComponentCreated(Exception):
     """
     We never want to create closed link components; the final answer
     is derived from when one has a created the "long knot" string
     link.
     """
+
 
 def cep(crossing_strand):
     """
@@ -34,13 +36,15 @@ def cep(crossing_strand):
     else:
         return crossing_strand.rotate(2)
 
+
 def entry_pts_ab(crossing):
     """
     The two entry points of a crossing with Dror's convention that the
-    overcrossing ("a") is first and the undercrossing ("b") is second. 
+    overcrossing ("a") is first and the undercrossing ("b") is second.
     """
     verts = [1, 0] if crossing.sign == -1 else [3, 0]
     return [CrossingEntryPoint(crossing, v) for v in verts]
+
 
 class StrandIndices(object):
     """
@@ -52,7 +56,7 @@ class StrandIndices(object):
             ordered_crossings = link.crossings
         for i, C in enumerate(ordered_crossings):
             for j, ce in enumerate(entry_pts_ab(C)):
-                indices[ce] = 2*i + j
+                indices[ce] = 2 * i + j
         self.indices = indices
 
     def merge(self, a, b):
@@ -74,6 +78,7 @@ class StrandIndices(object):
     def __setitem__(self, cs, val):
         self.indices[cep(cs)] = val
 
+
 def strand_matrix_merge(A, a, b):
     """
     The main computations all happen in this method.  Here A is a
@@ -94,9 +99,10 @@ def strand_matrix_merge(A, a, b):
     A = A.delete_columns([j])
     return A
 
+
 def test_meta_associativity():
     """
-    Tests strand_matrix_merge for required invariance properties. 
+    Tests strand_matrix_merge for required invariance properties.
     """
     def eval_merges(merges):
         R = PolynomialRing(QQ, 'x', 49).fraction_field()
@@ -105,23 +111,24 @@ def test_meta_associativity():
             A = strand_matrix_merge(A, a, b)
         return A
 
-    associative_merges =  [
+    associative_merges = [
         ([(0,1), (0,1)], [(1,2), (0,1)]),
         ([(0,1), (0,2)], [(1,3), (0,1)]),
         ([(2,5), (2,3)], [(5,3), (2,3)])
         ]
     for m1, m2 in associative_merges:
         assert eval_merges(m1) == eval_merges(m2)
-        
+
+
 class DrorDatum(object):
     """
-    The (omega, A) pair which is the invariant defined in the first column of 
+    The (omega, A) pair which is the invariant defined in the first column of
     http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
     """
     def __init__(self, link, ordered_crossings):
         self.strand_indices = StrandIndices(link, ordered_crossings)
         self.ring = R = PolynomialRing(ZZ, 't').fraction_field()
-        self.omega = R.one()        
+        self.omega = R.one()
         self.A = matrix(R, 0, 0)
 
     def add_crossing(self, crossing):
@@ -144,19 +151,21 @@ class DrorDatum(object):
         self.A = strand_matrix_merge(A, a, b)
         indices.merge(cs_a, cs_b)
 
+
 def num_overlap(crossing, frontier):
     neighbor_strands = set([cs.opposite() for cs in crossing.crossing_strands()])
     return len(neighbor_strands.intersection(frontier))
-        
+
+
 class Exhaustion(object):
     """
     An exhaustion of a link where crossings are added in one-by-one
-    so that the resulting tangle is connected at every stage.  
+    so that the resulting tangle is connected at every stage.
 
     Starting at the given crossing, it uses a greedy algorithm to try
     to minimize the sizes of the frontiers of the intermediate tangles.
 
-    If no initial crossing is specified, one is choosen at random.
+    If no initial crossing is specified, one is chosen at random.
     """
     def __init__(self, link, crossing=None):
         if crossing is None:
@@ -190,14 +199,14 @@ class Exhaustion(object):
         self.crossings = crossings
         self.frontier_lengths = frontier_lengths
         self.gluings = gluings
-        self.width = max(frontier_lengths)//2
+        self.width = max(frontier_lengths) // 2
 
     def test_indices(self):
         indices = StrandIndices(self.link, self.crossings)
         all_gluings = sum(self.gluings, [])[:-1]
         for a, b in all_gluings[:-1]:
             indices.merge(a, b)
-            
+
     def alexander_polynomial(self):
         D = DrorDatum(self.link, self.crossings)
         gluings = self.gluings[:]
@@ -207,7 +216,7 @@ class Exhaustion(object):
             D.add_crossing(C)
             for a, b in gluings:
                 D.merge(a, b)
-    
+
         C = self.crossings[-1]
         D.add_crossing(C)
         for a, b in self.gluings[-1][:-1]:
@@ -220,11 +229,12 @@ class Exhaustion(object):
         if p.leading_coefficient() < 0:
             p = -p
         t, e = p.parent().gen(), min(p.exponents())
-        return p//t**e
-        
+        return p // t**e
+
+
 def good_exhaustion(link, max_failed_tries=20):
     """
-    Uses a random search to try to find an Exhaustion with small width. 
+    Uses a random search to try to find an Exhaustion with small width.
     """
     crossings = list(link.crossings)
     C = random.choice(crossings)
@@ -240,10 +250,11 @@ def good_exhaustion(link, max_failed_tries=20):
         tries += 1
     return E_best
 
+
 def alexander(K):
     c = len(K.crossings)
     if c < 100:
         E = Exhaustion(K)
     else:
-        E = good_exhaustion(K, max(20, 0.15*c))
+        E = good_exhaustion(K, max(20, 0.15 * c))
     return E.alexander_polynomial()

@@ -49,9 +49,9 @@ except ImportError:
         from spherogram.planarity import planar
     except ValueError: # Allow importing from source directory
         pass
-    
+
 from collections import deque, defaultdict
-import operator
+
 
 class CyclicList(list):
     def __getitem__(self, n):
@@ -73,7 +73,7 @@ class BaseEdge(tuple):
 
     def __new__(cls, x, y, **kwargs):
         return tuple.__new__(cls, (x,y))
-        
+
     def __call__(self, end):
         """
         Calling an edge with one endpoint returns the other one.
@@ -87,13 +87,13 @@ class BaseEdge(tuple):
 
     def __hash__(self):
         return id(self)
-    
+
     def incident_to(self):
         return list(self)
-    
+
     def is_loop(self):
         return self[0] is self[1]
-    
+
 class Edge(BaseEdge):
     """
     An undirected edge.  We allow multiple Edges between the same
@@ -102,7 +102,7 @@ class Edge(BaseEdge):
 
     def __repr__(self):
         return '%s --- %s'%self
-        
+
     def __hash__(self):
         return id(self)
 
@@ -117,7 +117,7 @@ class MultiEdge(BaseEdge):
 
     def __init__(self, x, y):
         self.multiplicity = 1
-        
+
     def __repr__(self):
         return '%s --%d-- %s'%(self[0], self.multiplicity, self[1])
 
@@ -132,7 +132,7 @@ class DirectedEdge(BaseEdge):
     An Edge with a tail and a head.  The two vertices can be accessed as
     E.tail and E.head
     """
-    
+
     def __repr__(self):
         return '%s --> %s'%self
 
@@ -158,7 +158,7 @@ class DirectedMultiEdge(DirectedEdge):
 
     def __init__(self, v, w):
         self.multiplicity = 1
-        
+
     def __repr__(self):
         return '%s --%d-> %s'%(self[0], self.multiplicity, self[1])
 
@@ -224,7 +224,7 @@ class Graph(object):
 
     def _validate(self):
         pass
-    
+
     def __repr__(self):
         V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
         E = 'Edges:\n  ' + '\n  '.join([str(e) for e in self.edges])
@@ -236,7 +236,7 @@ class Graph(object):
         twice.
         """
         return self.incidence_dict[vertex]
-            
+
     def __getitem__(self, vertex):
         """
         Return a list of adjacent vertices, one per incident edge.
@@ -251,7 +251,7 @@ class Graph(object):
 
     def edges_between(self,vertex1,vertex2):
         return self.incident(vertex1).intersection(self.incident(vertex2))
-    
+
     # Allow flows to go in either direction across an edge.
     flow_incident = incident
 
@@ -320,7 +320,7 @@ class Graph(object):
         Generator for non-loop edges of a graph in the complement of
         a forbidden set, ordered by distance from the source.  Used for
         generating paths in the Ford-Fulkerson method.
-        
+
         Yields triples (e, v, f) where e and f are edges containing v
         and e precedes f in the breadth-first ordering.
 
@@ -389,7 +389,7 @@ class Graph(object):
     def one_min_cut(self, source, sink, capacity=None):
         """
         Find one minimal cut which separates source from sink, using
-        the classical Ford-Fulkerson algorithm.te
+        the classical Ford-Fulkerson algorithm.
 
         Returns a dict containing the set of vertices on the source
         side of the cut, the set of edges that cross the cut, a
@@ -500,7 +500,7 @@ class Graph(object):
 
     def is_planar(self):
         return self.reduced().is_planar()
-    
+
     def merge(self, V1, V2):
         """
         Merge two vertices and remove all edges between them.  The
@@ -556,11 +556,11 @@ class ReducedGraph(Graph):
     but having edges with multiplicities.
     """
     edge_class = MultiEdge
-    
+
     def __init__(self, pairs=[], singles=[]):
         self.Edge = self.__class__.edge_class
         self.find_edge = dict()
-        Graph.__init__(self, pairs, singles) 
+        Graph.__init__(self, pairs, singles)
 
     def add_edge(self, x, y):
         if (x,y) in self.find_edge:
@@ -661,12 +661,13 @@ class ReducedGraph(Graph):
                             pairs.append(pair)
         return pairs
 
+
 class FatGraph(Graph):
     """
     A FatGraph is a Graph which maintains a CyclicList of incident
     edges for each vertex.  The edges are FatEdges, which come in two
     flavors: twisted and untwisted.  Since the incident edges are in
-    particulary cyclically ordered, a FatGraph has a canonical
+    particular cyclically ordered, a FatGraph has a canonical
     embedding as a spine of a surface with boundary.  However, a
     CyclicList has a first element.  This extra data, namely a choice
     of distinguished edge for each vertex, is used to give a canonical
@@ -828,7 +829,7 @@ class Digraph(Graph):
             return False
         else:
             return True
-        
+
     def strong_components(self):
         """
         Return the vertex sets of the strongly connected components.
@@ -865,7 +866,7 @@ class Digraph(Graph):
         True
         """
         return StrongConnector(self).DAG()
-        
+
 class StrongConnector(object):
     """
     Finds strong components of a digraph using Tarjan's algorithm;
@@ -882,7 +883,7 @@ class StrongConnector(object):
         for vertex in self.digraph.vertices:
             if vertex not in self.seen:
                 self.search(vertex)
-                
+
     def search(self, vertex):
         self.root[vertex] = len(self.seen)
         self.seen.append(vertex)
@@ -928,6 +929,7 @@ class StrongConnector(object):
                 edges.add( (dag_tail, dag_head) )
         return Digraph(edges, self.components)
 
+
 class Poset(set):
     """
     A partially ordered set, generated from a directed acyclic graph.
@@ -954,7 +956,7 @@ class Poset(set):
 
     def __len__(self):
         return len(self.elements)
-    
+
     def search(self, vertex, seen, digraph):
         seen.append(vertex)
         for child in digraph.children(vertex):
@@ -986,7 +988,7 @@ class Poset(set):
         """
         Return the subset of minimal elements.
         """
-        return frozenset( [ x for x in self if not self.smaller[x] ] )
+        return frozenset([x for x in self if not self.smaller[x]])
 
     def largest(self):
         """
@@ -1023,7 +1025,7 @@ class Poset(set):
             self.closed.add(start)
             yield start
         for element in complement:
-           # print( 'adding ', element)
+            # print( 'adding ', element)
             extended = self.closure(start | set([element]))
             for subset in self.XXclosed_subsets(extended):
                 yield subset
@@ -1077,16 +1079,19 @@ class Poset(set):
                 if pairwise_incomparable:
                     yield self.closure(X)
 
+
 def powerset(S):
     """Recursive generator for all subsets of a set."""
     X = S.copy()
     while X:
-        for x in X: break
+        for x in X:
+            break
         X.remove(x)
         singleton = set([x])
         for Y in powerset(X):
             yield(singleton | Y)
         yield X
+
 
 if _within_sage:
     def _to_sage(self, loops=True, multiedges=True):

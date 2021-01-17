@@ -104,11 +104,11 @@ class Link(links_base.Link):
                 
         links_base.Link.__init__(self, crossings, braid_closure, check_planarity, build)
 
-
     @sage_method
     def linking_matrix(self):
         """
-        Calcluates the linking number for each pair of link components.
+        Calculates the linking number for each pair of link components.
+
         Returns a linking matrix, in which the (i,j)th component is the
         linking number of the ith and jth link components.
         """
