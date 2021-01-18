@@ -36,4 +36,4 @@ def run_all_tests():
     return results.failed
 
 if __name__ == '__main__':
-    run_all_tests()
+    sys.exit(run_all_tests())
