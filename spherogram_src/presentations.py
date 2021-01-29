@@ -3,12 +3,14 @@ from .graphs import ReducedGraph, Digraph, Poset
 from collections import deque
 import operator
 
+
 class Alphabet(object):
     """
     An Alphabet translates between integers and strings.
     Call as a function to go from string to integer; use getitem
     to go from integer to string.
     """
+
     def __init__(self, identity, pos, neg, separator=''):
         pos, neg = list(pos), list(neg)
         neg.reverse()
@@ -18,10 +20,10 @@ class Alphabet(object):
 
     def __getitem__(self, index):
         return self.strings[index]
-        
+
     def __call__(self, string):
         n = self.strings.index(string)
-        return n if n < self.size else n - 2*self.size
+        return n if n < self.size else n - 2 * self.size
 
     def spell(self, int_list):
         """
@@ -31,7 +33,8 @@ class Alphabet(object):
             return self.separator.join([self[x] for x in int_list])
         else:
             return self[0]
-        
+
+
 abc = Alphabet('1',
                'abcdefghijklmnopqrstuvwxyz',
                'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
@@ -40,12 +43,14 @@ ABC = Alphabet('1',
                'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                'abcdefghijklmnopqrstuvwxyz')
 
+
 class Word(deque):
     """
     A word in a free group is represented as a deque of non-zero
     integers.  Inverse corresponds to negation.  The optional alphabet
     controls how these lists are displayed to the user.
     """
+
     def __init__(self, word, alphabet=ABC):
         deque.__init__(self)
         if isinstance(word, str):
@@ -53,7 +58,7 @@ class Word(deque):
                 self.append(alphabet(char))
         else:
             self.extend(word)
-        self.letters = set(map(abs,self))
+        self.letters = set(map(abs, self))
         self.alphabet = alphabet
         self.cancel()
 
@@ -73,7 +78,7 @@ class Word(deque):
         if exponent < 0:
             inverse = self.__invert__()
             return inverse**(-exponent)
-        product = Word(exponent*list(self), alphabet=self.alphabet)
+        product = Word(exponent * list(self), alphabet=self.alphabet)
         product.cancel()
         return product
 
@@ -82,7 +87,7 @@ class Word(deque):
         while not done:
             done, size, n = True, len(self), 1
             self.rotate(-1)
-            while len(self) > 0 and n < size:
+            while self and n < size:
                 if self[0] == -self[-1]:
                     done = False
                     self.popleft()
@@ -92,7 +97,7 @@ class Word(deque):
                 n += 1
 
     def syllables(self):
-        if len(self) == 0:
+        if not self:
             return []
         ans, curr = [], None
         for x in self:
@@ -101,11 +106,11 @@ class Word(deque):
             if g == curr:
                 count += e
             else:
-                if curr != None:
-                    ans.append( (curr, count) )
+                if curr is not None:
+                    ans.append((curr, count))
                 curr, count = g, e
 
-        ans.append( (curr, count) )
+        ans.append((curr, count))
         return ans
 
     def verbose_string(self, separator=' * '):
@@ -115,13 +120,13 @@ class Word(deque):
             part = alpha[g] if e == 1 else alpha[g] + '^' + repr(e)
             ans.append(part)
         return separator.join(ans)
-        
+
 
 class CyclicWord(Word):
-    
+
     def cancel(self):
         Word.cancel(self)
-        while len(self) > 0 and self[0] == -self[-1]:
+        while self and self[0] == -self[-1]:
             self.popleft()
             self.pop()
 
@@ -131,22 +136,22 @@ class CyclicWord(Word):
     def __invert__(self):
         inverse = [-x for x in reversed(self)]
         return CyclicWord(inverse, alphabet=self.alphabet)
-    
+
     def spun(self, start=0):
         """
         Generator for letters in cyclic order, starting at start.
         """
         N = len(self)
-        for n in xrange(start, start+N):
-            yield self[n%N]
+        for n in range(start, start + N):
+            yield self[n % N]
 
     def invert(self):
         """
         Invert this cyclic word in place.
         """
         # This is builtin, starting from python 2.7
-        for n in xrange(len(self)/2):
-            self[n], self[-1-n] = self[-1-n], self[n]
+        for n in range(len(self) // 2):
+            self[n], self[-1 - n] = self[-1 - n], self[n]
         map(operator.neg, self)
 
     def rewrite(self, ordering):
@@ -157,20 +162,20 @@ class CyclicWord(Word):
             else:
                 seq.append(-1 - ordering.index(-letter))
         return CyclicWord(seq)
-                    
+
     def shuffle(self, perm_dict={}):
         """
         Permute generators according to the supplied dictionary.
         Keys must be positive integers.  Values may be negative.
         The set of keys must equal the set of values up to sign.
         """
-        abs_image = set( map(operator.abs, perm_dict.values()) )
+        abs_image = set(map(operator.abs, perm_dict.values()))
         if set(perm_dict.keys()) != abs_image:
             raise ValueError('Not a permutation!')
-        for n in xrange(len(self)):
+        for n in range(len(self)):
             x = self[n]
-            self[n] = perm_dict.get(x,x) if x > 0 else -perm_dict.get(-x,-x)
-            
+            self[n] = perm_dict.get(x, x) if x > 0 else -perm_dict.get(-x, -x)
+
     def powers(self, start=0):
         """
         Return a list of pairs (letter, power) for the exponential
@@ -183,12 +188,12 @@ class CyclicWord(Word):
             if letter == last_letter:
                 count += 1
             else:
-                result.append( (last_letter, count))
+                result.append((last_letter, count))
                 count = 1
                 last_letter = letter
-        result.append( (last_letter, count) )
+        result.append((last_letter, count))
         return result
-    
+
     def complexity(self, size, ordering=[], spin=0):
         """
         Returns the complexity of the word relative to an extension of
@@ -212,7 +217,7 @@ class CyclicWord(Word):
                 complexity.append(len(the_ordering))
                 the_ordering.append(letter)
         return Complexity(complexity), the_ordering
-                                  
+
     def minima(self, size, ordering=[]):
         """
         Return the minimal complexity of all rotations and inverted
@@ -222,15 +227,16 @@ class CyclicWord(Word):
         least = Complexity([])
         minima = []
         for word in (self, ~self):
-            for n in xrange(len(self)):
+            for n in range(len(self)):
                 complexity, Xordering = word.complexity(size, ordering, spin=n)
                 if complexity < least:
                     least = complexity
-                    minima = [ (CyclicWord(word.spun(n)), Xordering) ]
+                    minima = [(CyclicWord(word.spun(n)), Xordering)]
                 elif complexity == least:
-                    minima.append( (CyclicWord(word.spun(n)), Xordering)  )
+                    minima.append((CyclicWord(word.spun(n)), Xordering))
         return least, minima
-    
+
+
 class Complexity(list):
     def __lt__(self, other):
         if len(self) == len(other):
@@ -249,18 +255,13 @@ class Complexity(list):
 
     def __ge__(self, other):
         return not self < other
-        
-    def __cmp__(self, other):
-        result = cmp( len(other), len(self) )
-        if result == 0:
-            result = cmp(self, other)
-        return result
 
-        
+
 class WhiteheadMove(object):
     """
     Holds the data describing a Whitehead move.
     """
+
     def __init__(self, letter, cut_set, generators, alphabet):
         self.letter = letter
         self.cut_set = cut_set
@@ -270,7 +271,7 @@ class WhiteheadMove(object):
     def __repr__(self):
         subs = []
         for x in self.generators:
-            sub = '%s -> '%self.alphabet[x]
+            sub = '%s -> ' % self.alphabet[x]
             if x == self.letter or x == -self.letter:
                 sub += self.alphabet[x]
             else:
@@ -282,7 +283,8 @@ class WhiteheadMove(object):
                     sub += self.alphabet[-self.letter]
             subs.append(sub)
         return ', '.join(subs)
-            
+
+
 class Presentation(object):
     """
     A Presentation contains a list of CyclicWords as relators and a
@@ -291,7 +293,8 @@ class Presentation(object):
     generators can be provided in an optional list.  Instantiate with
     a list of objects that can be used to instantiate a CyclicWord,
     i.e. strings or lists of non-zero integers.
-    """ 
+    """
+
     def __init__(self, relators, generators=[], alphabet=ABC):
         self.alphabet = alphabet
         self.relators = []
@@ -300,7 +303,7 @@ class Presentation(object):
             raise ValueError('Please provide a sequence of relators.')
         for r in relators:
             W = CyclicWord(r, alphabet)
-            if len(W) > 0:
+            if W:
                 self.relators.append(W)
             if isinstance(r, str):
                 self.generators.update([abs(alphabet(l)) for l in r])
@@ -309,15 +312,15 @@ class Presentation(object):
 
     def __repr__(self):
         generators = ', '.join([self.alphabet[x] for x in self.generators])
-        return 'generators: [%s]\nrelators: %s'%(generators, self.relators)
+        return 'generators: [%s]\nrelators: %s' % (generators, self.relators)
 
     def __len__(self):
-        return sum( [len(W) for W in self.relators] )
+        return sum([len(W) for W in self.relators])
 
     def __eq__(self, other):
         return (self.relators == other.relators and
                 self.generators == other.generators)
-    
+
     def whitehead_graph(self):
         Wh = ReducedGraph()
         vertex_dict = {}
@@ -327,8 +330,9 @@ class Presentation(object):
             Wh.add_vertex(vertex_dict[letter])
             Wh.add_vertex(vertex_dict[-letter])
         for relator in self.relators:
-            for n in range(-1, len(relator)-1):
-                Wh.add_edge(vertex_dict[relator[n]], vertex_dict[-relator[n+1]])
+            for n in range(-1, len(relator) - 1):
+                Wh.add_edge(vertex_dict[relator[n]],
+                            vertex_dict[-relator[n + 1]])
         return Wh
 
     def find_reducers(self):
@@ -340,9 +344,9 @@ class Presentation(object):
             valence = whitehead.multi_valence(x)
             length_change = cut['size'] - valence
             if length_change < 0:
-                reducers.append( (length_change, x, cut['set']) )
+                reducers.append((length_change, x, cut['set']))
             elif length_change == 0:
-                levels.append( (x, cut) )
+                levels.append((x, cut))
         reducers.sort(key=lambda x: x[0])
         return reducers, levels
 
@@ -368,11 +372,10 @@ class Presentation(object):
             new_relators.append(W)
         return Presentation(new_relators, self.generators)
 
-
     def shorten(self):
         """
         Apply maximally reducing Whitehead moves until the minimal
-        length is reached.  Return the resulting minimal presentation. 
+        length is reached.  Return the resulting minimal presentation.
 
         >>> P = Presentation(['AAAAABBAACCC', 'AAABBBCCCCC', 'AABDCCBD'])
         >>> P.whitehead_graph().is_planar()
@@ -389,17 +392,12 @@ class Presentation(object):
         relators: [x, y]
         """
         result = Presentation(self.relators, self.generators)
-        starting_length = len(result)
-        #print(result.relators)
         while True:
             reducers, levels = result.find_reducers()
             if not reducers:
                 return result
             reduction, a, cut_set = reducers[0]
-            #w = WhiteheadMove(a, cut_set, self.generators, self.alphabet)
-            #print(w)
             result = result.whitehead_move(a, cut_set)
-            #print(result.relators)
         return result
 
     def level_transformations(self):
@@ -429,22 +427,21 @@ class Presentation(object):
 #        its complement has size 1.
 
         reducers, levels = self.find_reducers()
-        result = []
         if reducers:
-             raise ValueError('Presentation is not minimal.')
+            raise ValueError('Presentation is not minimal.')
         for generator, cut in levels:
             edges = set()
             for weight, path in cut['paths']:
                 for vertex, edge in path:
-                    edges.add( (vertex, edge(vertex)) )
+                    edges.add((vertex, edge(vertex)))
             for edge in cut['unsaturated']:
                 x, y = edge
-                edges.add( (x,y) )
-                edges.add( (y,x) )
+                edges.add((x, y))
+                edges.add((y, x))
             D = Digraph(edges)
             P = Poset(D.component_DAG())
             for subset in P.closed_subsets():
-                if 1 < len(subset) < len(P)-1:
+                if 1 < len(subset) < len(P) - 1:
                     yield generator, frozenset.union(*subset)
 
     def level_orbit(self, verbose=False):
@@ -455,17 +452,17 @@ class Presentation(object):
         (parent, Whitehead move, result, canonical presentation).
         """
         S = self.signature()
-        queue = deque([ (None, None, self, S) ])
+        queue = deque([(None, None, self, S)])
         seen = set([S])
         while queue:
             parent, move, pres, sig = queue.popleft()
             for a, A in pres.level_transformations():
                 P = Presentation(pres.relators, pres.generators)
-                P = P.whitehead_move(a,A)
+                P = P.whitehead_move(a, A)
                 signature = P.signature()
                 if signature not in seen:
-                    WM = WhiteheadMove(a,A, pres.generators, self.alphabet),
-                    queue.append( (pres, WM, P, signature) )
+                    WM = WhiteheadMove(a, A, pres.generators, self.alphabet),
+                    queue.append((pres, WM, P, signature))
                     seen.add(signature)
             if verbose:
                 yield (parent, move, pres, Presentation(*sig))
@@ -481,7 +478,6 @@ class Presentation(object):
         queue = deque()
         P = Presentation([], self.generators)
         queue.append(CanonizeNode(P, self.relators))
-        done = False
         while True:
             if len(queue[0].remaining) > 0:
                 left = queue.popleft()
@@ -491,7 +487,7 @@ class Presentation(object):
                 break
         relators = queue[0].presentation.relators
         ordering = queue[0].ordering
-        generators = tuple( range(1, len(self.generators) + 1 ) )
+        generators = tuple(range(1, len(self.generators) + 1))
         return tuple([tuple(R.rewrite(ordering)) for R in relators]), generators
 
     def magma_string(self):
@@ -499,7 +495,7 @@ class Presentation(object):
         ans = 'Group<' + ', '.join(gens) + ' | '
         ans += ', '.join([R.verbose_string() for R in self.relators])
         return ans + '>'
-                          
+
 
 class CanonizeNode(object):
     def __init__(self, presentation, remaining, ordering=[]):
@@ -511,7 +507,7 @@ class CanonizeNode(object):
 
     def __repr__(self):
         return '%s\n%s' % (self.presentation, self.ordering)
-    
+
     def children(self):
         childlist = []
         least = Complexity()
