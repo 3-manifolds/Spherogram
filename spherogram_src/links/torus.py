@@ -3,23 +3,17 @@ from .links import Crossing, Link
 def torus_knot(name, method='calc'):
     """
     Returns a (p,q)-torus knot, as an instance of the Link class.
+
+    If exactly one of p and q is negative, it returns the mirror of
+    T(|p|, |q|).
     """
+
     p, q = map(int, name[2:-1].split(','))
 
     if p==0 or q==0:
         raise Exception("Torus_knot(p,q) requires p, q, non-zero.")
-
-    else: 
-        to_mirror=False
-		        
-        #If q<0 or p<0 run torus_knot for |p|, |q| and then if p*q<0 take the mirror.
-    if p<0 or q<0:
-        p=abs(p)
-        q=abs(q)
-    if p<0 and q<0:
-        p=abs(p)
-        q=abs(q)
-        to_mirror=True
+    to_mirror = p * q < 0
+    p, q = abs(p), abs(q)
     if p==2:
         our_crossings=list()
         for i in range (q):
