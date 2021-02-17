@@ -87,7 +87,7 @@ class Word(deque):
         while not done:
             done, size, n = True, len(self), 1
             self.rotate(-1)
-            while self and n < size:
+            while len(self) and n < size:
                 if self[0] == -self[-1]:
                     done = False
                     self.popleft()
@@ -97,7 +97,7 @@ class Word(deque):
                 n += 1
 
     def syllables(self):
-        if not self:
+        if not len(self):
             return []
         ans, curr = [], None
         for x in self:
@@ -126,7 +126,7 @@ class CyclicWord(Word):
 
     def cancel(self):
         Word.cancel(self)
-        while self and self[0] == -self[-1]:
+        while len(self) and self[0] == -self[-1]:
             self.popleft()
             self.pop()
 
@@ -303,7 +303,7 @@ class Presentation(object):
             raise ValueError('Please provide a sequence of relators.')
         for r in relators:
             W = CyclicWord(r, alphabet)
-            if W:
+            if len(W):
                 self.relators.append(W)
             if isinstance(r, str):
                 self.generators.update([abs(alphabet(l)) for l in r])
