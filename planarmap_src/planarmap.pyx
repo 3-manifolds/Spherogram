@@ -8,7 +8,7 @@ cdef extern from 'PMdef.h':
         char m, b  #  map and basic map type
         long e, v, f  # edges, vertices, faces 
         long r, g, d  # red and black vertices, max degree
-        long t        # tolerence on e
+        long t        # tolerance on e
         long *dgArr   # pt on vertex list
 
     ctypedef struct pmMethod:
@@ -60,8 +60,8 @@ cdef long randrange_callback(long n):
 set_pmRandom_callback(randrange_callback)
 
 
-# The main function 
-        
+# The main function
+
 def random_map(num_vertices, int edge_connectivity=4,
                int num_link_comps=0, int max_tries=100):
     """
@@ -73,7 +73,7 @@ def random_map(num_vertices, int edge_connectivity=4,
     Recall that a graph is k-edge-connected if removing any set
     of *less than* k edges disconnects the graph.  In particular,
     for 4-valent graphs, being 2-connected is just the same as
-    being connected.  In particuar, a 2-connected graph can
+    being connected.  In particular, a 2-connected graph can
     (and frequently do) have looped edges.
 
     Under the hood, it uses Python's pseudo-random number
@@ -127,5 +127,3 @@ def random_map(num_vertices, int edge_connectivity=4,
         vert = vert.next
     pmFreeMap(&the_map)
     return ans
-    
-    
