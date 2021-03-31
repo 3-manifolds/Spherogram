@@ -1,6 +1,7 @@
 import snappy, spherogram
 from spherogram import Strand, Crossing, Link
 import random
+import collections
 
 def insert_space(point_dict, i):
     """
@@ -262,15 +263,22 @@ class Frontier(BiDict):
         overlap = self.overlap_indices(crossing)
         return len(overlap) > 0 and is_range(overlap)
 
-    def biggest_all_consecutive_overlap(self, crossings):
+    def biggest_all_consecutive_overlap(self):
+        """
+        Return a random crossing from among those with the maximal possible
+        overlap.
+        """
+        overlap_indices = collections.defaultdict(list)
+        for i, cs in self.int_to_set.items():
+            overlap_indices[cs.opposite()[0]].append(i)
         possible = []
-        for crossing in crossings:
-            overlap = list(sorted(self.overlap_indices(crossing)))
-            if len(overlap) > 0 and is_range(overlap):
+        for crossing, overlap in overlap_indices.items():
+            overlap = sorted(overlap)
+            if is_range(overlap):
                 possible.append((len(overlap), min(overlap), crossing))
-        overlap_len, start, crossing = max(possible)
-        return overlap_len, start, crossing
-
+        max_overlap = max(possible)[0]
+        good_choices = [pos for pos in possible if pos[0] == max_overlap]
+        return random.choice(good_choices)
 
 def num_overlap(crossing, frontier):
     return len([ns for ns in neighbors if ns in frontier])
@@ -306,8 +314,7 @@ class MorseExhaustion(object):
         frontier = Frontier({0:css[3], 1:css[2], 2:css[1], 3:css[0]})
         frontier_lengths = [4]
         while len(crossings) < len(link.crossings):
-            next_crossings = {cs.opposite()[0] for cs in frontier.values()}
-            overlap, i, C = frontier.biggest_all_consecutive_overlap(next_crossings)
+            overlap, i, C = frontier.biggest_all_consecutive_overlap()
             cs = frontier[i]
             cs_opp = cs.opposite()
             assert C not in crossings
@@ -363,7 +370,7 @@ class MorseExhaustion(object):
     def __iter__(self):
         return self.events.__iter__()
 
-def good_exhaustion(link, max_failed_tries=20):
+def good_exhaustion(link, max_tries=20):
     """
     Uses a random search to try to find an Exhaustion with small width.
 
@@ -371,18 +378,18 @@ def good_exhaustion(link, max_failed_tries=20):
     >>> ge.width
     2
     """
+    E_best = None
     crossings = list(link.crossings)
-    C = random.choice(crossings)
-    crossings.remove(C)
-    E_best = MorseExhaustion(link, C)
     tries = 0
-    while len(crossings) and tries < max_failed_tries:
-        C = random.choice(crossings)
-        crossings.remove(C)
-        E = MorseExhaustion(link, C)
-        if E.width < E_best.width:
-            E_best = E
-        tries += 1
+    while tries < max_tries:
+        random.shuffle(crossings)
+        for C in crossings:
+            E = MorseExhaustion(link, C)
+            if E_best is None or E.width < E_best.width:
+                E_best = E
+            tries += 1
+            if tries >= max_tries:
+                break
     return E_best
 
 def test_morse_machine(link):
@@ -401,6 +408,46 @@ def test_many(N):
         M = snappy.HTLinkExteriors().random()
         if M.solution_type() == 'all tetrahedra positively oriented':
             assert test_morse_machine(M.link())
+
+def morse_encoding_from_zs_hfk(link):
+    """
+    >>> me = morse_encoding_from_zs_hfk(Link('K8n1'))
+    >>> me.width
+    6
+    """
+    from knot_floer_homology import pd_to_morse
+    pd = 'PD: ' + repr(link.PD_code())
+    zs_morse = pd_to_morse(pd)
+    ans = MorseEncoding(zs_morse['events'])
+    assert zs_morse['girth'] == ans.width
+    return ans
+
+def orient_pres_isometric(A, B):
+    for iso in A.is_isometric_to(B, True):
+        mat = iso.cusp_maps()[0]
+        if mat.det() == 1:
+            return True
+    return False
+
+def test_zs_hfk(crossings, how_many):
+    from networkx.algorithms import approximation
+    for _ in range(how_many):
+        K = spherogram.random_link(crossings, num_components=1,
+                                   initial_map_gives_link=True,
+                                   consistent_twist_regions=True)
+
+        E = K.exterior()
+        if not E.solution_type().startswith('all tet'):
+            continue
+
+        exhaust = good_exhaustion(K, 100)
+        encoding0 = MorseEncoding(exhaust)
+        encoding1 = morse_encoding_from_zs_hfk(K)
+
+        M0 = encoding0.link().exterior()
+        M1 = encoding1.link().exterior()
+        assert orient_pres_isometric(E, M0)
+        print(encoding0.width, encoding1.width, orient_pres_isometric(E, M1))
 
 if __name__ == '__main__':
     import doctest

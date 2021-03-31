@@ -1,274 +1,206 @@
-from __future__ import print_function
 """
-Functions needed to calculate the Jones polynomial of K. Still needs work ...
+
+Computing the Jones polynomial following the conventions of Jake
+Rasmussen's lectures at PCMI, Summer 2019.
+
+https://www.youtube.com/watch?v=--l-XOhDXOU
+https://www.youtube.com/watch?v=3VwcGHycyAE
+
+
 """
-from sage.symbolic.ring import var
-from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
-import sage.graphs.graph as graph
-from sage.rings.rational_field import QQ
 
-def edge_index(edge_datum):
-    return edge_datum[2]['edge_index']
+from sage.all import ZZ, LaurentPolynomialRing, PerfectMatchings, PerfectMatching
+from . import exhaust
 
-def cut(G,T,e):
+R = LaurentPolynomialRing(ZZ, 'q')
+q = R.gen()
+
+def num_Pn(n):
     """
-    Input:
-    --A graph G.
-    --A spanning tree T for G
-    --And edge e of T
-
-    Cutting T along e separates T into two components.
-    Returns: The list of edges in G - e connecting the two different components of T-e."""
-    if not T.has_edge(*e):
-        raise Exception("e must be an edge of T.")
-    H = G.copy()
-    S = T.copy()
-    S.delete_edge(e)
-    (C1, C2) = S.connected_components()
-    answer = list()
-    for f in G.edges(sort=True, key=edge_index):
-        if (f[0] in C1 and f[1] in C2) or (f[0] in C2 and f[1] in C1):
-            if f != e:
-                answer.append(f)
-    return answer
-
-def is_internally_active(G, T, e):
+    An element of Jake's P_{0, n} of planar tangles from 0 points to n
+    points will be a PerfectMatching of [0,..,n-1] where
+    is_noncrossing is True.
     """
-    Input:
-    --A graph G.
-    --A spanning tree T for G
-    --And edge e of G
+    return len([m for m in PerfectMatchings(n) if m.is_noncrossing()])
 
-    Returns: True if e is in T and e is internally active for T, False otherwise. Uses the ordering on G.edges()."""
-    if not T.has_edge(*e):
-        return False
-    for f in cut(G,T,e):
-        if edge_index(f) < edge_index(e):
-            return False
-    return True
-
-def cyc(G,T,e):
+def insert_cup(matching, i):
     """
-    Input:
-    --A graph G.
-    --A spanning tree T for G
-    --And edge e of G not in T
+    Insert a new adjacent matching which joins i and i + 1.
 
-    Adjoining e to T creates a cycle.
-    Returns: this cycle."""
-    if not G.has_edge(*e):
-        raise Exception("e must be an edge of G.")
-    if T.has_edge(*e):
-        raise Exception("e must not be an edge of T.")
-    #First thing: catch exceptional case that e is a multiple for an edge in T (giving a 2-cycle).
-    try:
-        l = T.edge_label(e[0],e[1])
-        if isinstance(l,list):
-            l = l[0] #For multigraphs, edge_label returns a list. In this case, it's a list with one element...
-        if (e[0],e[1], l) in T.edges(sort=True, key=edge_index):
-            return [(e[0],e[1],l),e]
-        return [(e[1],e[0],l),e]
-    except:
-        pass
-
-    #Now the typical case.  First, need to turn T into a Graph which
-    #doesn't allow multiedges and also make a copy since we will
-    #modify it.
-    S = graph.Graph(T.edges(sort=True, key=edge_index))
-    S.add_edge(e)
-    cb = S.cycle_basis()[0]
-    answer = list()
-    for i in range(len(cb)):
-        l = S.edge_label(cb[i],cb[(i+1)%len(cb)])
-        if S.has_edge(cb[i],cb[(i+1)%len(cb)],l):
-            answer.append((cb[i],cb[(i+1)%len(cb)],l))
-        else:
-            answer.append((cb[(i+1)%len(cb)],cb[i],l))
-    return answer
-
-def is_externally_active(G,T,e):
+    >>> m = PerfectMatching([(0, 1), (2, 5), (3, 4)])
+    >>> insert_cup(m, 0)
+    [(0, 1), (2, 3), (4, 7), (5, 6)]
+    >>> insert_cup(m, 1)
+    [(0, 3), (1, 2), (4, 7), (5, 6)]
+    >>> insert_cup(m, 6)
+    [(0, 1), (2, 5), (3, 4), (6, 7)]
     """
-    Input:
-    --A graph G.
-    --A spanning tree T for G
-    --And edge e of G
+    assert len(matching.base_set()) >= i
+    def shift(pair):
+        return [a if a < i else a + 2 for a in pair]
+    return PerfectMatching([shift(pair) for pair in matching] + [(i, i + 1)])
 
-    Returns: True is e is not in T and e is externally active for T, False otherwise. Uses the ordering on G.edges()."""
-    if T.has_edge(*e):
-        return False
-    for f in cyc(G,T,e):
-        if edge_index(f) < edge_index(e):
-            return False
-    return True
-
-def _edge_sign(K, edge):
-    "Returns the sign (+/- 1) associated to given edge in the black graph."
-    crossing = edge[2]
-    if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
-        return +1
-    return -1
-
-def _Jones_contrib_edge(K, G, T, e, A):
-    "Returns the contribution to the Jones polynomial of the specified tree T and edge e."
-    #Need to also take crossing sign into account -- A -> 1/A in negative case.
-    s = e[2]['sign']
-    if is_internally_active(G,T,e):
-        return -A**(-3*s)
-    if T.has_edge(*e) and (not is_internally_active(G,T,e)):
-        return A**s
-    if is_externally_active(G,T,e):
-        return -A**(3*s)
-    if (not T.has_edge(*e)) and (not is_externally_active(G,T,e)):
-        return A**(-1*s)
-
-def _Jones_contrib(K, G, T, A):
-    "Returns the contribution to the Jones polynomial of the tree T. G should be self.black_graph()."
-    answer = 1
-    # 2 loops, edges in T and edges not in T
-    for e in G.edges(sort=True, key=edge_index):
-        answer = answer*_Jones_contrib_edge(K,G,T,e,A)
-    return answer
-
-def Jones_poly(K, variable=None, new_convention=False):
+def cap_off(matching, i):
     """
-    The old convention should really have powers of q^(1/2) for links
-    with an odd number of components, but it just multiplies the
-    answer by q^(1/2) to get rid of them.  Moroever, the choice of
-    value for the unlink is a little screwy, essentially::
+    Merge i and i + 1 with a cap.  Returns a new matching and whether
+    or not a circle was created.
 
-      (-q^(1/2) - q^(-1/2))^(n - 1).
-
-    In the new convention, powers of q^(1/2) never appear, i.e. the
-    new q is the old q^(1/2) and moreover the value for an n-component
-    unlink is (q + 1/q)^(n - 1).  This should match Bar-Natan's paper
-    on Khovanov homology.
+    >>> m = PerfectMatching([(0, 5), (1, 4), (2, 3)])
+    >>> cap_off(m, 2)
+    ([(0, 3), (1, 2)], True)
+    >>> cap_off(m, 3)
+    ([(0, 3), (1, 2)], False)
     """
-    if not variable:
-        L = LaurentPolynomialRing(QQ,'q')
-        variable = L.gen()
-    answer = 0
-    L_A = LaurentPolynomialRing(QQ,'A')
-    A = L_A.gen()
-    G = K.white_graph()
-    for i, labels in enumerate(G.edge_labels()):
-        labels['edge_index'] = i
-    writhe = K.writhe()
-    for T in spanning_trees(G):
-        answer = answer + _Jones_contrib(K,G,T,A)
-    answer = answer * (-A)**(3*writhe)
-    ans = 0
-    for i in range(len(answer.coefficients())):
-        coeff = answer.coefficients()[i]
-        exp = answer.exponents()[i]
-        if new_convention:
-            # Now do the substitution A = i q^(1/2) so A^2 = -q
-            assert exp % 2 == 0
-            ans = ans + coeff*((-variable)**(exp//2))
-        else:
-            ans = ans + coeff*(variable**(exp//4))
-    return ans
+    def shift(a):
+        return a if a < i else a - 2
+    def follow(a):
+        b = matching.partner(a)
+        if b == i:
+            b = matching.partner(i + 1)
+        elif b == i + 1:
+            b = matching.partner(i)
+        return b
 
-def spanning_trees(G):
+    n = len(matching.base_set())
+    circle = matching.partner(i) == i + 1
+    new_match = set()
+    for a in range(n):
+        if not a in {i, i + 1}:
+            u, v = shift(a), shift(follow(a))
+            if u > v:
+                u, v = v, u
+            new_match.add((u, v))
+    return PerfectMatching(new_match), circle
+
+class VElement(object):
     """
-    NOTE: This code was essentially merged into SageMath proper
-    in 2014.  However, because of sorting-related changes needed to
-    support Python 3, the *other* code in this file will not work with
-    SageMath's version of Graph.spanning_trees.  Hence we retain our
-    original version, somewhat modified to work around the Python 3
-    issues; specifically, each edge must have an "edge_index" label
-    which uniquely identifies it and is sortable.
+    An element of some V_{0, n} which is the free R-module on P_{0, n}
 
-    Returns a list of all spanning trees.
-
-    If the graph is disconnected, returns the empty list.
-
-    Uses the Read-Tarjan backtracking algorithm [RT75]_.
-
-    EXAMPLES::
-
-        sage: G = Graph([(1,2),(1,2),(1,3),(1,3),(2,3),(1,4)],multiedges=True)
-        sage: len(spanning_trees(G))
-        8
-        sage: G.spanning_trees_count()
-        8
-        sage: G = Graph([(1,2),(2,3),(3,1),(3,4),(4,5),(4,5),(4,6)],multiedges=True)
-        sage: len(spanning_trees(G))
-        6
-        sage: G.spanning_trees_count()
-        6
-
-    .. SEEALSO::
-
-        - :meth:`~sage.graphs.generic_graph.GenericGraph.spanning_trees_count`
-          -- counts the number of spanning trees.
-
-        - :meth:`~sage.graphs.graph.Graph.random_spanning_tree`
-          -- returns a random spanning tree.
-
-    TESTS:
-
-    Works with looped graphs::
-
-        sage: g = Graph({i:[i,(i+1)%6] for i in range(6)})
-        sage: spanning_trees(G)
-        [Graph on 6 vertices,
-         Graph on 6 vertices,
-         Graph on 6 vertices,
-         Graph on 6 vertices,
-         Graph on 6 vertices,
-         Graph on 6 vertices]
-
-    REFERENCES:
-
-    .. [RT75] Read, R. C. and Tarjan, R. E.
-      Bounds on Backtrack Algorithms for Listing Cycles, Paths, and Spanning Trees
-      Networks, Volume 5 (1975), numer 3, pages 237-252.
+    >>> m = PerfectMatching([(0, 1), (3, 4), (2, 5)])
+    >>> v1 = VElement(m)
+    >>> v1
+    (1)*[(0, 1), (2, 5), (3, 4)]
+    >>> v2 = (q + q**-1)*v1
+    >>> v2
+    (q^-1 + q)*[(0, 1), (2, 5), (3, 4)]
+    >>> v3 = q* VElement(PerfectMatching([(5, 0), (4, 3), (1, 2)]))
+    >>> v1 + v2 + v3
+    (q^-1 + 1 + q)*[(0, 1), (2, 5), (3, 4)] + (q)*[(0, 5), (1, 2), (3, 4)]
+    >>> v2.insert_cup(6)
+    (q^-1 + q)*[(0, 1), (2, 5), (3, 4), (6, 7)]
+    >>> (v1 + v2 + v3).cap_off(1)
+    (q^-1 + 2 + q + q^2)*[(0, 3), (1, 2)]
     """
+    def __init__(self, spec=None):
+        self.dict = dict()
+        if spec is None:
+            spec = PerfectMatching([])
+        if isinstance(spec, dict):
+            self.dict = spec
+        if isinstance(spec, PerfectMatching):
+            assert spec.is_noncrossing()
+            self.dict[spec] = R.one()
 
-    def _recursive_spanning_trees(G,forest):
+    def __rmul__(self, other):
+        if other in R:
+            other = R(other)
+            return VElement({m:other*c for m, c in self.dict.items()})
+
+    def __add__(self, other):
+        if isinstance(other, VElement):
+            ans_dict = self.dict.copy()
+            for matching, coeff in other.dict.items():
+                cur_coeff = self.dict.get(matching, R.zero())
+                ans_dict[matching] = cur_coeff + coeff
+        return VElement(ans_dict)
+
+    def __repr__(self):
+        matchings = sorted(self.dict.keys())
+        terms = ['(%s)*%s' % (self.dict[m], m) for m in matchings]
+        if len(terms) == 0:
+            return '0'
+        return ' + '.join(terms)
+
+    def insert_cup(self, i):
         """
-        Returns all the spanning trees of G containing forest
+        Insert an new matching at (i, i + 1)
         """
-        if not G.is_connected():
-            return []
+        return VElement({insert_cup(m, i):c for m, c in self.dict.items()})
 
-        if G.size() == forest.size():
-            return [forest.copy()]
-        else:
-            # Pick an edge e from G-forest
-            for e in G.edges(sort=True, key=edge_index):
-                if not forest.has_edge(e):
-                    break
+    def cap_off(self, i):
+        ans_dict = dict()
+        for matching, coeff in self.dict.items():
+            new_matching, has_circle = cap_off(matching, i)
+            cur_coeff = ans_dict.get(new_matching, R.zero())
+            if has_circle:
+                coeff = (q + q**-1)*coeff
+            ans_dict[new_matching] = cur_coeff + coeff
+        return VElement(ans_dict)
 
-            # 1) Recursive call with e removed from G
-            G.delete_edge(e)
-            trees = _recursive_spanning_trees(G,forest)
-            G.add_edge(e)
+    def cap_then_cup(self, i):
+        return self.cap_off(i).insert_cup(i)
 
-            # 2) Recursive call with e include in forest
-            #
-            # e=xy links the CC (connected component) of forest containing x
-            # with the CC containing y. Any other edge which does that
-            # cannot be added to forest anymore, and B is the list of them
-            c1 = forest.connected_component_containing_vertex(e[0])
-            c2 = forest.connected_component_containing_vertex(e[1])
-            G.delete_edge(e)
-            B = G.edge_boundary(c1,c2,sort=False)
-            G.add_edge(e)
+    def add_positive_crossing(self, i):
+        return self + (-q)*self.cap_then_cup(i)
 
-            # Actual call
-            forest.add_edge(e)
-            G.delete_edges(B)
-            trees.extend(_recursive_spanning_trees(G,forest))
-            G.add_edges(B)
-            forest.delete_edge(e)
+    def add_negative_crossing(self, i):
+        return self.cap_then_cup(i) + (-q)*self
 
-            return trees
+    def is_multiple_of_empty_pairing(self):
+        return len(self.dict) == 1 and (PerfectMatching([]) in self.dict)
 
-    if G.is_connected() and len(G):
-        forest = graph.Graph()
-        forest.add_vertices(G.vertices())
-        forest.add_edges(G.bridges())
-        return _recursive_spanning_trees(graph.Graph(G,immutable=False,loops=False), forest)
+
+def kauffman_bracket(link):
+    """
+    >>> L = Link('T(2, 3)')
+    >>> kauffman_bracket(L)
+    q^-2 + 1 + q^2 - q^6
+    """
+    ans = VElement()
+    if isinstance(link, exhaust.MorseEncoding):
+        encoded = link
     else:
-        return []
+        exhaustion = exhaust.MorseExhaustion(link)
+        encoded = exhaust.MorseEncoding(exhaustion)
+    for event in encoded:
+        if event.kind == 'cup':
+            ans = ans.insert_cup(event.min)
+        elif event.kind == 'cap':
+            ans = ans.cap_off(event.min)
+        else:
+            assert event.kind == 'cross'
+            if event.a < event.b:
+                ans = ans.add_positive_crossing(event.min)
+            else:
+                ans = ans.add_negative_crossing(event.min)
+    assert ans.is_multiple_of_empty_pairing()
+    return ans.dict[PerfectMatching([])]
+
+def jones_polynomial(link, normalized=True):
+    bracket = kauffman_bracket(link)
+    if normalized:
+        factor = q + q**-1
+        norm_bracket = bracket // factor
+        assert norm_bracket*factor == bracket
+    else:
+        norm_bracket = bracket
+
+    signs = [c.sign for c in link.crossings]
+    n_minus, n_plus = signs.count(-1), signs.count(1)
+    return (-1)**n_minus * q**(n_plus - 2*n_minus) * norm_bracket
+
+def test_one_link(link):
+    new_poly = jones_polynomial(link)
+    old_poly = link.jones_polynomial(new_convention=True)
+    return new_poly - old_poly == 0
+
+def test_links(N):
+    import snappy
+    for i in range(N):
+        M = snappy.HTLinkExteriors.random()
+        L = M.link()
+        print(M.name(), test_one_link(L))
+
+if __name__ == '__main__':
+    import doctest
+    print(doctest.testmod())

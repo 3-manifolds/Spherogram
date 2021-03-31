@@ -1,7 +1,7 @@
 """
 When used within Sage, the Link class gains many methods to compute
 standard invariants.  Much of this code was contributed by Robert Lipshitz
-and Jennet Dickinson.  
+and Jennet Dickinson.
 """
 
 from . import links_base, alexander
@@ -21,7 +21,7 @@ if _within_sage:
     from sage.groups.braid import Braid, BraidGroup
     from sage.all import ZZ, QQ
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
-    from sage.graphs.graph import Graph 
+    from sage.graphs.graph import Graph
     from sage.quadratic_forms.quadratic_form import QuadraticForm
     try:
         from sage.knots.knot import Knot as SageKnot
@@ -30,7 +30,7 @@ if _within_sage:
         SageKnot, SageLink = type(None), type(None)
     import functools
 else:
-    pass 
+    pass
 
 def normalize_alex_poly(p,t):
     """
@@ -46,14 +46,14 @@ def normalize_alex_poly(p,t):
         p, e = p.polynomial_construction()
         assert e == 0
         return p
-   
+
 
     max_degree = max([sum(x) for x in p.exponents()])
     highest_monomial_exps = [x for x in p.exponents() if sum(x)==max_degree]
     leading_exponents = max(highest_monomial_exps)
     leading_monomial = functools.reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
     l = p.monomial_coefficient(leading_monomial)
-    
+
     if l < 0:
         p = -p
 
@@ -84,13 +84,13 @@ def sage_braid_as_int_word(braid):
 
 
 extra_docstring = """
-    You can also convert to and from SageMath braid and link types, 
+    You can also convert to and from SageMath braid and link types,
     see the documentation for the "sage_link" method for details.
 """
 
 class Link(links_base.Link):
-    __doc__ = links_base.Link.__doc__  + extra_docstring 
-    
+    __doc__ = links_base.Link.__doc__  + extra_docstring
+
     def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
         if _within_sage:
             if isinstance(crossings, Braid):
@@ -101,7 +101,7 @@ class Link(links_base.Link):
                 braid_closure = sage_braid_as_int_word(braid_closure)
             if crossings is not None and isinstance(crossings, (SageKnot, SageLink)):
                 crossings = crossings.pd_code()
-                
+
         links_base.Link.__init__(self, crossings, braid_closure, check_planarity, build)
 
     @sage_method
@@ -135,7 +135,7 @@ class Link(links_base.Link):
     @sage_method
     def knot_group(self):
         """
-        Computes the knot group using the Wirtinger presentation. 
+        Computes the knot group using the Wirtinger presentation.
         Returns a finitely presented group::
 
            sage: K = Link('3_1')
@@ -206,7 +206,7 @@ class Link(links_base.Link):
             g_component = [c.strand_components[2] for c in self.crossings]
             for i in range(len(g)):
                 g[i] = t[g_component[i]]
-            
+
         else:
             L_t = LaurentPolynomialRing(QQ,'t')
             t = L_t.gen()
@@ -225,7 +225,7 @@ class Link(links_base.Link):
             deprecation_warnings_issued.add('alexander_poly')
             print('Deprecation Warning: use "alexander_polynomial" instead of "alexander_poly".')
         return self.alexander_polynomial(*args, **kwargs)
-                  
+
     @sage_method
     def alexander_polynomial(self, multivar=True, v='no', method='default', norm = True, factored = False):
         """
@@ -237,7 +237,7 @@ class Link(links_base.Link):
             t^2 - 3*t + 1
             sage: K.alexander_polynomial(v=[4])
             5
-            
+
             sage: K = Link('L7n1')
             sage: K.alexander_polynomial(norm=False)
             t1^-1*t2^-1 + t1^-2*t2^-4
@@ -253,7 +253,7 @@ class Link(links_base.Link):
 
         # sign normalization still missing, but when "norm=True" the
         # leading coefficient with respect to the first variable is made
-        # positive. 
+        # positive.
         if method == 'snappy':
             try:
                 return self.exterior().alexander_polynomial()
@@ -270,7 +270,7 @@ class Link(links_base.Link):
             else: # Use a simple method based on the Wirtinger presentation.
                 if method not in ['default', 'wirtinger']:
                     raise ValueError("Available methods are 'default' and 'wirtinger'")
-                
+
                 if(multivar):
                     L = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
                     t = list(L.gens())
@@ -286,7 +286,7 @@ class Link(links_base.Link):
                     k = m-1
                 else:
                     k = n-1
-                
+
                 subMatrix = C[0:k,0:k]
                 p = subMatrix.determinant()
                 if p == 0: return 0
@@ -300,19 +300,19 @@ class Link(links_base.Link):
 
             if v != 'no':
                 return p(*v)
-                
+
             if multivar and factored: # it's easier to view this way
                 return p.factor()
             else:
                 return p
-        
+
     def _edge_sign(K, edge):
         "Returns the sign (+/- 1) associated to given edge in the black graph."
         crossing = edge[2]
         if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
             return +1
         return -1
-        
+
     @sage_method
     def black_graph(self):
         """
@@ -321,7 +321,7 @@ class Link(links_base.Link):
         connected component. The edges are labeled by the crossings
         they correspond to.  Example::
 
-            sage: K=Link('5_1')                                                                                
+            sage: K=Link('5_1')
             sage: K.black_graph()
             Subgraph of (): Multi-graph on 2 vertices
 
@@ -384,7 +384,7 @@ class Link(links_base.Link):
         i.e if the multigraph has more than 2 components, a ValueError
         is raised::
 
-            sage: K=Link('5_1')           
+            sage: K=Link('5_1')
             sage: K.white_graph()
             Subgraph of (): Multi-graph on 2 vertices
 
@@ -393,7 +393,7 @@ class Link(links_base.Link):
         expected way.
         """
         # Map corners (i.e. CrossingStrands) to faces.
-        face_of = dict((corner, n) for n, face in enumerate(self.faces()) for corner in face) 
+        face_of = dict((corner, n) for n, face in enumerate(self.faces()) for corner in face)
 
         # Create the edges, labeled with crossing and sign.
         edges = []
@@ -402,7 +402,7 @@ class Link(links_base.Link):
                           {'crossing':c, 'sign':1}))
             edges.append((face_of[CrossingStrand(c, 1)], face_of[CrossingStrand(c, 3)],
                           {'crossing':c, 'sign':-1}))
-                
+
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components()
@@ -410,12 +410,12 @@ class Link(links_base.Link):
             raise ValueError('The link diagram is split.')
         return G.subgraph(components[1])
 
-    @sage_method      
+    @sage_method
     def goeritz_matrix(self, return_graph=False):
         """
         Call self.white_graph() and return the Goeritz matrix of the result.
         If the return_graph flag is set, also return the graph::
-        
+
             sage: K=Link('4_1')
             sage: abs(K.goeritz_matrix().det())
             5
@@ -442,8 +442,8 @@ class Link(links_base.Link):
         Returns the signature of the link, computed from the Goeritz matrix using
         the algorithm of Gordon and Litherland::
 
-            sage: K = Link('4a1')            
-            sage: K.signature()          
+            sage: K = Link('4a1')
+            sage: K.signature()
             0
             sage: L = Link('9^3_12')
             sage: Lbar = L.mirror()
@@ -475,12 +475,12 @@ class Link(links_base.Link):
     @sage_method
     def determinant(self, method='goeritz'):
         """
-        Returns the determinant of the link, a non-negative integer.                
+        Returns the determinant of the link, a non-negative integer.
 
         Possible methods are 'wirt', using the Wirtinger presentation; 'goeritz',
         using the Goeritz matrix, and 'color', using the 'colorability matrix', or
         anything else, to compute the Alexander polynomial at -1.  Example::
-        
+
             sage: K = Link( [(4,1,5,2),(6,4,7,3),(8,5,1,6),(2,8,3,7)] )  # Figure 8 knot
             sage: K.determinant()
             5
@@ -540,24 +540,52 @@ class Link(links_base.Link):
         return morse.MorseLinkDiagram(self)
 
     @sage_method
-    def jones_polynomial(self, variable=None, new_convention=False):
+    def jones_polynomial(self, variable=None, new_convention=True):
         """
         Returns the Jones polynomial of the link, with the
-        following conventions: TBA.  Here is a test case::
+        following conventions:
+
+        WARNING: The default conventions changed in SnapPy 3.0.  You
+        can partially recover the old conventions as illustrated
+        below::
 
           sage: L = Link('8_5')
-          sage: L.jones_polynomial()
+          sage: J = L.jones_polynomial(); J
+          1 - q^2 + 3*q^4 - 3*q^6 + 3*q^8 - 4*q^10 + 3*q^12 - 2*q^14 + q^16
+          sage: Jold = L.jones_polynomial(new_convention=False); Jold
           1 - q + 3*q^2 - 3*q^3 + 3*q^4 - 4*q^5 + 3*q^6 - 2*q^7 + q^8
+
+        Here are the values one unlinks with 4 and 5 components::
 
           sage: U4 = Link(braid_closure=[1, -1, 2, -2, 3, -3])
           sage: U5 = Link(braid_closure=[1, -1, 2, -2, 3, -3, 4, -4])
-          sage: U4.jones_polynomial(new_convention=True).factor()
+          sage: U4.jones_polynomial().factor()
           (q^-3) * (1 + q^2)^3
-          sage: U5.jones_polynomial(new_convention=True).factor()
+          sage: U5.jones_polynomial().factor()
           (q^-4) * (1 + q^2)^4
+          sage: U4.jones_polynomial(new_convention=False).factor()
+          (-q^-2) * (1 + q)^3
+          sage: U5.jones_polynomial(new_convention=False).factor()
+          (q^-2) * (1 + q)^4
+
         """
-        from . import jones
-        return jones.Jones_poly(self, variable, new_convention)
+        from . import jones, jones_old
+
+        if new_convention:
+            J = jones.jones_polynomial(self, normalized=True)
+        else:
+            if len(self.link_components) != 1:
+                J = jones_old.Jones_poly(self, new_convention=False)
+            else:
+                J = jones.jones_polynomial(self, normalized=True)
+                R = J.parent()
+                q = R.gen()
+                terms = [J[e]*q**(e//2) for e in J.exponents()]
+                J = sum(terms , R(0))
+
+        if variable is not None:
+            J = J(variable)
+        return J
 
     def seifert_matrix(self):
         """
@@ -573,10 +601,10 @@ class Link(links_base.Link):
 
         Uses the algorithm described in
 
-        J. Collins, "An algorithm for computing the Seifert matrix of a link 
+        J. Collins, "An algorithm for computing the Seifert matrix of a link
         from a braid representation." (2007).
 
-        after first making the link isotopic to a braid closure. 
+        after first making the link isotopic to a braid closure.
         """
         from . import seifert
         ans = seifert.seifert_matrix(self)
@@ -586,10 +614,10 @@ class Link(links_base.Link):
 
     def braid_word(self, as_sage_braid=False):
         """
-        Return a list of integers which defines a braid word whose closure is the 
+        Return a list of integers which defines a braid word whose closure is the
         given link.  The natural numbers 1, 2, 3, etc are the generators and the
         negatives are the inverses.
-        
+
         >>> L = Link('K8n1')
         >>> word = L.braid_word();
         >>> Link(braid_closure=word).exterior().identify()    # doctest: +SNAPPY
@@ -600,7 +628,7 @@ class Link(links_base.Link):
 
             sage: Link('K6a2').braid_word(as_sage_braid=True)
             (s0^-1*s1)^2*s0^-2
-        
+
         Implementation follows P. Vogel, "Representation of links by
         braids, a new algorithm".
         """
@@ -636,7 +664,7 @@ class Link(links_base.Link):
             <Link: 1 comp; 3 cross>
             sage: S = L.sage_link(); S
             Knot represented by 3 crossings
-            sage: Link(S) 
+            sage: Link(S)
             <Link: 1 comp; 3 cross>
         """
         if SageKnot is None:
@@ -649,7 +677,7 @@ class Link(links_base.Link):
     def _sage_(self):
         """
         A quick test:
-        
+
             sage: L = Link('K13n100')
             sage: L._sage_()
             Knot represented by 13 crossings

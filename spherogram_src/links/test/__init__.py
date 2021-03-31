@@ -273,7 +273,7 @@ class TestLinkFunctions(unittest.TestCase):
                 ('L10n1', ('q^8 - 2*q^7 + 2*q^6 - 4*q^5 + 3*q^4 - 3*q^3 + 2*q^2 - 2*q + 1', -2))]
         for link_name, (poly, exp) in data:
             link = getattr(self, link_name)
-            self.assertEqual(link.jones_polynomial(), L(poly)*q**exp)
+            self.assertEqual(link.jones_polynomial(new_convention=False), L(poly)*q**exp)
 
 def run():
     test_montesinos.test(15)
