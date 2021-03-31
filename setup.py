@@ -178,7 +178,8 @@ long_description = open('README.rst').read()
 long_description = long_description.split('==\n')[1]
 long_description = long_description.split('\nDeveloped')[0]
 
-install_requires = ['decorator', 'networkx', 'snappy_manifolds>=1.1']
+install_requires = ['decorator', 'networkx',
+                    'snappy_manifolds>=1.1', 'knot_floer_homology']
 
 setup( name = 'spherogram',
        version = version,

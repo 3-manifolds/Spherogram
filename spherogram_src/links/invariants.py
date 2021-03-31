@@ -306,6 +306,27 @@ class Link(links_base.Link):
             else:
                 return p
 
+    def knot_floer_homology(self):
+        """
+        Uses Zoltán Szabó's HFK Calculator to compute the knot Floer
+        homology.  This also gives the Seifert genus, whether the knot
+        fibers, etc::
+
+        >>> K = Link('K3a1')
+        >>> K.knot_floer_homology()    # doctest: +NORMALIZE_WHITESPACE
+        {'L_space_knot': True,
+         'epsilon': 1,
+         'fibered': True,
+         'modulus': 2,
+         'nu': 1,
+         'ranks': {(-1, -2): 1, (0, -1): 1, (1, 0): 1},
+         'seifert_genus': 1,
+         'tau': 1,
+         'total_rank': 3}
+        """
+        import knot_floer_homology
+        return knot_floer_homology.pd_to_hfk(self)
+
     def _edge_sign(K, edge):
         "Returns the sign (+/- 1) associated to given edge in the black graph."
         crossing = edge[2]
