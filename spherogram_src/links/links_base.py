@@ -1,7 +1,7 @@
 from __future__ import print_function
 """
 Links are made from Crossings.  The general model is that of
-a PD diagram as described in 
+a PD diagram as described in
 
   http://katlas.org/wiki/Planar_Diagrams
 
@@ -11,12 +11,11 @@ See the file "doc.pdf" for the conventions, and the file
 from .. import graphs
 from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
-import  string, os, sys, re, copy
+import  string, os, sys, re, copy, pickle
 from collections import OrderedDict, namedtuple
-try:
-    import cPickle as pickle
-except ImportError: # Python 3
-    import pickle
+
+is_int_DT_exterior = re.compile(r'DT[:]? *(\[[0-9, \-\(\)]+\](?: *, *\[[01, ]+\])?)$')
+is_alpha_DT_exterior = re.compile(r'DT[:\[] *([a-zA-Z]+(?:\.[01]+)?)[\]]?$')
 
 # Helper function.
 def is_iterable(obj):
@@ -49,7 +48,7 @@ def lookup_DT_code_by_name(name):
     >>> lookup_DT_code_by_name('garbage')
     """
     if re.match(r'\d+[an]\d+$', name):
-        name = 'K' + name 
+        name = 'K' + name
     for table in DT_tables:
         try:
             return str(table[name])
@@ -62,20 +61,20 @@ class Crossing(object):
     +1, -1}.  In the first case, the strands at the crossings can have
     any orientations, but crossings with sign +/-1 must be oriented as
     shown in "doc.pdf".
-    
+
     Roles of some of the other attributes:
-    
+
     * label: Arbitrary name used for printing the crossing.
-    
+
     * directions: store the orientations of the link components passing
     through the crossing.  For a +1 crossing this is { (0, 2), (3, 1) }.
     Set with calls to make_tail.
-    
+
     * adjacent: The other Crossings that this Crossing is attached to.
-    
+
     * strand_labels: Numbering of the strands, used for DT codes and
     such.
-    
+
     * strand_components: Which element of the parent
     Link.link_components each input's strand belongs to.
     """
@@ -104,7 +103,7 @@ class Crossing(object):
 
     def rotate(self, s):
         """
-        Rotate the incoming connections by 90*s degrees anticlockwise.  
+        Rotate the incoming connections by 90*s degrees anticlockwise.
         """
         rotate = lambda v : (v + s) % 4
         new_adjacent = CyclicList(self.adjacent[s:] + self.adjacent[:s])
@@ -120,11 +119,11 @@ class Crossing(object):
     def rotate_by_90(self):
         "Effectively switches the crossing"
         self.rotate(1)
-        
+
     def rotate_by_180(self):
         "Effective reverses directions of the strands"
         self.rotate(2)
-    
+
     def orient(self):
         if (2, 0) in self.directions:
             self.rotate_by_180()
@@ -139,12 +138,12 @@ class Crossing(object):
 
     def crossing_strands(self):
         return [CrossingStrand(self, v) for v in range(4)]
-    
+
     def __setitem__(self, i, other):
         o, j = other
         self.adjacent[i % 4] = other
         other[0].adjacent[other[1]] = (self, i % 4)
-        
+
     def __repr__(self):
         return "%s" % self.label
 
@@ -168,7 +167,7 @@ class Crossing(object):
 
     def peer_info(self):
         labels = self.strand_labels
-        SW = labels[0] if self.sign == 1 else labels[1] 
+        SW = labels[0] if self.sign == 1 else labels[1]
         NW = labels[3] if self.sign == 1 else labels[0]
         if SW % 2 == 0:
             ans = SW, (-NW, -self.sign)
@@ -223,11 +222,11 @@ class CrossingStrand(BasicCrossingStrand):
 
     def __repr__(self):
         return "<CS %s, %s>" % (self.crossing, self.strand_index)
-    
+
 class CrossingEntryPoint(CrossingStrand):
     """
     One of the two entry points of an oriented crossing
-    """    
+    """
     def next(self):
         c, e = self.crossing, self.strand_index
         s = 1 if isinstance(c, Strand) else 2
@@ -247,7 +246,7 @@ class CrossingEntryPoint(CrossingStrand):
 
     def is_over_crossing(self):
         return self.strand_index != 0
-        
+
     def component(self):
         ans = [self]
         while True:
@@ -260,7 +259,7 @@ class CrossingEntryPoint(CrossingStrand):
         return ans
 
     def component_label(self):
-        return self.crossing.strand_components[self.strand_index]      
+        return self.crossing.strand_components[self.strand_index]
 
     def label_crossing(self, comp, labels):
         c, e = self.crossing, self.strand_index
@@ -270,14 +269,14 @@ class CrossingEntryPoint(CrossingStrand):
 
     def __repr__(self):
         return "<CEP %s, %s>" % (self.crossing, self.strand_index)
-        
+
 
 class LinkComponents(list):
     def add(self, c):
         component = c.component()
         self.append(component)
         return component
-    
+
 class Labels(OrderedDict):
     def add(self, x):
         self[x] = len(self)
@@ -286,7 +285,7 @@ class Strand(object):
     """
     When constructing links, it's convenient to have strands as well
     as crossings.  These are stripped by the Link class when it
-    pieces things together.  
+    pieces things together.
     """
     def __init__(self, label=None):
         self.label = label
@@ -316,10 +315,10 @@ class Strand(object):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
         print( "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent]) )
-    
+
     def is_loop(self):
         return self == self.adjacent[0][0]
-    
+
 def enumerate_lists(lists, n=0, filter=lambda x:True):
     ans = []
     for L in lists:
@@ -331,7 +330,7 @@ class Link(object):
     """
     Links are made from Crossings.  The general model is that of the PD
     diagrams used in `KnotTheory <http://katlas.org/wiki/Planar_Diagrams>`_.
-    
+
     See the file "doc.pdf" for the conventions, which can be accessed
     via "spherogram.pdf_docs()", and the `Spherogram tutorial
     <http://www.math.uic.edu/t3m/SnapPy/spherogram.html>`_
@@ -342,7 +341,7 @@ class Link(object):
     >>> K1 = Link([[8,3,1,4],[2,6,3,5],[6,2,7,1],[4,7,5,8]])
 
     and by directly gluing up Crossings:
-    
+
     >>> a, b, c, d = [Crossing(x) for x in 'abcd']
     >>> a[0], a[1], a[2], a[3] = c[1], d[0], b[1], b[0]
     >>> b[2], b[3] = d[3], c[2]
@@ -354,7 +353,7 @@ class Link(object):
     >>> Link('T(4, 2)')
     <Link: 2 comp; 6 cross>
 
-    You can also construct a link by taking the closure of a braid. 
+    You can also construct a link by taking the closure of a braid.
 
     >>> Link(braid_closure=[1, 2, -1, -2])
     <Link: 1 comp; 4 cross>
@@ -369,7 +368,7 @@ class Link(object):
     >>> Link('L12n123')
     <Link L12n123: 2 comp; 12 cross>
     """
-    
+
     def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
         self.name = None
 
@@ -378,11 +377,11 @@ class Link(object):
 
         if crossings is not None and braid_closure is not None:
             raise ValueError('Specified *both* crossings and braid_closure')
-        
+
         if crossings is not None:
             if isinstance(crossings, str):
                 crossings = self._crossings_from_string(crossings)
-        
+
             # Crossings can be a PD code rather than a list of actual crossings
             if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
                 crossings, component_starts = self._crossings_from_PD_code(crossings)
@@ -392,7 +391,7 @@ class Link(object):
         else:
             crossings = []  # empty link
 
-        # Make sure everything is tied up. 
+        # Make sure everything is tied up.
         if True in [ None in c.adjacent for c in crossings]:
             raise ValueError('No loose strands allowed')
 
@@ -419,26 +418,56 @@ class Link(object):
                 X.label = c
 
     def _crossings_from_string(self, spec):
+        """
+        >>> Link('T(3, 2)')
+        <Link: 1 comp; 4 cross>
+        >>> Link('DT: [(4,6,2)]')
+        <Link: 1 comp; 3 cross>
+        >>> Link('DT: [(4,6,2)], [0,0,1]')
+        <Link: 1 comp; 3 cross>
+        >>> Link('DT: cacbca.001')
+        <Link: 1 comp; 3 cross>
+        >>> Link('DT: cacbca')
+        <Link: 1 comp; 3 cross>
+        >>> Link('DT[cacbca.001]')
+        <Link: 1 comp; 3 cross>
+        """
         if spec.startswith('T(' ):
             from . import torus
             crossings = torus.torus_knot(spec).crossings
         else:
-            from .. import codecs
-            self.name = spec
-            DT_string = lookup_DT_code_by_name(spec)
-            if DT_string is None:
-                raise ValueError('No link by that name known')
-            crossings = codecs.DTcodec(DT_string).PD_code()
+            from ..codecs import DTcodec
+            m = is_int_DT_exterior.match(spec)
+            if m:
+                code = eval(m.group(1), {})
+                if isinstance(code, tuple):
+                    dt = DTcodec(*code)
+                elif isinstance(code, list) and isinstance(code[0], int):
+                    dt = DTcodec([tuple(code)])
+                else:
+                    dt = DTcodec(code)
+            else:
+                m = is_alpha_DT_exterior.match(spec)
+                if m:
+                    dt = DTcodec(m.group(1))
+                else:
+                    dt_string = lookup_DT_code_by_name(spec)
+                    if dt_string is None:
+                        raise ValueError('No link by that name known')
+                    self.name = spec
+                    dt = DTcodec(dt_string)
+            crossings = dt.PD_code()
 
         return crossings
-                          
+
+
     def _crossings_from_PD_code(self, code):
         labels = set()
         for X in code:
             for i in X:
                 labels.add(i)
 
-        gluings = OrderedDict()                
+        gluings = OrderedDict()
 
         for c, X in enumerate(code):
             for i, x in enumerate(X):
@@ -518,7 +547,7 @@ class Link(object):
         conventions.
 
         The components of the resulting link are will be oriented
-        consistently with the braid.  
+        consistently with the braid.
         """
         if num_strands is None:
             num_strands = max([abs(a) for a in word]) + 1
@@ -526,7 +555,7 @@ class Link(object):
         strands = [Strand('s'+repr(i)) for i in range(num_strands)]
         current = [(x,1) for x in strands]
         crossings = []
-        
+
         for i, a in enumerate(word):
             C = Crossing('x'+repr(i))
             crossings.append(C)
@@ -547,7 +576,7 @@ class Link(object):
 
         for i in range(num_strands):
             strands[i][0] = current[i]
-                
+
         return crossings + strands
 
     def all_crossings_oriented(self):
@@ -567,7 +596,7 @@ class Link(object):
             self._build(start_orientations=start_css, component_starts=start_css)
         else:
             self._build()
-        
+
     def _orient_crossings(self, start_orientations = None):
         if self.all_crossings_oriented():
             return
@@ -609,7 +638,7 @@ class Link(object):
             if (first + second) % 2 != 1:
                 return False
         return True
-            
+
     def _build_components(self, component_starts=None):
         """
         Each component is stored as a list of *entry points* to
@@ -643,14 +672,14 @@ class Link(object):
         [(20, 12, 18, 16), (8, 2, 4, 6, 14, 10)]
         """
         if component_starts is not None:
-            component_starts = [cs.crossing.entry_points()[cs.strand_index % 2] 
+            component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
         remaining, components = OrderedSet( self.crossing_entries() ), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
             c._clear_strand_info()
-        
+
         while len(remaining):
             if component_starts:
                 d = component_starts[len(components)]
@@ -672,7 +701,7 @@ class Link(object):
 
                 if not found:
                     d = remaining.pop()
-        
+
             component = components.add(d)
             for c in component:
                 labels.add( c )
@@ -697,12 +726,12 @@ class Link(object):
                     new_starts.append(cep.next())
             self._build_components(component_starts=new_starts)
             assert self._DT_convention_holds()
-            
+
         self.link_components = components
 
     def digraph(self):
         """
-        The underlying directed graph for the link diagram. 
+        The underlying directed graph for the link diagram.
         """
         G = graphs.Digraph()
         for component in self.link_components:
@@ -736,7 +765,7 @@ class Link(object):
         True
         >>> len(S.split_link_diagram())
         2
-        
+
         A split link with one component planar and the other nonplanar
         >>> a, b = Crossing(), Crossing()
         >>> a[0], a[2] = a[1], a[3]
@@ -785,7 +814,7 @@ class Link(object):
                     return False
                 over = next_over
         return True
-    
+
 
     def faces(self):
         """
@@ -794,7 +823,7 @@ class Link(object):
         *clockwise*.  These corners are recorded as CrossingStrands,
         where CrossingStrand(c, j) denotes the corner of the face
         abutting crossing c between strand j and j + 1.
-        
+
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.
         """
@@ -846,7 +875,7 @@ class Link(object):
            overcrossings (or undercrossings); this has the effect of doing
            "picking up" strands and putting them down elsewhere.
 
-        4. Finally, the ``global`` mode is the combination of 3 and 4. 
+        4. Finally, the ``global`` mode is the combination of 3 and 4.
 
 
         Some examples:
@@ -874,7 +903,7 @@ class Link(object):
         <Link: 2 comp; 2 cross>
 
         >>> K = Link('K14n2345')
-        >>> K.backtrack(30) 
+        >>> K.backtrack(30)
         >>> K.simplify('global')
         True
         >>> K   #doctest: +ELLIPSIS
@@ -894,7 +923,7 @@ class Link(object):
         """
         Performs a sequence of Reidemeister moves which increase or maintain
         the number of crossings in a diagram.  The number of such
-        moves is the parameter steps.  The diagram is modified in place. 
+        moves is the parameter steps.  The diagram is modified in place.
 
         >>> K = Link('L14a7689')
         >>> K
@@ -958,7 +987,7 @@ class Link(object):
 
         def keep(C):
             return set([i in indices for i in C.strand_components]) == set([True])
-        
+
         L = self.copy()
         final_crossings = []
         for C in L.crossings:
@@ -1055,7 +1084,7 @@ class Link(object):
         ans = '[' + ','.join([repr([peer[c][0] for c in comp])[1:-1].replace(',', '') for comp in even_labels])
         ans += '] / ' + ' '.join([ ['_', '+', '-'][peer[c][1]] for c in sum(even_labels, [])])
         return ans
-        
+
     def KLPProjection(self):
         return python_KLP(self)
 
@@ -1088,7 +1117,7 @@ class Link(object):
         from . import simplify
         link = self.copy() if not destroy_original else self
         return simplify.deconnect_sum(link)
-    
+
     def exterior(self):
         # This method is monkey-patched by snappy
         raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
@@ -1113,7 +1142,7 @@ class Link(object):
     def linking_number(self):
         """
         Returns the linking number of self if self has two components;
-        or the sum of the linking numbers of all pairs of components 
+        or the sum of the linking numbers of all pairs of components
         in general.
         """
         n = 0
@@ -1131,7 +1160,7 @@ class Link(object):
 
     def _pieces(self):
         """
-        Auxiliary function used by knot_group. Constructs the strands 
+        Auxiliary function used by knot_group. Constructs the strands
         of the knot from under-crossing to under-crossing. Needed for the
         Wirtinger Presentation.
         """
@@ -1159,7 +1188,7 @@ class Link(object):
     def connected_sum(self, other_knot):
         """
         Returns the connected sum of two knots.
-       
+
         >>> fig8 = [(1,7,2,6), (5,3,6,2), (7,4,0,5), (3,0,4,1)]
         >>> K = Link(fig8)
         >>> K.connected_sum(K)
@@ -1173,7 +1202,7 @@ class Link(object):
         (g2,j2) = g1.adjacent[j1]
         f1[i1]=g2[j2]
         f2[i2]=g1[j1]
-        for c in first.crossings: #Indicate which crossings came from which knot.                        
+        for c in first.crossings: #Indicate which crossings came from which knot.
             c.label=(c.label, 1)
         for c in second.crossings:
             c.label=(c.label, 2)
@@ -1182,7 +1211,7 @@ class Link(object):
 
     def copy(self, recursively=False):
         """
-        Returns a copy of the link.  
+        Returns a copy of the link.
 
         >>> K = Link('L14n467')
         >>> copy = K.copy(); copy
@@ -1201,7 +1230,7 @@ class Link(object):
                 n, i = loose_strands.pop()
                 adj_c, adj_i  = self.crossings[n].adjacent[i]
                 adj_n = self.crossings.index(adj_c)
-                crossings[n][i] = crossings[adj_n][adj_i] 
+                crossings[n][i] = crossings[adj_n][adj_i]
                 loose_strands.remove((adj_n,adj_i))
 
             # Orient the new crossings.
@@ -1210,7 +1239,7 @@ class Link(object):
                 e = 3 if old.sign == 1 else 1
                 new.make_tail(e)
                 new.orient()
-                    
+
             component_starts = []
             for component in self.link_components:
                 old_crossing, entry_point = component[0]
@@ -1228,7 +1257,7 @@ class Link(object):
         Returns the mirror image of the link, preserving link orientations and
         component order.
         """
-        # Basically, we just mirror every crossing, but the particular data 
+        # Basically, we just mirror every crossing, but the particular data
         # structures used make this a little involved.
 
         new_crossings = dict()
@@ -1284,8 +1313,8 @@ class Link(object):
             if a*b < 0:
                 C.rotate_by_90()
         L._rebuild()
-        return L        
-            
+        return L
+
     def optimize_overcrossings(self):
         """
         Minimizes the number of crossings of a strand which crosses entirely
@@ -1312,14 +1341,14 @@ class Link(object):
 
     def overstrands(self):
         """
-        Returns a list of the sequences of overcrossings (which are lists of 
+        Returns a list of the sequences of overcrossings (which are lists of
         CrossingEntryPoints), sorted in descending order of length.
 
         >>> L = Link('L14n1000')
         >>> len(L.overstrands()[0])
         3
         """
-        ceps = OrderedSet([cep for cep in self.crossing_entries() if cep.is_over_crossing()])        
+        ceps = OrderedSet([cep for cep in self.crossing_entries() if cep.is_over_crossing()])
         strands = []
         while ceps:
             cep = ceps.pop()
@@ -1364,7 +1393,7 @@ class KLPCrossing(object):
             strands, self.sign = [3, 0], 'R'
         else:
             strands, self.sign = [0,1], 'L'
-            
+
         components = [ c.strand_components[s] for s in strands]
         self.Xcomponent, self.Ycomponent = components
         self.strand, self.neighbor = {}, {}
