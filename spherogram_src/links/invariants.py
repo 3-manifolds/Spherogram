@@ -470,18 +470,21 @@ class Link(links_base.Link):
             sage: Lbar = L.mirror()
             sage: L.signature() + Lbar.signature()
             0
+            sage: M = Link(braid_closure=[1, 2, 1, 2, 1, 2, 1, 2])
+            sage: M.signature()
+            6
 
         SnapPy 3.0 switched the sign convention for the signature so
         that "positive knots have negative signatures".  You can
         recover the previous default by::
-            
+
           sage: L = Link('3a1')
           sage: L.signature()
           -2
           sage: L.signature(new_convention=False)
           2
 
-    
+
         """
         m, G = self.goeritz_matrix(return_graph=True)
         correction = sum([e[2]['sign'] for e in G.edges(sort=False)
@@ -654,10 +657,13 @@ class Link(links_base.Link):
         given link.  The natural numbers 1, 2, 3, etc are the generators and the
         negatives are the inverses.
 
-        >>> L = Link('K8n1')
-        >>> word = L.braid_word();
-        >>> Link(braid_closure=word).exterior().identify()    # doctest: +SNAPPY
-        [m222(0,0), 8_20(0,0), K5_12(0,0), K8n1(0,0)]
+        >>> L = Link('K6a2')
+        >>> word = L.braid_word()
+        >>> B = Link(braid_closure=word)
+        >>> B.exterior().identify()    # doctest: +SNAPPY
+        [m289(0,0), 6_2(0,0), K5_19(0,0), K6a2(0,0)]
+        >>> L.signature(), B.signature()
+        (-2, -2)
 
         Within Sage, you can get the answer as an element of the
         appropriate BraidGroup::

@@ -68,6 +68,34 @@ PD code from KnotInfo, which gives -2 as the signature.
 >>> T6.signature()
 -2
 
+
+Versus Sage
+===========
+
+>>> b = [1, 1, 1, 2, 1, 3, 1, 2, 2, 3, 3]
+>>> K = Link(braid_closure=b)
+>>> pd = K.PD_code(min_strand_index=1)
+>>> L = Link(pd)
+>>> K.signature(), L.signature()
+(6, 6)
+>>> K.exterior().is_isometric_to(L.exterior())
+True
+
+>>> import sage.all
+>>> B4 = sage.all.BraidGroup(4)
+>>> w = B4(b)
+>>> SK = sage.all.Link(w)
+>>> SL = sage.all.Link(pd)
+>>> SK.signature(), SL.signature()
+(-6, -6)
+>>> SM = sage.all.Link(L.mirror().PD_code(min_strand_index=1))
+>>> SM.signature()
+6
+
+>>> SB = Link(braid_closure=w)
+>>> SB.signature()
+6
+
 """
 
 import snappy
