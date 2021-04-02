@@ -686,8 +686,7 @@ class Link(links_base.Link):
     @sage_method
     def sage_link(self):
         """
-        Convert to a SageMath Knot or Link; our signature conventions
-        differ by a sign::
+        Convert to a SageMath Knot or Link::
 
            sage: L = Link('K10n11')   # Spherogram link
            sage: K = L.sage_link(); K
@@ -695,7 +694,7 @@ class Link(links_base.Link):
            sage: L.alexander_polynomial()/K.alexander_polynomial()  # Agree up to units
            -t^3
            sage: L.signature(), K.signature()
-           (-4, 4)
+           (-4, -4)
 
         Can also go the other way::
 
@@ -713,7 +712,8 @@ class Link(links_base.Link):
         if SageKnot is None:
             raise ValueError('Your SageMath does not seem to have a native link type')
         sage_type = SageKnot if len(self.link_components) == 1 else SageLink
-        code = [list(x) for x in self.PD_code(min_strand_index=1)]
+        # Sage's PD_code lists strands *clockwise* not our *anticlockwise*.
+        code = [[x[0], x[3], x[2], x[1]] for x in self.PD_code(min_strand_index=1)]
         return sage_type(code)
 
     @sage_method

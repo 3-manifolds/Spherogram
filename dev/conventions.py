@@ -85,12 +85,8 @@ True
 >>> B4 = sage.all.BraidGroup(4)
 >>> w = B4(b)
 >>> SK = sage.all.Link(w)
->>> SL = sage.all.Link(pd)
->>> SK.signature(), SL.signature()
-(-6, -6)
->>> SM = sage.all.Link(L.mirror().PD_code(min_strand_index=1))
->>> SM.signature()
-6
+>>> SK.signature()
+-6
 
 >>> SB = Link(braid_closure=w)
 >>> SB.signature()
