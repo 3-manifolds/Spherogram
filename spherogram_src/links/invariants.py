@@ -458,7 +458,7 @@ class Link(links_base.Link):
             return m
 
     @sage_method
-    def signature(self):
+    def signature(self, new_convention=True):
         """
         Returns the signature of the link, computed from the Goeritz matrix using
         the algorithm of Gordon and Litherland::
@@ -470,11 +470,26 @@ class Link(links_base.Link):
             sage: Lbar = L.mirror()
             sage: L.signature() + Lbar.signature()
             0
+
+        SnapPy 3.0 switched the sign convention for the signature so
+        that "positive knots have negative signatures".  You can
+        recover the previous default by::
+            
+          sage: L = Link('3a1')
+          sage: L.signature()
+          -2
+          sage: L.signature(new_convention=False)
+          2
+
+    
         """
         m, G = self.goeritz_matrix(return_graph=True)
         correction = sum([e[2]['sign'] for e in G.edges(sort=False)
                           if e[2]['sign'] == e[2]['crossing'].sign])
-        return QuadraticForm(QQ, m).signature() + correction
+        ans = QuadraticForm(QQ, m).signature() + correction
+        if new_convention:
+            ans = -ans
+        return ans
 
     @sage_method
     def _colorability_matrix(self):
@@ -665,7 +680,8 @@ class Link(links_base.Link):
     @sage_method
     def sage_link(self):
         """
-        Convert to a SageMath Knot or Link::
+        Convert to a SageMath Knot or Link; our signature conventions
+        differ by a sign::
 
            sage: L = Link('K10n11')   # Spherogram link
            sage: K = L.sage_link(); K
@@ -673,7 +689,7 @@ class Link(links_base.Link):
            sage: L.alexander_polynomial()/K.alexander_polynomial()  # Agree up to units
            -t^3
            sage: L.signature(), K.signature()
-           (4, 4)
+           (-4, 4)
 
         Can also go the other way::
 

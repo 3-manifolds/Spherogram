@@ -15,7 +15,7 @@ Wikipedia.
 >>> C[2], C[1] = A[3], A[0]
 >>> T0 = Link([A, B, C])
 >>> T0.signature()
-2
+-2
 >>> T0.jones_polynomial()
 q^2 + q^6 - q^8
 >>> E = T0.exterior()
@@ -24,9 +24,8 @@ q^2 + q^6 - q^8
 120
 
 
-Here's the problem.  As per OzSz, HFK in Alexander degree 0 is
-supported in Maslov grading (signature/2), but with our conventions
-it's (-signature/2).
+As per OzSz, HFK in Alexander degree 0 is supported in Maslov grading
+(signature/2), which is the case now:
 
 
 >>> HFK = T0.knot_floer_homology()
@@ -45,25 +44,29 @@ Some other ways of getting the trefoil:
 
 >>> T1 = RationalTangle(1, 3).denominator_closure()
 >>> T1.signature()
--2
+2
 
 >>> T2 = RationalTangle(3, 1).numerator_closure()
 >>> T2.signature()
-2
+-2
 
 >>> T3 = Link('T(3, 2)')
 >>> T3.signature()
-2
+-2
 
 >>> T4 = Link(braid_closure=[1, 1, 1])
 >>> T4.signature()
--2
+2
 
 PD code from KnotInfo, which gives -2 as the signature.
 
 >>> T5 = Link([[1,5,2,4],[3,1,4,6],[5,3,6,2]])
 >>> T5.signature()
-2
+-2
+
+>>> T6 = Link('K3a1')
+>>> T6.signature()
+-2
 
 """
 
