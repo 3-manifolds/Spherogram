@@ -662,14 +662,14 @@ class Link(links_base.Link):
         >>> B = Link(braid_closure=word)
         >>> B.exterior().identify()    # doctest: +SNAPPY
         [m289(0,0), 6_2(0,0), K5_19(0,0), K6a2(0,0)]
-        >>> L.signature(), B.signature()
-        (-2, -2)
 
         Within Sage, you can get the answer as an element of the
-        appropriate BraidGroup::
+        appropriate BraidGroup and also check our earlier work::
 
             sage: Link('K6a2').braid_word(as_sage_braid=True)
             (s0^-1*s1)^2*s0^-2
+            sage: L.signature(), B.signature()
+            (-2, -2)
 
         Implementation follows P. Vogel, "Representation of links by
         braids, a new algorithm".
