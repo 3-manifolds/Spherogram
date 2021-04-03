@@ -472,7 +472,7 @@ class Link(links_base.Link):
             0
             sage: M = Link(braid_closure=[1, 2, 1, 2, 1, 2, 1, 2])
             sage: M.signature()
-            6
+            -6
 
         SnapPy 3.0 switched the sign convention for the signature so
         that "positive knots have negative signatures".  You can
@@ -667,7 +667,7 @@ class Link(links_base.Link):
         appropriate BraidGroup and also check our earlier work::
 
             sage: Link('K6a2').braid_word(as_sage_braid=True)
-            (s0^-1*s1)^2*s0^-2
+            (s0*s1^-1)^2*s0^2
             sage: L.signature(), B.signature()
             (-2, -2)
 

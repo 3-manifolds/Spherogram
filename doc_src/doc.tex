@@ -3,6 +3,12 @@
 \usepackage{fourier}
 \usepackage{graphicx}
 \usepackage[import]{xypic}
+\usepackage{tikz}
+\usetikzlibrary{braids}
+\usetikzlibrary{calc}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{decorations.markings}
+\usetikzlibrary{decorations.pathreplacing}
 \usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 
 \newenvironment{xyoverpic}[3]
@@ -22,9 +28,11 @@
 \setlength{\parindent}{0pt}
 
 \begin{document}
-\section{Conventions for crossings}
+\section{Conventions for crossings}\label{sec:cross}
 
 \includegraphics[scale=0.6]{pics/crossings}
+
+
 
 \section{Conventions for tangles}
 
@@ -49,9 +57,9 @@ Conventions for operations and rational tangles follow
 
  \url{http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf}
 
-and are shown on the next page.
+ and are shown on the next page.
 
-\pagebreak
+\pagebreak 
 
 \begin{cxyoverpic}{(432,576)}{scale=1.0}{pics/tangles}
     ,(74,439)*{T + S}
@@ -77,6 +85,68 @@ and are shown on the next page.
 \end{cxyoverpic}
 
 
+\section{Conventions for braids}
+
+The convention for SnapPy 3.0/Spherogram 2.0 and newer is illustrated
+by the braid closure of $\sigma_1^3 \sigma_2^{-2} \sigma_3$
+corresponding to \verb+Link(braid_closure=[1, 1, 1, -2, -2, 3])+.
+Note that a positive braid has all positive crossings in the sense of
+Section~\ref{sec:cross}.
+
+\begin{center}
+  \begin{tikzpicture}[scale=0.8,
+    >={Computer Modern Rightarrow[length=1pt 5, width'=0pt 1]}]
+  \begin{scope}[line width=1.5pt, line cap=round]
+    \foreach \y in {0, 1, 2, 3}{
+      \coordinate (a) at (0, \y);
+      \coordinate (b) at ($(0, 9) - (a)$);
+      \coordinate (c) at ($(8, 9) - (a)$);
+      \coordinate (d) at ($(8, 0) + (a)$);
+      \coordinate (t) at ($(-6, 0) + 1.1*(\y, 0)$);
+      \coordinate (s) at ($(6, 0) +  1.1*(-\y, 0)$);
+      \draw (a) .. controls +(t) and +(t) .. (b) --
+            (c) .. controls +(s) and +(s) .. (d);
+      \draw[<-] ($(c)!0.55!(b)$) -- +(0.1, 0); 
+    }
+    \draw[->] (2, 3) -- +(0.1, 0); 
+    \draw[->] (2, 2) -- +(0.1, 0);
+    \draw[->] (8, 1) -- +(0.1, 0); 
+    \draw[->] (8, 0) -- +(0.1, 0);
+    %\draw (0, 3) .. controls +(-2, 0) and +(-2, 0) .. (0, 6);
+    \pic[rotate=90, scale=0.8,
+         braid/.cd,
+         height=-1.25cm,
+         gap=0.15,
+         ]
+    {braid={s_{2, 1} s_{2, 1} s_{2, 1}
+        s_{2, 3} s_{2, 3} s_{4, 3}}};
+  \end{scope}
+  \foreach \y in {1, 2, 3, 4}{
+    \node[above=0.2] at ($(0, \y) + (-0.3, -1)$) {$\y$};
+  }
+  \node[below] at (2, 0) {$\sigma_1^3$};
+  \node[below] at (5.5, 1) {$\sigma_2^{-2}$};
+  \node[above] at (7.25, 3.1) {$\sigma_3$};
+\end{tikzpicture}
+\end{center}
+
+
+
+In earlier versions of SnapPy, the sign of the crossings was reversed,
+e.g. the same braid would have been:
+\begin{center}
+  \begin{tikzpicture}
+  \begin{scope}[line width=1pt, line cap=round]
+    \pic[rotate=90, scale=0.6,
+         braid/.cd,
+         height=-1.25cm,
+         gap=0.15,
+         ]
+    {braid={s_{1, 2} s_{1, 2} s_{1, 2}
+        s_{3, 2} s_{3, 2} s_{3, 4}}};
+  \end{scope}
+\end{tikzpicture}
+\end{center}
 
 
 \end{document}

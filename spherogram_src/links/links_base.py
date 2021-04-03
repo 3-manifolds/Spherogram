@@ -358,6 +358,9 @@ class Link(object):
     >>> Link(braid_closure=[1, 2, -1, -2])
     <Link: 1 comp; 4 cross>
 
+    WARNING: In SnapPy 3.0, the convention for braids changed.  See
+    the "doc.pdf" file for details.
+
     You can also access the links from the Rolfsen and
     Hoste-Thistlethwaite tables by name.
 
@@ -536,14 +539,14 @@ class Link(object):
         sigma_1, sigma_2, sigma_3, and so on, and negative numbers to
         their inverses.
 
-        Conventions follow Birman's book; if one views braid
-        vertically, so that [a, b, c] corresponds to
+        Conventions follow the mirror image of Birman's book; if one
+        views braid vertically, so that [a, b, c] corresponds to
 
         a
         b
         c
 
-        then sigma_i corresponds to the rational tangle +1 in our
+        then sigma_i corresponds to the rational tangle -1 in our
         conventions.
 
         The components of the resulting link are will be oriented
@@ -559,7 +562,7 @@ class Link(object):
         for i, a in enumerate(word):
             C = Crossing('x'+repr(i))
             crossings.append(C)
-            if a > 0:
+            if a < 0:
                 t0, t1 = 1, 0
                 b0, b1 = 2, 3
             else:

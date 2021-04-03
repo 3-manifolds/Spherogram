@@ -244,7 +244,7 @@ def braid_word(link):
     >>> fig8 = [(1,7,2,6),(5,3,6,2),(7,4,0,5),(3,0,4,1)]
     >>> L = Link(fig8)
     >>> braid_word(L)
-    [-1, 2, -1, 2]
+    [1, -2, 1, -2]
 
     >>> w = braid_word(Link('K13n1234'))
     >>> M = ClosedBraid(w).exterior()      # doctest: +SNAPPY
@@ -258,9 +258,9 @@ def braid_word(link):
     word = []
     for position, strand, over_or_under in arrows:
         if over_or_under != 0:
-            word.append(-strand-1)
-        else:
             word.append(strand+1)
+        else:
+            word.append(-strand-1)
     return word
 
 def seifert_matrix(link, return_matrix_of_types=False):

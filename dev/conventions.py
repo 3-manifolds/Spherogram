@@ -56,7 +56,7 @@ Some other ways of getting the trefoil:
 
 >>> T4 = Link(braid_closure=[1, 1, 1])
 >>> T4.signature()
-2
+-2
 
 PD code from KnotInfo, which gives -2 as the signature.
 
@@ -77,7 +77,7 @@ Versus Sage
 >>> pd = K.PD_code(min_strand_index=1)
 >>> L = Link(pd)
 >>> K.signature(), L.signature()
-(6, 6)
+(-6, -6)
 >>> K.exterior().is_isometric_to(L.exterior())
 True
 
@@ -90,7 +90,7 @@ True
 
 >>> SB = Link(braid_closure=w)
 >>> SB.signature()
-6
+-6
 
 """
 
