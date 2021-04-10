@@ -310,7 +310,7 @@ class Link(links_base.Link):
         """
         Uses Zoltán Szabó's HFK Calculator to compute the knot Floer
         homology.  This also gives the Seifert genus, whether the knot
-        fibers, etc::
+        fibers, etc:
 
         >>> K = Link('K3a1')
         >>> K.knot_floer_homology()    # doctest: +NORMALIZE_WHITESPACE
