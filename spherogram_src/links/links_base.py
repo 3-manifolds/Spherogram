@@ -404,7 +404,7 @@ class Link(object):
         self.unlinked_unknot_components = 0
         for s in crossings:
             if isinstance(s, Strand):
-                if s.is_loop:
+                if s.is_loop():
                     self.unlinked_unknot_components += 1
                 s.fuse()
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]

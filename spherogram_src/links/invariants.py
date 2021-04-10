@@ -325,6 +325,10 @@ class Link(links_base.Link):
          'total_rank': 3}
         """
         import knot_floer_homology
+        if len(self.link_components) + self.unlinked_unknot_components > 1:
+            raise ValueError('Only works for knots, this has more components')
+        if len(self.link_components) == 0 and self.unlinked_unknot_components == 1:
+            return Link(braid_closure=[1, 1, -1]).knot_floer_homology()
         return knot_floer_homology.pd_to_hfk(self)
 
     def _edge_sign(K, edge):
