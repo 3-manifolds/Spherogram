@@ -581,12 +581,17 @@ class Link(links_base.Link):
     @sage_method
     def jones_polynomial(self, variable=None, new_convention=True):
         """
-        Returns the Jones polynomial of the link, with the
-        following conventions:
+        Returns the Jones polynomial of the link, following the
+        conventions of https://arxiv.org/abs/math/0201043
 
+        In particular, it obeys the oriented skein relation::
+
+          q^2 V(L-) - q^-2 V(L+) = (q - q^-1) V(L0)
+
+        and V(n-component unlink) = (q + q^-1)^(n-1).
+        
         WARNING: The default conventions changed in SnapPy 3.0.  You
-        can partially recover the old conventions as illustrated
-        below::
+        can recover the old conventions as illustrated below::
 
           sage: L = Link('8_5')
           sage: J = L.jones_polynomial(); J
