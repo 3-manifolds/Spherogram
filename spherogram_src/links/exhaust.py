@@ -1,5 +1,4 @@
-import snappy, spherogram
-from spherogram import Strand, Crossing, Link
+from .links_base import Strand, Crossing, Link
 import random
 import collections
 
@@ -401,9 +400,6 @@ def test_morse_machine(link):
     return E.is_isometric_to(new_E)
 
 def test_many(N):
-    """
-    >>> test_many(5)
-    """
     for i in range(N):
         M = snappy.HTLinkExteriors().random()
         if M.solution_type() == 'all tetrahedra positively oriented':

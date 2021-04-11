@@ -138,11 +138,15 @@ class TestLinkFunctions(unittest.TestCase):
         self.assertEqual(self.L6a4.alexander_polynomial(),       t1*t2*t3 - t1*t2 - t1*t3 - t2*t3 + t1 + t2 + t3 - 1)
 
         # method = 'snappy'
-        self.assertEqual(self.Tref.alexander_polynomial(method='snappy'),       a**2 - a + 1)
-        self.assertEqual(self.K3_1.alexander_polynomial(method='snappy'), a**2 - a + 1)
-        self.assertEqual(self.K7_2.alexander_polynomial(method='snappy'),       3*a**2 - 5*a + 3)
-        self.assertEqual(self.K8_3.alexander_polynomial(method='snappy'),       4*a**2 - 9*a + 4)
-        self.assertEqual(self.K8_13.alexander_polynomial(method='snappy'),      2*a**4 - 7*a**3 + 11*a**2 - 7*a + 2)
+        try:
+            import snappy
+            self.assertEqual(self.Tref.alexander_polynomial(method='snappy'),       a**2 - a + 1)
+            self.assertEqual(self.K3_1.alexander_polynomial(method='snappy'), a**2 - a + 1)
+            self.assertEqual(self.K7_2.alexander_polynomial(method='snappy'),       3*a**2 - 5*a + 3)
+            self.assertEqual(self.K8_3.alexander_polynomial(method='snappy'),       4*a**2 - 9*a + 4)
+            self.assertEqual(self.K8_13.alexander_polynomial(method='snappy'),      2*a**4 - 7*a**3 + 11*a**2 - 7*a + 2)
+        except ImportError:
+            pass
         
     def testConnectedSum(self):
         repeat = 3
