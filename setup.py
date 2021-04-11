@@ -1,6 +1,5 @@
 import os, shutil, sys, sysconfig, subprocess
 from glob import glob
-from distutils.util import get_platform
 from setuptools import setup, Command, Extension
 
 
