@@ -361,6 +361,11 @@ class Link(object):
     WARNING: In SnapPy 3.0, the convention for braids changed.  See
     the "doc.pdf" file for details.
 
+    DT codes, in their many forms, are also accepted:
+
+    >>> L1 = Link('DT: [(4,6,2)]')
+    >>> L2 = Link('DT: cacbca.001')
+
     You can also access the links from the Rolfsen and
     Hoste-Thistlethwaite tables by name.
 
