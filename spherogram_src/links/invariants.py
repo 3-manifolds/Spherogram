@@ -323,6 +323,23 @@ class Link(links_base.Link):
          'seifert_genus': 1,
          'tau': 1,
          'total_rank': 3}
+
+        The homology itself is encoded by 'ranks', with the form::
+
+          (Alexander grading, Maslov grading): dimension
+
+        For example, here is the Conway knot, which has Alexander
+        polynomial 1 and genus 3:
+
+        >>> L = Link('K11n34')
+        >>> ranks = L.knot_floer_homology()['ranks']
+        >>> [(a, m) for a, m in ranks if a == 3]
+        [(3, 3), (3, 4)]
+        >>> ranks[3, 3], ranks[3, 4]
+        (1, 1)
+
+        Computation is done over F_2, though the underlying
+        knot_floer_homology module can handle other finite fields.
         """
         import knot_floer_homology
         if len(self.link_components) + self.unlinked_unknot_components > 1:
