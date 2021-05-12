@@ -1063,6 +1063,12 @@ class Link(object):
         >>> L = Link('K8n1')
         >>> L.DT_code(DT_alpha=True, flips=True)
         'DT[hahCHeAgbdf.11101000]'
+
+        In the alphabetical form, the first letter determines the
+        number C of crossings, the second the number L of link
+        components, and the next L give the number of crossings on
+        each component; subsequent letters describe each crossing with
+        'a' being 2, 'A' being -2, etc.
         """
         DT_info = [c.DT_info() for c in self.crossings]
         first_to_second = {first:second for first, second, _ in DT_info}
