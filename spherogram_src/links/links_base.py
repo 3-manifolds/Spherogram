@@ -1066,7 +1066,7 @@ class Link(object):
 
         In the alphabetical form, the first letter determines the
         number C of crossings, the second the number L of link
-        components, and the next L give the number of crossings on
+        components, and the next L gives the number of crossings on
         each component; subsequent letters describe each crossing with
         'a' being 2, 'A' being -2, etc.
         """
