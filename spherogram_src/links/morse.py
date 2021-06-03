@@ -37,7 +37,7 @@ from ..sage_helper import _within_sage
 from ..graphs import CyclicList, Digraph
 from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
-from tangles import join_strands
+from .tangles import join_strands
 if _within_sage:
     from sage.numerical.mip import MixedIntegerLinearProgram
 
@@ -80,8 +80,7 @@ def morse_via_LP(link, solver='GLPK'):
             s = CrossingStrand(c, ce.strand_index)
             t = s.opposite()
             LP.add_constraint(flat_edge[s] == flat_edge[t])
-            LP.add_constraint(
-                flat_edge[s] + large_edge[s] + large_edge[t] == 1)
+            LP.add_constraint(flat_edge[s] + large_edge[s] + large_edge[t] == 1)
 
     for i, face in enumerate(faces):
         eqn = 0
@@ -211,8 +210,8 @@ class MorseLinkDiagram(object):
                     if co not in orientations:
                         new.append(co)
                     orientations[cn] = kind
-                    orientations[co] = {
-                        'up': 'down', 'down': 'up', 'max': 'max', 'min': 'min'}[kind]
+                    orientations[co] = {'up': 'down', 'down': 'up',
+                                        'max': 'max', 'min': 'min'}[kind]
 
             current = new
 
