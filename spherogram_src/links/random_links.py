@@ -148,6 +148,11 @@ def random_link(crossings,
        largest (apparently) prime component is returned; otherwise all
        summands are returned as a list.
 
+       Warning: If ``prime_decomposition=True`` and
+       ``return_all_pieces=False``, then the link returned may have
+       fewer components than requested.  This is because a prime piece
+       can have fewer components than the link as a whole.
+
 
     Some examples:
     
