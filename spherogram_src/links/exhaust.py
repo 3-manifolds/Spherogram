@@ -2,6 +2,7 @@ from .links_base import Strand, Crossing, Link
 import random
 import collections
 
+
 def insert_space(point_dict, i):
     """
     Insert two new points which will be labeled i and i + 1.
@@ -12,6 +13,7 @@ def insert_space(point_dict, i):
             a = a + 2
         ans[a] = v
     return ans
+
 
 def remove_space(point_dict, i):
     """
@@ -24,6 +26,7 @@ def remove_space(point_dict, i):
         if a > i + 1:
             ans[a - 2] = v
     return ans
+
 
 class Event(object):
     """
@@ -38,8 +41,9 @@ class Event(object):
 
     * ('cross', a, b): Cross strand a *over* strand b.
     """
+
     def __init__(self, kind, a, b, c=None):
-        if not kind in ['cup', 'cap', 'cross']:
+        if kind not in ['cup', 'cap', 'cross']:
             raise ValueError('Event kind must be cup, cap, or cross')
         self.kind = kind
         if abs(a - b) != 1 or a < 0 or b < 0:
@@ -53,6 +57,7 @@ class Event(object):
         if self.c is not None:
             ans += (self.c,)
         return repr(ans)
+
 
 class MorseEncoding(object):
     """
@@ -81,6 +86,7 @@ class MorseEncoding(object):
     >>> U.exterior().fundamental_group().num_generators()
     1
     """
+
     def __init__(self, events):
         self.events = []
         for event in events:
@@ -107,7 +113,6 @@ class MorseEncoding(object):
 
     def link(self):
         active = dict()
-        component_starts = []
         crossings = []
         for event in self.events:
             if event.kind == 'cup':
@@ -140,6 +145,7 @@ class MorseEncoding(object):
     def __iter__(self):
         return self.events.__iter__()
 
+
 class BiDict(object):
     """
     A bijective mapping from range(n) to a set of hashable non-integers.
@@ -171,11 +177,12 @@ class BiDict(object):
     >>> sorted(bd.values())
     ['a', 'd', 'f', 'u', 'v', 'x', 'y']
     """
+
     def __init__(self, int_to_set_dict):
         self.n = n = len(int_to_set_dict)
         assert sorted(int_to_set_dict.keys()) == list(range(n))
         self.int_to_set = int_to_set_dict
-        self.set_to_int = {v:k for k, v in int_to_set_dict.items()}
+        self.set_to_int = {v: k for k, v in int_to_set_dict.items()}
 
     def __getitem__(self, index):
         if isinstance(index, int):
@@ -210,26 +217,28 @@ class BiDict(object):
             the_int = self.set_to_int[the_set]
         self.int_to_set.pop(the_int)
         self.set_to_int.pop(the_set)
+
         def shift(j):
             return j if j < the_int else j - 1
-        self.int_to_set = {shift(k):v for k, v in self.int_to_set.items()}
-        self.set_to_int = {k:shift(v) for k, v in self.set_to_int.items()}
+        self.int_to_set = {shift(k): v for k, v in self.int_to_set.items()}
+        self.set_to_int = {k: shift(v) for k, v in self.set_to_int.items()}
         self.n += -1
 
     def insert_space(self, i, n):
         """
         Shift indices upwards when necessary so that the n slots
 
-        i, i+1, ... , i + n - 1
+        i, i + 1, ... , i + n - 1
 
         are unassigned.
         """
         assert isinstance(i, int)
+
         def shift(j):
             return j if j < i else j + n
         self.n = self.n + n
-        self.int_to_set = {shift(k):v for k, v in self.int_to_set.items()}
-        self.set_to_int = {k:shift(v) for k, v in self.set_to_int.items()}
+        self.int_to_set = {shift(k): v for k, v in self.int_to_set.items()}
+        self.set_to_int = {k: shift(v) for k, v in self.set_to_int.items()}
 
     def values(self):
         return self.int_to_set.values()
@@ -246,12 +255,14 @@ class BiDict(object):
     def _check(self):
         return sorted(self.int_to_set.keys()) == list(range(self.n))
 
+
 def is_range(L):
     """
     >>> is_range([2, 3, 4]), is_range([2, 3, 5])
     (True, False)
     """
     return L == list(range(min(L), max(L) + 1))
+
 
 class Frontier(BiDict):
     def overlap_indices(self, crossing):
@@ -279,8 +290,6 @@ class Frontier(BiDict):
         good_choices = [pos for pos in possible if pos[0] == max_overlap]
         return random.choice(good_choices)
 
-def num_overlap(crossing, frontier):
-    return len([ns for ns in neighbors if ns in frontier])
 
 class MorseExhaustion(object):
     """
@@ -303,6 +312,7 @@ class MorseExhaustion(object):
     >>> me.link().exterior().fundamental_group().relators()
     ['abAB']
     """
+
     def __init__(self, link, crossing=None):
         events = []
         if crossing is None:
@@ -310,7 +320,7 @@ class MorseExhaustion(object):
         crossings = [crossing]
         events = [('cup', 0, 1), ('cup', 0, 1), ('cross', 1, 2)]
         css = crossing.crossing_strands()
-        frontier = Frontier({0:css[3], 1:css[2], 2:css[1], 3:css[0]})
+        frontier = Frontier({0: css[3], 1: css[2], 2: css[1], 3: css[0]})
         frontier_lengths = [4]
         while len(crossings) < len(link.crossings):
             overlap, i, C = frontier.biggest_all_consecutive_overlap()
@@ -320,40 +330,40 @@ class MorseExhaustion(object):
             crossings.append(C)
             if overlap == 1:
                 i = frontier[cs]
-                events.append(('cup', i+1, i+2))
+                events.append(('cup', i + 1, i + 2))
                 if cs_opp.strand_index in {1, 3}:
-                    events.append(('cross', i, i+1))
+                    events.append(('cross', i, i + 1))
                 else:
-                    events.append(('cross', i+1, i))
-                frontier.insert_space(i+1, 2)
+                    events.append(('cross', i + 1, i))
+                frontier.insert_space(i + 1, 2)
                 for s in range(3):
                     frontier[i + s] = cs_opp.rotate(-(s + 1))
             elif overlap == 2:
                 if cs_opp.strand_index in {1, 3}:
-                    events.append(('cross', i, i+1))
+                    events.append(('cross', i, i + 1))
                 else:
-                    events.append(('cross', i+1, i))
+                    events.append(('cross', i + 1, i))
                 for s in range(2):
                     frontier[i + s] = cs_opp.rotate(-(s + 1))
             elif overlap == 3:
                 if cs_opp.strand_index in {1, 3}:
-                    events.append(('cross', i, i+1))
+                    events.append(('cross', i, i + 1))
                 else:
-                    events.append(('cross', i+1, i))
-                events.append(('cap', i+1, i+2))
+                    events.append(('cross', i + 1, i))
+                events.append(('cap', i + 1, i + 2))
                 frontier.pop(i + 2)
                 frontier.pop(i)
                 frontier[i] = cs_opp.rotate(-1)
             else:
                 assert overlap == 4
                 if cs_opp.rotate().strand_index in {1, 3}:
-                    events.append(('cross', i+1, i+2))
+                    events.append(('cross', i + 1, i + 2))
                 else:
-                    events.append(('cross', i+2, i+1))
-                events += 2*[('cap', i, i+1)]
+                    events.append(('cross', i + 2, i + 1))
+                events += 2 * [('cap', i, i + 1)]
                 for a in range(4):
                     frontier.pop(i)
-            assert frontier_lengths[-1] + 4 - 2*overlap == len(frontier)
+            assert frontier_lengths[-1] + 4 - 2 * overlap == len(frontier)
             assert frontier._check()
             frontier_lengths.append(len(frontier))
 
@@ -361,13 +371,14 @@ class MorseExhaustion(object):
         self.crossings = crossings
         self.frontier_lengths = frontier_lengths
         self.events = events
-        self.width = max(frontier_lengths)//2
+        self.width = max(frontier_lengths) // 2
 
     def __repr__(self):
         return repr(self.events)
 
     def __iter__(self):
         return self.events.__iter__()
+
 
 def good_exhaustion(link, max_tries=20):
     """
@@ -391,6 +402,7 @@ def good_exhaustion(link, max_tries=20):
                 break
     return E_best
 
+
 def test_morse_machine(link):
     E = link.exterior()
     exhaust = MorseExhaustion(link, link.crossings[0])
@@ -399,11 +411,13 @@ def test_morse_machine(link):
     new_E = new_link.exterior()
     return E.is_isometric_to(new_E)
 
+
 def test_many(N):
     for i in range(N):
         M = snappy.HTLinkExteriors().random()
         if M.solution_type() == 'all tetrahedra positively oriented':
             assert test_morse_machine(M.link())
+
 
 def morse_encoding_from_zs_hfk(link):
     """
@@ -418,12 +432,14 @@ def morse_encoding_from_zs_hfk(link):
     assert zs_morse['girth'] == ans.width
     return ans
 
+
 def orient_pres_isometric(A, B):
     for iso in A.is_isometric_to(B, True):
         mat = iso.cusp_maps()[0]
         if mat.det() == 1:
             return True
     return False
+
 
 def test_zs_hfk(crossings, how_many):
     from networkx.algorithms import approximation
@@ -444,6 +460,7 @@ def test_zs_hfk(crossings, how_many):
         M1 = encoding1.link().exterior()
         assert orient_pres_isometric(E, M0)
         print(encoding0.width, encoding1.width, orient_pres_isometric(E, M1))
+
 
 if __name__ == '__main__':
     import doctest
