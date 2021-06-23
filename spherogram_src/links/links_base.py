@@ -1,4 +1,9 @@
 from __future__ import print_function
+
+import copy
+import re
+import snappy_manifolds
+from collections import OrderedDict, namedtuple
 """
 Links are made from Crossings.  The general model is that of
 a PD diagram as described in
@@ -11,13 +16,14 @@ See the file "doc.pdf" for the conventions, and the file
 from .. import graphs
 from .ordered_set import OrderedSet
 CyclicList = graphs.CyclicList
-import  string, os, sys, re, copy, pickle
-from collections import OrderedDict, namedtuple
 
-is_int_DT_exterior = re.compile(r'DT[:]? *(\[[0-9, \-\(\)]+\](?: *, *\[[01, ]+\])?)$')
+is_int_DT_exterior = re.compile(
+    r'DT[:]? *(\[[0-9, \-\(\)]+\](?: *, *\[[01, ]+\])?)$')
 is_alpha_DT_exterior = re.compile(r'DT[:\[] *([a-zA-Z]+(?:\.[01]+)?)[\]]?$')
 
 # Helper function.
+
+
 def is_iterable(obj):
     try:
         iter(obj)
@@ -25,8 +31,8 @@ def is_iterable(obj):
     except TypeError:
         return False
 
+
 # Looking up links in SnapPy's databases
-import snappy_manifolds
 DT_tables = snappy_manifolds.get_DT_tables()
 
 try:
@@ -55,6 +61,7 @@ def lookup_DT_code_by_name(name):
         except IndexError:
             continue
 
+
 class Crossing(object):
     """
     See "doc.pdf" for the conventions.  The sign of a crossing can be in {0,
@@ -78,6 +85,7 @@ class Crossing(object):
     * strand_components: Which element of the parent
     Link.link_components each input's strand belongs to.
     """
+
     def __init__(self, label=None):
         self.label = label
         self.adjacent = CyclicList([None, None, None, None])
@@ -105,7 +113,8 @@ class Crossing(object):
         """
         Rotate the incoming connections by 90*s degrees anticlockwise.
         """
-        rotate = lambda v : (v + s) % 4
+        def rotate(v):
+            return (v + s) % 4
         new_adjacent = CyclicList(self.adjacent[s:] + self.adjacent[:s])
         for i, (o, j) in enumerate(new_adjacent):
             if o != self:
@@ -114,7 +123,8 @@ class Crossing(object):
             else:
                 self.adjacent[i] = (self, (j - s) % 4)
 
-        self.directions = set( [ (rotate(a), rotate(b)) for a, b in self.directions] )
+        self.directions = set([(rotate(a), rotate(b))
+                               for a, b in self.directions])
 
     def rotate_by_90(self):
         "Effectively switches the crossing"
@@ -130,10 +140,10 @@ class Crossing(object):
         self.sign = 1 if (3, 1) in self.directions else -1
 
     def __getitem__(self, i):
-        return (self, i%4)
+        return (self, i % 4)
 
     def entry_points(self):
-        verts = [0,1] if self.sign == -1 else [0, 3]
+        verts = [0, 1] if self.sign == -1 else [0, 3]
         return [CrossingEntryPoint(self, v) for v in verts]
 
     def crossing_strands(self):
@@ -150,15 +160,16 @@ class Crossing(object):
     def info(self):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
-        print( "<%s : %s : %s : %s>" % (self.label, self.sign, [format_adjacent(a) for a in self.adjacent], self.directions) )
+        print("<%s : %s : %s : %s>" % (self.label, self.sign, [
+              format_adjacent(a) for a in self.adjacent], self.directions))
 
     def DT_info(self):
         """
         Returns (first label, second label, flip)
         """
         labels = self.strand_labels
-        over = labels[3]+1 if self.sign == 1 else labels[1] + 1
-        under = labels[0]+1
+        over = labels[3] + 1 if self.sign == 1 else labels[1] + 1
+        under = labels[0] + 1
         if self.sign == 1:
             flip = 1 if labels[0] < labels[3] else 0
         else:
@@ -176,12 +187,16 @@ class Crossing(object):
 
         return ans
 
-BasicCrossingStrand = namedtuple('BasicCrossingStrand', ['crossing', 'strand_index'])
+
+BasicCrossingStrand = namedtuple(
+    'BasicCrossingStrand', ['crossing', 'strand_index'])
+
 
 class CrossingStrand(BasicCrossingStrand):
     """
     One of the four strands of a crossing.
     """
+
     def rotate(self, s=1):
         """
         The CrossingStrand *counter-clockwise* from self.
@@ -192,7 +207,7 @@ class CrossingStrand(BasicCrossingStrand):
         """
         The CrossingStrand at the other end of the edge from self
         """
-        return CrossingStrand(* self.crossing.adjacent[self.strand_index] )
+        return CrossingStrand(* self.crossing.adjacent[self.strand_index])
 
     def next(self):
         """
@@ -223,14 +238,16 @@ class CrossingStrand(BasicCrossingStrand):
     def __repr__(self):
         return "<CS %s, %s>" % (self.crossing, self.strand_index)
 
+
 class CrossingEntryPoint(CrossingStrand):
     """
     One of the two entry points of an oriented crossing
     """
+
     def next(self):
         c, e = self.crossing, self.strand_index
         s = 1 if isinstance(c, Strand) else 2
-        return CrossingEntryPoint(*c.adjacent[ (e + s) % (2*s)])
+        return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
 
     def previous(self):
         s = 1 if isinstance(self.crossing, Strand) else 2
@@ -277,9 +294,11 @@ class LinkComponents(list):
         self.append(component)
         return component
 
+
 class Labels(OrderedDict):
     def add(self, x):
         self[x] = len(self)
+
 
 class Strand(object):
     """
@@ -287,6 +306,7 @@ class Strand(object):
     as crossings.  These are stripped by the Link class when it
     pieces things together.
     """
+
     def __init__(self, label=None):
         self.label = label
         self.adjacent = [None, None]
@@ -296,12 +316,12 @@ class Strand(object):
         Joins the incoming and outgoing strands and removes
         self from the picture.
         """
-        (a, i), (b,j) = self.adjacent
+        (a, i), (b, j) = self.adjacent
         a.adjacent[i] = (b, j)
         b.adjacent[j] = (a, i)
 
     def __getitem__(self, i):
-        return (self, i%2)
+        return (self, i % 2)
 
     def __setitem__(self, i, other):
         o, j = other
@@ -314,17 +334,20 @@ class Strand(object):
     def info(self):
         def format_adjacent(a):
             return (a[0].label, a[1]) if a else None
-        print( "<%s : %s>" % (self.label, [format_adjacent(a) for a in self.adjacent]) )
+        print("<%s : %s>" %
+              (self.label, [format_adjacent(a) for a in self.adjacent]))
 
     def is_loop(self):
         return self == self.adjacent[0][0]
 
-def enumerate_lists(lists, n=0, filter=lambda x:True):
+
+def enumerate_lists(lists, n=0, filter=lambda x: True):
     ans = []
     for L in lists:
-        ans.append([n + i for i, x in enumerate(L) if filter(n+i)])
+        ans.append([n + i for i, x in enumerate(L) if filter(n + i)])
         n += len(L)
     return ans
+
 
 class Link(object):
     """
@@ -392,7 +415,8 @@ class Link(object):
 
             # Crossings can be a PD code rather than a list of actual crossings
             if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
-                crossings, component_starts = self._crossings_from_PD_code(crossings)
+                crossings, component_starts = self._crossings_from_PD_code(
+                    crossings)
                 start_orientations = component_starts[:]
         elif braid_closure is not None:
             crossings = self._crossings_from_braid_closure(braid_closure)
@@ -400,7 +424,7 @@ class Link(object):
             crossings = []  # empty link
 
         # Make sure everything is tied up.
-        if True in [ None in c.adjacent for c in crossings]:
+        if True in [None in c.adjacent for c in crossings]:
             raise ValueError('No loose strands allowed')
 
         # Fuse the strands.  If there any components made up
@@ -440,7 +464,7 @@ class Link(object):
         >>> Link('DT[cacbca.001]')
         <Link: 1 comp; 3 cross>
         """
-        if spec.startswith('T(' ):
+        if spec.startswith('T('):
             from . import torus
             crossings = torus.torus_knot(spec).crossings
         else:
@@ -468,7 +492,6 @@ class Link(object):
 
         return crossings
 
-
     def _crossings_from_PD_code(self, code):
         labels = set()
         for X in code:
@@ -480,21 +503,22 @@ class Link(object):
         for c, X in enumerate(code):
             for i, x in enumerate(X):
                 if x in gluings:
-                    gluings[x].append( (c,i) )
+                    gluings[x].append((c, i))
                 else:
-                    gluings[x] = [(c,i)]
+                    gluings[x] = [(c, i)]
 
         if set([len(v) for v in gluings.values()]) != set([2]):
             raise ValueError("PD code isn't consistent")
 
+        component_starts = self._component_starts_from_PD(
+            code, labels, gluings)
 
-        component_starts = self._component_starts_from_PD(code, labels, gluings)
-
-        crossings = [Crossing(i) for i,d in enumerate(code)]
-        for (c,i), (d,j) in gluings.values():
+        crossings = [Crossing(i) for i, d in enumerate(code)]
+        for (c, i), (d, j) in gluings.values():
             crossings[c][i] = crossings[d][j]
 
-        component_starts = [crossings[c].crossing_strands()[i] for (c,i) in component_starts]
+        component_starts = [crossings[c].crossing_strands()[i]
+                            for (c, i) in component_starts]
         return crossings, component_starts
 
     def _component_starts_from_PD(self, code, labels, gluings):
@@ -506,13 +530,13 @@ class Link(object):
             if c1 == c2:
                 # loop at strand, take next strand to be next smallest label
                 # on crossing
-                next_label = min(set(code[c1])-set([m]))
+                next_label = min(set(code[c1]) - set([m]))
                 direction = (c1, code[c1].index(next_label))
                 starts.append(direction)
             else:
                 # strand connects two different crossings, take next strand to
                 # be next smallest label on two 'opposite' strands
-                j1, j2 = (index1+2)%4, (index2+2)%4
+                j1, j2 = (index1 + 2) % 4, (index2 + 2) % 4
                 l1, l2 = code[c1][j1], code[c2][j2]
                 if l1 < l2:
                     next_label = l1
@@ -531,8 +555,8 @@ class Link(object):
             while next_label != m:
                 labels.remove(next_label)
                 g = gluings[next_label]
-                other_direction = g[1-g.index(direction)]
-                direction = (other_direction[0], (other_direction[1]+2)%4)
+                other_direction = g[1 - g.index(direction)]
+                direction = (other_direction[0], (other_direction[1] + 2) % 4)
                 next_label = code[direction[0]][direction[1]]
 
         return starts
@@ -560,12 +584,12 @@ class Link(object):
         if num_strands is None:
             num_strands = max([abs(a) for a in word]) + 1
 
-        strands = [Strand('s'+repr(i)) for i in range(num_strands)]
-        current = [(x,1) for x in strands]
+        strands = [Strand('s' + repr(i)) for i in range(num_strands)]
+        current = [(x, 1) for x in strands]
         crossings = []
 
         for i, a in enumerate(word):
-            C = Crossing('x'+repr(i))
+            C = Crossing('x' + repr(i))
             crossings.append(C)
             if a < 0:
                 t0, t1 = 1, 0
@@ -590,9 +614,9 @@ class Link(object):
     def all_crossings_oriented(self):
         return len([c for c in self.crossings if c.sign == 0]) == 0
 
-    def _build(self, start_orientations=None, component_starts = None):
-        self._orient_crossings(start_orientations = start_orientations)
-        self._build_components(component_starts = component_starts)
+    def _build(self, start_orientations=None, component_starts=None):
+        self._orient_crossings(start_orientations=start_orientations)
+        self._build_components(component_starts=component_starts)
 
     def _rebuild(self, same_components_and_orientations=False):
         if same_components_and_orientations:
@@ -601,18 +625,20 @@ class Link(object):
         for c in self.crossings:
             c._clear()
         if same_components_and_orientations:
-            self._build(start_orientations=start_css, component_starts=start_css)
+            self._build(start_orientations=start_css,
+                        component_starts=start_css)
         else:
             self._build()
 
-    def _orient_crossings(self, start_orientations = None):
+    def _orient_crossings(self, start_orientations=None):
         if self.all_crossings_oriented():
             return
-        if start_orientations == None:
+        if start_orientations is None:
             start_orientations = list()
-        remaining = OrderedSet( [ (c, i) for c in self.crossings for i in range(4) if c.sign == 0] )
+        remaining = OrderedSet(
+            [(c, i) for c in self.crossings for i in range(4) if c.sign == 0])
         while len(remaining):
-            if len(start_orientations)>0:
+            if len(start_orientations) > 0:
                 c, i = start = start_orientations.pop()
             else:
                 c, i = start = remaining.pop()
@@ -621,8 +647,8 @@ class Link(object):
             while not finished:
                 d, j = c.adjacent[i]
                 d.make_tail(j)
-                remaining.discard( (c,i) ), remaining.discard( (d,j) )
-                c, i = d, (j+2) % 4
+                remaining.discard((c, i)), remaining.discard((d, j))
+                c, i = d, (j + 2) % 4
                 finished = (c, i) == start
 
         for c in self.crossings:
@@ -682,7 +708,8 @@ class Link(object):
         if component_starts is not None:
             component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
-        remaining, components = OrderedSet( self.crossing_entries() ), LinkComponents()
+        remaining, components = OrderedSet(
+            self.crossing_entries()), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
@@ -712,7 +739,7 @@ class Link(object):
 
             component = components.add(d)
             for c in component:
-                labels.add( c )
+                labels.add(c)
             others = []
             for c in component:
                 c.label_crossing(len(components) - 1, labels)
@@ -746,11 +773,8 @@ class Link(object):
             for c in component:
                 cs0 = CrossingStrand(c.crossing, c.strand_index)
                 cs1 = cs0.opposite()
-                e = G.add_edge(cs0.crossing, cs1.crossing)
+                G.add_edge(cs0.crossing, cs1.crossing)
         return G
-
-    def copy(self):
-        return pickle.loads(pickle.dumps(self))
 
     def is_planar(self):
         """
@@ -789,7 +813,7 @@ class Link(object):
             components = self.split_link_diagram()
             return all(C.is_planar() for C in components)
         v = len(self.crossings)
-        assert 2*v == len(G.edges)
+        assert 2 * v == len(G.edges)
         euler = -v + len(self.faces())
         return euler == 2 or v == 0
 
@@ -823,7 +847,6 @@ class Link(object):
                 over = next_over
         return True
 
-
     def faces(self):
         """
         The faces are the complementary regions of the link diagram. Each face
@@ -835,7 +858,8 @@ class Link(object):
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.
         """
-        corners = OrderedSet([ CrossingStrand(c,i) for c in self.crossings for i in range(4) ])
+        corners = OrderedSet([CrossingStrand(c, i)
+                              for c in self.crossings for i in range(4)])
         faces = []
         while len(corners):
             face = [corners.pop()]
@@ -927,7 +951,7 @@ class Link(object):
         elif mode == 'global':
             return simplify.pickup_simplify(self, type_III_limit)
 
-    def backtrack(self, steps=10, prob_type_1 = .3, prob_type_2 = .3):
+    def backtrack(self, steps=10, prob_type_1=.3, prob_type_2=.3):
         """
         Performs a sequence of Reidemeister moves which increase or maintain
         the number of crossings in a diagram.  The number of such
@@ -944,8 +968,8 @@ class Link(object):
         29
         """
         from . import simplify
-        simplify.backtrack(self,num_steps = steps, prob_type_1 = prob_type_1, prob_type_2 = prob_type_2)
-
+        simplify.backtrack(self, num_steps=steps,
+                           prob_type_1=prob_type_1, prob_type_2=prob_type_2)
 
     def sublink(self, components):
         """
@@ -1010,7 +1034,6 @@ class Link(object):
 
         return type(self)(final_crossings, check_planarity=False)
 
-
     def __len__(self):
         return len(self.crossings)
 
@@ -1035,11 +1058,11 @@ class Link(object):
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         else:
-            PD = [tuple(x) for x in PD ]
+            PD = [tuple(x) for x in PD]
         return PD
 
     def _oriented_PD_code(self, KnotTheory=False, min_strand_index=0):
-        PD = {c: [-1,-1,-1,-1] for c in self.crossings}
+        PD = {c: [-1, -1, -1, -1] for c in self.crossings}
 
         label = min_strand_index
         for comp in self.link_components:
@@ -1052,7 +1075,7 @@ class Link(object):
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         else:
-            PD = [tuple(x) for x in PD ]
+            PD = [tuple(x) for x in PD]
         return PD
 
     def DT_code(self, DT_alpha=False, flips=False):
@@ -1071,18 +1094,21 @@ class Link(object):
         'a' being 2, 'A' being -2, etc.
         """
         DT_info = [c.DT_info() for c in self.crossings]
-        first_to_second = {first:second for first, second, _ in DT_info}
-        first_to_flip = {first:flip for first, _, flip in DT_info}
-        odd_labels = enumerate_lists(self.link_components, n=1, filter=lambda x:x%2==1)
-        DT = [ tuple([first_to_second[x] for x in component]) for component in odd_labels]
+        first_to_second = {first: second for first, second, _ in DT_info}
+        first_to_flip = {first: flip for first, _, flip in DT_info}
+        odd_labels = enumerate_lists(
+            self.link_components, n=1, filter=lambda x: x % 2 == 1)
+        DT = [tuple([first_to_second[x] for x in component])
+              for component in odd_labels]
         the_flips = [first_to_flip[x] for x in sum(odd_labels, [])]
 
         if DT_alpha:
             if len(self) > 52:
                 raise ValueError("Too many crossing for alphabetic DT code")
             DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
-            init_data = [len(self), len(DT)] +  [len(c) for c in DT]
-            DT = ''.join([DT_alphabet[x] for x in init_data] + [DT_alphabet[x>>1] for x in sum(DT, tuple())])
+            init_data = [len(self), len(DT)] + [len(c) for c in DT]
+            DT = ''.join([DT_alphabet[x] for x in init_data] +
+                         [DT_alphabet[x >> 1] for x in sum(DT, tuple())])
             if flips:
                 DT += '.' + ''.join([repr(flip) for flip in the_flips])
             return "DT[" + DT + "]"
@@ -1093,10 +1119,13 @@ class Link(object):
                 return DT
 
     def peer_code(self):
-        peer = dict( [ c.peer_info() for c in self.crossings] )
-        even_labels = enumerate_lists(self.link_components, n=0, filter=lambda x:x%2==0)
-        ans = '[' + ','.join([repr([peer[c][0] for c in comp])[1:-1].replace(',', '') for comp in even_labels])
-        ans += '] / ' + ' '.join([ ['_', '+', '-'][peer[c][1]] for c in sum(even_labels, [])])
+        peer = dict([c.peer_info() for c in self.crossings])
+        even_labels = enumerate_lists(
+            self.link_components, n=0, filter=lambda x: x % 2 == 0)
+        ans = '[' + ','.join([repr([peer[c][0] for c in comp])
+                              [1:-1].replace(',', '') for comp in even_labels])
+        ans += '] / ' + ' '.join([['_', '+', '-'][peer[c][1]]
+                                  for c in sum(even_labels, [])])
         return ans
 
     def KLPProjection(self):
@@ -1134,7 +1163,8 @@ class Link(object):
 
     def exterior(self):
         # This method is monkey-patched by snappy
-        raise RuntimeError("SnapPy doesn't seem to be available.  Try: from snappy import *")
+        raise RuntimeError(
+            "SnapPy doesn't seem to be available.  Try: from snappy import *")
 
     def __repr__(self):
         name = ' ' + self.name if self.name else ''
@@ -1148,9 +1178,9 @@ class Link(object):
         >>> K.writhe()
         0
         """
-        writhe_value=0
+        writhe_value = 0
         for i in range(len(self.crossings)):
-                writhe_value+=self.crossings[i].sign
+            writhe_value += self.crossings[i].sign
         return writhe_value
 
     def linking_number(self):
@@ -1161,7 +1191,7 @@ class Link(object):
         """
         n = 0
         for s in self.link_components:
-            tally = [0]*len(self.crossings)
+            tally = [0] * len(self.crossings)
             for c in s:
                 for i, x in enumerate(self.crossings):
                     if c[0] == x:
@@ -1169,7 +1199,7 @@ class Link(object):
             for i, m in enumerate(tally):
                 if m == 1:
                     n += (self.crossings)[i].sign
-        n = n/4
+        n = n / 4
         return n
 
     def _pieces(self):
@@ -1194,7 +1224,7 @@ class Link(object):
                     pieces[s].append(y.adjacent[l][0][3])
                 if y.adjacent[l][1] == 3:
                     pieces[s].append(y.adjacent[l][0][1])
-                lnew = (y.adjacent[l][1] + 2)%4
+                lnew = (y.adjacent[l][1] + 2) % 4
                 y = y.adjacent[l][0]
                 l = lnew
         return pieces
@@ -1208,18 +1238,18 @@ class Link(object):
         >>> K.connected_sum(K)
         <Link: 1 comp; 8 cross>
         """
-        first=self.copy()
-        second=other_knot.copy()
-        (f1,i1) = (first.crossings[0],0)
-        (f2,i2) = f1.adjacent[i1]
-        (g1,j1) = (second.crossings[0],0)
-        (g2,j2) = g1.adjacent[j1]
-        f1[i1]=g2[j2]
-        f2[i2]=g1[j1]
-        for c in first.crossings: #Indicate which crossings came from which knot.
-            c.label=(c.label, 1)
+        first = self.copy()
+        second = other_knot.copy()
+        (f1, i1) = (first.crossings[0], 0)
+        (f2, i2) = f1.adjacent[i1]
+        (g1, j1) = (second.crossings[0], 0)
+        (g2, j2) = g1.adjacent[j1]
+        f1[i1] = g2[j2]
+        f2[i2] = g1[j1]
+        for c in first.crossings:  # Indicate which crossings came from which knot.
+            c.label = (c.label, 1)
         for c in second.crossings:
-            c.label=(c.label, 2)
+            c.label = (c.label, 2)
             first.crossings.append(c)
         return type(self)(first.crossings)
 
@@ -1233,19 +1263,19 @@ class Link(object):
         >>> K.PD_code() == copy.PD_code()
         True
         """
-
         if recursively:
             return copy.deepcopy(self)
         else:
             crossings = [Crossing(c.label) for c in self.crossings]
             old_to_new = dict(zip(self.crossings, crossings))
-            loose_strands = set([(n,i) for n in range(len(crossings)) for i in range(4)])
+            loose_strands = set(
+                [(n, i) for n in range(len(crossings)) for i in range(4)])
             while loose_strands:
                 n, i = loose_strands.pop()
-                adj_c, adj_i  = self.crossings[n].adjacent[i]
+                adj_c, adj_i = self.crossings[n].adjacent[i]
                 adj_n = self.crossings.index(adj_c)
                 crossings[n][i] = crossings[adj_n][adj_i]
-                loose_strands.remove((adj_n,adj_i))
+                loose_strands.remove((adj_n, adj_i))
 
             # Orient the new crossings.
             for old, new in old_to_new.items():
@@ -1260,11 +1290,11 @@ class Link(object):
                 crossing = old_to_new[old_crossing]
                 component_starts.append(
                     CrossingEntryPoint(crossing, entry_point))
-            link = self.__class__(crossings=crossings, check_planarity=False, build=False)
+            link = self.__class__(crossings=crossings,
+                                  check_planarity=False, build=False)
             link._build(component_starts=component_starts)
             link.name = self.name
             return link
-
 
     def mirror(self):
         """
@@ -1296,7 +1326,7 @@ class Link(object):
                 B_new[b_new] = convert(A, a)
 
         new_link = type(self)(list(new_crossings.values()),
-                        check_planarity=False, build=False)
+                              check_planarity=False, build=False)
 
         # Build the link components, starting in the same place as
         # the original link.
@@ -1304,7 +1334,7 @@ class Link(object):
         component_starts = []
         for component in self.link_components:
             C_new, c_new = convert(*component[0])
-            component_starts.append( CrossingEntryPoint(C_new, c_new) )
+            component_starts.append(CrossingEntryPoint(C_new, c_new))
 
         new_link._build_components(component_starts)
         return new_link
@@ -1324,7 +1354,7 @@ class Link(object):
         L = self.copy()
         for C in L.crossings:
             a, b, c = C.DT_info()
-            if a*b < 0:
+            if a * b < 0:
                 C.rotate_by_90()
         L._rebuild()
         return L
@@ -1362,7 +1392,8 @@ class Link(object):
         >>> len(L.overstrands()[0])
         3
         """
-        ceps = OrderedSet([cep for cep in self.crossing_entries() if cep.is_over_crossing()])
+        ceps = OrderedSet(
+            [cep for cep in self.crossing_entries() if cep.is_over_crossing()])
         strands = []
         while ceps:
             cep = ceps.pop()
@@ -1386,13 +1417,15 @@ class Link(object):
                 strand.extend(forward_strand)
                 strands.append(strand)
                 ceps = ceps - OrderedSet(strand)
-        return sorted(strands, key = len, reverse=True)
+        return sorted(strands, key=len, reverse=True)
 
 # ---- building the link exterior if SnapPy is present --------
+
 
 def vertex_to_KLP(c, v):
     i = v if c.sign == 1 else (v - 1) % 4
     return ['Ybackward', 'Xforward', 'Yforward', 'Xbackward'][i]
+
 
 class KLPCrossing(object):
     """
@@ -1400,15 +1433,16 @@ class KLPCrossing(object):
     of the strands is fixed in the master picture but
     which strand is on top varies.
     """
+
     def __init__(self, c):
-        self.adjacent = adjacent = 4*[None]
+        self.adjacent = 4 * [None]
         self.index = c._KLP_index
         if c.sign == 1:
             strands, self.sign = [3, 0], 'R'
         else:
-            strands, self.sign = [0,1], 'L'
+            strands, self.sign = [0, 1], 'L'
 
-        components = [ c.strand_components[s] for s in strands]
+        components = [c.strand_components[s] for s in strands]
         self.Xcomponent, self.Ycomponent = components
         self.strand, self.neighbor = {}, {}
         for v in range(4):
@@ -1421,6 +1455,7 @@ class KLPCrossing(object):
             return getattr(self, index)
         vertex, info_type = index.split('_')
         return getattr(self, info_type)[vertex]
+
 
 def python_KLP(L):
     vertices = list(L.crossings)
