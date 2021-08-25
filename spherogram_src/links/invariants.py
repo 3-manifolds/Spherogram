@@ -368,8 +368,13 @@ class Link(links_base.Link):
         >>> gens, diff = data['generators'], data['differentials']
         >>> vert = {(i,j):diff[i, j] for i, j in diff
         ...                          if gens[i][1] == gens[j][1] + 1}
-        >>> len(vert)
-        39
+
+        sage: from sage.all import matrix, GF
+        sage: M = matrix(GF(31991), len(gens), len(gens), vert, sparse=True)
+        sage: M*M == 0
+        True
+        sage: M.right_kernel().rank() - M.rank()
+        1
 
         """
         import knot_floer_homology
