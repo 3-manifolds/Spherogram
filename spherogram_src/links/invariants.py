@@ -364,12 +364,12 @@ class Link(links_base.Link):
         For example, to compute the vertical differential, whose homology
         is HFhat(S^3), you can do:
 
-        >>> data = pd_to_hfk(pd_code, complex=True)
+        >>> data = L.knot_floer_homology(prime=31991, complex=True)
         >>> gens, diff = data['generators'], data['differentials']
         >>> vert = {(i,j):diff[i, j] for i, j in diff
         ...                          if gens[i][1] == gens[j][1] + 1}
         >>> len(vert)
-        2
+        39
 
         """
         import knot_floer_homology
@@ -377,7 +377,7 @@ class Link(links_base.Link):
             raise ValueError('Only works for knots, this has more components')
         if len(self.link_components) == 0 and self.unlinked_unknot_components == 1:
             return Link(braid_closure=[1, 1, -1]).knot_floer_homology()
-        return knot_floer_homology.pd_to_hfk(self)
+        return knot_floer_homology.pd_to_hfk(self, prime=prime, complex=complex)
 
     def _edge_sign(K, edge):
         "Returns the sign (+/- 1) associated to given edge in the black graph."
