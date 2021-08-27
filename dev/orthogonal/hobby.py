@@ -39,15 +39,18 @@ def solve_cyclic (a, b, c, v):
         w.insert(1, (v1-a0*w[0] - c1*w[1])/b1)
         return w
 
-def polar(r, phi):
-    return vector(RR, [r*cos(phi), r*sin(phi)])
 
-def to_polar((x,y)):
-    r = sqrt(x**2+y**2)
-    phi = 0 if r == 0 else RR(math.atan2(y,x))
+def polar(r, phi):
+    return vector(RR, [r * cos(phi), r * sin(phi)])
+
+
+def to_polar(xy):
+    x, y = xy
+    r = sqrt(x**2 + y**2)
+    phi = 0 if r == 0 else RR(math.atan2(y, x))
     return r, phi
-                  
-    
+
+
 def good_bezier(p1, angle1, angle2, p2, tension1=1.0, tension2=1.0):
     """
     Compute a nice curve from p1 to p2 with specified tangents

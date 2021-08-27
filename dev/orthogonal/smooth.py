@@ -43,12 +43,14 @@ def smooth_segment2(seg):
 
 sq = matrix(RR, [(0,0), (1,0), (1,1), (0, 1)]).rows()
 
+
 def smooth(polylines):
     return sum( [ smooth_segment2(s) for s in polylines ], Graphics())
 
+
 def hobby_smooth(points):
     dirs = hobby.hobby_cyclic_dirs(points)
-    print dirs
+    print(dirs)
     path = []
     for k in range(len(points)-1):
         (c0, c1) = hobby.good_bezier(points[k],dirs[k],dirs[k+1],points[k+1])
@@ -61,17 +63,18 @@ def hobby_smooth(points):
     return path
             
 
+
 def test_gb(p1, a1, a2, p2, t1=1.0, t2=1.0):
     c0, c1 = hobby.good_bezier(p1, a1, a2, p2, t1, t2)
-
     G = bezier_path([[p1, c0, c1, p2]]) + point(c0) + point(c1)
     G.set_aspect_ratio(1.0)
     return G
 
+
 def test_hd(points, t):
     #points = matrix(RR, [(0,0), (1, 1), (2, -2), (3, 0), (2, 3), (0, 2)]).rows()
-    dirs = hobby.hobby_dirs(points, 0, RR.pi()/2)
-    print dirs
+    dirs = hobby.hobby_dirs(points, 0, RR.pi() / 2)
+    print(dirs)
     path = []
     for k in range(len(points)-1):
         (c0, c1) = hobby.good_bezier(points[k],dirs[k],dirs[k+1],points[k+1], t, t)
@@ -85,4 +88,3 @@ def test_hd(points, t):
     G = point2d(points) + bezier_path(path, color='green')
     G.set_aspect_ratio(1.0)
     return G
-    
