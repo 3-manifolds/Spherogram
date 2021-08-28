@@ -1,9 +1,10 @@
-from __future__ import print_function
 from . import links, tangles
 Crossing, Link, RationalTangle, IdentityBraid = links.Crossing, links.Link, tangles.RationalTangle, tangles.IdentityBraid
-import os, sys, re
+import os
+import sys
+import re
 
-#----- Some basic tests, constructing links by hand -------
+# ----- Some basic tests, constructing links by hand -------
 
 def figure8():
     a, b, c, d = [Crossing(x) for x in 'abcd']

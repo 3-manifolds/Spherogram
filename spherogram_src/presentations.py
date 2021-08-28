@@ -1,4 +1,3 @@
-from __future__ import print_function
 from .graphs import ReducedGraph, Digraph, Poset
 from collections import deque
 import operator

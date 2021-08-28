@@ -1,6 +1,5 @@
-from __future__ import range
-
-import snappy, sys
+import snappy
+import sys
 sys.path.append('/Users/dunfield/s/dev')
 import spherogram.graphs as graphs
 from spherogram import DTcodec
