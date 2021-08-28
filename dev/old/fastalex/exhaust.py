@@ -303,7 +303,7 @@ def test():
     def get_data():
         file = open('knot_widths.csv', 'w')
         for i in range(3, 1001):
-            width = good_exhaustion(knot(i))[0]//2
+            width = good_exhaustion(knot(i))[0] // 2
             file.write('%d, %d\n' % (i, width))
             file.flush()
 
@@ -314,16 +314,15 @@ def test():
         p0 = p1.parent()(p0)
         ans = p0 == p1
         if not ans:
-            print p0
-            print p1
-            print
+            print(p0)
+            print(p1)
+            print()
         return ans
 
     def test_knots():
         for M in snappy.LinkExteriors(cusps=1):
-            print M.name(), compare_one_knot(M.link())
+            print(M.name(), compare_one_knot(M.link()))
 
     def time_test_knot(i):
         K = knot(i)
         alexander(K)
-

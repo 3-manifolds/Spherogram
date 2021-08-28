@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import networkx as nx
 
 
@@ -642,7 +640,7 @@ class ReducedGraph(Graph):
                 return []
             return majors
         major_set = set(majors)
-        for n in xrange(1,len(majors)):
+        for n in range(1, len(majors)):
             for v in majors[:n]:
                 pair = (v, majors[n])
                 components = self.components(deleted_vertices=pair)

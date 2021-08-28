@@ -1,4 +1,3 @@
-from __future__ import print_function
 import spherogram, spherogram.links, spherogram.links.test
 import spherogram.links.simplify, spherogram.links.morse
 import spherogram.links.seifert

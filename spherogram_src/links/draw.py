@@ -1,4 +1,3 @@
-from __future__ import print_function
 """
 Plotting pictures of links via Andrew Bartholomew's "Draw programme"
 http://www.layer8.co.uk/maths/draw/index.htm

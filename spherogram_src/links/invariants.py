@@ -136,13 +136,13 @@ class Link(links_base.Link):
     def knot_group(self):
         """
         Computes the knot group using the Wirtinger presentation.
+
         Returns a finitely presented group::
 
            sage: K = Link('3_1')
            sage: G = K.knot_group()
            sage: type(G)
            <class 'sage.groups.finitely_presented.FinitelyPresentedGroup_with_category'>
-
         """
         n = len(self.crossings)
         F = FreeGroup(n)
@@ -156,19 +156,20 @@ class Link(links_base.Link):
                     if q[0] == z:
                         if t == 0:
                             j = m
-                        elif t == len(p)-1:
+                        elif t == len(p) - 1:
                             i = m
                         else:
                             k = m
-            i+=1; j+=1; k+=1
+            i += 1
+            j += 1
+            k += 1
             if z.sign > 0:
                 r = F([-k,i,k,-j])
             if z.sign < 0:
                 r = F([k,i,-k,-j])
             rels.append(r)
 
-        G = F/rels
-        return G
+        return F / rels
 
     @sage_method
     def alexander_matrix(self, mv=True):

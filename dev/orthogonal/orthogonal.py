@@ -109,14 +109,16 @@ def kitty_corner(turns):
 
 LabeledFaceVertex = namedtuple('LabeledFaceVertex', ['index', 'kind', 'turn'])
 
+
 class OrthogonalFace(CyclicList):
     """
     A face of an OrthogonalRep oriented *clockwise* and stored as a list of
     pairs (edge, vertex) where vertex is gives the *clockwise* orientation
     of edge.
     """
-    def __init__(self, graph, (edge, vertex)):
-        self.append( (edge, vertex) )
+    def __init__(self, graph, edge_vertex):
+        edge, vertex = edge_vertex
+        self.append((edge, vertex))
         while True:
             edge, vertex = self[-1]
             edge = graph.next_edge_at_vertex(edge, vertex)
@@ -504,19 +506,19 @@ class OrthogonalLinkDiagram(list):
         For each edge in a face, assign it one of four possible orientations:
         "left", "right", "up", "down".
         """
-        orientations = {self[0][0]:'right'}
+        orientations = {self[0][0]: 'right'}
         N = self.face_network.to_undirected()
         G = spherogram.graphs.Graph(N.edges())
-#        N.remove_node('s'), N.remove_node('t')
-#        for i in networkx.traversal.dfs_preorder_nodes(N, 0):
+        #        N.remove_node('s'), N.remove_node('t')
+        #        for i in networkx.traversal.dfs_preorder_nodes(N, 0):
         G.remove_vertex('s'), G.remove_vertex('t')
         for i in G.depth_first_search(0):
             F = self[i]
             for edge in F:
-                if orientations.has_key(edge):
+                if edge in orientations:
                     new_orientations = F.orient_edges(edge, orientations[edge])
                     for e, dir in new_orientations.iteritems():
-                        if orientations.has_key(e):
+                        if e in orientations:
                             assert orientations[e] == dir
                         else:
                             orientations[e] = dir
@@ -641,8 +643,10 @@ spherogram.Link.draw = orthogonal_draw
 def link_from_manifold(manifold):
     return DTcodec(manifold.DT_code()).link()
 
+
 def random_link():
     return link_from_manifold(HTLinkExteriors.random())
+
 
 def check_faces(link):
     faces = link.faces()
@@ -650,17 +654,21 @@ def check_faces(link):
     assert set(Counter(sum( faces, [] )).values()) == set([1])
     assert link.is_planar()
 
+
 def test_face_method(N):
-    for i in xrange(N):
+    for i in range(N):
         check_faces(random_link())
+
 
 def element(S):
     return list(S)[0]
+
 
 def appears_hyperbolic(M):
     acceptable = ['all tetrahedra positively oriented',
                   'contains negatively oriented tetrahedra']
     return M.solution_type() in acceptable and M.volume() > 1.0 
+
 
 def test(manifold_with_DT, plink_manifold=None):
     L = link_from_manifold(manifold_with_DT)
@@ -670,15 +678,17 @@ def test(manifold_with_DT, plink_manifold=None):
     PM.LE.load_from_spherogram(L, None, False)
     PM.LE.callback()
     if appears_hyperbolic(PM):
-        assert abs(manifold_with_DT.volume() - PM.volume())  < 0.000001
+        assert abs(manifold_with_DT.volume() - PM.volume()) < 0.000001
         assert manifold_with_DT.is_isometric_to(PM)
+
 
 def big_test():
     PM = snappy.Manifold()
     while 1:
         M = snappy.HTLinkExteriors.random()
-        print 'Testing Manifold:', M
+        print('Testing Manifold:', M)
         ans = test(M, PM)
+
 
 if __name__ == '__main__':
     unknot = RationalTangle(1).numerator_closure()

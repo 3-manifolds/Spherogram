@@ -26,22 +26,23 @@ from spherogram.links.links import CrossingStrand, Crossing, Strand
 from orthogonal import basic_topological_numbering
 from sage.numerical.mip import MixedIntegerLinearProgram
 
+
 def bridge_LP(link):
     """
     An integer linear program which computes the bridge number of the given
-    link diagram.   
+    link diagram.
     """
     LP = MixedIntegerLinearProgram(maximization=False)
 
     # Near a crossing, the level sets of the height function are either
     # horizontal or vertical, and so there are two flat corners which
-    # must be opposite.  
+    # must be opposite.
     hor_cross = LP.new_variable(binary=True)
     vert_cross = LP.new_variable(binary=True)
 
     # We add a dummy vertex in the middle of each edge so it can bend.
     # The corners here must either both be flat or just one is large.  For
-    # the corner to large, *both* flat_edge and large_edge must be 1.  
+    # the corner to large, *both* flat_edge and large_edge must be 1.
     flat_edge = LP.new_variable(binary=True)
     large_edge = LP.new_variable(binary=True)
 
@@ -50,7 +51,7 @@ def bridge_LP(link):
     faces = link.faces()
     LP.add_constraint(sum(exterior[i] for i, F in enumerate(faces)) == 1)
 
-    # Now for the main constraints 
+    # Now for the main constraints
     for c in link.crossings:
         LP.add_constraint(hor_cross[c] + vert_cross[c] == 1)
         for ce in c.entry_points():
@@ -72,26 +73,27 @@ def bridge_LP(link):
     return bridge//2, LP.get_values([hor_cross, vert_cross, flat_edge, large_edge, exterior])
 
 
-
-
 def have_positive_value(D):
     return [k for k, v in D.iteritems() if v > 0]
 
+
 class ImmutableValueDict(dict):
     def __setitem__(self, index, value):
-        if self.has_key(index):
+        if index in self:
             if self[index] != value:
                 raise ValueError("Can't change an assigned value")
         else:
             dict.__setitem__(self, index, value)
 
+
 def pairing_to_permuation(pairing):
     points = sorted(sum(pairing, tuple()))
     assert points == range(len(points))
-    ans = len(points)*[None]
+    ans = len(points) * [None]
     for x, y in pairing:
         ans[x], ans[y] = y, x
     return ans
+
 
 class UpwardSnake(tuple):
     """
@@ -121,7 +123,7 @@ class UpwardSnake(tuple):
         #assert heights[-1] == link.heights[ans.final.crossing]
         ans.heights = heights
         return ans
-        
+
 class UpwardLinkDiagram(object):
     def __init__(self, link):
         self.link = link = link.copy()
@@ -161,20 +163,20 @@ class UpwardLinkDiagram(object):
                 for cn, kind in expand_orientation(cs, orientations[cs]):
                     co = cn.opposite()
                     if cn in self.bends or co in self.bends:
-                        kind = {'up':'min', 'down':'max'}[kind]
-                    if not orientations.has_key(co):
+                        kind = {'up': 'min', 'down': 'max'}[kind]
+                    if co not in orientations:
                         new.append(co)
                     orientations[cn] = kind
                     orientations[co] = {'up':'down', 'down':'up', 'max':'max', 'min':'min'}[kind]
 
             current = new
-                    
+
         self.orientations = orientations
 
 
     def strands_below(self, crossing):
         """
-        The two upward strands below crossing.  
+        The two upward strands below crossing.
         """
         kinds = self.orientations
         a = CrossingStrand(crossing, 0)
@@ -191,7 +193,7 @@ class UpwardLinkDiagram(object):
         else:
             assert self.orientations[b] in ['up', 'min']
             return b
-                    
+
     def digraph(self):
         G = Digraph()
         kinds = self.orientations
@@ -201,7 +203,7 @@ class UpwardLinkDiagram(object):
                 G.add_edge(cs, c), G.add_edge(cs, d)
             elif kinds[cs] == 'max':
                 G.add_edge(c, cs), G.add_edge(d, cs)
-                
+
         for cs, kind in kinds.iteritems():
             if kind == 'up':
                 c, d  = cs.crossing, cs.opposite().crossing
@@ -227,7 +229,7 @@ class UpwardLinkDiagram(object):
             self.strand_to_snake[snake.final] = snake
 
         self.pack_snakes()
-        
+
 
     def pack_snakes(self):
         snakes, to_snake = self.snakes, self.strand_to_snake
@@ -239,7 +241,7 @@ class UpwardLinkDiagram(object):
         for b in self.bends:
             a = b.opposite()
             S.add_edge(to_snake[a], to_snake[b])
-            
+
         snake_pos = basic_topological_numbering(S)
         self.S, self.snake_pos = S, snake_pos
         heights = self.heights
@@ -275,7 +277,7 @@ class UpwardLinkDiagram(object):
             cross = (i, j) if a.entry_point % 2 == 1 else (j, i)
             cross_data.append( (self.heights[c], cross) )
         cross_data.sort()
-        
+
         def bottom_pairing(snake):
             cs = snake[0]
             return tuple(sorted([to_index(cs), to_index(cs.opposite())]))
@@ -288,16 +290,16 @@ class UpwardLinkDiagram(object):
             return tuple(sorted([to_index(cs), to_index(cn)]))
 
         top = set(top_pairing(snake) for snake in self.snakes)
-            
+
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
-                
+
 
 class BridgeDiagram(object):
     def __init__(self, bottom, crossings, top):
         self.bottom, self.crossings, self.top = bottom, crossings, top
         self.width = 2*len(bottom)
         self.name = 'None'
-        
+
     def link(self):
         crossings = []
         curr_endpoints = self.width*[None]
@@ -316,7 +318,7 @@ class BridgeDiagram(object):
             else:
                 ins, outs = (0, 1), (3,2)
                 a, b = b, a
-                        
+
             c[ins[0]] = curr_endpoints[a]
             c[ins[1]] = curr_endpoints[b]
             curr_endpoints[a] = (c, outs[0])
@@ -340,13 +342,13 @@ class BridgeDiagram(object):
         return bohua_HF.compute_HF(self.bohua_code())
 
     def is_proper(self):
-        return max( abs(a-b) for a, b in self.crossings) < 2
-        
-                    
-def bridge(link, tries = 20, check = True):
+        return max(abs(a - b) for a, b in self.crossings) < 2
+
+
+def bridge(link, tries=20, check=True):
     if isinstance(link, (snappy.Triangulation, snappy.Manifold)):
         link = link_from_manifold(link)
-    for i in xrange(tries):
+    for i in range(tries):
         UL = UpwardLinkDiagram(link)
         if UL.is_bridge():
             B = UL.bridge()
@@ -363,16 +365,15 @@ def bridge(link, tries = 20, check = True):
                         except ImportError:
                             pass
 
-                        
+
                 return B
-        
-        
+
+
 def test2():
     while True:
         L = random_16()
-        print L.name, bridge(L).width
-        
-            
+        print(L.name, bridge(L).width)
+
 
 def test1():
     for M in snappy.HTLinkExteriors(num_cusps=1):
@@ -384,13 +385,14 @@ def test1():
         if b == 2:
             assert tb
         if tb and b > 2 or b > 3:
-            print M, b, M.is_two_bridge()
+            print(M, b, M.is_two_bridge())
+
 
 unknot = RationalTangle(1).numerator_closure()
 hopf = RationalTangle(2).numerator_closure()
 for i, c in enumerate(hopf.crossings):
     c.label = i
-    
+
 trefoil = DTcodec([(4,6,2)]).link()
 big_knot = DTcodec([(4, 12, 14, 22, 20, 2, 28, 24, 6, 10, 26, 16, 8, 18)]).link()
 big_link = DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link()
@@ -399,6 +401,7 @@ big_link = DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link(
 def link_from_manifold(manifold):
     return DTcodec(manifold.DT_code()).link()
 
+
 def random_16():
     n = random.randrange(1, 1008907)
     M = snappy.Manifold('16n%d' % n)
@@ -406,8 +409,9 @@ def random_16():
     L.name = M.name()
     return L
 
+
 def test_16(N):
-    for i in xrange(N):
+    for i in range(N):
         M = random_16()
         L = random_16()
-        print M.name(), bridge_LP(L)[0]
+        print(M.name(), bridge_LP(L)[0])

@@ -1,12 +1,12 @@
-from __future__ import print_function
 """
 Graph functions to be used by the Jones polynomial function in links.py
-Potentially could be implemented in sage: 
-http://www.sagemath.org/doc/reference/graphs/sage/graphs/graph.html
+Potentially could be implemented in sage:
+https://www.sagemath.org/doc/reference/graphs/sage/graphs/graph.html
 """
 
 import sage.graphs.graph as graph
 import bridge_finding
+
 
 def spanning_trees(G):
     """
