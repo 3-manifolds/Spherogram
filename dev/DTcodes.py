@@ -791,7 +791,7 @@ class DTcodec(object):
         Return a byte sequence containing the signed DT code.
         """
         code_bytes = bytearray()
-        next_flip = next(iter(self.flips))
+        next_flip = iter(self.flips).__next__
         for component in self.code:
             for label in component:
                 byte = abs(label)
