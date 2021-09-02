@@ -1,16 +1,12 @@
-from .. import FatGraph, FatEdge, CyclicList, Link, Crossing
+from .. import FatGraph, FatEdge, Link, Crossing
 from ..links.links import CrossingEntryPoint
 from ..links.ordered_set import OrderedSet
 from .Base64LikeDT import (decode_base64_like_DT_code, encode_base64_like_DT_code)
-import string, sys
-
-python_major_version = sys.version_info[0]
-if python_major_version == 3:
-    unicode = str
 
 
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
+
 
 def char_to_int(x):
     n = ord(x)
@@ -532,7 +528,7 @@ class DTcodec(object):
     """
 
     def __init__(self, input, flips=None):
-        if isinstance(input, (bytes, str, unicode, list)):
+        if isinstance(input, (bytes, str, list)):
             self.decode(input, flips)
 
     def __getitem__(self, n):
@@ -562,7 +558,7 @@ class DTcodec(object):
         if flips is not None:
             flips = [bool(flip) for flip in flips]
         self.flips = flips
-        if isinstance(dt, (str, unicode)):
+        if isinstance(dt, (str,)):
             if dt[:2] == '0x':
                 dt_bytes = [int(dt[n:n+2], 16) for n in range(2,len(dt),2)]
                 self.code, self.flips = self.unpack_signed_DT(dt_bytes)

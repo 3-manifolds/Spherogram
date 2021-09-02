@@ -791,10 +791,7 @@ class DTcodec(object):
         Return a byte sequence containing the signed DT code.
         """
         code_bytes = bytearray()
-        try:
-            next_flip = self.flips.__iter__().next
-        except AttributeError: # Python 3
-            next_flip = self.flips.__iter__().__next__
+        next_flip = iter(self.flips).__next__
         for component in self.code:
             for label in component:
                 byte = abs(label)
@@ -811,7 +808,7 @@ class DTcodec(object):
         """
         Return the hex encoding of the signed DT byte sequence.
         """
-        return '0x'+''.join(['%.2x'%b for b in bytearray(self.signed_DT())])
+        return '0x'+''.join('%.2x'%b for b in bytearray(self.signed_DT()))
 
     def PD(self, KnotTheory=False):
         G = self.fat_graph
