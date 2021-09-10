@@ -153,12 +153,15 @@ def is_isotopic(self,other):
     return False
 """
 
-"""
-Determine if two diagrams are isotopic to each (ignoring over/under)
-"""
-def unrooted_isotopic(self,other,rotation=False):
-    if len(self.crossings) != len(other.crossings): return False
-    if self.n != other.n: return False
+
+def unrooted_isotopic(self, other, rotation=False):
+    """
+    Determine if two diagrams are isotopic to each (ignoring over/under)
+    """
+    if len(self.crossings) != len(other.crossings):
+        return False
+    if self.n != other.n:
+        return False
     for i in range(2*self.n):
         if self.isosig() == other.circular_rotate(i).isosig():
             if rotation:
@@ -563,7 +566,8 @@ def trace_boundary_component(start_cs,full_boundary):
             print(cs)
             cs = cs.next_corner()
             i += 1
-            if i>100: raise Exception()
+            if i>100:
+                raise Exception()
         cs = cs.rotate(1)
         boundary_comp.append(cs)
     boundary_comp.pop(-1) #code aboves adds the start_cs twice
@@ -623,7 +627,8 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
     seen_cs = []
     #figure out which strands are glued to each other
     for cs in adjacent:
-        if cs in seen_cs: continue
+        if cs in seen_cs:
+            continue
         next_cross = cs.next_corner()
         while next_cross not in adjacent:
             next_cross = next_cross.next_corner()

@@ -3,17 +3,23 @@ from snappy.SnapPy import triangulate_link_complement_from_data
 from spherogram import FatGraph, FatEdge, CyclicList, Link, Crossing
 import string
 
+
 def sign(x):
     return 1 if x > 0 else -1 if x < 0 else 0
 
+
 def char_to_int(x):
     n = ord(x)
-    if 96 < n < 123: return n - 96
-    if 64 < n < 91:  return 64 - n  
+    if 96 < n < 123:
+        return n - 96
+    if 64 < n < 91:
+        return 64 - n  
     raise ValueError('Not an ascii letter.')
+
 
 def string_to_ints(s):
     return [char_to_int(x) for x in s]
+
 
 def partition_list(L, parts):
     assert sum(parts) == len(L)
@@ -85,14 +91,20 @@ class DTvertex(tuple):
         return str((self[0], self[1]))
 
     def entry_slot(self, N):
-        if N == self[0]: return South
-        elif N == self[1]: return East
-        else: raise ValueError('%d is not a label of %s'%(N,self))
+        if N == self[0]:
+            return South
+        elif N == self[1]:
+            return East
+        else:
+            raise ValueError('%d is not a label of %s' % (N, self))
 
     def exit_slot(self, N):
-        if N == self[0]: return North
-        elif N == self[1]: return West
-        else: raise ValueError('%d is not a label of %s'%(N,self))
+        if N == self[0]:
+            return North
+        elif N == self[1]:
+            return West
+        else:
+            raise ValueError('%d is not a label of %s'% (N, self))
 
     def first_under(self):
         first, second, even_over = self
@@ -104,6 +116,7 @@ class DTvertex(tuple):
     def upper_pair(self):
         first, second, even_over = self
         return (0,2) if bool(first%2) ^ even_over else (1,3)
+
 
 class DTPath(object):
     """
@@ -631,7 +644,7 @@ class DTcodec(object):
         crossings = [x<<1 for x in code[2+components:]]
         assert len(crossings) == num_crossings
         return partition_list(crossings, comp_lengths)
-        
+
     def embed(self, edge=None):
         """
         Try to flip crossings in the FatGraph until it becomes planar.
@@ -639,7 +652,8 @@ class DTcodec(object):
         G = self.fat_graph
         # Add the marked_valence cache
         if edge is None: # OK. No problem. Just pick one at random.
-            for edge in G.edges: break
+            for edge in G.edges:
+                break
         # Find a circle and embed it.
         vertices, circle_edges = self.find_circle(edge)
         G.mark(circle_edges)

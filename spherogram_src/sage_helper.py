@@ -13,15 +13,19 @@ where the first non-whitespace character is | followed by a space.
 try:
     import sage.all
     _within_sage = True
-except:
+except Exception:
     _within_sage = False
     import decorator
 
 
-import doctest, re, types
+import doctest
+import re
+import types
+
 
 class SageNotAvailable(Exception):
     pass
+
 
 if _within_sage:
     def sage_method(function):
@@ -33,6 +37,3 @@ else:
         
     def sage_method(function):
         return decorator.decorator(_sage_method, function)
-        
-    
-

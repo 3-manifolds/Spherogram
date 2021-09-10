@@ -39,7 +39,8 @@ for M in links:
         continue
     for other_id in ids:
         mutation_graph.add_edge(M_id,other_id)
-"""        
+"""
+
 
 def mutant_neighborhood_graph(link):
     G = Graph()
@@ -61,6 +62,7 @@ def mutant_neighborhood_graph(link):
 
     return G, isosig_to_link_dict
 
+
 mutation_graph = Graph()
 isosig_dict = {}
 i = 0
@@ -69,7 +71,7 @@ for link in links:
     i += 1
     try:
         isosig = link.isometry_signature(of_link=True)
-    except:
+    except Exception:
         print('isosig failed')
         continue
     if isosig in mutation_graph:
@@ -85,4 +87,3 @@ with open('mutation_graph_knots12.txt', 'w') as f:
 
 with open('isosig_to_PD_dict12.txt', 'w') as g:
     g.write(str(isosig_dict))
-

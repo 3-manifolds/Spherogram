@@ -395,25 +395,26 @@ def pickup_overstrand(link,overstrand):
     return crossingsremoved
 
 
-def strand_pickup(link,overstrands):
+def strand_pickup(link, overstrands):
     """
     Simplifies link by optimizing the path of the longest sequence of overcrossings.
     Returns a new link and the number of crossings removed.
     """
     for overstrand in overstrands:
-        if len(overstrand) == 1: continue
-        crossings_removed = pickup_overstrand(link,overstrand)
+        if len(overstrand) == 1:
+            continue
+        crossings_removed = pickup_overstrand(link, overstrand)
         if crossings_removed != 0:
             return crossings_removed
     return 0
 
 
-def remove_overstrand(link,overstrand):
+def remove_overstrand(link, overstrand):
     """
     Delete an overstrand from a link.  If the overstrand is a loop, it doesn't
-    leave any loose strands and removes the loop. Otherwise, there will be 
+    leave any loose strands and removes the loop. Otherwise, there will be
     two strands left in the link not attached to anything.  This function
-    assumes that the start and end of the overstrand are not places where 
+    assumes that the start and end of the overstrand are not places where
     overstrands crosses itself.
     """
     #only add bridge strands for the places where the strand doesn't cross itself
