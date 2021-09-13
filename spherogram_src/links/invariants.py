@@ -290,7 +290,8 @@ class Link(links_base.Link):
 
                 subMatrix = C[0:k,0:k]
                 p = subMatrix.determinant()
-                if p == 0: return 0
+                if p == 0:
+                    return 0
                 if multivar:
                     t_i = M[1][-1]
                     p = (p.factor())/(t_i-1)

@@ -10,12 +10,16 @@ def sign(x):
 
 def char_to_int(x):
     n = ord(x)
-    if 96 < n < 123: return n - 96
-    if 64 < n < 91:  return 64 - n  
+    if 96 < n < 123:
+        return n - 96
+    if 64 < n < 91:
+        return 64 - n  
     raise ValueError('Not an ascii letter.')
+
 
 def string_to_ints(s):
     return [char_to_int(x) for x in s]
+
 
 def partition_list(L, parts):
     assert sum(parts) == len(L)
@@ -25,6 +29,7 @@ def partition_list(L, parts):
         ans.append(tuple(L[k:k+p]))
         k += p
     return ans
+
 
 DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
 
@@ -65,11 +70,14 @@ DT_alphabet = '_abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA'
 
 South, East, North, West = 0, 1, 2, 3
 
+
 class FlippingError(Exception):
     pass
 
+
 class EmbeddingError(Exception):
     pass
+
 
 class DTvertex(tuple):
     """
@@ -89,18 +97,25 @@ class DTvertex(tuple):
         return str((self[0], self[1]))
 
     def entry_slot(self, N):
-        if N == self[0]: return South
-        elif N == self[1]: return East
-        else: raise ValueError('%d is not a label of %s'%(N,self))
+        if N == self[0]:
+            return South
+        elif N == self[1]:
+            return East
+        else:
+            raise ValueError('%d is not a label of %s' % (N, self))
 
     def exit_slot(self, N):
-        if N == self[0]: return North
-        elif N == self[1]: return West
-        else: raise ValueError('%d is not a label of %s'%(N,self))
+        if N == self[0]:
+            return North
+        elif N == self[1]:
+            return West
+        else:
+            raise ValueError('%d is not a label of %s' % (N, self))
 
     def upper_pair(self):
         first, second, even_over = self
-        return (0,2) if bool(first%2) ^ even_over else (1,3)
+        return (0, 2) if bool(first % 2) ^ even_over else (1, 3)
+
 
 class DTPath(object):
     """
@@ -120,7 +135,7 @@ class DTPath(object):
     def next(self):
         try:
             slot = self.next_edge.slots[self.end]
-            self.next_edge = self.graph(self.next_edge[self.end])[slot+2]
+            self.next_edge = self.graph(self.next_edge[self.end])[slot + 2]
             if self.next_edge == self.first_edge:
                 raise StopIteration
         except AttributeError:
@@ -129,6 +144,7 @@ class DTPath(object):
 
     __next__ = next
     
+
 class DTFatEdge(FatEdge):
     """
     A fat edge which can be marked and belongs to a link component.
@@ -146,10 +162,11 @@ class DTFatEdge(FatEdge):
         This method returns the edge label.
         """
         v = self[0]
-        if self.slot(v)%2 == 0:
+        if self.slot(v) % 2 == 0:
             return v[0]
         else:
             return v[1]
+
 
 class DTFatGraph(FatGraph):
     edge_class = DTFatEdge
@@ -250,7 +267,7 @@ class DTFatGraph(FatGraph):
         component, starting at the given edge, in the direction
         determined by the vertex.
         """
-        if not vertex in edge:
+        if vertex not in edge:
             raise ValueError('That vertex is not an endpoint of the edge.')
         forward = True if vertex == edge[0] else False
         return DTPath(edge, self, forward)
@@ -392,8 +409,7 @@ class DTFatGraph(FatGraph):
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
-        result = set()
-        first_vertex = vertex = edge[1] 
+        first_vertex = vertex = edge[1]
         while True:
             end = 0 if edge[0] is vertex else 1
             slot = edge.slots[end]
@@ -402,7 +418,7 @@ class DTFatGraph(FatGraph):
                 interior_edge = self(vertex)[slot]
                 if not interior_edge.marked:
                     # For lookups, slot values must be in 0,1,2,3
-                    yield vertex, slot%4  
+                    yield vertex, slot % 4
                 else:
                     break
             if k == 0:
@@ -507,7 +523,7 @@ class DTFatGraph(FatGraph):
         KLP['Xbackward_neighbor'] = ids[slot]
         KLP['Xbackward_strand'] = strands[slot]
         slot = 3 if flipped else 2
-        KLP['Xforward_neighbor']  = ids[slot]
+        KLP['Xforward_neighbor'] = ids[slot]
         KLP['Xforward_strand'] = strands[slot]
         KLP['Xcomponent'] = edges[slot].component
         slot = 2 if flipped else 1
@@ -521,6 +537,7 @@ class DTFatGraph(FatGraph):
 
 # This assumes that the diagram has no loops, and that each component
 # meets the next one (so in particular the diagram is connected.
+
 
 class DTcodec(object):
     """
@@ -625,7 +642,6 @@ class DTcodec(object):
                 if flip:
                     G.flip(self[label])
 
-
     def unpack_signed_DT(self, signed_dt):
         dt = []
         component = []
@@ -708,7 +724,8 @@ class DTcodec(object):
         G = self.fat_graph
         # Add the marked_valence cache
         if edge is None: # OK. No problem. Just pick one at random.
-            for edge in G.edges: break
+            for edge in G.edges:
+                break
         # Find a circle and embed it.
         vertices, circle_edges = self.find_circle(edge)
         G.mark(circle_edges)
@@ -778,11 +795,9 @@ class DTcodec(object):
         G = self.fat_graph
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
-        #print 'do_flips: %s[%s] %s[%s]'%(v, vslot, w, wslot) 
-        not_unique = ( G.marked_valences[v] == G.marked_valences[w] == 2 )
         # starting from the v_edge, go ccw to a marked edge
-        for k in range(1,3):
-            ccw_edge = G(v)[vslot+k]
+        for k in range(1, 3):
+            ccw_edge = G(v)[vslot + k]
             if ccw_edge.marked:
                 break
         if not ccw_edge.marked:
@@ -960,9 +975,7 @@ class DTcodec(object):
         """
         G = self.fat_graph
         vertices = list(G.vertices)
-        num_crossings = len(vertices)
-        num_components = len(self.code)
-        KLP_indices = dict( (v,n) for n, v in enumerate(vertices))
+        KLP_indices = dict((v, n) for n, v in enumerate(vertices))
         KLP_crossings = [G.KLP_dict(v, KLP_indices) for v in vertices]
         return len(G.vertices), 0, len(self.code), KLP_crossings
 

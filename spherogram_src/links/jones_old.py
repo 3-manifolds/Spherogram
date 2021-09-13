@@ -68,7 +68,7 @@ def cyc(G,T,e):
         if (e[0],e[1], l) in T.edges(sort=True, key=edge_index):
             return [(e[0],e[1],l),e]
         return [(e[1],e[0],l),e]
-    except:
+    except Exception:
         pass
 
     #Now the typical case.  First, need to turn T into a Graph which

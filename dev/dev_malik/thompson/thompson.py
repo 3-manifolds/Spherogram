@@ -10,9 +10,10 @@ class DyadicRational:
         self.reduce()
 
     def reduce(self):
-        if self.numerator == 0: return
+        if self.numerator == 0:
+            return
         while self.numerator % 2 == 0:
-            self.numerator = self.numerator/2
+            self.numerator = self.numerator // 2
             self.denom_exp -= 1
 
     def children(self):
@@ -98,7 +99,8 @@ class TreeSequence:
     def _has_all_parents(self):
         for d in self.dyadic_seq:
             if d not in [DyadicRational(0,1), DyadicRational(1,1), DyadicRational(1,0)]:
-                if not self.find_dyadic(d.parent()): return False
+                if not self.find_dyadic(d.parent()):
+                    return False
         return True
 
     def _is_ordered(self):
@@ -376,18 +378,23 @@ class ABWord:
     def evaluate(self):
         product = self.identity
         for letter in self.word_string:
-            product = product * (eval('self.'+letter))
+            product = product * (eval('self.' + letter))
         return product
 
     def __repr__(self):
         return self.word_string
 
     def is_reduced(self):
-        for i in range(len(self.word_string)-1):
-            if self.word_string[i] == 'a' and self.word_string[i+1] == 'A': return False
-            if self.word_string[i] == 'A' and self.word_string[i+1] == 'a': return False
-            if self.word_string[i] == 'b' and self.word_string[i+1] == 'B': return False
-            if self.word_string[i] == 'B' and self.word_string[i+1] == 'b': return False
+        for i in range(len(self.word_string) - 1):
+            u, v = self.word_string[i: i + 2]
+            if u == 'a' and v == 'A':
+                return False
+            if u == 'A' and v == 'a':
+                return False
+            if u == 'b' and v == 'B':
+                return False
+            if u == 'B' and v == 'b':
+                return False
         return True
 
     def reduce(self):

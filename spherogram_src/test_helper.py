@@ -13,7 +13,7 @@ flag.
 try:
     import sage.all
     _within_sage = True
-except:
+except Exception:
     _within_sage = False
     import decorator
 
@@ -23,8 +23,12 @@ try:
 except ImportError:
     print('WARNING: Could not import snappy in test_helper.py.')
     _have_snappy = False
-    
-import doctest, re, types
+
+
+import doctest
+import re
+import types
+
 
 class SageNotAvailable(Exception):
     pass

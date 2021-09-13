@@ -14,21 +14,29 @@ def AB_ball(max_size):
     spheres = [AB_sphere(size) for size in range(1,max_size)]
     return itertools.chain(*spheres)
 
+
 def AB_sphere(size):
     letters = 'abAB'
-    all_words_itertool = itertools.product(letters,repeat=size)
+    all_words_itertool = itertools.product(letters, repeat=size)
     all_words = [''.join(word) for word in all_words_itertool]
-    return filter(is_reduced,all_words)
+    return filter(is_reduced, all_words)
+
 
 def is_reduced(word):
-    for i in range(len(word)-1):
-        if word[i] == 'a' and word[i+1] == 'A': return False
-        if word[i] == 'A' and word[i+1] == 'a': return False
-        if word[i] == 'b' and word[i+1] == 'B': return False
-        if word[i] == 'B' and word[i+1] == 'b': return False
+    for i in range(len(word) - 1):
+        u, v = word[i], word[i + 1]
+        if u == 'a' and v == 'A':
+            return False
+        if u == 'A' and v == 'a':
+            return False
+        if u == 'b' and v == 'B':
+            return False
+        if u == 'B' and v == 'b':
+            return False
     return True
 
-def word_image(word,image_a,image_b):
+
+def word_image(word, image_a, image_b):
     images = []
     for letter in word:
         if letter == 'a':

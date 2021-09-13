@@ -1,11 +1,14 @@
 import spherogram as sg
 import random
 
+
 def random_petaluma_diagram(size):
-    if size % 2 == 1:
+    if size % 2:
         return petaluma_knot(permutation(size))
     else:
         print("Size must be even")
+
+
 def petaluma_knot(height_perm):
     size = len(height_perm)
     crossing_dict = {}
@@ -22,11 +25,13 @@ def petaluma_knot(height_perm):
 
     for i in range(size):
         for j in strands_to_cross(size,i):
-            if (i,j) == (0,1): continue
+            if (i,j) == (0,1):
+                continue
             a,b = sorted([i,j]) #must be ordered
             next_crossing = crossing_dict[a,b]
             ordered_or_backward = 0
-            if i>j: ordered_or_backward = 1
+            if i>j:
+                ordered_or_backward = 1
             if height_perm[i] < height_perm[j]: # strand i passes under strand j
                 if not visited_dict[a,b]: #if first time crossing has come up
                     next_crossing[0] = old_crossing[end_position]
