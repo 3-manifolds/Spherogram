@@ -153,7 +153,7 @@ class Crossing(object):
         other[0].adjacent[other[1]] = (self, i % 4)
 
     def __repr__(self):
-        return "%s" % self.label
+        return "%s" % (self.label, )
 
     def info(self):
         def format_adjacent(a):
