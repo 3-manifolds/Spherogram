@@ -520,6 +520,21 @@ class Link(object):
         return crossings, component_starts
 
     def _component_starts_from_PD(self, code, labels, gluings):
+        """
+        A PD code determines an order and orientation on the link
+        components as follows, where we view the code as labels on the
+        strands at the point where two crossings are stuck together.
+
+        1.  The minimum label on each component is used to order the
+            components.
+
+        2.  Each component is oriented by finding its minimal label,
+            looking at the labels of its two neighbors, and then
+            orienting the component towards the smaller of those two.
+
+        This is designed so that a PLink-generated PD_code results in a
+        link with the same component order and orientation.
+        """
         starts = []
         while labels:
             m = min(labels)
