@@ -6,12 +6,14 @@ isotopy. It can allow for roots, as well as distinguishing the shadows or
 the tangle diagrams with the information of whether a crossing is over or under.
 """
 
+
 def rotate_list(L, s):
     n = len(L)
-    return [ L[(i + s) % n] for i in range(n) ]
+    return [L[(i + s) % n] for i in range(n)]
+
 
 def flip(L):
-    half = len(L)/2
+    half = len(L)//2
     for i in range(half):
         L[i],L[i+half] = L[i+half],L[i]
 
@@ -21,11 +23,11 @@ def clear_orientations(crossings):
         c.sign = 0
 
 
-def isosig(tangle,root = None, over_or_under = False):
+def isosig(tangle, root=None, over_or_under=False):
     strands, loops, orientations, crossing_order, over_or_under_data = all_cross_strands(tangle)
     isosig_strands = []
     isosig_loops = []
-    if root != None:
+    if root is not None:
         want_root = True
         root_position = crossing_order.index(root.crossing)
         root_tuple = tuple(root)
@@ -64,13 +66,14 @@ def isosig(tangle,root = None, over_or_under = False):
     isosig_orientations = [orientations[c] for c in crossing_order]
     return (len(tangle.crossings),tangle.n),tuple(isosig_strands),tuple(isosig_loops),tuple(isosig_orientations), tuple(isosig_over_or_under), root_isosig
 
-def min_isosig(tangle,root=None,over_or_under=False):
-    if root != None:
+
+def min_isosig(tangle, root=None, over_or_under=False):
+    if root is not None:
         cs_name = cslabel(root)
     isosigs = []
     for i in range(tangle.n*2):
         rotated_tangle = tangle.circular_rotate(i)
-        if root != None:
+        if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
@@ -79,15 +82,16 @@ def min_isosig(tangle,root=None,over_or_under=False):
 
 
 def isosig_with_gluings(tangle, gluings, root=None):
-    return (isosig(tangle,root = root),tuple(gluings))
+    return (isosig(tangle, root=root), tuple(gluings))
 
-def min_isosig_with_gluings(tangle, gluings, root = None):
-    if root != None:
+
+def min_isosig_with_gluings(tangle, gluings, root=None):
+    if root is not None:
         cs_name = cslabel(root)
     isosigs = []
     for i in range(tangle.n*2):
         rotated_tangle = tangle.circular_rotate(i)
-        if root != None:
+        if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None

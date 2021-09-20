@@ -771,7 +771,7 @@ class Digraph(Graph):
         Return the set of non-loop edges which *begin* at the vertex.
         """
         return set(e for e in self(vertex)
-                     if e.tail is vertex and not e.head is vertex)
+                     if e.tail is vertex and e.head is not vertex)
 
     # Force flows to go in the direction of the edge.
     flow_incident = outgoing
@@ -781,7 +781,7 @@ class Digraph(Graph):
         Return the set of non-loop edges which *end* at the vertex.
         """
         return set(e for e in self(vertex)
-                     if e.head is vertex and not e.tail is vertex)
+                     if e.head is vertex and e.tail is not vertex)
 
     def children(self, vertex):
         """

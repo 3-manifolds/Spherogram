@@ -65,12 +65,13 @@ def cap_off(matching, i):
     circle = matching.partner(i) == i + 1
     new_match = set()
     for a in range(n):
-        if not a in {i, i + 1}:
+        if a not in {i, i + 1}:
             u, v = shift(a), shift(follow(a))
             if u > v:
                 u, v = v, u
             new_match.add((u, v))
     return PerfectMatching(new_match), circle
+
 
 class VElement(object):
     """

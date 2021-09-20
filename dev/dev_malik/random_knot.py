@@ -114,10 +114,11 @@ def open_string_volume(crossings):
     loose = []
     for c in crossings_copy:
         for i in range(4):
-            if c.adjacent[i] == None:
+            if c.adjacent[i] is None:
                 loose.append(c.crossing_strands()[i])
     connect_loose_strands(crossings_copy, loose[0], loose[1])
     return Link(crossings_copy).exterior().volume()
+
 
 def alexander_evolution(n):
     crossings = [Crossing('0')]
@@ -217,34 +218,33 @@ def knot_search(turn_list, max_steps):
     return knots
 
 
-def open_string_evaluation(crossings, function, simplify = 'level'):
+def open_string_evaluation(crossings, function, simplify='level'):
     crossings_copy = pickle.loads(pickle.dumps(crossings))
     loose = []
     for c in crossings_copy:
         for i in range(4):
-            if c.adjacent[i] == None:
+            if c.adjacent[i] is None:
                 loose.append(c.crossing_strands()[i])
     connect_loose_strands(crossings_copy, loose[0], loose[1])
     K = Link(crossings_copy)
     if simplify:
         K.simplify(mode=simplify)
-    if len(K)>0:
+    if len(K) > 0:
         return function(K)
+
 
 def open_string_alexander(crossings):
     crossings_copy = pickle.loads(pickle.dumps(crossings))
     loose = []
     for c in crossings_copy:
         for i in range(4):
-            if c.adjacent[i] == None:
+            if c.adjacent[i] is None:
                 loose.append(c.crossing_strands()[i])
     connect_loose_strands(crossings_copy, loose[0], loose[1])
     K = Link(crossings_copy)
     K.simplify(mode='level')
-    if len(K)>0:
-        return K.alexander_polynomial()
-    else:
-        return 1
+    return K.alexander_polynomial() if len(K) > 0 else 1
+
 
 def open_string_from_turn_list(turn_list):
     crossings = [Crossing('0')]
@@ -492,8 +492,10 @@ def cross_strand(crossings, loose_cs, strand_to_cross, new_label, over_vs_under)
 
     return css[2+over_vs_under]
 
+
 def connect_crossing_strands(cs1, cs2):
-    cs1[0][cs1[1]] = cs2[0][cs2[1]] 
+    cs1[0][cs1[1]] = cs2[0][cs2[1]]
+
 
 def available_strands(loose_cs):
     start_cs = next_available_corner(loose_cs)
@@ -503,18 +505,19 @@ def available_strands(loose_cs):
         available.append(next_cs)
         next_cs = next_available_corner(next_cs)
     return available
-    
+
+
 def next_available_corner(cs):
     rotated = cs.rotate()
-    if rotated[0].adjacent[rotated[1]] == None:
+    if rotated[0].adjacent[rotated[1]] is None:
         rotated_twice = rotated.rotate()
-        if rotated_twice[0].adjacent[rotated_twice[1]] == None:
+        if rotated_twice[0].adjacent[rotated_twice[1]] is None:
             return rotated_twice.rotate().opposite()
         else:
             return rotated_twice.opposite()
     else:
         return rotated.opposite()
-        
+
 
 def connect_loose_strands(crossings, loose_cs, final_cs):
     G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs, 

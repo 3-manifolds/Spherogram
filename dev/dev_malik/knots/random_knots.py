@@ -54,8 +54,10 @@ def cross_strand(crossings, loose_cs, strand_to_cross, new_label):
     connect_crossing_strands(cs3, opposite)
     return cs2
 
+
 def connect_crossing_strands(cs1, cs2):
-    cs1[0][cs1[1]] = cs2[0][cs2[1]] 
+    cs1[0][cs1[1]] = cs2[0][cs2[1]]
+
 
 def available_strands(loose_cs):
     start_cs = next_available_corner(loose_cs)
@@ -65,18 +67,19 @@ def available_strands(loose_cs):
         available.append(next_cs)
         next_cs = next_available_corner(next_cs)
     return available
-    
+
+
 def next_available_corner(cs):
     rotated = cs.rotate()
-    if rotated[0].adjacent[rotated[1]] == None:
+    if rotated[0].adjacent[rotated[1]] is None:
         rotated_twice = rotated.rotate()
-        if rotated_twice[0].adjacent[rotated_twice[1]] == None:
+        if rotated_twice[0].adjacent[rotated_twice[1]] is None:
             return rotated_twice.rotate().opposite()
         else:
             return rotated_twice.opposite()
     else:
         return rotated.opposite()
-        
+
 
 def connect_loose_strands(crossings, loose_cs, final_cs):
     G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs, 

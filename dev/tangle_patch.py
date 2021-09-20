@@ -83,7 +83,8 @@ def random_tree_knot(size,simplify=None,prime_decomp = False):
             cant_deconnect = (len(ds)>1)
     return knot
 
-def all_circular_sums(self,other):
+
+def all_circular_sums(self, other):
     """
     All possible tangle sums as above
     """
@@ -93,21 +94,21 @@ def all_circular_sums(self,other):
     return [self.circular_sum(other,n) for n in range(len(other.adjacent))]
 
 
-
 def random_root(self):
     return choice(choice(self.crossings).crossing_strands())
 
 
 def isosig_with_gluings(self, gluings, root=None):
-    return (self.isosig(root = root),tuple(gluings))
+    return (self.isosig(root=root), tuple(gluings))
+
 
 def min_isosig_with_gluings(self, gluings, root = None):
-    if root != None:
+    if root is not None:
         cs_name = cslabel(root)
     isosigs = []
     for i in range(self.n*2):
         rotated_tangle = self.circular_rotate(i)
-        if root != None:
+        if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None

@@ -38,13 +38,14 @@ def _crossing_to_edge(K,G,c):
         raise Exception("Did not find two faces incident to c="+repr(c))
     return tuple(edge)
 
-def _dual_spanning_tree(K,T):
+
+def _dual_spanning_tree(K, T):
     "Returns the spanning tree for the white graph dual to the spanning tree T for the black graph. Here, dual means the edges do not intersect, i.e., no common crossings."
-    edges = list()
     G = K.white_graph()
     crossings_to_ignore = [e[2] for e in T.edges()]
-    crossings_to_use = [c for c in K.crossings if not c in crossings_to_ignore]
-    return Graph([K._crossing_to_edge(G,c) for c in crossings_to_use])
+    crossings_to_use = [c for c in K.crossings if c not in crossings_to_ignore]
+    return Graph([K._crossing_to_edge(G, c) for c in crossings_to_use])
+
 
 def Kauffman_states(K):
     "Returns the set of Kauffman states for the Alexander polynomial, corresponding to the spanning trees in the black graph. Returns a list of dictionaries, with keys crossings and values faces in the knot projection."
