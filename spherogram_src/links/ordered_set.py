@@ -1,57 +1,41 @@
-import collections
-
-
-class OrderedSet(collections.abc.MutableSet):
-
+class OrderedSet():
     def __init__(self, iterable=None):
-        self.end = end = []
-        end += [None, end, end]         # sentinel node for doubly linked list
-        self.map = {}                   # key --> [key, prev, next]
         if iterable is not None:
-            self |= iterable
+            self.elts = {e:None for e in iterable}
+        else:
+            self.elts = dict()
 
     def __len__(self):
-        return len(self.map)
+        return len(self.elts)
 
     def __contains__(self, key):
-        return key in self.map
+        return key in self.elts
 
     def add(self, key):
-        if key not in self.map:
-            end = self.end
-            curr = end[1]
-            curr[2] = end[1] = self.map[key] = [key, curr, end]
+        self.elts[key] = None
 
     def discard(self, key):
-        if key in self.map:
-            key, prev, next = self.map.pop(key)
-            prev[2] = next
-            next[1] = prev
+        if key in self.elts:
+            self.elts.pop(key)
 
     def __iter__(self):
-        end = self.end
-        curr = end[2]
-        while curr is not end:
-            yield curr[0]
-            curr = curr[2]
+        return iter(self.elts.keys())
 
-    def __reversed__(self):
-        end = self.end
-        curr = end[1]
-        while curr is not end:
-            yield curr[0]
-            curr = curr[1]
-
-    def pop(self, last=True):
-        if not self:
-            raise KeyError('set is empty')
-        key = self.end[1][0] if last else self.end[2][0]
-        self.discard(key)
-        return key
+    def pop(self):
+        return self.elts.popitem()[0]
 
     def update(self, sequence):
         for s in sequence:
             self.add(s)
+
+    def difference_update(self, sequence):
+        for s in sequence:
+            self.discard(s)
+
+    def remove(self, key):
+        if key not in self.elts:
+            raise KeyError('element not in set')
+        self.elts.pop(key)
 
     def __repr__(self):
         if not self:
@@ -67,6 +51,4 @@ class OrderedSet(collections.abc.MutableSet):
 if __name__ == '__main__':
     s = OrderedSet('abracadaba')
     t = OrderedSet('simsalabim')
-    print(s | t)
-    print(s & t)
-    print(s - t)
+    print(s == t, t == t)

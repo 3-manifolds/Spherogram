@@ -760,7 +760,7 @@ class Link(object):
                 if o.component_label() is None:
                     others.append(o)
             other_crossing_entries.append(others)
-            remaining = remaining - OrderedSet(component)
+            remaining.difference_update(component)
 
         if (component_starts is not None) and (not self._DT_convention_holds()):
             # Specified starts turn out not to satisfy the DT
@@ -1429,7 +1429,7 @@ class Link(object):
                 strand = backwards_strand[::-1]
                 strand.extend(forward_strand)
                 strands.append(strand)
-                ceps = ceps - OrderedSet(strand)
+                ceps.difference_update(strand)
         return sorted(strands, key=len, reverse=True)
 
 # ---- building the link exterior if SnapPy is present --------
