@@ -26,11 +26,12 @@ class OrderedSet():
 
     def update(self, sequence):
         for s in sequence:
-            self.add(s)
+            self.elts[s] = None
 
     def difference_update(self, sequence):
         for s in sequence:
-            self.discard(s)
+            if s in self.elts:
+                self.elts.pop(s)
 
     def remove(self, key):
         if key not in self.elts:
