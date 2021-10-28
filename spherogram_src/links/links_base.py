@@ -920,7 +920,7 @@ class Link(object):
            overcrossings (or undercrossings); this has the effect of doing
            "picking up" strands and putting them down elsewhere.
 
-        4. Finally, the ``global`` mode is the combination of 3 and 4.
+        4. Finally, the ``global`` mode is the combination of 2 and 3.
 
 
         Some examples:
@@ -951,8 +951,6 @@ class Link(object):
         >>> K.backtrack(30)
         >>> K.simplify('global')
         True
-        >>> K   #doctest: +ELLIPSIS
-        <Link: 1 comp; ... cross>
         """
         from . import simplify
         if mode == 'basic':
@@ -1394,7 +1392,7 @@ class Link(object):
         1
         """
         from . import simplify
-        return simplify.strand_pickup(self, self.overstrands())
+        return simplify.strand_pickup(self, 'over')
 
     def overstrands(self):
         """
@@ -1405,32 +1403,8 @@ class Link(object):
         >>> len(L.overstrands()[0])
         3
         """
-        ceps = OrderedSet(
-            [cep for cep in self.crossing_entries() if cep.is_over_crossing()])
-        strands = []
-        while ceps:
-            cep = ceps.pop()
-            start_crossing = cep.crossing
-            is_loop = False
-            forward_strand = [cep]
-            forward_cep = cep.next()
-            while forward_cep.is_over_crossing():
-                if forward_cep.crossing == start_crossing:
-                    is_loop = True
-                    break
-                forward_strand.append(forward_cep)
-                forward_cep = forward_cep.next()
-            backwards_strand = []
-            backwards_cep = cep.previous()
-            if not is_loop:
-                while backwards_cep.is_over_crossing():
-                    backwards_strand.append(backwards_cep)
-                    backwards_cep = backwards_cep.previous()
-                strand = backwards_strand[::-1]
-                strand.extend(forward_strand)
-                strands.append(strand)
-                ceps.difference_update(strand)
-        return sorted(strands, key=len, reverse=True)
+        from . import simplify
+        return simplify.over_or_under_strands(self, 'over')
 
 # ---- building the link exterior if SnapPy is present --------
 
