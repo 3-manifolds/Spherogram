@@ -178,7 +178,7 @@ long_description = long_description.split('==\n')[1]
 long_description = long_description.split('\nDeveloped')[0]
 
 install_requires = ['decorator', 'networkx',
-                    'snappy_manifolds>=1.1', 'knot_floer_homology>=1.1']
+                    'snappy_manifolds>=1.1.2', 'knot_floer_homology>=1.1']
 
 setup( name = 'spherogram',
        version = version,
