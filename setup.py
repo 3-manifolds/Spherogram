@@ -2,6 +2,10 @@ import os, shutil, sys, sysconfig, subprocess
 from glob import glob
 from setuptools import setup, Command, Extension
 
+# Disable M1 builds until we can test.
+if sys.platform == 'darwin':
+    os.environ['_PYTHON_HOST_PLATFORM'] = 'macosx-10.9-x86_64'
+    os.environ['ARCHFLAGS'] = '-arch x86_64'
 
 # Defensive linker flags for Linux:
 if sys.platform.startswith('linux'):
