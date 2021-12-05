@@ -69,6 +69,7 @@ def basic_topological_numbering(G):
 
     return numbering
 
+
 def topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
@@ -80,8 +81,8 @@ def topological_numbering(G):
     while success:
         success = False
         for v in G.vertices:
-            below = len([e for e in G.incoming(v) if e.dummy == False])
-            above = len([e for e in G.outgoing(v) if e.dummy == False])
+            below = len([e for e in G.incoming(v) if e.dummy is False])
+            above = len([e for e in G.outgoing(v) if e.dummy is False])
             if above != below:
                 if above > below:
                     new_pos = min( n[e.head] for e in G.outgoing(v) ) - 1
@@ -332,16 +333,17 @@ class OrthogonalRep(Digraph):
             verts =  [ text(repr(v), p, fontsize=20, color='black') for v, p in pos.iteritems() ]
             verts += [ circle(p, 1.5, fill=False) for p in pos.itervalues() ]
         edges = [ line( [pos[e.tail], pos[e.head]] ) for e in
-                  self.edges if not e in self.dummy]
+                  self.edges if e not in self.dummy]
         G = sum(verts + edges, Graphics())
         G.axes(False)
         return G
 
-#---------------------------------------------------
+# ---------------------------------------------------
 #
 # Orthogonal link diagrams
 #
-#---------------------------------------------------
+# ---------------------------------------------------
+
 
 class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):

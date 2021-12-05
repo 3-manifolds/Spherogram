@@ -173,11 +173,12 @@ def unrooted_isotopic(self, other, rotation=False):
 def random_root(self):
     return choice(choice(self.crossings).crossing_strands())
 
-def isosig(self,root = None, over_or_under = False):
+
+def isosig(self, root=None, over_or_under=False):
     strands, loops, orientations, crossing_order, over_or_under_data = self.all_cross_strands()
     isosig_strands = []
     isosig_loops = []
-    if root != None:
+    if root is not None:
         want_root = True
         root_position = crossing_order.index(root.crossing)
         root_tuple = tuple(root)
@@ -217,12 +218,12 @@ def isosig(self,root = None, over_or_under = False):
     return (len(self.crossings),self.n),tuple(isosig_strands),tuple(isosig_loops),tuple(isosig_orientations), tuple(isosig_over_or_under), root_isosig
 
 def min_isosig(self,root=None,over_or_under=False):
-    if root != None:
+    if root is not None:
         cs_name = cslabel(root)
     isosigs = []
     for i in range(self.n*2):
         rotated_tangle = self.circular_rotate(i)
-        if root != None:
+        if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
@@ -233,12 +234,12 @@ def isosig_with_gluings(self, gluings, root=None):
     return (self.isosig(root = root),tuple(gluings))
 
 def min_isosig_with_gluings(self, gluings, root = None):
-    if root != None:
+    if root is not None:
         cs_name = cslabel(root)
     isosigs = []
     for i in range(self.n*2):
         rotated_tangle = self.circular_rotate(i)
-        if root != None:
+        if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
@@ -1093,14 +1094,15 @@ def all_nhd_vol_dists(link,radius,tolerance):
             nhds.append([double_volumes,1,T1])
     return nhds
 
-"""
-Asks if two sorted lists of floats are near each other
-"""
+
 def close_float_sets(L1, L2, tolerance):
+    """
+    Asks if two sorted lists of floats are near each other
+    """
     if len(L1) != len(L2):
         return False
     for i in range(len(L1)):
-        if abs(L1[i]-L2[i])>tolerance:
+        if abs(L1[i] - L2[i]) > tolerance:
             return False
     return True
 

@@ -263,7 +263,7 @@ class DTFatGraph(FatGraph):
         component, starting at the given edge, in the direction
         determined by the vertex.
         """
-        if not vertex in edge:
+        if vertex not in edge:
             raise ValueError('That vertex is not an endpoint of the edge.')
         forward = True if vertex == edge[0] else False
         return DTPath(edge, self, forward)

@@ -63,7 +63,6 @@ def link_diagram(G):
         if edge.twisted:
             c.rotate_by_90()
 
-            
     return spherogram.Link(crossing_dict.values())
 
 
@@ -74,23 +73,23 @@ def label(edge):
     return frozenset( (s1,s2) )
 
 
-def open_underposition(crossing): 
-    if crossing.adjacent[0] == None:
+def open_underposition(crossing):
+    if crossing.adjacent[0] is None:
         return 0
-    elif crossing.adjacent[2] == None:
+    elif crossing.adjacent[2] is None:
         return 2
-    else:
-        print('Both under positions occupied')
-        return
+    print('Both under positions occupied')
+    return
+
 
 def open_overposition(crossing):
-    if crossing.adjacent[1] == None:
+    if crossing.adjacent[1] is None:
         return 1
-    elif crossing.adjacent[3] == None:
+    elif crossing.adjacent[3] is None:
         return 3
-    else:
-        print('No open over position')
-        return
+    print('No open over position')
+    return
+
 
 def link_to_fat_graph(link, alternate_around_crossing=False, alternate_strand = False):
     G = FatGraph()
