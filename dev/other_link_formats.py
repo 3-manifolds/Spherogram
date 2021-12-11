@@ -51,6 +51,7 @@ def from_gauss_code(code):
 
     return spherogram.Link(f'DT: {dt}')
 
+
 def regina_DT(code):
     """
     >>> L = regina_DT('flmnopHKRQGabcdeJI')
@@ -64,6 +65,8 @@ def regina_DT(code):
     l = string.ascii_letters[cross - 1]
     dt_prefix = 'DT: ' + l + 'a' + l
     return spherogram.Link(dt_prefix + code)
+
+
 
 if __name__ == '__main__':
     import doctest
