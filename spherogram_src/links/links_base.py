@@ -13,7 +13,13 @@ See the file "doc.pdf" for the conventions, and the file
 """
 from .. import graphs
 from .ordered_set import OrderedSet
-CyclicList = graphs.CyclicList
+
+class CyclicList4(list):
+    def __init__(self):
+        return list.__init__(self, [None, None, None, None])
+    def __getitem__(self, n):
+        return list.__getitem__(self, n % 4)
+
 
 is_int_DT_exterior = re.compile(
     r'DT[:]? *(\[[0-9, \-\(\)]+\](?: *, *\[[01, ]+\])?)$')
@@ -86,16 +92,17 @@ class Crossing(object):
 
     def __init__(self, label=None):
         self.label = label
-        self.adjacent = CyclicList([None, None, None, None])
+        self.adjacent = CyclicList4()
         self._clear()
+        self._adjacent_len = 4
 
     def _clear(self):
         self.sign, self.directions = 0, set()
         self._clear_strand_info()
 
     def _clear_strand_info(self):
-        self.strand_labels = CyclicList([None, None, None, None])
-        self.strand_components = CyclicList([None, None, None, None])
+        self.strand_labels = CyclicList4()
+        self.strand_components = CyclicList4()
 
     def make_tail(self, a):
         """
@@ -113,7 +120,7 @@ class Crossing(object):
         """
         def rotate(v):
             return (v + s) % 4
-        new_adjacent = CyclicList(self.adjacent[s:] + self.adjacent[:s])
+        new_adjacent = [self.adjacent[rotate(i)] for i in range(4)]
         for i, (o, j) in enumerate(new_adjacent):
             if o != self:
                 o.adjacent[j] = (self, i)
@@ -136,6 +143,14 @@ class Crossing(object):
         if (2, 0) in self.directions:
             self.rotate_by_180()
         self.sign = 1 if (3, 1) in self.directions else -1
+
+    def is_incoming(self, i):
+        if self.sign == 1:
+            return i in (0, 3)
+        elif self.sign == -1:
+            return i in (0, 1)
+        else:
+            raise ValueError('Crossing not oriented')
 
     def __getitem__(self, i):
         return (self, i % 4)
@@ -199,7 +214,8 @@ class CrossingStrand(BasicCrossingStrand):
         """
         The CrossingStrand *counter-clockwise* from self.
         """
-        return CrossingStrand(self.crossing, (self.strand_index + s) % len(self.crossing.adjacent))
+        c, e = self.crossing, self.strand_index
+        return CrossingStrand(c, (e + s) % c._adjacent_len)
 
     def opposite(self):
         """
@@ -212,10 +228,14 @@ class CrossingStrand(BasicCrossingStrand):
         The CrossingStrand obtained by moving in the direction of self for
         one crossing
         """
-        return self.rotate(2).opposite()
+        # Equivalent to: return self.rotate(2).opposite()
+        c, e = self.crossing, self.strand_index
+        return CrossingStrand(*c.adjacent[(e + 2) % c._adjacent_len])
 
     def next_corner(self):
-        return self.rotate().opposite()
+        # Equivalent to: return self.rotate().opposite()
+        c, e = self.crossing, self.strand_index
+        return CrossingStrand(*c.adjacent[(e + 1) % c._adjacent_len])
 
     def previous_corner(self):
         return self.opposite().rotate(-1)
@@ -244,11 +264,11 @@ class CrossingEntryPoint(CrossingStrand):
 
     def next(self):
         c, e = self.crossing, self.strand_index
-        s = 1 if isinstance(c, Strand) else 2
+        s = c._adjacent_len // 2
         return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
 
     def previous(self):
-        s = 1 if isinstance(self.crossing, Strand) else 2
+        s = self.crossing._adjacent_len // 2
         return CrossingEntryPoint(*self.opposite().rotate(s))
 
     def other(self):
@@ -308,6 +328,7 @@ class Strand(object):
     def __init__(self, label=None):
         self.label = label
         self.adjacent = [None, None]
+        self._adjacent_len = 2
 
     def fuse(self):
         """
@@ -642,6 +663,21 @@ class Link(object):
                         component_starts=start_css)
         else:
             self._build()
+
+    def _check_crossing_orientations(self):
+        for C in self.crossings:
+            if C.sign == 1:
+                assert C.directions == { (0, 2), (3, 1) }
+            elif C.sign == -1:
+                assert C.directions == { (0, 2), (1, 3) }
+            else:
+                assert False
+            for (a, b) in C.directions:
+                D, d = C.adjacent[b]
+                assert d in {x for x, y in D.directions}
+                D, d = C.adjacent[a]
+                assert d in {y for x, y in D.directions}
+
 
     def _orient_crossings(self, start_orientations=None):
         if self.all_crossings_oriented():
@@ -1065,7 +1101,7 @@ class Link(object):
         PD = []
 
         for c in self.crossings:
-            PD.append([s + min_strand_index for s in c.strand_labels[:]])
+            PD.append([s + min_strand_index for s in c.strand_labels])
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         else:

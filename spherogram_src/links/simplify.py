@@ -92,11 +92,13 @@ def reidemeister_I_and_II(link, A):
 
     return eliminated, changed
 
-def basic_simplify(link):
+def basic_simplify(link, build_components=True, to_visit=None):
     """
     Do Reidemeister I and II moves until none are possible.
     """
-    to_visit, eliminated = set(link.crossings), set()
+    if to_visit is None:
+        to_visit = set(link.crossings)
+    eliminated = set()
     while to_visit:
         crossing = to_visit.pop()
         elim, changed = reidemeister_I_and_II(link, crossing)
@@ -108,7 +110,7 @@ def basic_simplify(link):
     success = len(eliminated) > 0
 
     # Redo the strand labels (used for DT codes)
-    if success:
+    if success and build_components:
         component_starts = []
         for component in link.link_components:
             a, b = component[:2]
@@ -346,6 +348,7 @@ def pickup_strand(link, dual_graph, kind, strand):
     then finding a path that minimizes the number of edges it has to cross
     over to connect the same endpoints. Returns number of crossings removed.
     """
+    init_link_cross_count = len(link.crossings)
     G = dual_graph
     startcep = strand[0].previous()
 
@@ -383,9 +386,9 @@ def pickup_strand(link, dual_graph, kind, strand):
 
     # creating a new list of crossings from which to rebuild the link,
     # remove old overcross
-    newcrossings = link.crossings
+    newcrossings = []
 
-    cr = remove_strand(link, strand)
+    removed = remove_strand(link, strand)
     loose_end = startcep.rotate(2)
 
     # find new sequence of overcrossings to create
@@ -400,9 +403,21 @@ def pickup_strand(link, dual_graph, kind, strand):
 
     ec, ecep = endpoint.crossing, endpoint.strand_index
     ec[ecep] = loose_end
-    link._rebuild()
 
-    return crossingsremoved
+    link.crossings.extend(newcrossings)
+    active = set()
+    for C in removed:
+        for i in range(4):
+            D = C.adjacent[i][0]
+            if D not in removed:
+                active.add(D)
+
+    active.update(newcrossings)
+    basic_simplify(link, build_components=False, to_visit=active)
+
+    final_cross_removed = init_link_cross_count - len(link.crossings)
+    assert final_cross_removed >= crossingsremoved
+    return final_cross_removed
 
 
 def strand_pickup(link, kind):
@@ -465,7 +480,7 @@ def remove_strand(link, strand):
     for s in bridge_strands.values():
         s.fuse()
 
-    return len(crossing_set)
+    return crossing_set
 
 
 def cross(link, cep_to_cross, kind, loose_end, label):
@@ -474,23 +489,34 @@ def cross(link, cep_to_cross, kind, loose_end, label):
     cep_to_cross and its opposite, and attach one side to a given
     position loose_end.
     """
-    if kind == 'over':
-        a, b, c, d = 0, 1, 2, 3
-    else:
-        assert kind == 'under'
-        a, b, c, d = 3, 0, 1, 2
 
-    new_crossing = Crossing(label)
-    new_crossing[b] = loose_end
     ic = cep_to_cross
     ico = ic.opposite()
     while ic.crossing not in link.crossings:
         ic = ic.next()
     while ico.crossing not in link.crossings:
         ico = ico.next()
+    left_to_right = not ic.crossing.is_incoming(ic.strand_index)
+
+    if kind == 'over':
+        if left_to_right:
+            a, b, c, d = 2, 3, 0, 1
+        else:
+            a, b, c, d = 0, 1, 2, 3
+    else:
+        assert kind == 'under'
+        a, b, c, d = 3, 0, 1, 2
+
+    new_crossing = Crossing(label)
+    new_crossing[b] = loose_end
     new_crossing[c] = ic
     new_crossing[a] = ico
-
+    new_crossing.make_tail(b)
+    if left_to_right:
+        new_crossing.make_tail(c)
+    else:
+        new_crossing.make_tail(a)
+    new_crossing.orient()
     return new_crossing, new_crossing.crossing_strands()[d]
 
 
@@ -686,27 +712,26 @@ def pickup_simplify(link, type_III=0):
     Optimizes the overcrossings on a diagram, then the undercrossings,
     simplifying in between until the process stabilizes.
     """
-    def intermediate_simplify(a_link):
-        if type_III:
-            simplify_via_level_type_III(a_link, type_III)
-        else:
-            basic_simplify(a_link)
-
     L = link
     init_num_crossings = len(L.crossings)
-    intermediate_simplify(L)
+    if type_III:
+        simplify_via_level_type_III(link, type_III)
+    else:
+        basic_simplify(L, build_components=False)
     stabilized = init_num_crossings == 0
 
     while not stabilized:
         old_cross = len(L.crossings)
         strand_pickup(L, 'over')
-        intermediate_simplify(L)
+        if type_III:
+            simplify_via_level_type_III(link, type_III)
 
         strand_pickup(L, 'under')
-        intermediate_simplify(L)
-
+        if type_III:
+            simplify_via_level_type_III(link, type_III)
 
         new_cross = len(L.crossings)
         stabilized = new_cross == 0 or new_cross == old_cross
 
+    L._rebuild()
     return len(L.crossings) != init_num_crossings
