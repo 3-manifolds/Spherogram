@@ -100,7 +100,8 @@ class Link(links_base.Link):
             if isinstance(braid_closure, Braid):
                 braid_closure = sage_braid_as_int_word(braid_closure)
             if crossings is not None and isinstance(crossings, (SageKnot, SageLink)):
-                crossings = crossings.pd_code()
+                # Sage's PD_code lists strands *clockwise* not our *anticlockwise*.
+                crossings = [[x[0], x[3], x[2], x[1]] for x in crossings.pd_code()]
 
         links_base.Link.__init__(self, crossings, braid_closure, check_planarity, build)
 
@@ -648,7 +649,7 @@ class Link(links_base.Link):
           q^2 V(L-) - q^-2 V(L+) = (q - q^-1) V(L0)
 
         and V(n-component unlink) = (q + q^-1)^(n-1).
-        
+
         WARNING: The default conventions changed in SnapPy 3.0.  You
         can recover the old conventions as illustrated below::
 
@@ -762,6 +763,13 @@ class Link(links_base.Link):
 
         Can also go the other way::
 
+           sage: L = Link('K11n11')
+           sage: M = Link(L.sage_link())
+           sage: L.signature(), M.signature()
+           (-2, -2)
+
+        Can also take a braid group perspective.
+
             sage: B = BraidGroup(4)
             sage: a, b, c = B.gens()
             sage: Link(braid_closure=(a**-3) * (b**4) * (c**2) * a * b * c )
@@ -772,6 +780,8 @@ class Link(links_base.Link):
             Knot represented by 3 crossings
             sage: Link(S)
             <Link: 1 comp; 3 cross>
+
+
         """
         if SageKnot is None:
             raise ValueError('Your SageMath does not seem to have a native link type')
