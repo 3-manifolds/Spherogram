@@ -141,39 +141,39 @@ def _int_to_chars(value, num_chars):
 
     return chars
 
+
 def _get_num_chars(code):
     """
     Given a DT code, determine the minimal number of characters to encode
     each integer so that the code fits.
     """
-    max_number = max([
-            max([abs(crossing) for crossing in comp])
-            for comp in code])
+    max_number = max(max(abs(crossing) for crossing in comp)
+                     for comp in code)
     num_chars = 1
     while max_number > 31:
         num_chars += 1
         max_number >>= 6
     return num_chars
 
+
 def _encode_DT_code(code):
     """
     Given a DT code, convert to base64-like encoding.
     """
     num_chars = _get_num_chars(code)
-    
     # 1 -> "1", 2 -> "2", ...
-    chars  = _unsigned_int_to_char(num_chars + 52)
-
+    chars = _unsigned_int_to_char(num_chars + 52)
     chars += _int_to_chars(len(code), num_chars)
     for comp in code:
         chars += _int_to_chars(len(comp), num_chars)
         for crossing in comp:
             chars += _int_to_chars(crossing, num_chars)
-        
     return chars
 
+
 def _boolean_to_int(b):
-    return 1 if b else 0
+    return 1 if b else 0  # int(b)
+
 
 def _encode_flips(flips):
     """

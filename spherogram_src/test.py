@@ -1,9 +1,14 @@
-import spherogram, spherogram.links, spherogram.links.test
-import spherogram.links.simplify, spherogram.links.morse
+import spherogram
+import spherogram.links
+import spherogram.links.test
+import spherogram.links.simplify
+import spherogram.links.morse
 import spherogram.links.seifert
 
 import spherogram.test_helper as test_helper
-import re, getopt, sys
+import re
+import getopt
+import sys
 
 
 modules = [spherogram.codecs.DT, spherogram.codecs.Base64LikeDT,
@@ -18,6 +23,7 @@ if test_helper._have_snappy:
     import snappy
     spherogram.links.links_base.Link.exterior = snappy._link_exterior
 
+
 def run_doctests(verbose=False, print_info=True):
     if test_helper._have_snappy:
         snappy.number.Number._accuracy_for_testing = 8
@@ -26,6 +32,7 @@ def run_doctests(verbose=False, print_info=True):
         snappy.ManifoldHP.use_field_conversion('snappy')
     return test_helper.doctest_modules(modules, verbose, print_info)
 
+
 def run_all_tests():
     optlist, args = getopt.getopt(sys.argv[1:], 'v', ['verbose'])
     verbose = len(optlist) > 0
@@ -33,6 +40,7 @@ def run_all_tests():
     print()
     spherogram.links.test.run()
     return results.failed
+
 
 if __name__ == '__main__':
     sys.exit(run_all_tests())

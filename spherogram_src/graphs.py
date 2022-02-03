@@ -35,6 +35,7 @@ for x, y in G.edges:
 where x and y will be the two endpoints of the edge (ordered as
 tail, head in the case of directed edges).
 """
+from collections import deque, defaultdict
 
 _within_sage = False
 try:
@@ -48,8 +49,6 @@ except ImportError:
     except ValueError: # Allow importing from source directory
         pass
 
-from collections import deque, defaultdict
-
 
 class CyclicList(list):
     def __getitem__(self, n):
@@ -58,10 +57,13 @@ class CyclicList(list):
         elif isinstance(n, slice):
             # Python3 only: in python2, __getslice__ gets called instead.
             return list.__getitem__(self, n)
+
     def succ(self, x):
-        return self[(self.index(x)+1)%len(self)]
+        return self[(self.index(x) + 1) % len(self)]
+
     def pred(self, x):
-        return self[(self.index(x)-1)%len(self)]
+        return self[(self.index(x) - 1) % len(self)]
+
 
 class BaseEdge(tuple):
     """
@@ -444,11 +446,11 @@ class Graph(object):
                 forbidden=full_edges,
                 for_flow=True)
             for parent, vertex, child in generator:
-                 parents[child] = (parent, vertex)
-                 cut_set.add(child(vertex))
-                 if child(vertex) == sink:
-                     reached_sink = True
-                     break
+                parents[child] = (parent, vertex)
+                cut_set.add(child(vertex))
+                if child(vertex) == sink:
+                    reached_sink = True
+                    break
             # If we did not get to the sink, we visited every vertex
             # reachable from the source, thereby providing the cut
             # set.
@@ -580,16 +582,12 @@ class ReducedGraph(Graph):
         """
         Return the valence of a vertex, counting edge multiplicities.
         """
-        valence = 0
-        for e in self.incidence_dict[vertex]:
-                valence += e.multiplicity
-        return valence
+        return sum(e.multiplicity for e in self.incidence_dict[vertex])
 
     def is_planar(self):
         """
         Return the planarity.
         """
-
         verts_with_loops = set()
         non_loop_edges = set()
         for e in self.edges:
@@ -691,7 +689,7 @@ class FatGraph(Graph):
             # themselves sorted.
             if v in incidences:
                 incidences[v].append(edge)
-                incidences[v].sort(key=lambda e : e.slot(v))
+                incidences[v].sort(key=lambda e: e.slot(v))
             else:
                 incidences[v] = CyclicList([edge])
         return edge
@@ -704,25 +702,23 @@ class FatGraph(Graph):
     def reorder(self, vertex, cyclist):
         for e, n in zip(self(vertex), cyclist):
             e.set_slot(vertex, n)
-        self.incidence_dict[vertex].sort(key=lambda e : e.slot(vertex))
+        self.incidence_dict[vertex].sort(key=lambda e: e.slot(vertex))
 
     def boundary_cycles(self):
-        left  = [(e[0], e, 'L') for e in self.edges]
+        left = [(e[0], e, 'L') for e in self.edges]
         right = [(e[0], e, 'R') for e in self.edges]
         sides = left + right
         cycles = []
         while sides:
             cycle = []
             v, e, s = start = sides.pop()
-            #print('start:', start)
             while True:
                 cycle.append(e)
                 # cross the edge
                 v = e(v)
-                if (
-                    ( e.twisted and s=='L') or
-                    ( not e.twisted and (s=='L')==(v==e[0]) )
-                    ): # go counter-clockwise
+                if (( e.twisted and s=='L') or
+                        ( not e.twisted and (s=='L')==(v==e[0]) )):
+                    # go counter-clockwise
                     e = self(v).succ(e)
                     s = 'R' if e.twisted or v == e[0] else 'L'
                 else: # go clockwise
@@ -771,7 +767,7 @@ class Digraph(Graph):
         Return the set of non-loop edges which *begin* at the vertex.
         """
         return set(e for e in self(vertex)
-                     if e.tail is vertex and e.head is not vertex)
+                   if e.tail is vertex and e.head is not vertex)
 
     # Force flows to go in the direction of the edge.
     flow_incident = outgoing
@@ -781,7 +777,7 @@ class Digraph(Graph):
         Return the set of non-loop edges which *end* at the vertex.
         """
         return set(e for e in self(vertex)
-                     if e.head is vertex and e.tail is not vertex)
+                   if e.head is vertex and e.tail is not vertex)
 
     def children(self, vertex):
         """

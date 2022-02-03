@@ -33,6 +33,7 @@ import types
 class SageNotAvailable(Exception):
     pass
 
+
 if _within_sage:
     def sage_method(function):
         function._sage_method = True
@@ -46,6 +47,7 @@ else:
 
 
 SNAPPY_FLAG = doctest.register_optionflag('SNAPPY')
+
 
 def filter_out_snappy(pieces):
     ans = []
@@ -70,14 +72,15 @@ else:
         def parse(self, string, name='<string>'):
             pieces = doctest.DocTestParser.parse(self, string, name)
             return filter_out_snappy(pieces)
-
         
     globs = dict()
 
+
 def print_results(module, results):
     print(module.__name__ + ':')
-    print('   %s failures out of %s tests.' %  (results.failed, results.attempted))
-    
+    print('   %s failures out of %s tests.' % (results.failed, results.attempted))
+
+
 def doctest_modules(modules, verbose=False, print_info=True, extraglobs=dict()):
     finder = doctest.DocTestFinder(parser=DocTestParser())
 #    full_extraglobals = dict(globs.items() + extraglobs.items())
@@ -100,8 +103,3 @@ def doctest_modules(modules, verbose=False, print_info=True, extraglobs=dict()):
     if print_info:
         print('\nAll doctests:\n   %s failures out of %s tests.' % (failed, attempted))
     return doctest.TestResults(failed, attempted)
-    
-
-        
-    
-

@@ -227,15 +227,13 @@ class DTFatGraph(FatGraph):
         if not self.pushed:
             self.pushed = True
             return
-        #print 'pushing %s'%flips
         self.stack.append( 
             [flips,
              [ ( (e[0], e.slots[0]), (e[1], e.slots[1]), e.component )
                for e in self.edges if e.marked],
              [ ( (e[0], e.slots[0]), (e[1], e.slots[1]), e.component )
                for e in self.edges if not e.marked]
-             ]
-            )
+             ])
 
     def pop(self):
         """
@@ -250,8 +248,6 @@ class DTFatGraph(FatGraph):
         for x, y, component in unmarked:
             edge = self.add_edge(x, y)
             edge.component = component
-        #print 'popped %s[%s]'%(vertex, flips)
-        #print 'stack size: %d'%len(self.stack)
         return flips
 
     def clear_stack(self):
@@ -362,8 +358,6 @@ class DTFatGraph(FatGraph):
         for edge in marked_arc[:-1]:
             v = edge(v)
             vertex_list.append(v)
-        #print 'bridge:', marked_arc
-        #print 'avoiding:', vertex_list
         for start_vertex in vertex_list:
             # the vertex_set gets expanded to include vertices visited
             # by the bridge path.
@@ -457,7 +451,7 @@ class DTFatGraph(FatGraph):
     def incoming_under(self, vertex):
         first, second, even_over = vertex
         incoming = [e.PD_index() for e in self(vertex) if e[1] is vertex]
-        incoming.sort(key = lambda x : x%2)
+        incoming.sort(key = lambda x: x % 2)
         return incoming[0] if even_over else incoming[1]
 
     def PD_tuple(self, vertex):
@@ -779,7 +773,7 @@ class DTcodec(object):
         """
         G = self.fat_graph
         vertices = [v for v in G.vertices if 0 < G.marked_valences[v] < 4]
-        vertices.sort( key=lambda v : G.marked_valences[v] )
+        vertices.sort(key=lambda v: G.marked_valences[v])
         try:
             return vertices.pop()
         except IndexError:

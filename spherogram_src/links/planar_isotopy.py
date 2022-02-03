@@ -108,7 +108,6 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
         rotated_gluings.sort()
         isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,root=rotated_root))        
 
-
     return min(isosigs)
 
 
@@ -133,12 +132,13 @@ def crossing_orientations(strands):
             css_seen.append(cs) #didn't find cs
     return orientations, over_or_under
 
+
 """
 Give a list of the crossing strands encountered starting at 
 a strand on the boundary of a tangle and moving to the other
 end of that strand.
 """
-def cross_strand(tangle,i):
+def cross_strand(tangle, i):
     if i >= 2*tangle.n:
         raise Exception("Not a valid start position for strand")
     cs = tangle.adjacent[i]
@@ -148,21 +148,23 @@ def cross_strand(tangle,i):
         strand.append(cs)
     return strand
 
+
 def loop_strand(cs):
     """
     Get the closed loop starting at crossing strand cs
     """
     strand = [cs]
-    cs = cs[0].adjacent[(cs[1]+2)%4]
+    cs = cs[0].adjacent[(cs[1] + 2) % 4]
     while cs not in strand:
         strand.append(cs)
-        cs = cs[0].adjacent[(cs[1]+2)%4]
+        cs = cs[0].adjacent[(cs[1] + 2) % 4]
     return strand
+
 
 def all_cross_strands(tangle):
     """
     Returns all the strands but without duplicate in the opposite direction,
-    starting at position 0 and going clockwise, and then components that 
+    starting at position 0 and going clockwise, and then components that
     don't intersect the boundary.
     """
     other_ends_seen = [] #use to eliminate duplicate strand in other direction
@@ -204,26 +206,26 @@ def all_cross_strands(tangle):
                                 break
                     else:
                         seen_once.add(loop_cs[0])
-    while len(orientations)<len(tangle.crossings):
+    while len(orientations) < len(tangle.crossings):
         for loop in loops:
             for cs in loop:
                 if cs[0] in seen_once:
-                     loop = loop_strand((cs[0],(cs[1]+1)%4))
-                     loops.append(loop)
-                     cs_seen.extend(loop)
-                     for loop_cs in loop:
-                         if loop_cs[0] in seen_once:
-                             for seen_cs in cs_seen:
-                                 if loop_cs[0] == seen_cs[0]:
-                                     orientation = (loop_cs[1]-seen_cs[1])%4
-                                     if orientation == 3:
-                                         orientation = -1
-                                     orientations[loop_cs[0]]=orientation
-                                     over_or_under[loop_cs[0]]= loop_cs[1]%2
-                                     seen_once.remove(loop_cs[0])
-                                     break
-                         else:
-                             seen_once.add(loop_cs[0])
+                    loop = loop_strand((cs[0],(cs[1]+1)%4))
+                    loops.append(loop)
+                    cs_seen.extend(loop)
+                    for loop_cs in loop:
+                        if loop_cs[0] in seen_once:
+                            for seen_cs in cs_seen:
+                                if loop_cs[0] == seen_cs[0]:
+                                    orientation = (loop_cs[1]-seen_cs[1])%4
+                                    if orientation == 3:
+                                        orientation = -1
+                                    orientations[loop_cs[0]]=orientation
+                                    over_or_under[loop_cs[0]]= loop_cs[1]%2
+                                    seen_once.remove(loop_cs[0])
+                                    break
+                        else:
+                            seen_once.add(loop_cs[0])
     crossings = map(lambda x: x[0], cs_seen)
     crossing_order = []
     for c in crossings:

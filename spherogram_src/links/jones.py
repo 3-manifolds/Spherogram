@@ -15,6 +15,7 @@ from . import exhaust
 R = LaurentPolynomialRing(ZZ, 'q')
 q = R.gen()
 
+
 def num_Pn(n):
     """
     An element of Jake's P_{0, n} of planar tangles from 0 points to n
@@ -22,6 +23,7 @@ def num_Pn(n):
     is_noncrossing is True.
     """
     return len([m for m in PerfectMatchings(n) if m.is_noncrossing()])
+
 
 def insert_cup(matching, i):
     """
@@ -36,9 +38,11 @@ def insert_cup(matching, i):
     [(0, 1), (2, 5), (3, 4), (6, 7)]
     """
     assert len(matching.base_set()) >= i
+
     def shift(pair):
         return [a if a < i else a + 2 for a in pair]
     return PerfectMatching([shift(pair) for pair in matching] + [(i, i + 1)])
+
 
 def cap_off(matching, i):
     """
@@ -53,6 +57,7 @@ def cap_off(matching, i):
     """
     def shift(a):
         return a if a < i else a - 2
+
     def follow(a):
         b = matching.partner(a)
         if b == i:
@@ -105,7 +110,7 @@ class VElement(object):
     def __rmul__(self, other):
         if other in R:
             other = R(other)
-            return VElement({m:other*c for m, c in self.dict.items()})
+            return VElement({m: other * c for m, c in self.dict.items()})
 
     def __add__(self, other):
         if isinstance(other, VElement):
@@ -177,6 +182,7 @@ def kauffman_bracket(link):
     assert ans.is_multiple_of_empty_pairing()
     return ans.dict[PerfectMatching([])]
 
+
 def jones_polynomial(link, normalized=True):
     bracket = kauffman_bracket(link)
     if normalized:
@@ -190,10 +196,12 @@ def jones_polynomial(link, normalized=True):
     n_minus, n_plus = signs.count(-1), signs.count(1)
     return (-1)**n_minus * q**(n_plus - 2*n_minus) * norm_bracket
 
+
 def test_one_link(link):
     new_poly = jones_polynomial(link)
     old_poly = link.jones_polynomial(new_convention=True)
     return new_poly - old_poly == 0
+
 
 def test_links(N):
     import snappy
@@ -201,6 +209,7 @@ def test_links(N):
         M = snappy.HTLinkExteriors.random()
         L = M.link()
         print(M.name(), test_one_link(L))
+
 
 if __name__ == '__main__':
     import doctest

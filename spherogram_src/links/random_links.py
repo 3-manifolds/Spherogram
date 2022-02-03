@@ -8,7 +8,6 @@ Nathan Dunfield, Alexander Ehrenberg, Shiladitya Bhattacharyya, and Dongming Lei
 Details to hopefully appear in some paper or other.  I wouldn't hold
 your breath, though.
 """
-
 import random
 from .. import graphs
 from . import links, twist
@@ -19,6 +18,7 @@ class LinkGenerationError(Exception):
     def __init__(self, num_tries):
         message = "Didn't generate requested link after %d tries." % num_tries
         Exception.__init__(self, message)
+
 
 def random_map(num_verts, edge_conn_param=4,
                num_link_comps=0, max_tries=100):
@@ -34,7 +34,6 @@ def random_map(num_verts, edge_conn_param=4,
                               num_link_comps, max_tries)
         if data is None:
             raise LinkGenerationError(max_tries)
-        
 
     vertex_adjacencies = []
     for vertex, adjacencies in data:
@@ -47,7 +46,8 @@ def random_map(num_verts, edge_conn_param=4,
         for i, edge in enumerate(edges):
             edge_adjacencies[edge] = (v, i)
     return edge_adjacencies
-        
+
+
 def map_to_link(map):
     num_edges = len(map) // 2
     crossings = [links.Crossing() for i in range(num_edges//2)]
@@ -164,12 +164,11 @@ def random_link(crossings,
     >>> isinstance(random_link(30, return_all_pieces=True), list)
     True
     """
-
     # This means no trivial loops.  PlanarMap accepts 6, which means
-    # no bigons, but this is unbearably slow.  
+    # no bigons, but this is unbearably slow.
     edge_conn_param = 4
 
-    # Generate the initial link    
+    # Generate the initial link
     if num_components == 'any':
         plane_map = random_map(crossings, edge_conn_param)
         link = map_to_link(plane_map)
@@ -183,12 +182,11 @@ def random_link(crossings,
             link = map_to_link(plane_map)
             if len(link.link_components) >= num_components:
                 break
-        
+
         comps = longest_components(link, num_components)
         link = link.sublink(comps)
         if len(link.link_components) != num_components:
             raise LinkGenerationError(max_tries)
-
 
     # Adjust the currently random crossings to match the request
 
@@ -207,26 +205,25 @@ def random_link(crossings,
         elif isinstance(simplify, str):
             return link.simplify(mode=simplify)
         return False
-            
+
     simplify_func(link)
-            
-    # Pull into "prime" pieces, if requested.  
-    
+
+    # Pull into "prime" pieces, if requested.
+
     if prime_decomposition:
         if return_all_pieces:
             return simplified_prime_pieces(link, simplify_func)
         else:
             return largest_prime_piece(link, simplify_func)
     else:
-        return link 
+        return link
 
 #def random_knot(crossings, **kwargs):
 #    return random_link(crossings, num_components=1, **kwargs)
-#
+
 #def new_random_knot(crossings, prime_decomposition=True):
 #    return random_knot(crossings, edge_conn_param=4,
 #                initial_map_gives_knot=True, 
 #                return_all_pieces=False, 
 #                prime_decomposition=prime_decomposition,
 #                consistent_twist_regions=True)
-

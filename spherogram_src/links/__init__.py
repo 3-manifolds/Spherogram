@@ -1,10 +1,13 @@
-from .links import Crossing, Strand, Link, ClosedBraid
+import os
+import sys
 
+from .links import Crossing, Strand, Link, ClosedBraid
 from .tangles import Tangle, RationalTangle, ZeroTangle, InfinityTangle, IdentityBraid, join_strands
 from . import orthogonal
-Link.view = orthogonal.orthogonal_draw
-import os, sys
 from .random_links import random_link
+
+Link.view = orthogonal.orthogonal_draw
+
 
 def pdf_docs():
     "Open the PDF docs for links and tangles using the default application"
@@ -17,6 +20,8 @@ def pdf_docs():
         command = 'xdg-open'
     os.system(command + ' ' + file)
 
-__all__ = ['Crossing', 'Strand', 'Link', 'ClosedBraid', 'Tangle', 'RationalTangle',
-    'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'join_strands',
-    'pdf_docs', 'random_link']
+
+__all__ = ['Crossing', 'Strand', 'Link', 'ClosedBraid',
+           'Tangle', 'RationalTangle',
+           'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'join_strands',
+           'pdf_docs', 'random_link']
