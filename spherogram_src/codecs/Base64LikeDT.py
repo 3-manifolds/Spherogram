@@ -13,7 +13,7 @@ Associated to a DT code are the flips, which contain information about the signs
 of the crossings.  The flips can be deduced from the DT code, but the algorithm
 for laying out a link projection from a DT code runs faster if the flips are
 known in advance. Here, the associated flips are::
-  
+
    >>> from spherogram import DTcodec
    >>> flips = DTcodec(code).flips
    >>> flips
@@ -90,7 +90,7 @@ def _chars_to_int(chars):
     Take a string of ASCII characters and convert it to integer using the
     base64-like scheme described above.
     """
-    
+
     value = 0
 
     for pos, char in enumerate(chars):
@@ -127,7 +127,7 @@ def _int_to_chars(value, num_chars):
     Encode the given integer using base64-like encoding with num_chars
     characters.
     """
-    
+
     abs_value = abs(value)
 
     chars = ""
@@ -147,8 +147,7 @@ def _get_num_chars(code):
     Given a DT code, determine the minimal number of characters to encode
     each integer so that the code fits.
     """
-    max_number = max(max(abs(crossing) for crossing in comp)
-                     for comp in code)
+    max_number = max(abs(crossing) for comp in code for crossing in comp)
     num_chars = 1
     while max_number > 31:
         num_chars += 1
@@ -211,10 +210,10 @@ def _decode_DT_code(chars):
     num_chars = _char_to_unsigned_int(chars[0]) - 52
 
     num_components, pos = _consume_int_and_advance(chars, 1, num_chars)
-    
+
     for i in range(num_components):
         component = []
-        
+
         num_crossings, pos = _consume_int_and_advance(chars, pos, num_chars)
         for j in range(num_crossings):
             crossing, pos = _consume_int_and_advance(chars, pos, num_chars)
@@ -240,6 +239,7 @@ def _empty_to_none(l):
         return None
     return l
 
+
 def decode_base64_like_DT_code(chars):
     """
     Given a base64-like encoding, return the DT code and, if present in the
@@ -251,4 +251,3 @@ def decode_base64_like_DT_code(chars):
     flips = _decode_flips(chars[pos:])[:num_crossings]
 
     return code, _empty_to_none(flips)
-    
