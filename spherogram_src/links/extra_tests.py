@@ -1,10 +1,10 @@
-from . import links, tangles
-Crossing, Link, RationalTangle, IdentityBraid = links.Crossing, links.Link, tangles.RationalTangle, tangles.IdentityBraid
-import os
 import sys
-import re
+from . import links, tangles
+
+Crossing, Link, RationalTangle, IdentityBraid = links.Crossing, links.Link, tangles.RationalTangle, tangles.IdentityBraid
 
 # ----- Some basic tests, constructing links by hand -------
+
 
 def figure8():
     a, b, c, d = [Crossing(x) for x in 'abcd']
@@ -16,7 +16,8 @@ def figure8():
     b[3] = c[2]
     c[3] = d[2]
     c[0] = d[1]
-    return Link([a,b,c,d])
+    return Link([a, b, c, d])
+
 
 def punct_torus():
     a = Crossing('a')
@@ -24,8 +25,9 @@ def punct_torus():
     a[1] = a[3]
     return Link([a], check_planarity=False)
 
+
 def whitehead():
-    a, b, c, d, e =  crossings = [Crossing(x) for x in 'abcde']
+    a, b, c, d, e = crossings = [Crossing(x) for x in 'abcde']
     a[0] = b[3]
     a[1] = d[0]
     a[2] = d[3]
@@ -37,14 +39,15 @@ def whitehead():
     c[2] = e[3]
     d[1] = e[0]
     return Link(crossings)
- 
+
+
 def basic_test():
-    K, W, T = figure8(), whitehead(), punct_torus()
-    print( K.is_planar(), W.is_planar(), punct_torus().is_planar() )
-    print( K.PD_code(True) )
-    print( K.DT_code(True) , K.peer_code())
-    print( W.PD_code(True) )
-    print( W.DT_code(True) , K.peer_code())
+    K, W, _ = figure8(), whitehead(), punct_torus()
+    print(K.is_planar(), W.is_planar(), punct_torus().is_planar())
+    print(K.PD_code(True))
+    print(K.DT_code(True), K.peer_code())
+    print(W.PD_code(True))
+    print(W.DT_code(True), K.peer_code())
 
 
 # ----- checking the SnapPy link exterior code ------------
@@ -57,9 +60,12 @@ def knot(fractions):
         T = A + B + C
         return T.numerator_closure()
 
+
 def some_knots():
-    from . import hyperbolic_montesinos 
-    return [ (K, knot(fractions)) for K, fractions in hyperbolic_montesinos.knots] 
+    from . import hyperbolic_montesinos
+    return [(K, knot(fractions))
+            for K, fractions in hyperbolic_montesinos.knots]
+
 
 def exterior_test():
     try:
@@ -72,7 +78,7 @@ def exterior_test():
     C, Id = RationalTangle(1), IdentityBraid(1)
     x = C | Id
     y = Id | (-C)
-    print((x*y*x*y).denominator_closure().exterior().volume())
+    print((x * y * x * y).denominator_closure().exterior().volume())
 
     for name, K in some_knots():
         M0, M1 = K.exterior(), snappy.Manifold(K.DT_code(True))
@@ -89,13 +95,12 @@ def alexander_polynomial_test():
     compute the Alexander polynomials via KnotTheory and
     also Sage.  Make sure they match.
     """
-    
     try:
         sys.path.append('/Users/dunfield/work/python')
         import nsagetools
     except ImportError:
         print("Skipping this test as you're not within Sage and/or are not Nathan.")
-        return 
+        return
 
     from sage.all import mathematica, PolynomialRing, ZZ
 
@@ -107,7 +112,7 @@ def alexander_polynomial_test():
 
     def alex_by_KnotTheory(L):
         p = mathematica.MyAlex(L.PD_code(True)).sage()
-        i = min( [i for i,c in enumerate(p) if c != 0])
+        i = min([i for i, c in enumerate(p) if c != 0])
         R = PolynomialRing(ZZ, 'a')
         return R(p[i:])
 
@@ -120,6 +125,7 @@ def alexander_polynomial_test():
         assert alex_match(K)
 
     print("Checked Alexander polynomials via KnotTheory for these 167 knots.")
+
 
 if __name__ == '__main__':
     basic_test()

@@ -32,13 +32,13 @@ if _within_sage:
 else:
     pass
 
-def normalize_alex_poly(p,t):
+
+def normalize_alex_poly(p, t):
     """
     Normalize the sign of the leading coefficient and make all
     exponents positive, then return as an ordinary rather than Laurent
     polynomial.
     """
-
     if len(t) == 1:
         p = p*(t[0]**(-min(p.exponents())))
         if p.coefficients()[-1]<0:
@@ -46,7 +46,6 @@ def normalize_alex_poly(p,t):
         p, e = p.polynomial_construction()
         assert e == 0
         return p
-
 
     max_degree = max([sum(x) for x in p.exponents()])
     highest_monomial_exps = [x for x in p.exponents() if sum(x)==max_degree]
@@ -88,8 +87,9 @@ extra_docstring = """
     see the documentation for the "sage_link" method for details.
 """
 
+
 class Link(links_base.Link):
-    __doc__ = links_base.Link.__doc__  + extra_docstring
+    __doc__ = links_base.Link.__doc__ + extra_docstring
 
     def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
         if _within_sage:
@@ -410,7 +410,6 @@ class Link(links_base.Link):
         not be the case that these two graphs are complementary in the
         expected way.
         """
-
         faces = []
         for x in self.faces():
             l = []
@@ -419,22 +418,21 @@ class Link(links_base.Link):
                 l.append((y[0],(y[1]+1)%4))
             faces.append(l)
 
-        coords=list()
+        coords = list()
         for i in range(len(faces)-1):
-            for j in range (i+1, len(faces)):
-                a=set(faces[i])
-                b=set(faces[j])
-                s=a.union(b)
+            for j in range(i+1, len(faces)):
+                a = set(faces[i])
+                b = set(faces[j])
+                s = a.union(b)
                 for x in range(len(self.crossings)):
                     crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
                     total=set(crossings)
                     if total.issubset(s):
                         coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
 
-        G=graph.Graph(coords, multiedges=True)
-        component=G.connected_components(sort=False)[1]
-        G=G.subgraph(component)
-        return G
+        G = graph.Graph(coords, multiedges=True)
+        component = G.connected_components(sort=False)[1]
+        return G.subgraph(component)
 
     @sage_method
     def white_graph(self):
@@ -684,8 +682,8 @@ class Link(links_base.Link):
                 J = jones.jones_polynomial(self, normalized=True)
                 R = J.parent()
                 q = R.gen()
-                terms = [J[e]*q**(e//2) for e in J.exponents()]
-                J = sum(terms , R(0))
+                terms = [J[e] * q**(e // 2) for e in J.exponents()]
+                J = sum(terms, R(0))
 
         if variable is not None:
             J = J(variable)

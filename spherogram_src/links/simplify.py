@@ -142,11 +142,13 @@ def possible_type_III_moves(link):
                     ans.append(face)
     return ans
 
+
 def insert_strand(X, x):
     Y, y = X.adjacent[x]
     S = Strand()
     S[0], S[1] = X[x], Y[y]
     return S
+
 
 def reidemeister_III(link, triple):
     """
@@ -154,16 +156,17 @@ def reidemeister_III(link, triple):
     update its lists of link components.
     """
     A, B, C = [t.crossing for t in triple]
-    a, b, c =  [t.strand_index for t in triple]
+    a, b, c = [t.strand_index for t in triple]
     # We insert Strands around the border of the triple to make the code more
     # transparent and eliminate some special cases.
-    old_border =  [(C, c-1), (C, c-2), (A, a-1), (A, a-2), (B, b-1), (B, b-2)]
+    old_border = [(C, c-1), (C, c-2), (A, a-1), (A, a-2), (B, b-1), (B, b-2)]
     border_strands = [insert_strand(*P) for P in old_border]
     new_boarder = [(A,a), (B, b+1), (B, b), (C, c+1), (C, c), (A, a+1)]
     for i, (X,x) in enumerate(new_boarder):
         X[x] = border_strands[i][0]
     A[a-1], B[b-1], C[c-1] = B[b+2], C[c+2], A[a+2]
     [S.fuse() for S in border_strands]
+
 
 def simplify_via_level_type_III(link, max_consecutive_failures=100):
     """
@@ -187,8 +190,10 @@ def simplify_via_level_type_III(link, max_consecutive_failures=100):
     link._build_components()
     return success
 
+
 def common_element(X, Y):
-    return list(set(X) & set(Y))[0]
+    return next(iter(set(X) & set(Y)))
+
 
 class Face(tuple):
     """

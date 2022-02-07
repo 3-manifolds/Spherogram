@@ -14,9 +14,11 @@ See the file "doc.pdf" for the conventions, and the file
 from .. import graphs
 from .ordered_set import OrderedSet
 
+
 class CyclicList4(list):
     def __init__(self):
         return list.__init__(self, [None, None, None, None])
+
     def __getitem__(self, n):
         return list.__getitem__(self, n % 4)
 
@@ -667,9 +669,9 @@ class Link(object):
     def _check_crossing_orientations(self):
         for C in self.crossings:
             if C.sign == 1:
-                assert C.directions == { (0, 2), (3, 1) }
+                assert C.directions == {(0, 2), (3, 1)}
             elif C.sign == -1:
-                assert C.directions == { (0, 2), (1, 3) }
+                assert C.directions == {(0, 2), (1, 3)}
             else:
                 assert False
             for (a, b) in C.directions:
@@ -677,7 +679,6 @@ class Link(object):
                 assert d in {x for x, y in D.directions}
                 D, d = C.adjacent[a]
                 assert d in {y for x, y in D.directions}
-
 
     def _orient_crossings(self, start_orientations=None):
         if self.all_crossings_oriented():

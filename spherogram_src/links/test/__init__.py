@@ -279,11 +279,9 @@ class TestLinkFunctions(unittest.TestCase):
             link = getattr(self, link_name)
             self.assertEqual(link.jones_polynomial(new_convention=False), L(poly)*q**exp)
 
+
 def run():
     test_montesinos.test(15)
     if _within_sage:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)
         unittest.TextTestRunner(verbosity=2, stream=sys.stdout).run(suite)
-
-
-
