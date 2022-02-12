@@ -25,11 +25,6 @@ if test_helper._have_snappy:
 
 
 def run_doctests(verbose=False, print_info=True):
-    if test_helper._have_snappy:
-        snappy.number.Number._accuracy_for_testing = 8
-    if test_helper._have_snappy and test_helper._within_sage:
-        snappy.Manifold.use_field_conversion('snappy')
-        snappy.ManifoldHP.use_field_conversion('snappy')
     return test_helper.doctest_modules(modules, verbose, print_info)
 
 
