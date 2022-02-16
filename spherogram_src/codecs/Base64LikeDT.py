@@ -63,11 +63,13 @@ of the last component.
 _base64LikeEncoding = (
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-')
 
+
 def _unsigned_int_to_char(i):
     """
     Convert an integer 0-63 to ASCII character.
     """
     return _base64LikeEncoding[i]
+
 
 def _char_to_unsigned_int(char):
     """
@@ -77,13 +79,14 @@ def _char_to_unsigned_int(char):
     i = ord(char)
     if i >= 97 and i <= 122:  # a z
         return i - 97
-    if i >= 65 and i <= 90: # A Z
+    if i >= 65 and i <= 90:  # A Z
         return i - 39
-    if i >= 48 and i <= 57: # 0 9
+    if i >= 48 and i <= 57:  # 0 9
         return i + 4
     if i == 43:
         return 62
     return 63
+
 
 def _chars_to_int(chars):
     """
@@ -106,6 +109,7 @@ def _chars_to_int(chars):
 
     return sign * value
 
+
 def _consume_int_and_advance(chars, pos, num_chars):
     """
     Read the num_chars characters from the string chars and interpret it as
@@ -121,6 +125,7 @@ def _consume_int_and_advance(chars, pos, num_chars):
 
     end = pos + num_chars
     return _chars_to_int(chars[pos:end]), end
+
 
 def _int_to_chars(value, num_chars):
     """
@@ -180,7 +185,7 @@ def _encode_flips(flips):
     """
     chars = ""
 
-    padded_flips = flips + 5 * [ 0 ]
+    padded_flips = flips + 5 * [0]
 
     for pos in range(len(padded_flips) // 6):
         val = 0
@@ -190,7 +195,8 @@ def _encode_flips(flips):
 
     return chars
 
-def encode_base64_like_DT_code(code, flips = None):
+
+def encode_base64_like_DT_code(code, flips=None):
     """
     Given a DT code and optionally flips, convert to base64-like encoding.
     """
@@ -198,6 +204,7 @@ def encode_base64_like_DT_code(code, flips = None):
         return _encode_DT_code(code) + _encode_flips(flips)
     else:
         return _encode_DT_code(code)
+
 
 def _decode_DT_code(chars):
     """
@@ -223,6 +230,7 @@ def _decode_DT_code(chars):
 
     return code, pos
 
+
 def _decode_flips(chars):
     """
     Read a bit field from base64-like encoding.
@@ -234,10 +242,9 @@ def _decode_flips(chars):
             flips.append(bool((val >> j) & 1))
     return flips
 
+
 def _empty_to_none(l):
-    if not l:
-        return None
-    return l
+    return l if l else None
 
 
 def decode_base64_like_DT_code(chars):
