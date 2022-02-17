@@ -228,7 +228,7 @@ class DualGraphOfFaces(graphs.Graph):
                 dual_edge.interface = (edge, edge.opposite())
                 dual_edge.label= len(self.edges) - 1
 
-        #assert self.is_planar()
+        # assert self.is_planar()
 
     def two_cycles(self):
         """
@@ -451,7 +451,7 @@ def remove_strand(link, strand):
     attached to anything.  This function assumes that the start and
     end of the strand are not places where strands crosses itself.
     """
-    #only add bridge strands for the places where the strand doesn't cross itself
+    # only add bridge strands for the places where the strand doesn't cross itself
     crossings_seen = [s.crossing for s in strand]
     crossing_set = set()
     for c in crossings_seen:
