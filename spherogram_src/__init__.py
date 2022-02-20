@@ -9,6 +9,8 @@ from .codecs import *
 
 # Make the module version number easily accessible.
 from . import version as _version
+
+
 def version():
     return _version.version
 

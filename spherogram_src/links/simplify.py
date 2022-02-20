@@ -92,6 +92,7 @@ def reidemeister_I_and_II(link, A):
 
     return eliminated, changed
 
+
 def basic_simplify(link, build_components=True, to_visit=None):
     """
     Do Reidemeister I and II moves until none are possible.
@@ -120,6 +121,7 @@ def basic_simplify(link, build_components=True, to_visit=None):
                 component_starts.append(b)
         link._build_components(component_starts)
     return success
+
 
 def possible_type_III_moves(link):
     """
@@ -206,6 +208,7 @@ class Face(tuple):
 
     def __repr__(self):
         return "<F%d>" % self.label
+
 
 class DualGraphOfFaces(graphs.Graph):
     """
@@ -297,6 +300,7 @@ def deconnect_sum(link):
     link._build_components()
     return link.split_link_diagram(destroy_original=True)
 
+
 def dual_edges(overstrand, graph):
     """
     Find the set of crossings and edges of the dual graph encountered
@@ -318,6 +322,7 @@ def dual_edges(overstrand, graph):
 
     return edges_crossed
 
+
 def extend_strand_forward(kind, strand, end_cep):
     """
     Extend the strand by adding on end_cep and what comes after it
@@ -331,6 +336,7 @@ def extend_strand_forward(kind, strand, end_cep):
         cep = cep.next()
         if cep == strand[0]:
             break
+
 
 def extend_strand_backward(kind, strand, start_cep):
     """
@@ -346,6 +352,7 @@ def extend_strand_backward(kind, strand, start_cep):
         cep = cep.previous()
         if cep == strand[-1]:
             break
+
 
 def pickup_strand(link, dual_graph, kind, strand):
     """
@@ -631,7 +638,7 @@ def reverse_type_II(link, c, d, label1, label2, rebuild=False):
 
     if rebuild:
         comp_sts = [comp[0] for comp in link.link_components]
-        link._rebuild(component_starts = comp_sts)
+        link._rebuild(component_starts=comp_sts)
 
 
 def random_reverse_type_II(link, label1, label2, rebuild=False):
@@ -648,7 +655,8 @@ def random_reverse_type_II(link, label1, label2, rebuild=False):
     c, d = random.sample(face,2)
     reverse_type_II(link,c,d,label1,label2,rebuild=rebuild)
 
-def random_reverse_move(link,t,n):
+
+def random_reverse_move(link, t, n):
     """
     Performs a crossing increasing move of type t, where t is 1, 2, or 3
     n is for labeling the new crossings
@@ -663,7 +671,7 @@ def random_reverse_move(link,t,n):
             reidemeister_III(link, random.choice(poss_moves))
 
 
-def backtrack(link, num_steps = 10, prob_type_1 = .3, prob_type_2 = .3):
+def backtrack(link, num_steps=10, prob_type_1=.3, prob_type_2=.3):
     """
     Randomly perform a series of Reidemeister moves which increase or preserve
     the number of crossings of a link diagram, with the number of such moves
@@ -704,11 +712,12 @@ def clear_orientations(link):
         i.sign = 0
         i.directions.clear()
 
+
 def relabel_crossings(link):
     """
     Relabel the crossings as integers
     """
-    for i,cr in enumerate(link.crossings):
+    for i, cr in enumerate(link.crossings):
         cr.label = str(i)
 
 

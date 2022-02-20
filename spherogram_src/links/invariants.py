@@ -229,7 +229,7 @@ class Link(links_base.Link):
         return self.alexander_polynomial(*args, **kwargs)
 
     @sage_method
-    def alexander_polynomial(self, multivar=True, v='no', method='default', norm = True, factored = False):
+    def alexander_polynomial(self, multivar=True, v='no', method='default', norm=True, factored=False):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
@@ -582,7 +582,7 @@ class Link(links_base.Link):
             sage: K.determinant()
             5
         """
-        if method=='color':
+        if method == 'color':
             M = self._colorability_matrix()
             size = len(self.crossings)-1
             N = matrix(size, size)
@@ -590,10 +590,10 @@ class Link(links_base.Link):
                 for j in range(size):
                     N[(i,j)]=M[(i+1,j+1)]
             return abs(N.determinant())
-        elif method=='goeritz':
+        elif method == 'goeritz':
             return abs(self.goeritz_matrix().determinant())
         else:
-            return abs(self.alexander_polynomial(multivar=False, v=[-1], norm = False))
+            return abs(self.alexander_polynomial(multivar=False, v=[-1], norm=False))
 
     @sage_method
     def morse_number(self, solver='GLPK'):
@@ -798,6 +798,7 @@ class Link(links_base.Link):
             Knot represented by 13 crossings
         """
         return self.sage_link()
+
 
 class ClosedBraid(Link):
     """

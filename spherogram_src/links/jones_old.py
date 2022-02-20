@@ -32,6 +32,7 @@ def cut(G, T, e):
                 answer.append(f)
     return answer
 
+
 def is_internally_active(G, T, e):
     """
     Input:
@@ -46,6 +47,7 @@ def is_internally_active(G, T, e):
         if edge_index(f) < edge_index(e):
             return False
     return True
+
 
 def cyc(G,T,e):
     """
@@ -102,6 +104,7 @@ def is_externally_active(G,T,e):
             return False
     return True
 
+
 def _edge_sign(K, edge):
     "Returns the sign (+/- 1) associated to given edge in the black graph."
     crossing = edge[2]
@@ -123,6 +126,7 @@ def _Jones_contrib_edge(K, G, T, e, A):
     if (not T.has_edge(*e)) and (not is_externally_active(G,T,e)):
         return A**(-1*s)
 
+
 def _Jones_contrib(K, G, T, A):
     "Returns the contribution to the Jones polynomial of the tree T. G should be self.black_graph()."
     answer = 1
@@ -130,6 +134,7 @@ def _Jones_contrib(K, G, T, A):
     for e in G.edges(sort=True, key=edge_index):
         answer = answer*_Jones_contrib_edge(K,G,T,e,A)
     return answer
+
 
 def Jones_poly(K, variable=None, new_convention=False):
     """
@@ -169,6 +174,7 @@ def Jones_poly(K, variable=None, new_convention=False):
         else:
             ans = ans + coeff*(variable**(exp//4))
     return ans
+
 
 def spanning_trees(G):
     """
