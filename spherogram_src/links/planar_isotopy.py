@@ -96,7 +96,7 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
-        #permuting the indices in the gluings
+        # permuting the indices in the gluings
         perm = range(len(tangle.adjacent))
         perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
         perm = rotate_list(perm,i)
@@ -107,7 +107,7 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
             new_g.sort()
             rotated_gluings.append(tuple(new_g))
         rotated_gluings.sort()
-        isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,root=rotated_root))        
+        isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,root=rotated_root))
 
     return min(isosigs)
 
@@ -122,7 +122,7 @@ def crossing_orientations(strands):
     css_seen = []
     for strand in strands:
         for cs in strand:
-            for seen_cs in css_seen: 
+            for seen_cs in css_seen:
                 if cs[0] == seen_cs[0]:
                     orientation = (cs[1]-seen_cs[1])%4
                     if orientation == 3:
@@ -130,7 +130,7 @@ def crossing_orientations(strands):
                     orientations[cs[0]]=orientation
                     over_or_under[cs[0]] = (cs[1]%2)
                     break
-            css_seen.append(cs) #didn't find cs
+            css_seen.append(cs)  # didn't find cs
     return orientations, over_or_under
 
 

@@ -46,7 +46,7 @@ except ImportError:
     try:
         from .planarity import planar
         from spherogram.planarity import planar
-    except ValueError: # Allow importing from source directory
+    except ValueError:  # Allow importing from source directory
         pass
 
 
@@ -341,7 +341,7 @@ class Graph(object):
             fifo.extend([(child, child(vertex), edge) for edge in new_edges])
             yield parent, vertex, child
 
-    def next(self):  #For Python 2 compatibility
+    def next(self):  # For Python 2 compatibility
         return self.__next__()
 
     def components(self, deleted_vertices=[]):
@@ -721,18 +721,18 @@ class FatGraph(Graph):
                     # go counter-clockwise
                     e = self(v).succ(e)
                     s = 'R' if e.twisted or v == e[0] else 'L'
-                else: # go clockwise
+                else:  # go clockwise
                     e = self(v).pred(e)
                     s = 'L' if e.twisted or v == e[0] else 'R'
                 if (e[0],e,s) == start:
                     cycles.append(cycle)
                     break
-                #print('next', (e[0],e,s))
                 sides.remove( (e[0],e,s) )
         return cycles
 
     def filled_euler(self):
         return len(self.vertices) - len(self.edges) + len(self.boundary_cycles())
+
 
 class Digraph(Graph):
     """

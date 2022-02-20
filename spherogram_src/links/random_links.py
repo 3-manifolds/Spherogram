@@ -60,7 +60,7 @@ def map_to_link(map):
 def num_self_crossings(component):
     comp_set = set(component)
     return len([ce for ce in component if ce.other() in comp_set])
-    
+
 def longest_components(link, num_components):
     components = link.link_components
     self_crosses = [(num_self_crossings(comp), i)
@@ -87,19 +87,19 @@ def largest_prime_piece(link, simplify_fun):
 
 
 def random_link(crossings,
-                num_components = 'any', 
+                num_components = 'any',
                 initial_map_gives_link = False,
                 alternating = False,
                 consistent_twist_regions = False,
                 simplify = 'basic',
                 prime_decomposition = True,
-                return_all_pieces = False, 
+                return_all_pieces = False,
                 max_tries=100):
     """
     Generates a random link from a model that starts with a random
     4-valent planar graph sampled with the uniform distribution by
     Schaeffer's `PlanarMap program.
-    <http://www.lix.polytechnique.fr/~schaeffe/PagesWeb/PlanarMap/index-en.html>`_ 
+    <http://www.lix.polytechnique.fr/~schaeffe/PagesWeb/PlanarMap/index-en.html>`_
 
     The ``crossings`` argument specifies the number of vertices of the
     initial planar graph G; the number of crossing in the returned knot
@@ -155,7 +155,7 @@ def random_link(crossings,
 
 
     Some examples:
-    
+
     >>> K = random_link(25, num_components=1, initial_map_gives_link=True, alternating=True)
     >>> K
     <Link: 1 comp; 25 cross>
@@ -218,12 +218,12 @@ def random_link(crossings,
     else:
         return link
 
-#def random_knot(crossings, **kwargs):
-#    return random_link(crossings, num_components=1, **kwargs)
+# def random_knot(crossings, **kwargs):
+#     return random_link(crossings, num_components=1, **kwargs)
 
-#def new_random_knot(crossings, prime_decomposition=True):
-#    return random_knot(crossings, edge_conn_param=4,
-#                initial_map_gives_knot=True, 
-#                return_all_pieces=False, 
-#                prime_decomposition=prime_decomposition,
-#                consistent_twist_regions=True)
+# def new_random_knot(crossings, prime_decomposition=True):
+#     return random_knot(crossings, edge_conn_param=4,
+#                 initial_map_gives_knot=True,
+#                 return_all_pieces=False,
+#                 prime_decomposition=prime_decomposition,
+#                 consistent_twist_regions=True)

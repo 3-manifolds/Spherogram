@@ -34,6 +34,6 @@ if _within_sage:
 else:
     def _sage_method(function, *args, **kw):
         raise SageNotAvailable('Sorry, this feature requires using SnapPy inside Sage.')
-        
+
     def sage_method(function):
         return decorator.decorator(_sage_method, function)

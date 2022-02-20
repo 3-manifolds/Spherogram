@@ -204,7 +204,7 @@ class Link(links_base.Link):
             L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
             t = list(L_t.gens())
 
-            #determine the component to which each variable corresponds
+            # determine the component to which each variable corresponds
             g_component = [c.strand_components[2] for c in self.crossings]
             for i in range(len(g)):
                 g[i] = t[g_component[i]]
@@ -269,7 +269,7 @@ class Link(links_base.Link):
             # If single variable, use the super-fast method of Bar-Natan.
             if comp == 1 and method == 'default' and norm:
                 p = alexander.alexander(self)
-            else: # Use a simple method based on the Wirtinger presentation.
+            else:  # Use a simple method based on the Wirtinger presentation.
                 if method not in ['default', 'wirtinger']:
                     raise ValueError("Available methods are 'default' and 'wirtinger'")
 
@@ -304,7 +304,7 @@ class Link(links_base.Link):
             if v != 'no':
                 return p(*v)
 
-            if multivar and factored: # it's easier to view this way
+            if multivar and factored:  # it's easier to view this way
                 return p.factor()
             else:
                 return p
@@ -428,7 +428,7 @@ class Link(links_base.Link):
                     crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
                     total=set(crossings)
                     if total.issubset(s):
-                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
+                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x]))  # label by the crossing.
 
         G = graph.Graph(coords, multiedges=True)
         component = G.connected_components(sort=False)[1]
