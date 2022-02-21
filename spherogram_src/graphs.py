@@ -94,6 +94,7 @@ class BaseEdge(tuple):
     def is_loop(self):
         return self[0] is self[1]
 
+
 class Edge(BaseEdge):
     """
     An undirected edge.  We allow multiple Edges between the same
@@ -108,6 +109,7 @@ class Edge(BaseEdge):
 
     def __eq__(self, other):
         return self is other
+
 
 class MultiEdge(BaseEdge):
     """
@@ -126,6 +128,7 @@ class MultiEdge(BaseEdge):
 
     def __eq__(self, other):
         return set(self) == set(other)
+
 
 class DirectedEdge(BaseEdge):
     """
@@ -150,6 +153,7 @@ class DirectedEdge(BaseEdge):
     def tail(self):
         return self[0]
 
+
 class DirectedMultiEdge(DirectedEdge):
     """
     A DirectedEdge with multiplicity.  DirectedMultiEdges are equal if
@@ -167,6 +171,7 @@ class DirectedMultiEdge(DirectedEdge):
 
     def __eq__(self, other):
         return tuple(self) == tuple(other)
+
 
 class FatEdge(Edge):
     """
@@ -202,6 +207,7 @@ class FatEdge(Edge):
             self.slots[self.index(vertex)] = n
         except ValueError:
             raise ValueError('Vertex is not an end of this edge.')
+
 
 class Graph(object):
     """
@@ -514,7 +520,7 @@ class Graph(object):
         >>> set(G.vertices) == {frozenset([1, 2]), frozenset([0])}
         True
         """
-        new_vertex = V1|V2
+        new_vertex = V1 | V2
         if new_vertex in self.vertices:
             raise ValueError('Merged vertex already exists!')
         self.edges -= set([e for e in self.edges if V1 in e and V2 in e])
@@ -549,6 +555,7 @@ class Graph(object):
         G.add_nodes_from(self.vertices)
         G.add_edges_from(self.edges)
         return G
+
 
 class ReducedGraph(Graph):
     """
@@ -860,6 +867,7 @@ class Digraph(Graph):
         True
         """
         return StrongConnector(self).DAG()
+
 
 class StrongConnector(object):
     """

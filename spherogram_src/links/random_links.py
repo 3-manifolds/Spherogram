@@ -57,9 +57,11 @@ def map_to_link(map):
     ans = links.Link(crossings, check_planarity=False)
     return ans
 
+
 def num_self_crossings(component):
     comp_set = set(component)
     return len([ce for ce in component if ce.other() in comp_set])
+
 
 def longest_components(link, num_components):
     components = link.link_components
@@ -67,6 +69,7 @@ def longest_components(link, num_components):
                     for i, comp in enumerate(components)]
     self_crosses.sort(reverse=True)
     return [components[x[1]] for x in self_crosses[:num_components]]
+
 
 def simplified_prime_pieces(link, simplify_fun):
     ans = []
@@ -79,21 +82,22 @@ def simplified_prime_pieces(link, simplify_fun):
             ans.append(L)
     return ans
 
+
 def largest_prime_piece(link, simplify_fun):
     pieces = simplified_prime_pieces(link, simplify_fun)
     if len(pieces) == 0:
         return links.Link([])
-    return max(pieces, key=lambda L:len(L.crossings))
+    return max(pieces, key=lambda L: len(L.crossings))
 
 
 def random_link(crossings,
-                num_components = 'any',
-                initial_map_gives_link = False,
-                alternating = False,
-                consistent_twist_regions = False,
-                simplify = 'basic',
-                prime_decomposition = True,
-                return_all_pieces = False,
+                num_components='any',
+                initial_map_gives_link=False,
+                alternating=False,
+                consistent_twist_regions=False,
+                simplify='basic',
+                prime_decomposition=True,
+                return_all_pieces=False,
                 max_tries=100):
     """
     Generates a random link from a model that starts with a random
