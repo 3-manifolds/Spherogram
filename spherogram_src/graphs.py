@@ -504,7 +504,7 @@ class Graph(object):
             R.add_edge(*e)
         return R
 
-    def is_planar(self) -> bool:
+    def is_planar(self):
         return self.reduced().is_planar()
 
     def merge(self, V1, V2):
