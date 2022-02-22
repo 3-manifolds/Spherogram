@@ -1074,7 +1074,7 @@ class Poset(set):
                 pairwise_incomparable = True
                 for x in X:
                     if (X.intersection(self.smaller[x]) or
-                            X.intersection(self.larger[x])):
+                        X.intersection(self.larger[x])):
                         pairwise_incomparable = False
                         break
                 if pairwise_incomparable:

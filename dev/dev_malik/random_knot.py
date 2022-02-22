@@ -703,7 +703,7 @@ def split_face(G, next_edge, current_corner, current_face):
     insert_edge(G, new_0_face, first_0_edge, new_1_face, first_1_edge)
     if first_0_edge is None:
         first_0_edge = G.edges_between(new_0_face, new_1_face).pop()
-    if first_1_edge =is None:
+    if first_1_edge is None:
         first_1_edge = G.edges_between(new_0_face, new_1_face).pop()
 
     print('Vertices3')
