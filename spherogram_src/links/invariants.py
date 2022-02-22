@@ -113,10 +113,12 @@ class Link(links_base.Link):
         Returns a linking matrix, in which the (i,j)th component is the
         linking number of the ith and jth link components.
         """
-        matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
+        matrix = [[0 for i in range(len(self.link_components))]
+                  for j in range(len(self.link_components))]
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
-                tally = [ [0 for m in range(len(self.crossings)) ] for n in range(2) ]
+                tally = [[0 for m in range(len(self.crossings))]
+                         for n in range(2)]
                 if not (comp1 == comp2):
                     for i, c in enumerate(self.crossings):
                         for x1 in comp1:

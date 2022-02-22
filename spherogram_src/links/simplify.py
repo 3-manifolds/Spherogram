@@ -235,21 +235,21 @@ class DualGraphOfFaces(graphs.Graph):
 
     def two_cycles(self):
         """
-        Finds all two cycles and returns them as a pair of CrossingStrands which
-        are dual to the edges in the cycle.  The crossing strands are
+        Find all two cycles and yield them as a pair of CrossingStrands which
+        are dual to the edges in the cycle.
+
+        The crossing strands are
         oriented consistently with respect to one of the faces which a
         vertex for the cycle.
         """
-        cycles = []
         for face0 in self.vertices:
             for dual_edge0 in self.incident(face0):
                 face1 = dual_edge0(face0)
                 if face0.label < face1.label:
                     for dual_edge1 in self.incident(face1):
                         if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
-                            cycles.append( (common_element(face0, dual_edge0.interface),
-                                            common_element(face0, dual_edge1.interface)))
-        return cycles
+                            yield (common_element(face0, dual_edge0.interface),
+                                   common_element(face0, dual_edge1.interface))
 
 
 def dual_graph_as_nx(link):
