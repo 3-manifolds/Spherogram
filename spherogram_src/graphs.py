@@ -339,7 +339,7 @@ class Graph(object):
         initial = incident(source) - forbidden
         seen = forbidden | initial
         # Use a deque since we need to popleft.
-        fifo = deque([ (None, source, e) for e in initial ])
+        fifo = deque([(None, source, e) for e in initial])
         while fifo:
             parent, vertex, child = fifo.popleft()
             new_edges = incident(child(vertex)) - seen
@@ -466,7 +466,7 @@ class Graph(object):
             path = deque()
             flow = residual[child]
             while True:
-                path.appendleft( (vertex, child) )
+                path.appendleft((vertex, child))
                 children[vertex].add(child)
                 if vertex == source:
                     break
@@ -477,7 +477,7 @@ class Graph(object):
                 residual[edge] -= flow
                 if residual[edge] == 0:
                     full_edges.add(edge)
-            path_list.append( (flow, path) )
+            path_list.append((flow, path))
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
@@ -485,7 +485,7 @@ class Graph(object):
                               if vertex in edge
                               and edge(vertex) not in cut_set])
         # Find the unsaturated edges.
-        unsaturated = [ e for e in self.edges if residual[e] > 0 ]
+        unsaturated = [e for e in self.edges if residual[e] > 0]
         flow_dict = dict.fromkeys(self.edges, 0)
         # Compute the flow.
         for flow, edges in path_list:
@@ -532,9 +532,9 @@ class Graph(object):
             self.edges.remove(edge)
             x, y = edge
             if x in old_vertices:
-                self.edges.add( self.Edge(new_vertex, y) )
+                self.edges.add(self.Edge(new_vertex, y))
             if y in old_vertices:
-                self.edges.add( self.Edge(x, new_vertex) )
+                self.edges.add(self.Edge(x, new_vertex))
 
     def mergeable(self):
         """
@@ -600,7 +600,7 @@ class ReducedGraph(Graph):
         for e in self.edges:
             v, w = e
             if v != w:
-                non_loop_edges.add( (v, w) )
+                non_loop_edges.add((v, w))
             else:
                 verts_with_loops.add(v)
 
@@ -626,7 +626,7 @@ class ReducedGraph(Graph):
     def one_min_cut(self, source, sink):
         capacity = dict((e, e.multiplicity) for e in self.edges)
         cut = Graph.one_min_cut(self, source, sink, capacity)
-        cut['size'] = sum([e.multiplicity for e in cut['edges'] ])
+        cut['size'] = sum([e.multiplicity for e in cut['edges']])
         return cut
 
     def cut_pairs(self):
@@ -723,8 +723,8 @@ class FatGraph(Graph):
                 cycle.append(e)
                 # cross the edge
                 v = e(v)
-                if (( e.twisted and s=='L') or
-                        ( not e.twisted and (s=='L')==(v==e[0]) )):
+                if ((e.twisted and s=='L') or
+                        (not e.twisted and (s=='L')==(v==e[0]))):
                     # go counter-clockwise
                     e = self(v).succ(e)
                     s = 'R' if e.twisted or v == e[0] else 'L'
@@ -734,7 +734,7 @@ class FatGraph(Graph):
                 if (e[0],e,s) == start:
                     cycles.append(cycle)
                     break
-                sides.remove( (e[0],e,s) )
+                sides.remove((e[0], e, s))
         return cycles
 
     def filled_euler(self):
@@ -928,7 +928,7 @@ class StrongConnector(object):
             dag_tail= self.which_component[tail]
             dag_head = self.which_component[head]
             if dag_head != dag_tail:
-                edges.add( (dag_tail, dag_head) )
+                edges.add((dag_tail, dag_head))
         return Digraph(edges, self.components)
 
 
@@ -996,7 +996,7 @@ class Poset(set):
         """
         Return the subset of maximal elements.
         """
-        return frozenset( [ x for x in self if not self.larger[x] ] )
+        return frozenset([x for x in self if not self.larger[x]])
 
     def closure(self, A):
         """
@@ -1027,7 +1027,6 @@ class Poset(set):
             self.closed.add(start)
             yield start
         for element in complement:
-            # print( 'adding ', element)
             extended = self.closure(start | set([element]))
             for subset in self.XXclosed_subsets(extended):
                 yield subset
@@ -1074,8 +1073,8 @@ class Poset(set):
             if 0 < len(X):
                 pairwise_incomparable = True
                 for x in X:
-                    if ( X.intersection(self.smaller[x]) or
-                         X.intersection(self.larger[x]) ):
+                    if (X.intersection(self.smaller[x]) or
+                        X.intersection(self.larger[x])):
                         pairwise_incomparable = False
                         break
                 if pairwise_incomparable:
