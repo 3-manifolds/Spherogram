@@ -417,7 +417,7 @@ class Link(links_base.Link):
             l = []
             for y in x:
                 l.append((y[0],y[1]))
-                l.append((y[0],(y[1]+1)%4))
+                l.append((y[0],(y[1]+1) % 4))
             faces.append(l)
 
         coords = list()
@@ -829,4 +829,4 @@ class ClosedBraid(Link):
         Link.__init__(self, *args, **kwargs)
 
     def __repr__(self):
-        return 'ClosedBraid%s'%str(self.braid_word)
+        return 'ClosedBraid%s' % str(self.braid_word)

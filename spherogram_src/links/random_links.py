@@ -50,12 +50,11 @@ def random_map(num_verts, edge_conn_param=4,
 
 def map_to_link(map):
     num_edges = len(map) // 2
-    crossings = [links.Crossing() for i in range(num_edges//2)]
-    for e in range(1, num_edges+1):
-        (a, i), (b,j) = map[e], map[-e]
+    crossings = [links.Crossing() for i in range(num_edges // 2)]
+    for e in range(1, num_edges + 1):
+        (a, i), (b, j) = map[e], map[-e]
         crossings[a][i] = crossings[b][j]
-    ans = links.Link(crossings, check_planarity=False)
-    return ans
+    return links.Link(crossings, check_planarity=False)
 
 
 def num_self_crossings(component):
