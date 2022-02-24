@@ -186,7 +186,7 @@ class FatEdge(Edge):
 
     def __init__(self, x, y, twists=0):
         self.slots = [x[1],y[1]]
-        self.twisted = (twists % 2)
+        self.twisted = bool(twists % 2)
 
     def __repr__(self):
         return '%s[%d] -%s- %s[%d]' % (self[0], self.slots[0],
