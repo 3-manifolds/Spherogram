@@ -53,7 +53,7 @@ except ImportError:
 class CyclicList(list):
     def __getitem__(self, n):
         if isinstance(n, int):
-            return list.__getitem__(self, n%len(self))
+            return list.__getitem__(self, n % len(self))
         elif isinstance(n, slice):
             # Python3 only: in python2, __getslice__ gets called instead.
             return list.__getitem__(self, n)
@@ -102,7 +102,7 @@ class Edge(BaseEdge):
     """
 
     def __repr__(self):
-        return '%s --- %s'%self
+        return '%s --- %s' % self
 
     def __hash__(self):
         return id(self)
@@ -121,7 +121,7 @@ class MultiEdge(BaseEdge):
         self.multiplicity = 1
 
     def __repr__(self):
-        return '%s --%d-- %s'%(self[0], self.multiplicity, self[1])
+        return '%s --%d-- %s' % (self[0], self.multiplicity, self[1])
 
     def __hash__(self):
         return id(self)
@@ -137,7 +137,7 @@ class DirectedEdge(BaseEdge):
     """
 
     def __repr__(self):
-        return '%s --> %s'%self
+        return '%s --> %s' % self
 
     def __hash__(self):
         return id(self)
@@ -164,7 +164,7 @@ class DirectedMultiEdge(DirectedEdge):
         self.multiplicity = 1
 
     def __repr__(self):
-        return '%s --%d-> %s'%(self[0], self.multiplicity, self[1])
+        return '%s --%d-> %s' % (self[0], self.multiplicity, self[1])
 
     def __hash__(self):
         return id(self)
@@ -186,12 +186,12 @@ class FatEdge(Edge):
 
     def __init__(self, x, y, twists=0):
         self.slots = [x[1],y[1]]
-        self.twisted = True if twists%2 != 0 else False
+        self.twisted = bool(twists % 2)
 
     def __repr__(self):
-        return '%s[%d] -%s- %s[%d]'%(self[0], self.slots[0],
-                                     'x' if self.twisted else '-',
-                                     self[1], self.slots[1])
+        return '%s[%d] -%s- %s[%d]' % (self[0], self.slots[0],
+                                       'x' if self.twisted else '-',
+                                       self[1], self.slots[1])
 
     def __hash__(self):
         return id(self)
@@ -234,7 +234,7 @@ class Graph(object):
     def __repr__(self):
         V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
         E = 'Edges:\n  ' + '\n  '.join([str(e) for e in self.edges])
-        return '%s\n%s'%(V,E)
+        return '%s\n%s' % (V, E)
 
     def __call__(self, vertex):
         """

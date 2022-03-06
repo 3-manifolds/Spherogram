@@ -49,7 +49,7 @@ def reidemeister_I(link, C):
     """
     elim, changed = set(), set()
     for i in range(4):
-        if C.adjacent[i] == (C, (i+1)%4):
+        if C.adjacent[i] == (C, (i + 1) % 4):
             (A, a), (B, b) = C.adjacent[i+2], C.adjacent[i+3]
             elim = set([C])
             if C != A:
@@ -688,7 +688,7 @@ def backtrack(link, num_steps=10, prob_type_1=.3, prob_type_2=.3):
     p1 = prob_type_1
     p2 = p1 + prob_type_2
     for i in range(num_steps):
-        x = random.uniform(0,1)
+        x = random.uniform(0, 1)
         if x < p1:
             t = 1
         elif p1 < x < p2:
@@ -696,9 +696,9 @@ def backtrack(link, num_steps=10, prob_type_1=.3, prob_type_2=.3):
         else:
             t = 3
 
-        n += t%3
+        n += t % 3
 
-        random_reverse_move(link,t,n)
+        random_reverse_move(link, t, n)
 
     link._rebuild(same_components_and_orientations=True)
 

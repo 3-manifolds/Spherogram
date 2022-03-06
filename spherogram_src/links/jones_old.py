@@ -81,15 +81,15 @@ def cyc(G,T,e):
     cb = S.cycle_basis()[0]
     answer = list()
     for i in range(len(cb)):
-        l = S.edge_label(cb[i],cb[(i+1)%len(cb)])
-        if S.has_edge(cb[i],cb[(i+1)%len(cb)],l):
-            answer.append((cb[i],cb[(i+1)%len(cb)],l))
+        l = S.edge_label(cb[i], cb[(i + 1) % len(cb)])
+        if S.has_edge(cb[i], cb[(i + 1) % len(cb)], l):
+            answer.append((cb[i], cb[(i + 1) % len(cb)], l))
         else:
-            answer.append((cb[(i+1)%len(cb)],cb[i],l))
+            answer.append((cb[(i + 1) % len(cb)], cb[i], l))
     return answer
 
 
-def is_externally_active(G,T,e):
+def is_externally_active(G, T, e):
     """
     Input:
     --A graph G.
