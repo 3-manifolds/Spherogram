@@ -5,7 +5,7 @@ and Jennet Dickinson.
 """
 
 from . import links_base, alexander
-from .links_base import CrossingStrand
+from .links_base import CrossingStrand, Crossing
 from ..sage_helper import _within_sage, sage_method
 
 deprecation_warnings_issued = set()
