@@ -49,7 +49,7 @@ def reidemeister_I(link, C):
     """
     elim, changed = set(), set()
     for i in range(4):
-        if C.adjacent[i] == (C, (i+1)%4):
+        if C.adjacent[i] == (C, (i + 1) % 4):
             (A, a), (B, b) = C.adjacent[i+2], C.adjacent[i+3]
             elim = set([C])
             if C != A:
@@ -92,6 +92,7 @@ def reidemeister_I_and_II(link, A):
 
     return eliminated, changed
 
+
 def basic_simplify(link, build_components=True, to_visit=None):
     """
     Do Reidemeister I and II moves until none are possible.
@@ -120,6 +121,7 @@ def basic_simplify(link, build_components=True, to_visit=None):
                 component_starts.append(b)
         link._build_components(component_starts)
     return success
+
 
 def possible_type_III_moves(link):
     """
@@ -207,6 +209,7 @@ class Face(tuple):
     def __repr__(self):
         return "<F%d>" % self.label
 
+
 class DualGraphOfFaces(graphs.Graph):
     """
     The dual graph to a link diagram D, whose vertices correspond to
@@ -228,25 +231,25 @@ class DualGraphOfFaces(graphs.Graph):
                 dual_edge.interface = (edge, edge.opposite())
                 dual_edge.label= len(self.edges) - 1
 
-        #assert self.is_planar()
+        # assert self.is_planar()
 
     def two_cycles(self):
         """
-        Finds all two cycles and returns them as a pair of CrossingStrands which
-        are dual to the edges in the cycle.  The crossing strands are
+        Find all two cycles and yield them as a pair of CrossingStrands which
+        are dual to the edges in the cycle.
+
+        The crossing strands are
         oriented consistently with respect to one of the faces which a
         vertex for the cycle.
         """
-        cycles = []
         for face0 in self.vertices:
             for dual_edge0 in self.incident(face0):
                 face1 = dual_edge0(face0)
                 if face0.label < face1.label:
                     for dual_edge1 in self.incident(face1):
                         if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
-                            cycles.append( (common_element(face0, dual_edge0.interface),
-                                            common_element(face0, dual_edge1.interface)))
-        return cycles
+                            yield (common_element(face0, dual_edge0.interface),
+                                   common_element(face0, dual_edge1.interface))
 
 
 def dual_graph_as_nx(link):
@@ -297,6 +300,7 @@ def deconnect_sum(link):
     link._build_components()
     return link.split_link_diagram(destroy_original=True)
 
+
 def dual_edges(overstrand, graph):
     """
     Find the set of crossings and edges of the dual graph encountered
@@ -318,6 +322,7 @@ def dual_edges(overstrand, graph):
 
     return edges_crossed
 
+
 def extend_strand_forward(kind, strand, end_cep):
     """
     Extend the strand by adding on end_cep and what comes after it
@@ -331,6 +336,7 @@ def extend_strand_forward(kind, strand, end_cep):
         cep = cep.next()
         if cep == strand[0]:
             break
+
 
 def extend_strand_backward(kind, strand, start_cep):
     """
@@ -346,6 +352,7 @@ def extend_strand_backward(kind, strand, start_cep):
         cep = cep.previous()
         if cep == strand[-1]:
             break
+
 
 def pickup_strand(link, dual_graph, kind, strand):
     """
@@ -451,7 +458,7 @@ def remove_strand(link, strand):
     attached to anything.  This function assumes that the start and
     end of the strand are not places where strands crosses itself.
     """
-    #only add bridge strands for the places where the strand doesn't cross itself
+    # only add bridge strands for the places where the strand doesn't cross itself
     crossings_seen = [s.crossing for s in strand]
     crossing_set = set()
     for c in crossings_seen:
@@ -631,7 +638,7 @@ def reverse_type_II(link, c, d, label1, label2, rebuild=False):
 
     if rebuild:
         comp_sts = [comp[0] for comp in link.link_components]
-        link._rebuild(component_starts = comp_sts)
+        link._rebuild(component_starts=comp_sts)
 
 
 def random_reverse_type_II(link, label1, label2, rebuild=False):
@@ -648,7 +655,8 @@ def random_reverse_type_II(link, label1, label2, rebuild=False):
     c, d = random.sample(face,2)
     reverse_type_II(link,c,d,label1,label2,rebuild=rebuild)
 
-def random_reverse_move(link,t,n):
+
+def random_reverse_move(link, t, n):
     """
     Performs a crossing increasing move of type t, where t is 1, 2, or 3
     n is for labeling the new crossings
@@ -663,7 +671,7 @@ def random_reverse_move(link,t,n):
             reidemeister_III(link, random.choice(poss_moves))
 
 
-def backtrack(link, num_steps = 10, prob_type_1 = .3, prob_type_2 = .3):
+def backtrack(link, num_steps=10, prob_type_1=.3, prob_type_2=.3):
     """
     Randomly perform a series of Reidemeister moves which increase or preserve
     the number of crossings of a link diagram, with the number of such moves
@@ -680,7 +688,7 @@ def backtrack(link, num_steps = 10, prob_type_1 = .3, prob_type_2 = .3):
     p1 = prob_type_1
     p2 = p1 + prob_type_2
     for i in range(num_steps):
-        x = random.uniform(0,1)
+        x = random.uniform(0, 1)
         if x < p1:
             t = 1
         elif p1 < x < p2:
@@ -688,9 +696,9 @@ def backtrack(link, num_steps = 10, prob_type_1 = .3, prob_type_2 = .3):
         else:
             t = 3
 
-        n += t%3
+        n += t % 3
 
-        random_reverse_move(link,t,n)
+        random_reverse_move(link, t, n)
 
     link._rebuild(same_components_and_orientations=True)
 
@@ -704,11 +712,12 @@ def clear_orientations(link):
         i.sign = 0
         i.directions.clear()
 
+
 def relabel_crossings(link):
     """
     Relabel the crossings as integers
     """
-    for i,cr in enumerate(link.crossings):
+    for i, cr in enumerate(link.crossings):
         cr.label = str(i)
 
 

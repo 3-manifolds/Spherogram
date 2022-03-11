@@ -46,14 +46,14 @@ except ImportError:
     try:
         from .planarity import planar
         from spherogram.planarity import planar
-    except ValueError: # Allow importing from source directory
+    except ValueError:  # Allow importing from source directory
         pass
 
 
 class CyclicList(list):
     def __getitem__(self, n):
         if isinstance(n, int):
-            return list.__getitem__(self, n%len(self))
+            return list.__getitem__(self, n % len(self))
         elif isinstance(n, slice):
             # Python3 only: in python2, __getslice__ gets called instead.
             return list.__getitem__(self, n)
@@ -94,6 +94,7 @@ class BaseEdge(tuple):
     def is_loop(self):
         return self[0] is self[1]
 
+
 class Edge(BaseEdge):
     """
     An undirected edge.  We allow multiple Edges between the same
@@ -101,13 +102,14 @@ class Edge(BaseEdge):
     """
 
     def __repr__(self):
-        return '%s --- %s'%self
+        return '%s --- %s' % self
 
     def __hash__(self):
         return id(self)
 
     def __eq__(self, other):
         return self is other
+
 
 class MultiEdge(BaseEdge):
     """
@@ -119,13 +121,14 @@ class MultiEdge(BaseEdge):
         self.multiplicity = 1
 
     def __repr__(self):
-        return '%s --%d-- %s'%(self[0], self.multiplicity, self[1])
+        return '%s --%d-- %s' % (self[0], self.multiplicity, self[1])
 
     def __hash__(self):
         return id(self)
 
     def __eq__(self, other):
         return set(self) == set(other)
+
 
 class DirectedEdge(BaseEdge):
     """
@@ -134,7 +137,7 @@ class DirectedEdge(BaseEdge):
     """
 
     def __repr__(self):
-        return '%s --> %s'%self
+        return '%s --> %s' % self
 
     def __hash__(self):
         return id(self)
@@ -150,6 +153,7 @@ class DirectedEdge(BaseEdge):
     def tail(self):
         return self[0]
 
+
 class DirectedMultiEdge(DirectedEdge):
     """
     A DirectedEdge with multiplicity.  DirectedMultiEdges are equal if
@@ -160,13 +164,14 @@ class DirectedMultiEdge(DirectedEdge):
         self.multiplicity = 1
 
     def __repr__(self):
-        return '%s --%d-> %s'%(self[0], self.multiplicity, self[1])
+        return '%s --%d-> %s' % (self[0], self.multiplicity, self[1])
 
     def __hash__(self):
         return id(self)
 
     def __eq__(self, other):
         return tuple(self) == tuple(other)
+
 
 class FatEdge(Edge):
     """
@@ -181,12 +186,12 @@ class FatEdge(Edge):
 
     def __init__(self, x, y, twists=0):
         self.slots = [x[1],y[1]]
-        self.twisted = True if twists%2 != 0 else False
+        self.twisted = bool(twists % 2)
 
     def __repr__(self):
-        return '%s[%d] -%s- %s[%d]'%(self[0], self.slots[0],
-                                     'x' if self.twisted else '-',
-                                     self[1], self.slots[1])
+        return '%s[%d] -%s- %s[%d]' % (self[0], self.slots[0],
+                                       'x' if self.twisted else '-',
+                                       self[1], self.slots[1])
 
     def __hash__(self):
         return id(self)
@@ -202,6 +207,7 @@ class FatEdge(Edge):
             self.slots[self.index(vertex)] = n
         except ValueError:
             raise ValueError('Vertex is not an end of this edge.')
+
 
 class Graph(object):
     """
@@ -228,7 +234,7 @@ class Graph(object):
     def __repr__(self):
         V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
         E = 'Edges:\n  ' + '\n  '.join([str(e) for e in self.edges])
-        return '%s\n%s'%(V,E)
+        return '%s\n%s' % (V, E)
 
     def __call__(self, vertex):
         """
@@ -333,7 +339,7 @@ class Graph(object):
         initial = incident(source) - forbidden
         seen = forbidden | initial
         # Use a deque since we need to popleft.
-        fifo = deque([ (None, source, e) for e in initial ])
+        fifo = deque([(None, source, e) for e in initial])
         while fifo:
             parent, vertex, child = fifo.popleft()
             new_edges = incident(child(vertex)) - seen
@@ -341,7 +347,7 @@ class Graph(object):
             fifo.extend([(child, child(vertex), edge) for edge in new_edges])
             yield parent, vertex, child
 
-    def next(self):  #For Python 2 compatibility
+    def next(self):  # For Python 2 compatibility
         return self.__next__()
 
     def components(self, deleted_vertices=[]):
@@ -460,7 +466,7 @@ class Graph(object):
             path = deque()
             flow = residual[child]
             while True:
-                path.appendleft( (vertex, child) )
+                path.appendleft((vertex, child))
                 children[vertex].add(child)
                 if vertex == source:
                     break
@@ -471,7 +477,7 @@ class Graph(object):
                 residual[edge] -= flow
                 if residual[edge] == 0:
                     full_edges.add(edge)
-            path_list.append( (flow, path) )
+            path_list.append((flow, path))
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
@@ -479,7 +485,7 @@ class Graph(object):
                               if vertex in edge
                               and edge(vertex) not in cut_set])
         # Find the unsaturated edges.
-        unsaturated = [ e for e in self.edges if residual[e] > 0 ]
+        unsaturated = [e for e in self.edges if residual[e] > 0]
         flow_dict = dict.fromkeys(self.edges, 0)
         # Compute the flow.
         for flow, edges in path_list:
@@ -514,7 +520,7 @@ class Graph(object):
         >>> set(G.vertices) == {frozenset([1, 2]), frozenset([0])}
         True
         """
-        new_vertex = V1|V2
+        new_vertex = V1 | V2
         if new_vertex in self.vertices:
             raise ValueError('Merged vertex already exists!')
         self.edges -= set([e for e in self.edges if V1 in e and V2 in e])
@@ -526,9 +532,9 @@ class Graph(object):
             self.edges.remove(edge)
             x, y = edge
             if x in old_vertices:
-                self.edges.add( self.Edge(new_vertex, y) )
+                self.edges.add(self.Edge(new_vertex, y))
             if y in old_vertices:
-                self.edges.add( self.Edge(x, new_vertex) )
+                self.edges.add(self.Edge(x, new_vertex))
 
     def mergeable(self):
         """
@@ -549,6 +555,7 @@ class Graph(object):
         G.add_nodes_from(self.vertices)
         G.add_edges_from(self.edges)
         return G
+
 
 class ReducedGraph(Graph):
     """
@@ -593,7 +600,7 @@ class ReducedGraph(Graph):
         for e in self.edges:
             v, w = e
             if v != w:
-                non_loop_edges.add( (v, w) )
+                non_loop_edges.add((v, w))
             else:
                 verts_with_loops.add(v)
 
@@ -619,7 +626,7 @@ class ReducedGraph(Graph):
     def one_min_cut(self, source, sink):
         capacity = dict((e, e.multiplicity) for e in self.edges)
         cut = Graph.one_min_cut(self, source, sink, capacity)
-        cut['size'] = sum([e.multiplicity for e in cut['edges'] ])
+        cut['size'] = sum([e.multiplicity for e in cut['edges']])
         return cut
 
     def cut_pairs(self):
@@ -716,23 +723,23 @@ class FatGraph(Graph):
                 cycle.append(e)
                 # cross the edge
                 v = e(v)
-                if (( e.twisted and s=='L') or
-                        ( not e.twisted and (s=='L')==(v==e[0]) )):
+                if ((e.twisted and s=='L') or
+                        (not e.twisted and (s=='L')==(v==e[0]))):
                     # go counter-clockwise
                     e = self(v).succ(e)
                     s = 'R' if e.twisted or v == e[0] else 'L'
-                else: # go clockwise
+                else:  # go clockwise
                     e = self(v).pred(e)
                     s = 'L' if e.twisted or v == e[0] else 'R'
                 if (e[0],e,s) == start:
                     cycles.append(cycle)
                     break
-                #print('next', (e[0],e,s))
-                sides.remove( (e[0],e,s) )
+                sides.remove((e[0], e, s))
         return cycles
 
     def filled_euler(self):
         return len(self.vertices) - len(self.edges) + len(self.boundary_cycles())
+
 
 class Digraph(Graph):
     """
@@ -861,6 +868,7 @@ class Digraph(Graph):
         """
         return StrongConnector(self).DAG()
 
+
 class StrongConnector(object):
     """
     Finds strong components of a digraph using Tarjan's algorithm;
@@ -920,7 +928,7 @@ class StrongConnector(object):
             dag_tail= self.which_component[tail]
             dag_head = self.which_component[head]
             if dag_head != dag_tail:
-                edges.add( (dag_tail, dag_head) )
+                edges.add((dag_tail, dag_head))
         return Digraph(edges, self.components)
 
 
@@ -988,7 +996,7 @@ class Poset(set):
         """
         Return the subset of maximal elements.
         """
-        return frozenset( [ x for x in self if not self.larger[x] ] )
+        return frozenset([x for x in self if not self.larger[x]])
 
     def closure(self, A):
         """
@@ -1019,7 +1027,6 @@ class Poset(set):
             self.closed.add(start)
             yield start
         for element in complement:
-            # print( 'adding ', element)
             extended = self.closure(start | set([element]))
             for subset in self.XXclosed_subsets(extended):
                 yield subset
@@ -1066,8 +1073,8 @@ class Poset(set):
             if 0 < len(X):
                 pairwise_incomparable = True
                 for x in X:
-                    if ( X.intersection(self.smaller[x]) or
-                         X.intersection(self.larger[x]) ):
+                    if (X.intersection(self.smaller[x]) or
+                        X.intersection(self.larger[x])):
                         pairwise_incomparable = False
                         break
                 if pairwise_incomparable:

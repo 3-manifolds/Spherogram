@@ -90,11 +90,11 @@ def strand_matrix_merge(A, a, b):
     mu = 1 - beta
     theta, epsilon = A.row(a), A.row(b)
     phi, psi = A.column(a), A.column(b)
-    A = A + matrix(psi).transpose()*matrix(theta)/mu
+    A = A + matrix(psi).transpose() * matrix(theta) / mu
     i, j = min(a, b), max(a, b)
-    A[i] = epsilon + delta*theta/mu
-    A[:, i] = phi + alpha*psi/mu
-    A[i, i] = gamma + alpha*delta/mu
+    A[i] = epsilon + delta * theta / mu
+    A[:, i] = phi + alpha * psi / mu
+    A[i, i] = gamma + alpha * delta / mu
     A = A.delete_rows([j])
     A = A.delete_columns([j])
     return A
@@ -174,7 +174,7 @@ class Exhaustion(object):
         frontier_lengths = [4]
         while len(crossings) < len(link.crossings):
             choices = [(num_overlap(cs.opposite()[0], frontier), cs) for cs in frontier]
-            overlap, cs = max(choices, key=lambda x:x[0])
+            overlap, cs = max(choices, key=lambda x: x[0])
             C = cs.opposite().crossing
             assert C not in crossings
             crossings.append(C)
@@ -189,7 +189,7 @@ class Exhaustion(object):
                 else:
                     frontier.add(cs)
 
-            assert frontier_lengths[-1] + 4 - 2*overlap == len(frontier)
+            assert frontier_lengths[-1] + 4 - 2 * overlap == len(frontier)
             frontier_lengths.append(len(frontier))
             gluings.append(C_gluings)
 

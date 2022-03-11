@@ -32,6 +32,7 @@ def cut(G, T, e):
                 answer.append(f)
     return answer
 
+
 def is_internally_active(G, T, e):
     """
     Input:
@@ -47,6 +48,7 @@ def is_internally_active(G, T, e):
             return False
     return True
 
+
 def cyc(G,T,e):
     """
     Input:
@@ -60,33 +62,34 @@ def cyc(G,T,e):
         raise Exception("e must be an edge of G.")
     if T.has_edge(*e):
         raise Exception("e must not be an edge of T.")
-    #First thing: catch exceptional case that e is a multiple for an edge in T (giving a 2-cycle).
+    # First thing: catch exceptional case that e is a multiple for an edge in T (giving a 2-cycle).
     try:
         l = T.edge_label(e[0],e[1])
         if isinstance(l,list):
-            l = l[0] #For multigraphs, edge_label returns a list. In this case, it's a list with one element...
+            l = l[0]  # For multigraphs, edge_label returns a list. In this case, it's a list with one element...
         if (e[0],e[1], l) in T.edges(sort=True, key=edge_index):
             return [(e[0],e[1],l),e]
         return [(e[1],e[0],l),e]
     except Exception:
         pass
 
-    #Now the typical case.  First, need to turn T into a Graph which
-    #doesn't allow multiedges and also make a copy since we will
-    #modify it.
+    # Now the typical case.  First, need to turn T into a Graph which
+    # doesn't allow multiedges and also make a copy since we will
+    # modify it.
     S = graph.Graph(T.edges(sort=True, key=edge_index))
     S.add_edge(e)
     cb = S.cycle_basis()[0]
     answer = list()
     for i in range(len(cb)):
-        l = S.edge_label(cb[i],cb[(i+1)%len(cb)])
-        if S.has_edge(cb[i],cb[(i+1)%len(cb)],l):
-            answer.append((cb[i],cb[(i+1)%len(cb)],l))
+        l = S.edge_label(cb[i], cb[(i + 1) % len(cb)])
+        if S.has_edge(cb[i], cb[(i + 1) % len(cb)], l):
+            answer.append((cb[i], cb[(i + 1) % len(cb)], l))
         else:
-            answer.append((cb[(i+1)%len(cb)],cb[i],l))
+            answer.append((cb[(i + 1) % len(cb)], cb[i], l))
     return answer
 
-def is_externally_active(G,T,e):
+
+def is_externally_active(G, T, e):
     """
     Input:
     --A graph G.
@@ -101,6 +104,7 @@ def is_externally_active(G,T,e):
             return False
     return True
 
+
 def _edge_sign(K, edge):
     "Returns the sign (+/- 1) associated to given edge in the black graph."
     crossing = edge[2]
@@ -108,9 +112,10 @@ def _edge_sign(K, edge):
         return +1
     return -1
 
+
 def _Jones_contrib_edge(K, G, T, e, A):
     "Returns the contribution to the Jones polynomial of the specified tree T and edge e."
-    #Need to also take crossing sign into account -- A -> 1/A in negative case.
+    # Need to also take crossing sign into account -- A -> 1/A in negative case.
     s = e[2]['sign']
     if is_internally_active(G,T,e):
         return -A**(-3*s)
@@ -121,6 +126,7 @@ def _Jones_contrib_edge(K, G, T, e, A):
     if (not T.has_edge(*e)) and (not is_externally_active(G,T,e)):
         return A**(-1*s)
 
+
 def _Jones_contrib(K, G, T, A):
     "Returns the contribution to the Jones polynomial of the tree T. G should be self.black_graph()."
     answer = 1
@@ -128,6 +134,7 @@ def _Jones_contrib(K, G, T, A):
     for e in G.edges(sort=True, key=edge_index):
         answer = answer*_Jones_contrib_edge(K,G,T,e,A)
     return answer
+
 
 def Jones_poly(K, variable=None, new_convention=False):
     """
@@ -167,6 +174,7 @@ def Jones_poly(K, variable=None, new_convention=False):
         else:
             ans = ans + coeff*(variable**(exp//4))
     return ans
+
 
 def spanning_trees(G):
     """

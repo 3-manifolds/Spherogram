@@ -131,7 +131,7 @@ class VElement(object):
         """
         Insert an new matching at (i, i + 1)
         """
-        return VElement({insert_cup(m, i):c for m, c in self.dict.items()})
+        return VElement({insert_cup(m, i): c for m, c in self.dict.items()})
 
     def cap_off(self, i):
         ans_dict = dict()
@@ -139,7 +139,7 @@ class VElement(object):
             new_matching, has_circle = cap_off(matching, i)
             cur_coeff = ans_dict.get(new_matching, R.zero())
             if has_circle:
-                coeff = (q + q**-1)*coeff
+                coeff = (q + q**-1) * coeff
             ans_dict[new_matching] = cur_coeff + coeff
         return VElement(ans_dict)
 
@@ -147,10 +147,10 @@ class VElement(object):
         return self.cap_off(i).insert_cup(i)
 
     def add_positive_crossing(self, i):
-        return self + (-q)*self.cap_then_cup(i)
+        return self + (-q) * self.cap_then_cup(i)
 
     def add_negative_crossing(self, i):
-        return self.cap_then_cup(i) + (-q)*self
+        return self.cap_then_cup(i) + (-q) * self
 
     def is_multiple_of_empty_pairing(self):
         return len(self.dict) == 1 and (PerfectMatching([]) in self.dict)
@@ -188,13 +188,13 @@ def jones_polynomial(link, normalized=True):
     if normalized:
         factor = q + q**-1
         norm_bracket = bracket // factor
-        assert norm_bracket*factor == bracket
+        assert norm_bracket * factor == bracket
     else:
         norm_bracket = bracket
 
     signs = [c.sign for c in link.crossings]
     n_minus, n_plus = signs.count(-1), signs.count(1)
-    return (-1)**n_minus * q**(n_plus - 2*n_minus) * norm_bracket
+    return (-1)**n_minus * q**(n_plus - 2 * n_minus) * norm_bracket
 
 
 def test_one_link(link):

@@ -113,10 +113,12 @@ class Link(links_base.Link):
         Returns a linking matrix, in which the (i,j)th component is the
         linking number of the ith and jth link components.
         """
-        matrix = [ [0 for i in range(len(self.link_components)) ] for j in range(len(self.link_components)) ]
+        matrix = [[0 for i in range(len(self.link_components))]
+                  for j in range(len(self.link_components))]
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
-                tally = [ [0 for m in range(len(self.crossings)) ] for n in range(2) ]
+                tally = [[0 for m in range(len(self.crossings))]
+                         for n in range(2)]
                 if not (comp1 == comp2):
                     for i, c in enumerate(self.crossings):
                         for x1 in comp1:
@@ -204,7 +206,7 @@ class Link(links_base.Link):
             L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
             t = list(L_t.gens())
 
-            #determine the component to which each variable corresponds
+            # determine the component to which each variable corresponds
             g_component = [c.strand_components[2] for c in self.crossings]
             for i in range(len(g)):
                 g[i] = t[g_component[i]]
@@ -229,7 +231,7 @@ class Link(links_base.Link):
         return self.alexander_polynomial(*args, **kwargs)
 
     @sage_method
-    def alexander_polynomial(self, multivar=True, v='no', method='default', norm = True, factored = False):
+    def alexander_polynomial(self, multivar=True, v='no', method='default', norm=True, factored=False):
         """
         Calculates the Alexander polynomial of the link. For links with one component,
         can evaluate the alexander polynomial at v::
@@ -269,7 +271,7 @@ class Link(links_base.Link):
             # If single variable, use the super-fast method of Bar-Natan.
             if comp == 1 and method == 'default' and norm:
                 p = alexander.alexander(self)
-            else: # Use a simple method based on the Wirtinger presentation.
+            else:  # Use a simple method based on the Wirtinger presentation.
                 if method not in ['default', 'wirtinger']:
                     raise ValueError("Available methods are 'default' and 'wirtinger'")
 
@@ -304,7 +306,7 @@ class Link(links_base.Link):
             if v != 'no':
                 return p(*v)
 
-            if multivar and factored: # it's easier to view this way
+            if multivar and factored:  # it's easier to view this way
                 return p.factor()
             else:
                 return p
@@ -415,7 +417,7 @@ class Link(links_base.Link):
             l = []
             for y in x:
                 l.append((y[0],y[1]))
-                l.append((y[0],(y[1]+1)%4))
+                l.append((y[0],(y[1]+1) % 4))
             faces.append(l)
 
         coords = list()
@@ -428,7 +430,7 @@ class Link(links_base.Link):
                     crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
                     total=set(crossings)
                     if total.issubset(s):
-                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x])) #label by the crossing.
+                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x]))  # label by the crossing.
 
         G = graph.Graph(coords, multiedges=True)
         component = G.connected_components(sort=False)[1]
@@ -582,7 +584,7 @@ class Link(links_base.Link):
             sage: K.determinant()
             5
         """
-        if method=='color':
+        if method == 'color':
             M = self._colorability_matrix()
             size = len(self.crossings)-1
             N = matrix(size, size)
@@ -590,10 +592,10 @@ class Link(links_base.Link):
                 for j in range(size):
                     N[(i,j)]=M[(i+1,j+1)]
             return abs(N.determinant())
-        elif method=='goeritz':
+        elif method == 'goeritz':
             return abs(self.goeritz_matrix().determinant())
         else:
-            return abs(self.alexander_polynomial(multivar=False, v=[-1], norm = False))
+            return abs(self.alexander_polynomial(multivar=False, v=[-1], norm=False))
 
     @sage_method
     def morse_number(self, solver='GLPK'):
@@ -799,6 +801,7 @@ class Link(links_base.Link):
         """
         return self.sage_link()
 
+
 class ClosedBraid(Link):
     """
     This is a convenience class for constructing closed braids.
@@ -826,4 +829,4 @@ class ClosedBraid(Link):
         Link.__init__(self, *args, **kwargs)
 
     def __repr__(self):
-        return 'ClosedBraid%s'%str(self.braid_word)
+        return 'ClosedBraid%s' % str(self.braid_word)

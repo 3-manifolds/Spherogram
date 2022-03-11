@@ -41,7 +41,7 @@ if _within_sage:
 else:
     def _sage_method(function, *args, **kw):
         raise SageNotAvailable('Sorry, this feature requires using SnapPy inside Sage.')
-        
+
     def sage_method(function):
         return decorator.decorator(_sage_method, function)
 
@@ -57,8 +57,8 @@ def filter_out_snappy(pieces):
         elif not piece.options.get(SNAPPY_FLAG, False):
             ans.append(piece)
     return ans
-            
-        
+
+
 if _within_sage:
     class DocTestParser(doctest.DocTestParser):
         def parse(self, string, name='<string>'):
@@ -72,7 +72,7 @@ else:
         def parse(self, string, name='<string>'):
             pieces = doctest.DocTestParser.parse(self, string, name)
             return filter_out_snappy(pieces)
-        
+
     globs = dict()
 
 

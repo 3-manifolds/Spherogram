@@ -13,9 +13,9 @@ def rotate_list(L, s):
 
 
 def flip(L):
-    half = len(L)//2
+    half = len(L) // 2
     for i in range(half):
-        L[i],L[i+half] = L[i+half],L[i]
+        L[i], L[i + half] = L[i + half], L[i]
 
 
 def clear_orientations(crossings):
@@ -96,7 +96,7 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
-        #permuting the indices in the gluings
+        # permuting the indices in the gluings
         perm = range(len(tangle.adjacent))
         perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
         perm = rotate_list(perm,i)
@@ -107,7 +107,7 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
             new_g.sort()
             rotated_gluings.append(tuple(new_g))
         rotated_gluings.sort()
-        isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,root=rotated_root))        
+        isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,root=rotated_root))
 
     return min(isosigs)
 
@@ -122,15 +122,15 @@ def crossing_orientations(strands):
     css_seen = []
     for strand in strands:
         for cs in strand:
-            for seen_cs in css_seen: 
+            for seen_cs in css_seen:
                 if cs[0] == seen_cs[0]:
-                    orientation = (cs[1]-seen_cs[1])%4
+                    orientation = (cs[1] - seen_cs[1]) % 4
                     if orientation == 3:
                         orientation = -1
-                    orientations[cs[0]]=orientation
-                    over_or_under[cs[0]] = (cs[1]%2)
+                    orientations[cs[0]] = orientation
+                    over_or_under[cs[0]] = (cs[1] % 2)
                     break
-            css_seen.append(cs) #didn't find cs
+            css_seen.append(cs)  # didn't find cs
     return orientations, over_or_under
 
 
@@ -140,12 +140,12 @@ def cross_strand(tangle, i):
     a strand on the boundary of a tangle and moving to the other
     end of that strand.
     """
-    if i >= 2*tangle.n:
+    if i >= 2 * tangle.n:
         raise Exception("Not a valid start position for strand")
     cs = tangle.adjacent[i]
     strand = [cs]
-    while (cs[0],(cs[1]+2)%4) not in tangle.adjacent:
-        cs = cs[0].adjacent[(cs[1]+2)%4]
+    while (cs[0], (cs[1] + 2) % 4) not in tangle.adjacent:
+        cs = cs[0].adjacent[(cs[1] + 2) % 4]
         strand.append(cs)
     return strand
 
@@ -176,9 +176,9 @@ def all_cross_strands(tangle):
     clockwise_order.extend(reversed(range(tangle.n, tangle.n * 2)))
     for i in clockwise_order:
         if i not in other_ends_seen:
-            strand = cross_strand(tangle,i)
+            strand = cross_strand(tangle, i)
             cs = strand[-1]
-            end = tangle.adjacent.index((cs[0],(cs[1]+2)%4))
+            end = tangle.adjacent.index((cs[0], (cs[1] + 2) % 4))
             if end not in other_ends_seen:
                 strands.append(strand)
                 strands_with_ends.append((strand,end))
@@ -191,18 +191,18 @@ def all_cross_strands(tangle):
     for strand in strands:
         for cs in strand:
             if cs[0] in seen_once:
-                loop = loop_strand((cs[0],(cs[1]+1)%4))
+                loop = loop_strand((cs[0], (cs[1] + 1) % 4))
                 loops.append(loop)
                 cs_seen.extend(loop)
                 for loop_cs in loop:
                     if loop_cs[0] in seen_once:
                         for seen_cs in cs_seen:
                             if loop_cs[0] == seen_cs[0]:
-                                orientation = (loop_cs[1]-seen_cs[1])%4
+                                orientation = (loop_cs[1] - seen_cs[1]) % 4
                                 if orientation == 3:
                                     orientation = -1
                                 orientations[loop_cs[0]]=orientation
-                                over_or_under[loop_cs[0]] = loop_cs[1]%2
+                                over_or_under[loop_cs[0]] = loop_cs[1] % 2
                                 seen_once.remove(loop_cs[0])
                                 break
                     else:

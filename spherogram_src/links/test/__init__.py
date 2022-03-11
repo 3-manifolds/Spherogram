@@ -8,9 +8,10 @@ from ...sage_helper import _within_sage
 if _within_sage:
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
     from sage.all import QQ
-    
+
+
 class TestLinkFunctions(unittest.TestCase):
-    
+
     def setUp(self):
         # Trefoil
         a = spherogram.Crossing('a')
@@ -30,35 +31,35 @@ class TestLinkFunctions(unittest.TestCase):
         self.K8_13 = spherogram.Link('8_13')
 
         # Hopf Link
-        a = spherogram.Crossing('a') 
-        b = spherogram.Crossing('b') 
-        a[0]=b[1] 
-        a[1]=b[0] 
-        a[2]=b[3] 
-        a[3]=b[2] 
+        a = spherogram.Crossing('a')
+        b = spherogram.Crossing('b')
+        a[0]=b[1]
+        a[1]=b[0]
+        a[2]=b[3]
+        a[3]=b[2]
         self.L2a1 = spherogram.Link([a,b])
 
-        #Borromean Link (3) 
-        a = spherogram.Crossing('a') 
-        b = spherogram.Crossing('b') 
-        c = spherogram.Crossing('c') 
-        d = spherogram.Crossing('d') 
-        e = spherogram.Crossing('e') 
-        f = spherogram.Crossing('f') 
+        # Borromean Link (3)
+        a = spherogram.Crossing('a')
+        b = spherogram.Crossing('b')
+        c = spherogram.Crossing('c')
+        d = spherogram.Crossing('d')
+        e = spherogram.Crossing('e')
+        f = spherogram.Crossing('f')
         a[2] = f[1]
-        a[3] = e[0] 
-        b[1] = a[0] 
-        b[2] = e[3] 
-        c[0] = a[1] 
-        c[1] = b[0] 
-        d[3] = c[2] 
-        d[0] = b[3] 
-        e[2] = d[1] 
-        e[1] = f[0] 
-        f[2] = c[3] 
-        f[3] = d[2] 
+        a[3] = e[0]
+        b[1] = a[0]
+        b[2] = e[3]
+        c[0] = a[1]
+        c[1] = b[0]
+        d[3] = c[2]
+        d[0] = b[3]
+        e[2] = d[1]
+        e[1] = f[0]
+        f[2] = c[3]
+        f[3] = d[2]
         self.Borr = spherogram.Link([a,b,c,d,e,f])
-        
+
         self.L6a2 = spherogram.Link('L6a2')
         self.L6a4 = spherogram.Link('L6a4')
         self.L7a3 = spherogram.Link('L7a3')
@@ -67,7 +68,7 @@ class TestLinkFunctions(unittest.TestCase):
         self.knots = [self.K3_1, self.K7_2, self.K8_3, self.K8_13]
         self.links = [self.L2a1, self.L6a4, self.L6a2, self.L7a3, self.L10n1]
         self.all_links = self.knots + self.links
-               
+
     def random_knot(self):
         random_index = randrange(0,len(self.knots))
         return self.knots[random_index]
@@ -119,7 +120,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(len(k.knot_group().generators()),             len(k.crossings))
             self.assertEqual(k.knot_group().abelian_invariants()[0],       0)
             self.assertEqual(len(k.knot_group().abelian_invariants()),     len(k.link_components))
-       
+
     def testAlexanderPoly(self):
         from sage.all import var, sqrt
         L = LaurentPolynomialRing(QQ,'t')
@@ -147,7 +148,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(self.K8_13.alexander_polynomial(method='snappy'),      2*a**4 - 7*a**3 + 11*a**2 - 7*a + 2)
         except ImportError:
             pass
-        
+
     def testConnectedSum(self):
         repeat = 3
         while repeat > 0:
@@ -201,7 +202,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertTrue(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for "+ repr(k1))
             self.assertTrue(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for "+repr(k1))
             repeat-=1
-            
+
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
@@ -214,7 +215,7 @@ class TestLinkFunctions(unittest.TestCase):
         self.assertEqual(self.K3_1.determinant(),                 3)
         self.assertEqual(self.K3_1.determinant(method='color'),   3)
         self.assertEqual(self.K3_1.determinant(method='goeritz'), 3)
-        
+
         self.assertEqual(self.Tref.determinant(),                 3)
         self.assertEqual(self.Tref.determinant(method='color'),   3)
         self.assertEqual(self.Tref.determinant(method='goeritz'), 3)
