@@ -367,7 +367,7 @@ def pickup_strand(link, dual_graph, kind, strand):
     if startcep == strand[-1]:
         # Totally overcrossing loop, must be totally unlinked and
         # unknotted
-        remove_strand(strand)
+        remove_strand(link, strand)
         return len(strand)
     length = len(strand)
     crossing_set = set([cep.crossing for cep in strand])
@@ -559,14 +559,17 @@ def over_or_under_strands(link, kind):
             forward_cep = forward_cep.next()
         backwards_strand = []
         backwards_cep = cep.previous()
-        if not is_loop:
+        if is_loop:
+            strand = forward_strand
+        else:
             while criteria(backwards_cep):
                 backwards_strand.append(backwards_cep)
                 backwards_cep = backwards_cep.previous()
             strand = backwards_strand[::-1]
             strand.extend(forward_strand)
-            strands.append(strand)
-            ceps.difference_update(strand)
+
+        strands.append(strand)
+        ceps.difference_update(strand)
 
     return sorted(strands, key=len, reverse=True)
 
