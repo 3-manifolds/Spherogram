@@ -23,6 +23,7 @@ def remove_crossings(link, eliminate):
     disconnected from the rest of the link, so this just updates
     link.crossings and link.link_components.
     """
+
     if len(eliminate):
         for C in eliminate:
             link.crossings.remove(C)
@@ -36,7 +37,7 @@ def remove_crossings(link, eliminate):
                         pass
             if len(component):
                 new_components.append(component)
-        components_removed = len(link.link_components)-len(new_components)
+        components_removed = len(link.link_components) - len(new_components)
         link.unlinked_unknot_components += components_removed
         link.link_components = new_components
 
@@ -114,7 +115,12 @@ def basic_simplify(link, build_components=True, to_visit=None):
     if success and build_components:
         component_starts = []
         for component in link.link_components:
-            a, b = component[:2]
+            assert len(component) > 0
+            if len(component) > 1:
+                a, b = component[:2]
+            else:
+                a = component[0]
+                b = a.next()
             if a.strand_label() % 2 == 0:
                 component_starts.append(a)
             else:
