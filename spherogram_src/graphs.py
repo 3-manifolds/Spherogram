@@ -37,12 +37,14 @@ tail, head in the case of directed edges).
 """
 from collections import deque, defaultdict
 
-_within_sage = False
 try:
     import sage.all
     import sage.graphs.graph
     _within_sage = True
 except ImportError:
+    _within_sage = False
+
+if not _within_sage:
     try:
         from .planarity import planar
         from spherogram.planarity import planar
