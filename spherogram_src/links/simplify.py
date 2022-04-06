@@ -362,9 +362,10 @@ def extend_strand_backward(kind, strand, start_cep):
 
 def pickup_strand(link, dual_graph, kind, strand):
     """
-    Simplify the given (over/under)crossing strand by erasing from the diagram and
-    then finding a path that minimizes the number of edges it has to cross
-    over to connect the same endpoints. Returns number of crossings removed.
+    Simplify the given (over/under)crossing strand by erasing it from
+    the diagram and then finding a path that minimizes the number of
+    edges it has to cross over to connect the same endpoints. Returns
+    number of crossings removed.
     """
     init_link_cross_count = len(link.crossings)
     G = dual_graph
@@ -374,6 +375,11 @@ def pickup_strand(link, dual_graph, kind, strand):
         # Totally overcrossing loop, must be totally unlinked and
         # unknotted
         remove_strand(link, strand)
+        return len(strand)
+    if startcep == strand[-1].next():
+        # We have a figure-8 curve with a single crossing in front
+        # of the rest of the components.
+        remove_strand(link, [startcep] + strand)
         return len(strand)
     length = len(strand)
     crossing_set = set([cep.crossing for cep in strand])
@@ -493,7 +499,7 @@ def remove_strand(link, strand):
             bridge_strands[c][1] = bridge_strands[left_cs.crossing][1-signs_equal]
         else:
             bridge_strands[c][1] = left_cs.crossing[left_cs.strand_index]
-    remove_crossings(link,set(crossings_seen))
+    remove_crossings(link, set(crossings_seen))
 
     for s in bridge_strands.values():
         s.fuse()
