@@ -510,7 +510,7 @@ class Link(links_base.Link):
         for i in range(N):
             m[(i, i)] = -sum(m.column(i))
         m = m.delete_rows([0]).delete_columns([0])
-        return m, G if return_graph else m
+        return (m, G) if return_graph else m
 
     @sage_method
     def signature(self, new_convention=True):
