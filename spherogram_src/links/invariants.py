@@ -5,23 +5,18 @@ and Jennet Dickinson.
 """
 
 from . import links_base, alexander
-from .links_base import Crossing, Strand, CrossingStrand
+from .links_base import CrossingStrand, Crossing
 from ..sage_helper import _within_sage, sage_method
 
 deprecation_warnings_issued = set()
 
 if _within_sage:
-    import sage.all
-    import sage.graphs.graph
     from sage.matrix.constructor import matrix
-    from sage.symbolic.ring import SR
     from sage.groups.free_group import FreeGroup
     import sage.graphs.graph as graph
-    from sage.symbolic.ring import var
     from sage.groups.braid import Braid, BraidGroup
-    from sage.all import ZZ, QQ
+    from sage.all import QQ
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
-    from sage.graphs.graph import Graph
     from sage.quadratic_forms.quadratic_form import QuadraticForm
     try:
         from sage.knots.knot import Knot as SageKnot
@@ -40,26 +35,27 @@ def normalize_alex_poly(p, t):
     polynomial.
     """
     if len(t) == 1:
-        p = p*(t[0]**(-min(p.exponents())))
-        if p.coefficients()[-1]<0:
+        p = p * (t[0]**(-min(p.exponents())))
+        if p.coefficients()[-1] < 0:
             p = -p
         p, e = p.polynomial_construction()
         assert e == 0
         return p
 
-    max_degree = max([sum(x) for x in p.exponents()])
-    highest_monomial_exps = [x for x in p.exponents() if sum(x)==max_degree]
+    max_degree = max(sum(x) for x in p.exponents())
+    highest_monomial_exps = [x for x in p.exponents() if sum(x) == max_degree]
     leading_exponents = max(highest_monomial_exps)
-    leading_monomial = functools.reduce(lambda x,y: x*y,[t[i]**(leading_exponents[i]) for i in range(len(t))])
+    leading_monomial = functools.reduce(lambda x, y: x * y,
+                                        [t[i]**(leading_exponents[i])
+                                         for i in range(len(t))])
     l = p.monomial_coefficient(leading_monomial)
 
     if l < 0:
         p = -p
 
-    for i in range(len(t)):
-        exps = map(lambda x: x[i], p.exponents())
-        min_exp = min(exps)
-        p = p*(t[i]**(-min_exp))
+    for i, ti in enumerate(t):
+        min_exp = min(x[i] for x in p.exponents())
+        p = p * (ti**(-min_exp))
 
     R = p.parent()
     p = R.polynomial_ring()(p)
@@ -67,17 +63,22 @@ def normalize_alex_poly(p, t):
 
 
 def sage_braid_as_int_word(braid):
+    """
+    Convert a Sage Braid to a word.
+    """
+    # Could simplify using braid.Tietze().
+
     G = braid.parent()
-    gen_idx = dict([(g, i + 1) for i, g in enumerate(G.gens())])
+    gen_idx = {g: i + 1 for i, g in enumerate(G.gens())}
     ans = []
     for g, e in braid.syllables():
         if e > 0:
-            ans += e*[gen_idx[g]]
+            ans += e * [gen_idx[g]]
         else:
-            ans += abs(e)*[-gen_idx[g]]
+            ans += abs(e) * [-gen_idx[g]]
 
     n = G.ngens()
-    if max([abs(a) for a in ans]) < n:
+    if max(abs(a) for a in ans) < n:
         ans += [n, -n]
     return ans
 
@@ -113,13 +114,13 @@ class Link(links_base.Link):
         Returns a linking matrix, in which the (i,j)th component is the
         linking number of the ith and jth link components.
         """
-        matrix = [[0 for i in range(len(self.link_components))]
-                  for j in range(len(self.link_components))]
+        mat = [[0 for i in range(len(self.link_components))]
+               for j in range(len(self.link_components))]
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
                 tally = [[0 for m in range(len(self.crossings))]
                          for n in range(2)]
-                if not (comp1 == comp2):
+                if comp1 != comp2:
                     for i, c in enumerate(self.crossings):
                         for x1 in comp1:
                             if x1[0] == c:
@@ -129,11 +130,9 @@ class Link(links_base.Link):
                                 tally[1][i] += 1
                 for k, c in enumerate(self.crossings):
                     if (tally[0][k] == 1 and tally[1][k] == 1):
-                        matrix[n1][n2] += 0.5 * (c.sign)
-        for i1, m1 in enumerate(matrix):
-            for i2, m2 in enumerate(m1):
-                matrix[i1][i2] = int(matrix[i1][i2])
-        return matrix
+                        mat[n1][n2] += 0.5 * (c.sign)
+                mat[n1][n2] = int(mat[n1][n2])
+        return mat
 
     @sage_method
     def knot_group(self):
@@ -149,7 +148,6 @@ class Link(links_base.Link):
         """
         n = len(self.crossings)
         F = FreeGroup(n)
-        g = list(F.gens())
         rels = []
         pieces = self._pieces()
 
@@ -167,9 +165,9 @@ class Link(links_base.Link):
             j += 1
             k += 1
             if z.sign > 0:
-                r = F([-k,i,k,-j])
+                r = F([-k, i, k, -j])
             if z.sign < 0:
-                r = F([k,i,-k,-j])
+                r = F([k, i, -k, -j])
             rels.append(r)
 
         return F / rels
@@ -199,26 +197,26 @@ class Link(links_base.Link):
         G = self.knot_group()
         num_gens = len(G.gens())
 
-        L_g = LaurentPolynomialRing(QQ,['g%d' % (i+1) for i in range(num_gens)])
+        L_g = LaurentPolynomialRing(QQ, [f'g{i+1}' for i in range(num_gens)])
         g = list(L_g.gens())
 
-        if(mv):
-            L_t = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
+        if mv:
+            L_t = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp)])
             t = list(L_t.gens())
 
             # determine the component to which each variable corresponds
             g_component = [c.strand_components[2] for c in self.crossings]
-            for i in range(len(g)):
-                g[i] = t[g_component[i]]
+            for i, gci in enumerate(g_component):
+                g[i] = t[gci]
 
         else:
-            L_t = LaurentPolynomialRing(QQ,'t')
+            L_t = LaurentPolynomialRing(QQ, 't')
             t = L_t.gen()
-            g = [t]*len(g)
+            g = [t] * len(g)
 
         B = G.alexander_matrix(g)
 
-        return (B,g)
+        return (B, g)
 
     @sage_method
     def alexander_poly(self, *args, **kwargs):
@@ -231,9 +229,12 @@ class Link(links_base.Link):
         return self.alexander_polynomial(*args, **kwargs)
 
     @sage_method
-    def alexander_polynomial(self, multivar=True, v='no', method='default', norm=True, factored=False):
+    def alexander_polynomial(self, multivar=True, v='no', method='default',
+                             norm=True, factored=False):
         """
-        Calculates the Alexander polynomial of the link. For links with one component,
+        Calculates the Alexander polynomial of the link.
+
+        For links with one component,
         can evaluate the alexander polynomial at v::
 
             sage: K = Link('4_1')
@@ -254,7 +255,6 @@ class Link(links_base.Link):
             sage: L.alexander_polynomial() == L.alexander_polynomial(method='wirtinger')
             True
         """
-
         # sign normalization still missing, but when "norm=True" the
         # leading coefficient with respect to the first variable is made
         # positive.
@@ -262,54 +262,54 @@ class Link(links_base.Link):
             try:
                 return self.exterior().alexander_polynomial()
             except ImportError:
-                raise RuntimeError('this method for alexander_polynomial '+no_snappy_msg)
-        else:
-            comp = len(self.link_components)
-            if comp < 2:
-                multivar = False
+                raise RuntimeError('the method "snappy" for '
+                                   'alexander_polynomial requires SnapPy')
 
-            # If single variable, use the super-fast method of Bar-Natan.
-            if comp == 1 and method == 'default' and norm:
-                p = alexander.alexander(self)
-            else:  # Use a simple method based on the Wirtinger presentation.
-                if method not in ['default', 'wirtinger']:
-                    raise ValueError("Available methods are 'default' and 'wirtinger'")
+        comp = len(self.link_components)
+        if comp < 2:
+            multivar = False
 
-                if(multivar):
-                    L = LaurentPolynomialRing(QQ,['t%d' % (i+1) for i in range(comp)])
-                    t = list(L.gens())
-                else:
-                    L = LaurentPolynomialRing(QQ,'t')
-                    t = [L.gen()]
+        # If single variable, use the super-fast method of Bar-Natan.
+        if comp == 1 and method == 'default' and norm:
+            p = alexander.alexander(self)
+        else:  # Use a simple method based on the Wirtinger presentation.
+            if method not in ['default', 'wirtinger']:
+                raise ValueError("Available methods are 'default' and 'wirtinger'")
 
-                M = self.alexander_matrix(mv=multivar)
-                C = M[0]
-                m = C.nrows()
-                n = C.ncols()
-                if n>m:
-                    k = m-1
-                else:
-                    k = n-1
-
-                subMatrix = C[0:k,0:k]
-                p = subMatrix.determinant()
-                if p == 0:
-                    return 0
-                if multivar:
-                    t_i = M[1][-1]
-                    p = (p.factor())/(t_i-1)
-                    p = p.expand()
-
-                if(norm):
-                    p = normalize_alex_poly(p,t)
-
-            if v != 'no':
-                return p(*v)
-
-            if multivar and factored:  # it's easier to view this way
-                return p.factor()
+            if multivar:
+                L = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp)])
+                t = list(L.gens())
             else:
-                return p
+                L = LaurentPolynomialRing(QQ, 't')
+                t = [L.gen()]
+
+            M = self.alexander_matrix(mv=multivar)
+            C = M[0]
+            m = C.nrows()
+            n = C.ncols()
+            if n > m:
+                k = m - 1
+            else:
+                k = n - 1
+
+            subMatrix = C[0: k, 0: k]
+            p = subMatrix.determinant()
+            if p == 0:
+                return 0
+            if multivar:
+                t_i = M[1][-1]
+                p = (p.factor()) / (t_i - 1)
+                p = p.expand()
+
+            if norm:
+                p = normalize_alex_poly(p, t)
+
+        if v != 'no':
+            return p(*v)
+
+        if multivar and factored:  # it's easier to view this way
+            return p.factor()
+        return p
 
     def knot_floer_homology(self, prime=2, complex=False):
         """
@@ -380,7 +380,6 @@ class Link(links_base.Link):
         True
         sage: M.right_kernel().rank() - M.rank()
         1
-
         """
         import knot_floer_homology
         if len(self.link_components) + self.unlinked_unknot_components > 1:
@@ -389,20 +388,16 @@ class Link(links_base.Link):
             return Link(braid_closure=[1, 1, -1]).knot_floer_homology()
         return knot_floer_homology.pd_to_hfk(self, prime=prime, complex=complex)
 
-    def _edge_sign(K, edge):
-        "Returns the sign (+/- 1) associated to given edge in the black graph."
-        crossing = edge[2]
-        if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
-            return +1
-        return -1
-
     @sage_method
     def black_graph(self):
         """
-        Returns the black graph of K. If the black graph is disconnected
-        (which can only happen for a split link diagram), returns one
-        connected component. The edges are labeled by the crossings
-        they correspond to.  Example::
+        Returns the black graph of K.
+
+        If the black graph is disconnected (which can only happen for
+        a split link diagram), returns one connected component. The
+        edges are labeled by the crossings they correspond to.
+
+        Example::
 
             sage: K=Link('5_1')
             sage: K.black_graph()
@@ -416,21 +411,21 @@ class Link(links_base.Link):
         for x in self.faces():
             l = []
             for y in x:
-                l.append((y[0],y[1]))
-                l.append((y[0],(y[1]+1) % 4))
+                l.append((y[0], y[1]))
+                l.append((y[0], (y[1] + 1) % 4))
             faces.append(l)
 
         coords = list()
-        for i in range(len(faces)-1):
-            for j in range(i+1, len(faces)):
+        for i in range(len(faces) - 1):
+            for j in range(i + 1, len(faces)):
                 a = set(faces[i])
                 b = set(faces[j])
                 s = a.union(b)
                 for x in range(len(self.crossings)):
-                    crossings=[self.crossings[x][0],self.crossings[x][1],self.crossings[x][2],self.crossings[x][3]]
-                    total=set(crossings)
+                    total = set(self.crossings[x][i] for i in range(4))
                     if total.issubset(s):
-                        coords.append((tuple(faces[i]),tuple(faces[j]),self.crossings[x]))  # label by the crossing.
+                        coords.append((tuple(faces[i]), tuple(faces[j]),
+                                       self.crossings[x]))  # label by the crossing.
 
         G = graph.Graph(coords, multiedges=True)
         component = G.connected_components(sort=False)[1]
@@ -474,15 +469,18 @@ class Link(links_base.Link):
         expected way.
         """
         # Map corners (i.e. CrossingStrands) to faces.
-        face_of = dict((corner, n) for n, face in enumerate(self.faces()) for corner in face)
+        face_of = {corner: n for n, face in enumerate(self.faces())
+                   for corner in face}
 
         # Create the edges, labeled with crossing and sign.
         edges = []
         for c in self.crossings:
-            edges.append((face_of[CrossingStrand(c, 0)], face_of[CrossingStrand(c, 2)],
-                          {'crossing':c, 'sign':1}))
-            edges.append((face_of[CrossingStrand(c, 1)], face_of[CrossingStrand(c, 3)],
-                          {'crossing':c, 'sign':-1}))
+            edges.append((face_of[CrossingStrand(c, 0)],
+                          face_of[CrossingStrand(c, 2)],
+                          {'crossing': c, 'sign': 1}))
+            edges.append((face_of[CrossingStrand(c, 1)],
+                          face_of[CrossingStrand(c, 3)],
+                          {'crossing': c, 'sign': -1}))
 
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
@@ -504,18 +502,15 @@ class Link(links_base.Link):
         G = self.white_graph()
         V = G.vertices()
         N = len(V)
-        m = matrix(N,N)
-        vertex = dict((v, n) for n, v in enumerate(V))
+        m = matrix(N, N)
+        vertex = {v: n for n, v in enumerate(V)}
         for e in G.edges(sort=False):
             i, j = vertex[e[0]], vertex[e[1]]
-            m[(i,j)] = m[(j,i)] = m[(i,j)] + e[2]['sign']
+            m[(i, j)] = m[(j, i)] = m[(i, j)] + e[2]['sign']
         for i in range(N):
-            m[(i,i)] = -sum(m.column(i))
+            m[(i, i)] = -sum(m.column(i))
         m = m.delete_rows([0]).delete_columns([0])
-        if return_graph:
-            return m, G
-        else:
-            return m
+        return m, G if return_graph else m
 
     @sage_method
     def signature(self, new_convention=True):
@@ -543,8 +538,6 @@ class Link(links_base.Link):
           -2
           sage: L.signature(new_convention=False)
           2
-
-
         """
         m, G = self.goeritz_matrix(return_graph=True)
         correction = sum([e[2]['sign'] for e in G.edges(sort=False)
@@ -558,16 +551,16 @@ class Link(links_base.Link):
     def _colorability_matrix(self):
         """Auxiliary function used by determinant."""
         edges = self._pieces()
-        m=matrix(len(self.crossings), len(edges))
+        m = matrix(len(self.crossings), len(edges))
         for c in self.crossings:
             for i in range(4):
                 for s in edges:
-                    if (c,i) in s:
-                        ind=edges.index(s)
-                        if i==1 or i==3:
-                            m[(self.crossings.index(c),ind)]+=1
-                        if i==2 or i==0:
-                            m[(self.crossings.index(c),ind)]-=1
+                    if (c, i) in s:
+                        ind = edges.index(s)
+                        if i % 2:
+                            m[(self.crossings.index(c), ind)] += 1
+                        else:
+                            m[(self.crossings.index(c), ind)] -= 1
                         break
         return m
 
@@ -586,16 +579,15 @@ class Link(links_base.Link):
         """
         if method == 'color':
             M = self._colorability_matrix()
-            size = len(self.crossings)-1
+            size = len(self.crossings) - 1
             N = matrix(size, size)
             for i in range(size):
                 for j in range(size):
-                    N[(i,j)]=M[(i+1,j+1)]
+                    N[(i, j)] = M[(i + 1, j + 1)]
             return abs(N.determinant())
-        elif method == 'goeritz':
+        if method == 'goeritz':
             return abs(self.goeritz_matrix().determinant())
-        else:
-            return abs(self.alexander_polynomial(multivar=False, v=[-1], norm=False))
+        return abs(self.alexander_polynomial(multivar=False, v=[-1], norm=False))
 
     @sage_method
     def morse_number(self, solver='GLPK'):
@@ -744,7 +736,7 @@ class Link(links_base.Link):
         if as_sage_braid:
             if not _within_sage:
                 raise ValueError('Requested Sage braid outside of Sage.')
-            n = max([abs(a) for a in word]) + 1
+            n = max(abs(a) for a in word) + 1
             word = BraidGroup(n)(word)
         return word
 
@@ -780,8 +772,6 @@ class Link(links_base.Link):
             Knot represented by 3 crossings
             sage: Link(S)
             <Link: 1 comp; 3 cross>
-
-
         """
         if SageKnot is None:
             raise ValueError('Your SageMath does not seem to have a native link type')
