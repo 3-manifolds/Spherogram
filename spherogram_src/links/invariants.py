@@ -65,9 +65,9 @@ def normalize_alex_poly(p, t):
 def sage_braid_as_int_word(braid):
     """
     Convert a Sage Braid to a word.
-
-    why not use braid.Tietze() ?
     """
+    # Could simplify using braid.Tietze().
+
     G = braid.parent()
     gen_idx = {g: i + 1 for i, g in enumerate(G.gens())}
     ans = []
