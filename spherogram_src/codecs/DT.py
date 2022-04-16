@@ -90,7 +90,7 @@ class DTvertex(tuple):
     # it never changes vertices either.
 
     def __new__(self, pair, overcrossing=1):
-        even_over = True if overcrossing == -1 else False
+        even_over = bool(overcrossing == -1)
         return tuple.__new__(self, (min(pair), max(pair), even_over))
 
     def __repr__(self):
@@ -117,7 +117,7 @@ class DTvertex(tuple):
         return (0, 2) if bool(first % 2) ^ even_over else (1, 3)
 
 
-class DTPath(object):
+class DTPath():
     """
     An iterator which starts at a FatEdge and walks around the
     link component containing that edge.  A DTPath raises
@@ -264,7 +264,7 @@ class DTFatGraph(FatGraph):
         """
         if vertex not in edge:
             raise ValueError('That vertex is not an endpoint of the edge.')
-        forward = True if vertex == edge[0] else False
+        forward = bool(vertex == edge[0])
         return DTPath(edge, self, forward)
 
     def marked_arc(self, vertex):
@@ -530,7 +530,7 @@ class DTFatGraph(FatGraph):
 # meets the next one (so in particular the diagram is connected.
 
 
-class DTcodec(object):
+class DTcodec():
     """
     Codec for DT codes of a link projection.
     """
@@ -579,7 +579,7 @@ class DTcodec(object):
                 parts = dt.split('.')
                 self.code = self.convert_alpha(parts[0])
                 if len(parts) > 1:
-                    self.flips = [False if d == '0' else True for d in parts[1]]
+                    self.flips = [d != '0' for d in parts[1]]
         elif isinstance(dt, bytes):
             self.code, self.flips = self.unpack_signed_DT(dt)
         else:

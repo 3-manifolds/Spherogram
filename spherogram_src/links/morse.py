@@ -147,7 +147,7 @@ class UpwardSnake(tuple):
         return ans
 
 
-class MorseLinkDiagram(object):
+class MorseLinkDiagram():
     """
     A planar link diagram with a height function on R^2 which
     is Morse on the link.
@@ -368,7 +368,7 @@ class MorseLinkDiagram(object):
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
 
 
-class BridgeDiagram(object):
+class BridgeDiagram():
     """
     A proper bridge diagram of a link, that is, a height function
     where all the mins are below all the maxes.

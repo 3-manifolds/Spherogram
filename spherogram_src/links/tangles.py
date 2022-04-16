@@ -22,7 +22,7 @@ def rotate_list(L, s):
     return [L[(i + s) % n] for i in range(n)]
 
 
-class Tangle(object):
+class Tangle():
     def __init__(self, n=2, crossings=None, entry_points=None, label=None):
         """
         A tangle is a rectangular block of crossings, with n strands

@@ -68,7 +68,7 @@ def lookup_DT_code_by_name(name):
             continue
 
 
-class Crossing(object):
+class Crossing():
     """
     See "doc.pdf" for the conventions.  The sign of a crossing can be in {0,
     +1, -1}.  In the first case, the strands at the crossings can have
@@ -130,8 +130,8 @@ class Crossing(object):
             else:
                 self.adjacent[i] = (self, (j - s) % 4)
 
-        self.directions = set([(rotate(a), rotate(b))
-                               for a, b in self.directions])
+        self.directions = set((rotate(a), rotate(b))
+                              for a, b in self.directions)
 
     def rotate_by_90(self):
         "Effectively switches the crossing"
@@ -320,7 +320,7 @@ class Labels(OrderedDict):
         self[x] = len(self)
 
 
-class Strand(object):
+class Strand():
     """
     When constructing links, it's convenient to have strands as well
     as crossings.  These are stripped by the Link class when it
@@ -370,7 +370,7 @@ def enumerate_lists(lists, n=0, filter=lambda x: True):
     return ans
 
 
-class Link(object):
+class Link():
     """
     Links are made from Crossings.  The general model is that of the PD
     diagrams used in `KnotTheory <http://katlas.org/wiki/Planar_Diagrams>`_.
@@ -528,7 +528,7 @@ class Link(object):
                 else:
                     gluings[x] = [(c, i)]
 
-        if set([len(v) for v in gluings.values()]) != set([2]):
+        if set(len(v) for v in gluings.values()) != set([2]):
             raise ValueError("PD code isn't consistent")
 
         component_starts = self._component_starts_from_PD(
@@ -1066,7 +1066,7 @@ class Link(object):
             indices.append(c)
 
         def keep(C):
-            return set([i in indices for i in C.strand_components]) == set([True])
+            return all(i in indices for i in C.strand_components)
 
         L = self.copy()
         final_crossings = []
@@ -1316,8 +1316,8 @@ class Link(object):
         else:
             crossings = [Crossing(c.label) for c in self.crossings]
             old_to_new = dict(zip(self.crossings, crossings))
-            loose_strands = set(
-                [(n, i) for n in range(len(crossings)) for i in range(4)])
+            loose_strands = set((n, i) for n in range(len(crossings))
+                                for i in range(4))
             while loose_strands:
                 n, i = loose_strands.pop()
                 adj_c, adj_i = self.crossings[n].adjacent[i]
@@ -1451,7 +1451,7 @@ def vertex_to_KLP(c, v):
     return ['Ybackward', 'Xforward', 'Yforward', 'Xbackward'][i]
 
 
-class KLPCrossing(object):
+class KLPCrossing():
     """
     SnapPea uses a convention where the orientation
     of the strands is fixed in the master picture but

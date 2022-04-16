@@ -301,7 +301,7 @@ def seifert_matrix(link, return_matrix_of_types=False):
     from a braid representation." (2007).
     """
     arrows = braid_arrows(link)
-    strands = set([x[1] for x in arrows])
+    strands = set(x[1] for x in arrows)
     grouped_by_strand = [[x for x in arrows if x[1] == strand]
                          for strand in strands]
     hom_gens = [[(group[i][0], group[i + 1][0], group[i][2], group[i + 1][2])
