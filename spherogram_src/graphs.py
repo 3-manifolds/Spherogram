@@ -211,7 +211,7 @@ class FatEdge(Edge):
             raise ValueError('Vertex is not an end of this edge.')
 
 
-class Graph(object):
+class Graph():
     """
     A set of vertices and a set of edges joining pairs of vertices.
     Vertices are arbitrary hashable objects and should not be
@@ -440,7 +440,7 @@ class Graph(object):
             for e in self.edges:
                 if e not in residual:
                     residual[e] = float('inf')
-        full_edges = set([e for e in self.edges if residual[e] == 0])
+        full_edges = set(e for e in self.edges if residual[e] == 0)
         children = {}
         for vertex in self.vertices:
             children[vertex] = set()
@@ -483,9 +483,9 @@ class Graph(object):
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
-            cut_edges |= set([edge for edge in self.edges
-                              if vertex in edge
-                              and edge(vertex) not in cut_set])
+            cut_edges |= set(edge for edge in self.edges
+                             if vertex in edge
+                             and edge(vertex) not in cut_set)
         # Find the unsaturated edges.
         unsaturated = [e for e in self.edges if residual[e] > 0]
         flow_dict = dict.fromkeys(self.edges, 0)
@@ -525,7 +525,7 @@ class Graph(object):
         new_vertex = V1 | V2
         if new_vertex in self.vertices:
             raise ValueError('Merged vertex already exists!')
-        self.edges -= set([e for e in self.edges if V1 in e and V2 in e])
+        self.edges -= set(e for e in self.edges if V1 in e and V2 in e)
         self.vertices.remove(V1)
         self.vertices.remove(V2)
         old_vertices = (V1, V2)
@@ -871,7 +871,7 @@ class Digraph(Graph):
         return StrongConnector(self).DAG()
 
 
-class StrongConnector(object):
+class StrongConnector():
     """
     Finds strong components of a digraph using Tarjan's algorithm;
     see http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm

@@ -144,9 +144,9 @@ def possible_type_III_moves(link):
     for face in link.faces():
         if len(face) == 3:
             if sum(ce.strand_index % 2 for ce in face) in [1, 2]:
-                while(face[1][1]% 2 != 0 or face[2][1]% 2 != 1):    # renumber face_list
+                while(face[1][1] % 2 != 0 or face[2][1] % 2 != 1):    # renumber face_list
                     face = [face[1], face[2], face[0]]
-                if len(set([e.crossing for e in face])) == 3:  # No repeated crossings
+                if len(set(e.crossing for e in face)) == 3:  # No repeated crossings
                     ans.append(face)
     return ans
 
@@ -381,8 +381,7 @@ def pickup_strand(link, dual_graph, kind, strand):
         # of the rest of the components.
         remove_strand(link, [startcep] + strand)
         return len(strand)
-    length = len(strand)
-    crossing_set = set([cep.crossing for cep in strand])
+    crossing_set = set(cep.crossing for cep in strand)
     endpoint = strand[-1].next()
 
     if endpoint.crossing in crossing_set:
@@ -481,12 +480,11 @@ def remove_strand(link, strand):
 
     start_cep = strand[0].previous()
     end_cep = strand[-1].next()
-    bridge_strands = dict([(c, Strand('strand'+str(c.label))) for c in crossing_set])
+    bridge_strands = {c: Strand('strand' + str(c.label)) for c in crossing_set}
     for cep in strand:
         c = cep.crossing
         if c not in crossing_set:
             continue
-        strand_index = cep.strand_index
         right_cs = cep.rotate(1).opposite()
         left_cs = cep.rotate(3).opposite()
         if right_cs.crossing in crossing_set:
