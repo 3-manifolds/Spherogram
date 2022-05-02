@@ -94,7 +94,8 @@ def reidemeister_I_and_II(link, A):
     return eliminated, changed
 
 
-def basic_simplify(link, build_components=True, to_visit=None):
+def basic_simplify(link, build_components=True, to_visit=None,
+                   force_build_components=False):
     """
     Do Reidemeister I and II moves until none are possible.
     """
@@ -112,7 +113,7 @@ def basic_simplify(link, build_components=True, to_visit=None):
     success = len(eliminated) > 0
 
     # Redo the strand labels (used for DT codes)
-    if success and build_components:
+    if (success and build_components) or force_build_components:
         component_starts = []
         for component in link.link_components:
             assert len(component) > 0
@@ -436,7 +437,7 @@ def pickup_strand(link, dual_graph, kind, strand):
                 active.add(D)
 
     active.update(newcrossings)
-    basic_simplify(link, build_components=False, to_visit=active)
+    basic_simplify(link, force_build_components=True, to_visit=active)
 
     final_cross_removed = init_link_cross_count - len(link.crossings)
     assert final_cross_removed >= crossingsremoved
