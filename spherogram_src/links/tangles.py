@@ -11,7 +11,7 @@ from .links import Crossing, Strand, Link
 from . import planar_isotopy
 
 
-def join_strands(x, y):
+def join_strands(x, y): """ what's this"""
     (a, i), (b, j) = x, y
     a.adjacent[i] = (b, j)
     b.adjacent[j] = (a, i)
