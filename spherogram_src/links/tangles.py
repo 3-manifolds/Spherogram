@@ -254,6 +254,37 @@ class Tangle():
     def __repr__(self):
         return "<Tangle: %s>" % self.label
 
+    def describe(self):
+        """Give a PD-like description of the tangle in the form
+        Tangle[{lower strands}, {upper strands}, P and X codes]"""
+        T = self.copy()
+        T.label = 0
+        # give each crossing/strand a unique identifier
+        for i, c in enumerate(T.crossings):
+            c.label = i + 1
+        arc_ids = {}
+        parts = []
+        lower = None
+        upper = None
+        for c in [T] + T.crossings:
+            arcs = []
+            for i, (d, j) in enumerate(c.adjacent):
+                arc = tuple(sorted([(c.label, i), (d.label, j)]))
+                # get arc id or assign a fresh one
+                arc_id = arc_ids.setdefault(arc, len(arc_ids) + 1)
+                arcs.append(arc_id)
+            if isinstance(c, Crossing):
+                print("arcs: " + repr(arcs))
+                parts.append("X[%s,%s,%s,%s]" % arcs)
+            elif isinstance(c, Strand):
+                parts.append("P[%s,%s]" % arcs)
+            elif isinstance(c, Tangle):
+                lower = "{" + ",".join(str(a) for a in arcs[:T.boundary[0]]) + "}"
+                upper = "{" + ",".join(str(a) for a in arcs[T.boundary[0]:]) + "}"
+            else:
+                raise Exception("Unexpected entity")
+        parts.sort()
+        return f"Tangle[{lower}, {upper}, {', '.join(parts)}]"
 
 Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
