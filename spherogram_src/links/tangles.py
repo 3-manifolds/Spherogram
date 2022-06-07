@@ -11,8 +11,7 @@ from .links import Crossing, Strand, Link
 from . import planar_isotopy
 
 
-def join_strands(x, y):
-    """ what's this"""
+def join_strands(x, y): 
     (a, i), (b, j) = x, y
     a.adjacent[i] = (b, j)
     b.adjacent[j] = (a, i)
@@ -254,7 +253,7 @@ class IdentityBraid(Tangle):
         entry_points = [(s, 0) for s in strands] + [(s, 1) for s in strands]
         Tangle.__init__(self, n, strands, entry_points)
 
-def TangleBraid(gens, n=None):
+def BraidTangle(gens, n=None):
     """
     Input:
     - gens is a list of nonzero integers, positive for positive generator
@@ -274,4 +273,14 @@ def TangleBraid(gens, n=None):
         if abs(i) >= n : raise Exception("no")
         b = b * gen(i)
     return b
+
+def EncircledIdentityBraid(num_strands):
+    """
+    Makes a tangle by encircling the identity braid with an unknot.
+    - num_strands is the number of strands
+
+    (ken) warning: This needs to be tested
+    """
+    braid_word=[_ for _ in range(num_strands-1, 0, -1)]+[_ for _ in range(1,num_strands)]
+    return BraidTangle(braid_word)+IdentityBraid(1)
 
