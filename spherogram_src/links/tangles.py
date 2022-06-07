@@ -241,12 +241,12 @@ class Tangle():
         return self.isosig() == other.isosig()
 
     def _fuse_strands(self, preserve_boundary=False):
-        """Fuse all strands and delete them, even ones incident to the boundary when
-        preserve_boundary is False."""
+        """Fuse all strands and delete them, even ones incident only to the boundary (unless
+        preserve_boundary is True)."""
         for s in reversed(self.crossings):
             if isinstance(s, Strand):
-                # check that the strand is not incident to the boundary
-                if preserve_boundary and self in [a[0] for a in s.adjacent]:
+                # check that the strand is not only incident to the boundary
+                if preserve_boundary and all(a[0] == self for a in s.adjacent):
                     continue
                 s.fuse()
                 self.crossings.remove(s)
