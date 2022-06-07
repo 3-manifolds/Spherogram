@@ -248,6 +248,7 @@ class RationalTangle(Tangle):
 
 class IdentityBraid(Tangle):
     def __init__(self, n):
+        assert n >= 0
         strands = [Strand() for i in range(n)]
         entry_points = [(s, 0) for s in strands] + [(s, 1) for s in strands]
         Tangle.__init__(self, n, strands, entry_points)
