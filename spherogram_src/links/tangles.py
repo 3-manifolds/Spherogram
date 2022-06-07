@@ -455,5 +455,5 @@ def EncircledIdentityBraid(num_strands):
 
     (ken) warning: This needs to be tested
     """
-    braid_word=[_ for _ in range(num_strands-1, 0, -1)]+[_ for _ in range(1,num_strands)]
-    return BraidTangle(braid_word)+IdentityBraid(1)
+    braid_word = list(range(num_strands, 0, -1)) + list(range(1, num_strands + 1))
+    return BraidTangle(braid_word) + IdentityBraid(1)
