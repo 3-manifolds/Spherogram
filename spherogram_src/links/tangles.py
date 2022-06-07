@@ -177,6 +177,46 @@ class Tangle():
             join_strands(T.adjacent[i], T.adjacent[m + i])
         return Link(T.crossings, check_planarity=False)
 
+    def annular_closure(self):
+        """
+        Takes the braid closure with the unknot axis of the closure.
+        TO DO: Ensure that the axis is the last component.
+        """
+        m, n = self.boundary
+        if m != n:
+            raise ValueError("To do annular closure, both the top and bottom number of strands must be equal")
+        return (self * EncircledIdentityBraid(n)).braid_closure()
+
+
+    def link(self):
+        "Get the tangle as a link if its boundary is (0, 0)."
+        if self.boundary != (0, 0):
+            raise ValueError("The boundary must be (0, 0)")
+        return Link(self.copy().crossings, check_planarity=False)
+
+    def reshape(self, boundary, displace=0):
+        """Renumber the boundary strands so that the tangle has the new boundary
+        shape. This is performed by either repeatedly moving the last strands from the
+        bottom right to the top right or vice versa. Simultaneously, displace controls
+        a rotation of the tangle where the tangle is rotated clockwise 'displace' units
+        (so, for example, if 0 <= displace < m then that strand number becomes the new
+        lower-left strand).
+        """
+        m, n = self.boundary
+        Tm, Tn = decode_boundary(boundary)
+        if (m, n) == (Tm, Tn):
+            return self
+        if m + n != Tm + Tn:
+            raise ValueError("Reshaping requires the tangle have the same number of boundary"
+                             " strands as in the new boundary.")
+        T = self.copy()
+        # The 'adjacent' array but in total counterclockwise order
+        adj_ccw = T.adjacent[:m] + list(reversed(T.adjacent[m:]))
+        adj_ccw = rotate_list(adj_ccw, displace)
+
+        return Tangle((Tm, Tn), T.crossings,
+                      adj_ccw[:Tm] + list(reversed(adj_ccw[Tm:])))
+
     def link(self):
         "Get the tangle as a link if its boundary is (0, 0)."
         if self.boundary != (0, 0):
@@ -386,3 +426,34 @@ def IdentityBraid(n):
     entry_points = [(s, 0) for s in strands] + [(s, 1) for s in strands]
     return Tangle(n, strands, entry_points,
                   f"IdentityBraid({n})")
+
+def BraidTangle(gens, n=None):
+    """
+    Input:
+    - gens is a list of nonzero integers, positive for positive generator
+      and negative for negative generator
+    - n is the number of strands. By default it is inferred.
+
+    (kmill) warning: This has never been tested.
+    """
+    if n == None:
+        n = max(-min(gens), max(gens)) + 1
+    def gen(i):
+        g = OneTangle() if i < 0 else MinusOneTangle()
+        return IdentityBraid(i-1) | g | IdentityBraid(n-i-1)
+    b = IdentityBraid(n)
+    for i in gens:
+        if i == 0 : raise Exception("no")
+        if abs(i) >= n : raise Exception("no")
+        b = b * gen(i)
+    return b
+
+def EncircledIdentityBraid(num_strands):
+    """
+    Makes a tangle by encircling the identity braid with an unknot.
+    - num_strands is the number of strands
+
+    (ken) warning: This needs to be tested
+    """
+    braid_word=[_ for _ in range(num_strands-1, 0, -1)]+[_ for _ in range(1,num_strands)]
+    return BraidTangle(braid_word)+IdentityBraid(1)
