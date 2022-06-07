@@ -18,7 +18,7 @@ def version():
 __version__ = version()
 
 
-__all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
+__all__ = ['ABC', 'CapTangle', 'CupTangle', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
