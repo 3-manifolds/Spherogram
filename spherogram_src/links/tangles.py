@@ -254,10 +254,14 @@ class Tangle():
     def __repr__(self):
         return "<Tangle: %s>" % self.label
 
-    def describe(self):
+    def describe(self, fuse_strands=False):
         """Give a PD-like description of the tangle in the form
-        Tangle[{lower strands}, {upper strands}, P and X codes]"""
+        Tangle[{lower strands}, {upper strands}, P and X codes].
+
+        If fuse_strands is True, then fuse all internal Strand nodes first."""
         T = self.copy()
+        if fuse_strands:
+            T._fuse_strands(preserve_boundary = True)
         T.label = 0
         # give each crossing/strand a unique identifier
         for i, c in enumerate(T.crossings):
@@ -274,17 +278,16 @@ class Tangle():
                 arc_id = arc_ids.setdefault(arc, len(arc_ids) + 1)
                 arcs.append(arc_id)
             if isinstance(c, Crossing):
-                print("arcs: " + repr(arcs))
-                parts.append("X[%s,%s,%s,%s]" % arcs)
+                parts.append("X[%s,%s,%s,%s]" % tuple(arcs))
             elif isinstance(c, Strand):
-                parts.append("P[%s,%s]" % arcs)
+                parts.append("P[%s,%s]" % tuple(arcs))
             elif isinstance(c, Tangle):
                 lower = "{" + ",".join(str(a) for a in arcs[:T.boundary[0]]) + "}"
                 upper = "{" + ",".join(str(a) for a in arcs[T.boundary[0]:]) + "}"
             else:
                 raise Exception("Unexpected entity")
         parts.sort()
-        return f"Tangle[{lower}, {upper}, {', '.join(parts)}]"
+        return f"Tangle[{lower}, {upper}{''.join(', ' + p for p in parts)}]"
 
 Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
@@ -305,25 +308,21 @@ def ZeroTangle():
                   [(bot, 0), (bot, 1), (top, 0), (top, 1)],
                   "ZeroTangle")
 
-
 def InfinityTangle():
     left, right = Strand('L'), Strand('R')
     return Tangle(2, [left, right],
                   [(left, 0), (right, 0), (left, 1), (right, 1)],
                   "InfinityTangle")
 
-
 def MinusOneTangle():
     c = Crossing('-one')
     return Tangle(2, [c], [(c, 3), (c, 0), (c, 2), (c, 1)],
                   "MinusOneTangle")
 
-
 def OneTangle():
     c = Crossing('one')
     return Tangle(2, [c], [(c, 0), (c, 1), (c, 3), (c, 2)],
                   "OneTangle")
-
 
 def IntegerTangle(n):
     if n == 0:
