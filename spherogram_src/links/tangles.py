@@ -176,6 +176,17 @@ class Tangle():
         for i in range(0, n):
             join_strands(T.adjacent[i], T.adjacent[m + i])
         return Link(T.crossings, check_planarity=False)
+    
+    def annular_closure(self):
+        """
+        Takes the braid closure with the unknot axis of the closure.
+        TO DO: Ensure that the axis is the last component.
+        """
+        m, n = self.boundary
+        if m != n:
+            raise ValueError("To do annular closure, both the top and bottom number of strands must be equal")
+        return (self * EncircledIdentityBraid(n)).braid_closure()
+
 
     def link(self):
         "Get the tangle as a link if its boundary is (0, 0)."
