@@ -65,14 +65,14 @@ def isosig(tangle, root=None, over_or_under=False):
     if over_or_under:
         isosig_over_or_under = [over_or_under_data[c] for c in crossing_order]
     isosig_orientations = [orientations[c] for c in crossing_order]
-    return (len(tangle.crossings),tangle.n),tuple(isosig_strands),tuple(isosig_loops),tuple(isosig_orientations), tuple(isosig_over_or_under), root_isosig
+    return (len(tangle.crossings),tangle.boundary),tuple(isosig_strands),tuple(isosig_loops),tuple(isosig_orientations), tuple(isosig_over_or_under), root_isosig
 
 
 def min_isosig(tangle, root=None, over_or_under=False):
     if root is not None:
         cs_name = cslabel(root)
     isosigs = []
-    for i in range(tangle.n*2):
+    for i in range(tangle.boundary[0] + tangle.boundary[1]):
         rotated_tangle = tangle.circular_rotate(i)
         if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
@@ -90,7 +90,7 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
     if root is not None:
         cs_name = cslabel(root)
     isosigs = []
-    for i in range(tangle.n*2):
+    for i in range(tangle.boundary[0] + tangle.boundary[1]):
         rotated_tangle = tangle.circular_rotate(i)
         if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
@@ -140,7 +140,7 @@ def cross_strand(tangle, i):
     a strand on the boundary of a tangle and moving to the other
     end of that strand.
     """
-    if i >= 2 * tangle.n:
+    if i >= tangle.boundary[0] + tangle.boundary[1]:
         raise Exception("Not a valid start position for strand")
     cs = tangle.adjacent[i]
     strand = [cs]
@@ -172,8 +172,9 @@ def all_cross_strands(tangle):
     strands = []
     strands_with_ends = []
     loops = []
-    clockwise_order = range(tangle.n)
-    clockwise_order.extend(reversed(range(tangle.n, tangle.n * 2)))
+    tm, tn = tangle.boundary
+    clockwise_order = range(tm + tn)
+    clockwise_order.extend(reversed(range(tm, tm + tn)))
     for i in clockwise_order:
         if i not in other_ends_seen:
             strand = cross_strand(tangle, i)
