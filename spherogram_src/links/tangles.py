@@ -251,3 +251,25 @@ class IdentityBraid(Tangle):
         strands = [Strand() for i in range(n)]
         entry_points = [(s, 0) for s in strands] + [(s, 1) for s in strands]
         Tangle.__init__(self, n, strands, entry_points)
+
+def TangleBraid(gens, n=None):
+    """
+    Input:
+    - gens is a list of nonzero integers, positive for positive generator
+      and negative for negative generator
+    - n is the number of strands. By default it is inferred.
+
+    (kmill) warning: This has never been tested.
+    """
+    if n == None:
+        n = max(-min(gens), max(gens)) + 1
+    def gen(i):
+        g = OneTangle() if i < 0 else MinusOneTangle()
+        return IdentityBraid(i-1) | g | IdentityBraid(n-i-1)
+    b = IdentityBraid(n)
+    for i in gens:
+        if i == 0 : raise Exception("no")
+        if abs(i) >= n : raise Exception("no")
+        b = b * gen(i)
+    return b
+
