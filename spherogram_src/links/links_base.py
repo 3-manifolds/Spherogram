@@ -427,6 +427,7 @@ class Link():
 
         component_starts = None
         start_orientations = None
+        component_spec = None # a list of (CrossingStrand, int) pairs
 
         if crossings is not None and braid_closure is not None:
             raise ValueError('Specified *both* crossings and braid_closure')
@@ -451,8 +452,8 @@ class Link():
 
         # Fuse the strands.  If there any components made up
         # only of strands, these are thrown out here.
-        # We also construct the component_starts from strand component indices
-        # if component_starts isn't already defined.
+        # We also construct component_spec from these which will
+        # be used to permute the components of the link.
 
         self.unlinked_unknot_components = 0
         component_strands = []
@@ -475,14 +476,11 @@ class Link():
                                  " component as a crossing")
         # Go through the component strands to construct component_starts
         if component_strands:
-            component_strands.sort(key=lambda s: s.component_idx)
-            component_starts = []
-            for i, s in enumerate(component_strands):
-                if i != s.component_idx:
-                    raise ValueError("Strand component indices must consist of distinct"
-                                     " consecutive numbers starting from 0")
-                c, j = s.adjacent[0]
-                component_starts.append(CrossingStrand(c, j))
+            component_spec = []
+            for s in component_strands:
+                c, i = s.adjacent[0]
+                assert isinstance(c, Crossing)
+                component_spec.append((CrossingStrand(c, i), s.component_idx))
                 s.fuse()
 
         # Finally remove all the Strand objects from the crossing list
@@ -492,6 +490,41 @@ class Link():
             self._build(start_orientations, component_starts)
             if check_planarity and not self.is_planar():
                 raise ValueError("Link isn't planar")
+
+            if component_spec:
+                # Assemble a permutation of the link components
+                component_perm = [None] * len(self.link_components)
+                unused_comps = OrderedSet(reversed(range(len(self.link_components))))
+                for cs, idx in component_spec:
+                    # orient the crossing strand as a CrossingEntryPoint
+                    cs = cs.crossing.entry_points()[cs.strand_index % 2]
+                    # Locate the link component that contains this cs
+                    for i, comp in enumerate(self.link_components):
+                        if cs in comp:
+                            if component_perm[idx] == i:
+                                # This is a second Strand in the same component
+                                # with the same component_idx
+                                break
+                            elif component_perm[idx] == None:
+                                if i not in unused_comps:
+                                    raise ValueError("Two Strand objects in the same component"
+                                                     " have different component_idx values")
+                                component_perm[idx] = i
+                                unused_comps.remove(i)
+                                break
+                            else:
+                                raise ValueError("Two Strand objects in different components"
+                                                 " had have the same component_idx values")
+                    else:
+                        raise Exception() # This should not happen
+                for i, comp in enumerate(self.link_components):
+                    if component_perm[i] == None:
+                        # This is why unused_comps is initialized with reverse
+                        component_perm[i] = unused_comps.pop()
+                assert len(unused_comps) == 0
+
+                component_starts = [self.link_components[i][0] for i in component_perm]
+                self._build_components(component_starts=component_starts)
 
         # If the crossings aren't labeled then label them for
         # debugging purposes.
@@ -789,7 +822,8 @@ class Link():
             # and turn them into CrossingEntryPoints
             component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
-        remaining = OrderedSet(self.crossing_entries())
+        remaining, components = OrderedSet(
+            self.crossing_entries()), LinkComponents()
         components = LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
@@ -797,7 +831,7 @@ class Link():
             c._clear_strand_info()
 
         while len(remaining):
-            if component_starts and len(components) < len(component_starts):
+            if component_starts:
                 d = component_starts[len(components)]
             elif len(components) == 0:
                 d = remaining.pop()

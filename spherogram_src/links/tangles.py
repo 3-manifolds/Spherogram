@@ -337,7 +337,25 @@ Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
 
 def ComponentTangle(component_idx):
-    """The unknotted (1,1) tangle with a specified component index."""
+    """The unknotted (1,1) tangle with a specified component index.
+    The component index can be a negative number following the usual
+    Python list indexing rules, so -1 means the component containing
+    this tangle should be the last component when it is turned into
+    a Link.
+
+    >>> import snappy
+    >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(-1))
+    >>> M=T.braid_closure().exterior()
+    >>> M.dehn_fill([(1,0),(0,0)])
+    >>> M.filled_triangulation().identify()
+    [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
+
+    >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(0))
+    >>> M=T.braid_closure().exterior()
+    >>> M.dehn_fill([(0,0),(1,0)])
+    >>> M.filled_triangulation().identify()
+    [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
+    """
     s = Strand(component_idx=component_idx)
     return Tangle((1, 1), [s], [(s, 0), (s, 1)])
 

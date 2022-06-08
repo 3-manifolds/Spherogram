@@ -2,7 +2,7 @@ import os
 import sys
 
 from .links import Crossing, Strand, Link, ClosedBraid
-from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, InfinityTangle, MinusOneTangle, OneTangle, IntegerTangle, IdentityBraid, join_strands
+from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, InfinityTangle, MinusOneTangle, OneTangle, IntegerTangle, IdentityBraid, ComponentTangle, join_strands
 from . import orthogonal
 from .random_links import random_link
 
