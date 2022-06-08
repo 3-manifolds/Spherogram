@@ -824,7 +824,6 @@ class Link():
                                 for cs in component_starts]
         remaining, components = OrderedSet(
             self.crossing_entries()), LinkComponents()
-        components = LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
