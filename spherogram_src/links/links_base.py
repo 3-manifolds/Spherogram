@@ -327,10 +327,11 @@ class Strand():
     pieces things together.
     """
 
-    def __init__(self, label=None):
+    def __init__(self, label=None, component_idx=None):
         self.label = label
         self.adjacent = [None, None]
         self._adjacent_len = 2
+        self.component_idx = component_idx
 
     def fuse(self):
         """
@@ -450,13 +451,41 @@ class Link():
 
         # Fuse the strands.  If there any components made up
         # only of strands, these are thrown out here.
+        # We also construct the component_starts from strand component indices
+        # if component_starts isn't already defined.
 
         self.unlinked_unknot_components = 0
+        component_strands = []
         for s in crossings:
             if isinstance(s, Strand):
-                if s.is_loop():
+                if s.component_idx != None:
+                    # defer fusing
+                    component_strands.append(s)
+                elif s.is_loop():
                     self.unlinked_unknot_components += 1
+                else:
+                    s.fuse()
+        if component_starts and component_strands:
+            raise Exception("Strands cannot have component indices if the"
+                            " link already has component_starts")
+        # check component strands are incident only to crossings
+        for s in component_strands:
+            if not all(isinstance(c, Crossing) for c, _ in s.adjacent):
+                raise ValueError("Strands with a component index must be in the same"
+                                 " component as a crossing")
+        # Go through the component strands to construct component_starts
+        if component_strands:
+            component_strands.sort(key=lambda s: s.component_idx)
+            component_starts = []
+            for i, s in enumerate(component_strands):
+                if i != s.component_idx:
+                    raise ValueError("Strand component indices must consist of distinct"
+                                     " consecutive numbers starting from 0")
+                c, j = s.adjacent[0]
+                component_starts.append(CrossingStrand(c, j))
                 s.fuse()
+
+        # Finally remove all the Strand objects from the crossing list
         self.crossings = [c for c in crossings if not isinstance(c, Strand)]
 
         if build:
@@ -756,17 +785,19 @@ class Link():
         [(20, 12, 18, 16), (8, 2, 4, 6, 14, 10)]
         """
         if component_starts is not None:
+            # Take all CrossingStrand and CrossingEntryPoint objects
+            # and turn them into CrossingEntryPoints
             component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
-        remaining, components = OrderedSet(
-            self.crossing_entries()), LinkComponents()
+        remaining = OrderedSet(self.crossing_entries())
+        components = LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
             c._clear_strand_info()
 
         while len(remaining):
-            if component_starts:
+            if component_starts and len(components) < len(component_starts):
                 d = component_starts[len(components)]
             elif len(components) == 0:
                 d = remaining.pop()

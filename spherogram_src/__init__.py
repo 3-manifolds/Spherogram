@@ -18,10 +18,13 @@ def version():
 __version__ = version()
 
 
-__all__ = ['ABC', 'CapTangle', 'CupTangle', 'ClosedBraid', 'CyclicList', 'CyclicWord',
+__all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
-           'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
+           'FatGraph', 'Graph',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
-           'RationalTangle', 'Crossing', 'Strand', 'Tangle','WhiteheadMove',
-           'Word', 'ZeroTangle', 'random_link']
+           'Crossing', 'Strand', 'WhiteheadMove',
+           'Word', 'random_link',
+           'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
+           'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
+           'IdentityBraid', 'join_strands']

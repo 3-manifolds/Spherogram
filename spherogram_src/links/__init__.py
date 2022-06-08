@@ -2,7 +2,7 @@ import os
 import sys
 
 from .links import Crossing, Strand, Link, ClosedBraid
-from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, InfinityTangle, IdentityBraid, join_strands
+from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, InfinityTangle, MinusOneTangle, OneTangle, IntegerTangle, IdentityBraid, join_strands
 from . import orthogonal
 from .random_links import random_link
 
@@ -22,6 +22,7 @@ def pdf_docs():
 
 
 __all__ = ['Crossing', 'Strand', 'Link', 'ClosedBraid',
-           'Tangle', 'RationalTangle', 'CapTangle', 'CupTangle',
-           'ZeroTangle', 'InfinityTangle', 'IdentityBraid', 'join_strands',
+           'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
+           'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
+           'IdentityBraid', 'join_strands',
            'pdf_docs', 'random_link']
