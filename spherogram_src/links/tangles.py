@@ -176,7 +176,7 @@ class Tangle():
         for i in range(0, n):
             join_strands(T.adjacent[i], T.adjacent[m + i])
         return Link(T.crossings, check_planarity=False)
-
+    
     def annular_closure(self):
         """
         Takes the braid closure with the unknot axis of the closure.
@@ -187,6 +187,16 @@ class Tangle():
             raise ValueError("To do annular closure, both the top and bottom number of strands must be equal")
         return (self * EncircledIdentityBraid(n)).braid_closure()
 
+
+    def annular_closure(self):
+        """
+        Takes the braid closure with the unknot axis of the closure.
+        TO DO: Ensure that the axis is the last component.
+        """
+        m, n = self.boundary
+        if m != n:
+            raise ValueError("To do annular closure, both the top and bottom number of strands must be equal")
+        return (self * EncircledIdentityBraid(n)).braid_closure()
 
     def link(self):
         "Get the tangle as a link if its boundary is (0, 0)."
@@ -420,6 +430,9 @@ class RationalTangle(Tangle):
 
 
 def IdentityBraid(n):
+    """
+    The braid with n strands and no crossings
+    """
     if n < 0:
         raise ValueError("Expecting non-negative int")
     strands = [Strand() for i in range(n)]
@@ -438,9 +451,12 @@ def BraidTangle(gens, n=None):
     """
     if n == None:
         n = max(-min(gens), max(gens)) + 1
+    # n is the braid index
+
     def gen(i):
         g = OneTangle() if i < 0 else MinusOneTangle()
-        return IdentityBraid(i-1) | g | IdentityBraid(n-i-1)
+        return IdentityBraid(abs(i) - 1) | g | IdentityBraid(n - abs(i) - 1)
+
     b = IdentityBraid(n)
     for i in gens:
         if i == 0 : raise Exception("no")
