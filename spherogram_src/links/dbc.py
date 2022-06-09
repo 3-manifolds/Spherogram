@@ -1,7 +1,12 @@
 def double_branched_cover(M):
     """
-    Input: Annular link complement corresponding to a (2,2) tangle T
-    Output: Double branched cover of T
+    The double branched cover of a (2,2)-tangle, given as the link complement of its braid closure (denominator closure) and axis.
+    The axis must be the last component. 
+    
+    >>> L=Manifold('L10nXXX')  #find the right link  NOT THIS ONE!!!
+    >>> M=double_branched_cover(L)
+    >>> M.identify()
+
     """
     
     #later change input from M, link exterior (annular closure of T), to T itself and call annular closure function
