@@ -517,7 +517,7 @@ class Link():
                                                  " had have the same component_idx values")
                     else:
                         raise Exception() # This should not happen
-                for i, comp in enumerate(self.link_components):
+                for i in range(len(self.link_components)):
                     if component_perm[i] == None:
                         # This is why unused_comps is initialized with reverse
                         component_perm[i] = unused_comps.pop()

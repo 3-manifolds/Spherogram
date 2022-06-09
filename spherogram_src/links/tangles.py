@@ -281,13 +281,18 @@ class Tangle():
     def is_planar_isotopic(self, other, root=None, over_or_under=False) -> bool:
         return self.isosig() == other.isosig()
 
-    def _fuse_strands(self, preserve_boundary=False):
+    def _fuse_strands(self, preserve_boundary=False, preserve_components=False):
         """Fuse all strands and delete them, even ones incident only to the boundary (unless
-        preserve_boundary is True)."""
+        preserve_boundary is True). This will eliminate Strands that are loops as well.
+
+        If preserve_components is True, then do not fuse strands that have the
+        component_idx attribute."""
         for s in reversed(self.crossings):
             if isinstance(s, Strand):
                 # check that the strand is not only incident to the boundary
                 if preserve_boundary and all(a[0] == self for a in s.adjacent):
+                    continue
+                if preserve_components and s.component_idx != None:
                     continue
                 s.fuse()
                 self.crossings.remove(s)
@@ -302,7 +307,7 @@ class Tangle():
         If fuse_strands is True, then fuse all internal Strand nodes first."""
         T = self.copy()
         if fuse_strands:
-            T._fuse_strands(preserve_boundary = True)
+            T._fuse_strands(preserve_boundary=True, preserve_components=True)
         T.label = 0
         # give each crossing/strand a unique identifier, which
         # is used for calculating ids for arcs
@@ -328,10 +333,35 @@ class Tangle():
             if isinstance(c, Crossing):
                 parts.append("X[%s,%s,%s,%s]" % tuple(arcs))
             elif isinstance(c, Strand):
-                parts.append("P[%s,%s]" % tuple(arcs))
+                if c.component_idx:
+                    parts.append(f"P[{arcs[0]},{arcs[1]}, component->{c.component_idx}]")
+                else:
+                    parts.append(f"P[{arcs[0]},{arcs[1]}]")
             else:
                 raise Exception("Unexpected entity")
         return f"Tangle[{lower}, {upper}{''.join(', ' + p for p in parts)}]"
+
+    def to_python(self):
+        """Return a string that gives Python code that re-creates this tangle."""
+        T = self.copy()
+        code = []
+        vs = [] # variable names for crossing entities
+        for i, c in enumerate(T.crossings):
+            vs.append(f"c{i}")
+            cons = None
+            args = []
+            if c.label != None:
+                args.append(f"label={c.label!r}")
+            if isinstance(c, Crossing):
+                cons = "Crossing"
+            elif isinstance(c, Strand):
+                cons = "Strand"
+                if c.component_idx != None:
+                    args.append(f"component_idx={c.component_idx}")
+            else:
+                raise Exception("Unexpected entity")
+            code.append(f"{vs[i]}={cons}({', '.join(args)})")
+        return "\n".join(code)
 
 Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
@@ -355,6 +385,13 @@ def ComponentTangle(component_idx):
     >>> M.dehn_fill([(0,0),(1,0)])
     >>> M.filled_triangulation().identify()
     [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
+
+    >>> T=(RationalTangle(2,3)+ComponentTangle(0))|(RationalTangle(2,5)+ComponentTangle(0))
+    >>> T.braid_closure()
+    Traceback (most recent call last):
+        ...
+    ValueError: Two Strand objects in different components had have the same component_idx values
+
     """
     s = Strand(component_idx=component_idx)
     return Tangle((1, 1), [s], [(s, 0), (s, 1)])
