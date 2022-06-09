@@ -1,9 +1,23 @@
 """
-Rational tangles, following
+A tangle is piece of a knot diagram in a disk where some of the
+strands meet the boundary. Tangles can be composed by gluing them
+along arcs in each boundary that have the same number of incident
+strands.
+
+This module gives a version of tangles where there are four distinguished
+boundary arcs used for gluing: the bottom and top, which can have incident
+strands, and the left and right, which cannot. Tangles can be glued
+vertically using ``*`` and horizontally using ``|``. There is also a second
+kind of horizontal composition using ``+`` where the rightmost strands of the top
+and bottom of the first tangle are glued to the leftmost strands of the top and
+bottom of the second tangle.
+
+Rational tangles (created using ``RationalTangle``) are following
 
 Classifying and Applying Rational Knots and Rational Tangles
 http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 
+See doc.pdf for conventions.
 """
 import pickle
 
@@ -36,6 +50,19 @@ def decode_boundary(boundary):
     """The boundary is either an nonnegative integer or a pair of non-negative integers.
 
     If it is an integer n, then returns (n, n). If it is a pair (m, n) then returns it.
+
+    >>> decode_boundary(2)
+    (2, 2)
+    >>> decode_boundary((3,4))
+    (3, 4)
+    >>> decode_boundary(-2)
+    Traceback (most recent call last):
+        ...
+    ValueError: Number of bottom boundary strands cannot be negative
+    >>> decode_boundary((3,-2))
+    Traceback (most recent call last):
+        ...
+    ValueError: Number of top boundary strands cannot be negative
     """
     if isinstance(boundary, tuple):
         m, n = boundary
@@ -66,6 +93,10 @@ class Tangle():
           and i indexes into c.adjacent. These pairs describe the boundary strands
           in order of the strand numbering.
         - label is an arbitrary label for the tangle.
+
+        Usually tangles should not be created directly using this constructor since the
+        tangle operations and various primitive tangles.
+
         """
 
         m, n = decode_boundary(boundary)
@@ -156,7 +187,12 @@ class Tangle():
         return -self.rotate(1)
 
     def numerator_closure(self):
-        "The bridge picture closure"
+        """The bridge closure, where consecutive pairs of strands at the top and
+        at the bottom are respectively joined by caps and cups. The numbers of
+        strands at the top and bottom must both be even.
+
+        A synonym for this is ``Tangle.bridge_closure()``.
+        """
         m, n = self.boundary
         if m % 2 or n % 2:
             raise ValueError("To do bridge closure, both the top and bottom must have an even number of strands")
@@ -168,7 +204,12 @@ class Tangle():
         return Link(T.crossings, check_planarity=False)
 
     def denominator_closure(self):
-        "The braid closure picture"
+        """The braid closure, where corresponding strands between the top and bottom
+        are joined. The number of strands at the top must equal the number of strands at
+        the bottom.
+
+        A synonym for this is ``Tangle.braid_closure()``.
+        """
         m, n = self.boundary
         if m != n:
             raise ValueError("To do braid closure, both the top and bottom number of strands must be equal")
@@ -228,7 +269,7 @@ class Tangle():
                       adj_ccw[:Tm] + list(reversed(adj_ccw[Tm:])))
 
     def link(self):
-        "Get the tangle as a link if its boundary is (0, 0)."
+        """Get the tangle as a link if its boundary is (0, 0)."""
         if self.boundary != (0, 0):
             raise ValueError("The boundary must be (0, 0)")
         return Link(self.copy().crossings, check_planarity=False)
@@ -291,12 +332,12 @@ class Tangle():
         return self.isosig() == other.isosig()
 
     def _fuse_strands(self, preserve_boundary=False):
-        """Fuse all strands and delete them, even ones incident to the boundary when
-        preserve_boundary is False."""
+        """Fuse all strands and delete them, even ones incident only to the boundary (unless
+        preserve_boundary is True)."""
         for s in reversed(self.crossings):
             if isinstance(s, Strand):
-                # check that the strand is not incident to the boundary
-                if preserve_boundary and self in [a[0] for a in s.adjacent]:
+                # check that the strand is not only incident to the boundary
+                if preserve_boundary and all(a[0] == self for a in s.adjacent):
                     continue
                 s.fuse()
                 self.crossings.remove(s)
@@ -304,43 +345,69 @@ class Tangle():
     def __repr__(self):
         return "<Tangle: %s>" % self.label
 
-    def describe(self, fuse_strands=False):
+    def describe(self, fuse_strands=True):
         """Give a PD-like description of the tangle in the form
-        Tangle[{lower strands}, {upper strands}, P and X codes].
+        Tangle[{lower arcs}, {upper arcs}, P and X codes].
 
         If fuse_strands is True, then fuse all internal Strand nodes first."""
         T = self.copy()
         if fuse_strands:
             T._fuse_strands(preserve_boundary = True)
         T.label = 0
-        # give each crossing/strand a unique identifier
+        # give each crossing/strand a unique identifier, which
+        # is used for calculating ids for arcs
         for i, c in enumerate(T.crossings):
             c.label = i + 1
         arc_ids = {}
+        def arc_key(c, i):
+            """For the given entity c and index into c.adjacent,
+            create a name for the incident arc. This gives something
+            that's suitable for use as a dictionary key."""
+            d, j = c.adjacent[i]
+            return tuple(sorted([(c.label, i), (d.label, j)]))
+        def arc_id(c, i):
+            """Get the unique integer id associated to the arc, generating
+            a fresh one if needed."""
+            return arc_ids.setdefault(arc_key(c, i), len(arc_ids) + 1)
+        m, n = T.boundary
+        lower = "{" + ",".join(str(arc_id(T, i)) for i in range(0, m)) + "}"
+        upper = "{" + ",".join(str(arc_id(T, i)) for i in range(m, m + n)) + "}"
         parts = []
-        lower = None
-        upper = None
-        for c in [T] + T.crossings:
-            arcs = []
-            for i, (d, j) in enumerate(c.adjacent):
-                arc = tuple(sorted([(c.label, i), (d.label, j)]))
-                # get arc id or assign a fresh one
-                arc_id = arc_ids.setdefault(arc, len(arc_ids) + 1)
-                arcs.append(arc_id)
+        for c in T.crossings:
+            arcs = [arc_id(c, i) for i in range(len(c.adjacent))]
             if isinstance(c, Crossing):
                 parts.append("X[%s,%s,%s,%s]" % tuple(arcs))
             elif isinstance(c, Strand):
                 parts.append("P[%s,%s]" % tuple(arcs))
-            elif isinstance(c, Tangle):
-                lower = "{" + ",".join(str(a) for a in arcs[:T.boundary[0]]) + "}"
-                upper = "{" + ",".join(str(a) for a in arcs[T.boundary[0]:]) + "}"
             else:
                 raise Exception("Unexpected entity")
-        parts.sort()
         return f"Tangle[{lower}, {upper}{''.join(', ' + p for p in parts)}]"
 
 Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
+
+def ComponentTangle(component_idx):
+    """The unknotted (1,1) tangle with a specified component index.
+    The component index can be a negative number following the usual
+    Python list indexing rules, so -1 means the component containing
+    this tangle should be the last component when it is turned into
+    a Link.
+
+    >>> import snappy
+    >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(-1))
+    >>> M=T.braid_closure().exterior()
+    >>> M.dehn_fill([(1,0),(0,0)])
+    >>> M.filled_triangulation().identify()
+    [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
+
+    >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(0))
+    >>> M=T.braid_closure().exterior()
+    >>> M.dehn_fill([(0,0),(1,0)])
+    >>> M.filled_triangulation().identify()
+    [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
+    """
+    s = Strand(component_idx=component_idx)
+    return Tangle((1, 1), [s], [(s, 0), (s, 1)])
 
 def CapTangle():
     """The unknotted (2,0) tangle."""
@@ -353,28 +420,35 @@ def CupTangle():
     return Tangle((0, 2), [cup], [(cup, 0), (cup, 1)])
 
 def ZeroTangle():
+    """The zero tangle, equivalent to ``RationalTangle(0)``."""
     bot, top = Strand('B'), Strand('T')
     return Tangle(2, [bot, top],
                   [(bot, 0), (bot, 1), (top, 0), (top, 1)],
                   "ZeroTangle")
 
 def InfinityTangle():
+    """The infinity tangle, equivalen to ``InfinityTangle(1, 0)``."""
     left, right = Strand('L'), Strand('R')
     return Tangle(2, [left, right],
                   [(left, 0), (right, 0), (left, 1), (right, 1)],
                   "InfinityTangle")
 
 def MinusOneTangle():
+    """The minus one tangle, equivalent to ``RationalTangle(-1)``."""
     c = Crossing('-one')
     return Tangle(2, [c], [(c, 3), (c, 0), (c, 2), (c, 1)],
                   "MinusOneTangle")
 
 def OneTangle():
+    """The one tangle, equivalent to ``RationalTangle(1)``."""
     c = Crossing('one')
     return Tangle(2, [c], [(c, 0), (c, 1), (c, 3), (c, 2)],
                   "OneTangle")
 
 def IntegerTangle(n):
+    """The tangle equivalent to ``RationalTangle(n)``. It is
+    ``n`` copies of the ``OneTangle`` joined by ``+`` when ``n`` is
+    positive, and otherwise ``-n`` copies of ``MinusOneTangle``."""
     if n == 0:
         return ZeroTangle()
     elif n > 0:
@@ -407,6 +481,15 @@ def continued_fraction_expansion(a, b):
 
 
 class RationalTangle(Tangle):
+    """
+    A rational tangle. ``RationalTangle(a, b)`` gives the a/b rational tangle when ``a``
+    and ``b`` are integers. If ``q`` is a rational, then ``RationalTangle(q)`` gives the
+    corresponding rational tangle.
+
+    This is a class that extends Tangle since it provides some additional information as
+    attributes: fraction gives (a, b) and partial_quotients gives the continued
+    fraction expansion.
+    """
     def __init__(self, a, b=1):
         if b == 1 and hasattr(a, 'numerator') and hasattr(a, 'denominator') and not isinstance(a, int):
             a, b = a.numerator(), a.denominator()
