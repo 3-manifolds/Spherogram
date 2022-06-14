@@ -58,7 +58,7 @@ def test4():
     return v
 
 
-class TestObject(object):
+class TestObject():
     pass
 
 

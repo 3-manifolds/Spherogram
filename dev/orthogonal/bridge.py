@@ -124,7 +124,8 @@ class UpwardSnake(tuple):
         ans.heights = heights
         return ans
 
-class UpwardLinkDiagram(object):
+
+class UpwardLinkDiagram():
     def __init__(self, link):
         self.link = link = link.copy()
         bridge, values = bridge_LP(link)
@@ -294,10 +295,10 @@ class UpwardLinkDiagram(object):
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
 
 
-class BridgeDiagram(object):
+class BridgeDiagram():
     def __init__(self, bottom, crossings, top):
         self.bottom, self.crossings, self.top = bottom, crossings, top
-        self.width = 2*len(bottom)
+        self.width = 2 * len(bottom)
         self.name = 'None'
 
     def link(self):
