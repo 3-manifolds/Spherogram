@@ -37,7 +37,8 @@ def entry_pts_ab(crossing):
     verts = [1, 0] if crossing.sign == -1 else [3, 0]
     return [CrossingEntryPoint(crossing, v) for v in verts]
 
-class StrandIndices(object):
+
+class StrandIndices():
     """
     A map from the crossings strands of a link L onto range(n).
     """
@@ -107,9 +108,9 @@ def test_meta_associativity():
         ]
     for m1, m2 in associative_merges:
         assert eval_merges(m1) == eval_merges(m2)
-    
-        
-class DrorDatum(object):
+
+
+class DrorDatum():
     """
     The (omega, A) pair which is the invariant defined in the first column of 
     http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
@@ -188,11 +189,12 @@ class DrorDatumAlt(DrorDatum):
 def num_overlap(crossing, frontier):
     neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
     return len(neighbor_strands.intersection(frontier))
-        
-class Exhaustion(object):
+
+
+class Exhaustion():
     """
     An exhaustion of a link where crossings are added in one-by-one
-    so that the resulting tangle is connected at every stage.  
+    so that the resulting tangle is connected at every stage.
 
     Starting at the given crossing, it uses a greedy algorithm to try
     to minimize the sizes of the frontiers of the intermediate tangles.

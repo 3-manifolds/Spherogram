@@ -118,7 +118,7 @@ class DTvertex(tuple):
         return (0,2) if bool(first%2) ^ even_over else (1,3)
 
 
-class DTPath(object):
+class DTPath():
     """
     An iterator which starts at a FatEdge and walks around the
     link component containing that edge.  A DTPath raises
@@ -526,10 +526,11 @@ class DTFatGraph(FatGraph):
         KLP['Ycomponent'] = edges[slot].component
         return KLP
 
+
 # This assumes that the diagram has no loops, and that each component
 # meets the next one (so in particular the diagram is connected.
 
-class DTcodec(object):
+class DTcodec():
     """
     Codec for DT codes of a link projection.
     """
