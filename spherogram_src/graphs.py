@@ -725,8 +725,8 @@ class FatGraph(Graph):
                 cycle.append(e)
                 # cross the edge
                 v = e(v)
-                if ((e.twisted and s=='L') or
-                        (not e.twisted and (s=='L')==(v==e[0]))):
+                if ((e.twisted and s == 'L') or
+                        (not e.twisted and (s == 'L') == (v == e[0]))):
                     # go counter-clockwise
                     e = self(v).succ(e)
                     s = 'R' if e.twisted or v == e[0] else 'L'
@@ -827,11 +827,8 @@ class Digraph(Graph):
         DAG = self.component_DAG()
         if not DAG.is_weakly_connected():
             return False
-        elif [v for v in DAG.vertices
-              if DAG.indegree(v)>1 or DAG.outdegree(v)>1]:
-            return False
-        else:
-            return True
+        return all(DAG.indegree(v) <= 1 and DAG.outdegree(v) <= 1
+                   for v in DAG.vertices)
 
     def strong_components(self):
         """
@@ -927,7 +924,7 @@ class StrongConnector():
         """
         edges = set()
         for tail, head in self.links:
-            dag_tail= self.which_component[tail]
+            dag_tail = self.which_component[tail]
             dag_head = self.which_component[head]
             if dag_head != dag_tail:
                 edges.add((dag_tail, dag_head))

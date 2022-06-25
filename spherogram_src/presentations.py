@@ -169,7 +169,7 @@ class CyclicWord(Word):
         The set of keys must equal the set of values up to sign.
         """
         abs_image = set(map(operator.abs, perm_dict.values()))
-        if set(perm_dict.keys()) != abs_image:
+        if set(perm_dict) != abs_image:
             raise ValueError('Not a permutation!')
         for n in range(len(self)):
             x = self[n]

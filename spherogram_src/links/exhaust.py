@@ -180,7 +180,7 @@ class BiDict():
 
     def __init__(self, int_to_set_dict):
         self.n = n = len(int_to_set_dict)
-        assert sorted(int_to_set_dict.keys()) == list(range(n))
+        assert sorted(int_to_set_dict) == list(range(n))
         self.int_to_set = int_to_set_dict
         self.set_to_int = {v: k for k, v in int_to_set_dict.items()}
 
@@ -245,7 +245,7 @@ class BiDict():
 
     def __repr__(self):
         itos = self.int_to_set
-        keys = sorted(itos.keys())
+        keys = sorted(itos)
         items = ['%d: %s' % (k, repr(itos[k])) for k in keys]
         return 'BiDict({' + ', '.join(items) + '})'
 
@@ -253,7 +253,7 @@ class BiDict():
         return len(self.int_to_set)
 
     def _check(self):
-        return sorted(self.int_to_set.keys()) == list(range(self.n))
+        return sorted(self.int_to_set) == list(range(self.n))
 
 
 def is_range(L):
