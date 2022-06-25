@@ -19,7 +19,7 @@ class OrderedSet():
             self.elts.pop(key)
 
     def __iter__(self):
-        return iter(self.elts.keys())
+        return iter(self.elts)
 
     def pop(self):
         return self.elts.popitem()[0]
