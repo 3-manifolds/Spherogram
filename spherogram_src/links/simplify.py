@@ -339,7 +339,10 @@ def extend_strand_forward(kind, strand, end_cep):
     """
     cep = end_cep.next()
     strand.append(end_cep)
+    start_cep = strand[0].previous()
     while getattr(cep, 'is_' + kind + '_crossing')():
+        if cep.next() == start_cep:  # prevents extending too far
+            break
         strand.append(cep)
         cep = cep.next()
         if cep == strand[0]:
@@ -352,10 +355,12 @@ def extend_strand_backward(kind, strand, start_cep):
     until you hit a crossing which is not of the given kind
     (over/under).
     """
-
     cep = start_cep.previous()
     strand.insert(0, start_cep)
+    end_cep = strand[-1].next()
     while getattr(cep, 'is_' + kind + '_crossing')():
+        if cep.previous() == end_cep:  # prevents extending too far
+            break
         strand.insert(0, cep)
         cep = cep.previous()
         if cep == strand[-1]:
