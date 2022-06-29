@@ -509,7 +509,7 @@ def remove_strand(link, strand):
     for s in bridge_strands.values():
         s.fuse()
 
-    return crossing_set
+    return set(crossings_seen)
 
 
 def cross(link, cep_to_cross, kind, loose_end, label):
