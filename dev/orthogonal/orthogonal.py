@@ -283,12 +283,12 @@ class OrthogonalRep(Digraph):
         self.faces, self.dummy = regular, dummy
 
     def saturation_edges(self, swap_hor_edges):
-        return sum( [face.saturation_edges(swap_hor_edges) for face in self.faces], [])
-        
+        return sum([face.saturation_edges(swap_hor_edges)
+                    for face in self.faces], [])
+
     def DAG_from_direction(self, kind):
-        H = Digraph(
-            pairs = [e for e in self.edges if e.kind == kind],
-            singles = self.vertices)
+        H = Digraph(pairs=[e for e in self.edges if e.kind == kind],
+                    singles=self.vertices)
 
         maximal_chains = H.weak_components()
         vertex_to_chain = element_map(maximal_chains)
@@ -452,16 +452,16 @@ class OrthogonalLinkDiagram(list):
             c.label = i
         for a, s in zip(string.ascii_letters, list(strands)):
             s.label = a
-        
+
     def flow_networkx(faces):
         """
         Tamassia's associated graph N(P) where the flow problem resides.
         """
         G = networkx.DiGraph()
-        
+
         # Source
         source_demand = sum(F.source_capacity() for F in faces)
-        G.add_node('s', demand = -source_demand)
+        G.add_node('s', demand=-source_demand)
         for i, F in enumerate(faces):
             if F.source_capacity():
                 G.add_edge('s', i, weight=0, capacity=F.source_capacity())
@@ -469,7 +469,7 @@ class OrthogonalLinkDiagram(list):
         # Sink
         sink_demand = sum(F.sink_capacity() for F in faces)
         assert sink_demand == source_demand
-        G.add_node('t', demand = sink_demand)
+        G.add_node('t', demand=sink_demand)
         for i, F in enumerate(faces):
             if F.sink_capacity():
                 G.add_edge(i, 't', weight=0, capacity=F.sink_capacity())

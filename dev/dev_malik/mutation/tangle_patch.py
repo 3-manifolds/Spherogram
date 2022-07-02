@@ -71,7 +71,7 @@ def random_tree_link(size):
     return random_tree(size).circular_sum(random_tree(size),0)
 
 
-def random_tree_knot(size,simplify=None,prime_decomp = False):
+def random_tree_knot(size, simplify=None, prime_decomp=False):
     found_nontrivial = False
     while not found_nontrivial:
         link = random_tree_link(size)
@@ -230,10 +230,12 @@ def min_isosig(self,root=None,over_or_under=False):
         isosigs.append(rotated_tangle.isosig(root=rotated_root,over_or_under=over_or_under))
     return min(isosigs)
 
-def isosig_with_gluings(self, gluings, root=None):
-    return (self.isosig(root = root),tuple(gluings))
 
-def min_isosig_with_gluings(self, gluings, root = None):
+def isosig_with_gluings(self, gluings, root=None):
+    return (self.isosig(root=root), tuple(gluings))
+
+
+def min_isosig_with_gluings(self, gluings, root=None):
     if root is not None:
         cs_name = cslabel(root)
     isosigs = []

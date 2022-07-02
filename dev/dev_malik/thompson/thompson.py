@@ -146,7 +146,7 @@ class TreeSequence:
             if dyadic_rational == dyadic:
                 return True
 
-    def tree_vertices(self, start_node=DyadicRational(1,1)):
+    def tree_vertices(self, start_node=DyadicRational(1, 1)):
         if start_node not in self:
             raise Exception('Starting node not in TreeSequence')
         left_child, right_child = start_node.children()
@@ -154,19 +154,19 @@ class TreeSequence:
         if not left_in and not right_in:
             return [left_child, right_child]
         if left_in and not right_in:
-            L = self.tree_vertices(start_node = left_child)
+            L = self.tree_vertices(start_node=left_child)
             L.append(right_child)
             return L
         if not left_in and right_in:
             L = [left_child]
-            L.extend(self.tree_vertices(start_node = right_child))
+            L.extend(self.tree_vertices(start_node=right_child))
             return L
         if left_in and right_in:
-            L = self.tree_vertices(start_node = left_child)
-            L.extend(self.tree_vertices(start_node = right_child))
+            L = self.tree_vertices(start_node=left_child)
+            L.extend(self.tree_vertices(start_node=right_child))
             return L
 
-    def exponents(self, start_node = DyadicRational(1,1)):
+    def exponents(self, start_node=DyadicRational(1, 1)):
         vertices = self.tree_vertices()
         exps = []
         for v in vertices:
@@ -320,10 +320,9 @@ class TreeMap:
                 for other_triple in group: #remove grouped elements from bank of elements
                     edges_copy.remove(other_triple)
                 #sort by biggest denom first
-                group.sort(key= lambda x: x[1].denom_exp, reverse=True)
-                if len(group) > 0:
+                group.sort(key=lambda x: x[1].denom_exp, reverse=True)
+                if group:
                     grouped_edges.append(group)
-
 
             #switch out denominators for indices
             #prep to add edge

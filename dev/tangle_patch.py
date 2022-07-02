@@ -45,42 +45,42 @@ def add_random_crossing(self,label):
     tangle_copy.n = self.n+1
     return tangle_copy
 
+
 def random_tree(size):
     """
     Repeatedly splits crossings, starting with a single crossing, resulting
     in a random 4-valent tree of crossings.
     """
-
     T = OneTangle()
     T.crossings[0].label = 0
-    for i in range(1,size):
+    for i in range(1, size):
         T = T.add_random_crossing(i)
     return T
+
 
 def random_tree_link(size):
     """
     Generate two random tree tangles and glues together.  Gives a link of size
     2*size
     """
+    return random_tree(size).circular_sum(random_tree(size), 0)
 
-    return random_tree(size).circular_sum(random_tree(size),0)
 
-
-def random_tree_knot(size,simplify=None,prime_decomp = False):
+def random_tree_knot(size, simplify=None, prime_decomp=False):
     found_nontrivial = False
     while not found_nontrivial:
         link = random_tree_link(size)
-        knot = link.sublink(max(link.link_components,key=len))
+        knot = link.sublink(max(link.link_components, key=len))
         knot.simplify(mode=simplify)
         if len(knot) > 0:
-            found_nontrivial=True
-    
+            found_nontrivial = True
+
     if prime_decomp:
         cant_deconnect = False
         while cant_deconnect:
             ds = knot.deconnect_sum()
-            knot = max(ds,key=len)
-            cant_deconnect = (len(ds)>1)
+            knot = max(ds, key=len)
+            cant_deconnect = (len(ds) > 1)
     return knot
 
 
@@ -91,7 +91,7 @@ def all_circular_sums(self, other):
 
     if len(self.adjacent) != len(other.adjacent):
         raise Exception("Tangles do not have the same number of strands")
-    return [self.circular_sum(other,n) for n in range(len(other.adjacent))]
+    return [self.circular_sum(other, n) for n in range(len(other.adjacent))]
 
 
 def random_root(self):
@@ -102,7 +102,7 @@ def isosig_with_gluings(self, gluings, root=None):
     return (self.isosig(root=root), tuple(gluings))
 
 
-def min_isosig_with_gluings(self, gluings, root = None):
+def min_isosig_with_gluings(self, gluings, root=None):
     if root is not None:
         cs_name = cslabel(root)
     isosigs = []
