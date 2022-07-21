@@ -383,7 +383,7 @@ def pickup_strand(link, dual_graph, kind, strand):
         # unknotted
         remove_strand(link, strand)
         return len(strand)
-    if startcep == strand[-1].next():
+    if startcep == strand[-1].next() and startcep.other() in strand:
         # We have a figure-8 curve with a single crossing in front
         # of the rest of the components.
         remove_strand(link, [startcep] + strand)
