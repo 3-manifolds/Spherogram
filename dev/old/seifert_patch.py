@@ -205,7 +205,8 @@ def braid_arrows(link):
         arrow.pop(1) #start and end positions are now the same
     return arrows
 
-def seifert_matrix(link, return_type_matrix = False):
+
+def seifert_matrix(link, return_type_matrix=False):
     """
     Returns the Seifert matrix of a link by first making it isotopic to a braid
     closure, and using the algorithm described in:

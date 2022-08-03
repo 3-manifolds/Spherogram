@@ -91,7 +91,8 @@ def open_overposition(crossing):
     return
 
 
-def link_to_fat_graph(link, alternate_around_crossing=False, alternate_strand = False):
+def link_to_fat_graph(link, alternate_around_crossing=False,
+                      alternate_strand=False):
     G = FatGraph()
     B = link.black_graph()
     visited_slots = []
@@ -111,25 +112,29 @@ def link_to_fat_graph(link, alternate_around_crossing=False, alternate_strand = 
                 visited_slots.append((adj[0].label,adj[1]))
     return G
 
-def graph_knot_sequence(link,length, alternate_around_crossing=False, alternate_strand = False):
+
+def graph_knot_sequence(link, length, alternate_around_crossing=False,
+                        alternate_strand=False):
     sequence = [link]
     link_copy = link.copy()
     for i in range(length):
-        link_copy = link_diagram(link_to_fat_graph(link_copy,alternate_around_crossing))
+        link_copy = link_diagram(link_to_fat_graph(link_copy,
+                                                   alternate_around_crossing))
         sequence.append(link_copy)
     return sequence
+
 
 def double(link):
     G = link_to_fat_graph(link)
     f = faces(G)
-    colors = face_two_coloring(G,f)
+    colors = face_two_coloring(G, f)
     D = link_diagram(link_to_fat_graph(link.copy()))
     H = link_to_fat_graph(D)
     for edge in H.edges:
-        edge.twisted = (edge.twisted+find_face_color(edge,colors))%2
+        edge.twisted = (edge.twisted + find_face_color(edge, colors)) % 2
     return link_diagram(H)
 
-    
+
 def group_by_quadruples(crossings):
     labels = defaultdict(list)
     for i,c in enumerate(crossings):
