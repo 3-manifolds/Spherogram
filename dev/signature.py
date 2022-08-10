@@ -103,12 +103,13 @@ def signature_function_of_integral_matrix(V, prec=53):
     n = len(partition) - 1
     values = []
     for i in range(n):
-         omega = exp((2*pi*I)*(partition[i] + partition[i + 1])/2)
-         A = (1 - omega)*V + (1 - omega.conjugate())*V.transpose()
-         values.append(signature_via_numpy(A))
+        omega = exp((2*pi*I)*(partition[i] + partition[i + 1])/2)
+        A = (1 - omega)*V + (1 - omega.conjugate())*V.transpose()
+        values.append(signature_via_numpy(A))
 
     assert list(reversed(values)) == values
     return partition, values
+
 
 def signature_function(L, prec=53):
     """

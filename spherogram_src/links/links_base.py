@@ -80,16 +80,16 @@ class Crossing():
     * label: Arbitrary name used for printing the crossing.
 
     * directions: store the orientations of the link components passing
-    through the crossing.  For a +1 crossing this is { (0, 2), (3, 1) }.
-    Set with calls to make_tail.
+      through the crossing.  For a +1 crossing this is { (0, 2), (3, 1) }.
+      Set with calls to make_tail.
 
     * adjacent: The other Crossings that this Crossing is attached to.
 
     * strand_labels: Numbering of the strands, used for DT codes and
-    such.
+      such.
 
     * strand_components: Which element of the parent
-    Link.link_components each input's strand belongs to.
+      Link.link_components each input's strand belongs to.
     """
 
     def __init__(self, label=None):

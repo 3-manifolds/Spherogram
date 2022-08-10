@@ -296,7 +296,8 @@ def alexander(K):
 # --- code which will be removed in final version ---- 
 
 def test():
-    import spherogram, snappy
+    import spherogram
+    import snappy
     import sys
     sys.path.append('/Users/dunfield/r')
     import knot_sample

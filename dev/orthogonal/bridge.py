@@ -14,13 +14,15 @@ To each corner of a face of D is classified into "large", "flat", or
 2, 1, and 0 respectively.  The geometric conditions are
 
 * Every vertex has either a single "large" angle or two "flat" ones which
-are opposite.
+  are opposite.
 
 * The sum of the corner types around every face is degree - 2, with the
-exception of the exterior face (which is degree + 2).
+  exception of the exterior face (which is degree + 2).
 """
 
-import spherogram, snappy, random
+import spherogram
+import snappy
+import random
 from spherogram import DTcodec, RationalTangle, Digraph, CyclicList, Link, join_strands
 from spherogram.links.links import CrossingStrand, Crossing, Strand
 from orthogonal import basic_topological_numbering

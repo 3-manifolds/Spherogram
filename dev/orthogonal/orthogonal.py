@@ -21,7 +21,11 @@ As all vertices (=crossings) of the underlying graph are 4-valent, things simpif
 the associated network N(P) has A_V empty and A_F has no self-loops.
 """
 
-import snappy, networkx, random, plink, string
+import snappy
+import networkx
+import random
+import plink
+import string
 from spherogram.links.links import CrossingStrand, CrossingEntryPoint, Strand
 from spherogram import CyclicList, Digraph, RationalTangle, DTcodec
 import spherogram.graphs
@@ -127,8 +131,8 @@ class OrthogonalFace(CyclicList):
             if self[0] == (edge, vertex):
                 break
             else:
-               self.append( (edge, vertex) )
-                
+                self.append( (edge, vertex) )
+
         self._add_turns()
         
     def _add_turns(self):

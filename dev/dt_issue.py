@@ -1,4 +1,5 @@
-import snappy, spherogram
+import snappy
+import spherogram
 import spherogram.links.orthogonal
 from nsnappytools import appears_hyperbolic
 from sage.all import *
