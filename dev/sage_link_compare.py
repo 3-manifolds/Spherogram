@@ -1,7 +1,9 @@
-import spherogram, snappy
+import spherogram
+import snappy
 from sage.all import Link as SageLink
 from sage.all import LaurentPolynomialRing, PolynomialRing, ZZ, var
 from sage.symbolic.ring import SymbolicRing
+
 
 def alexander_poly_of_sage(knot):
     p = knot.alexander_polynomial()
@@ -9,6 +11,7 @@ def alexander_poly_of_sage(knot):
     if ans.leading_coefficient() < 0:
         ans = -ans
     return ans
+
 
 def jones_polynomial_of_sage(knot):
     """
@@ -20,6 +23,7 @@ def jones_polynomial_of_sage(knot):
     exps = p.exponents()
     assert all(e % 4 == 0 for e in exps)
     return sum(c*q**(-e//4) for c, e in zip(p.coefficients(), exps))
+
 
 def test_knot(snappy_manifold):
     M = snappy_manifold

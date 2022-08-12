@@ -6,10 +6,10 @@ from .links import Crossing, Link
 
 def torus_knot(name: str) -> Link:
     """
-    Return a (p,q)-torus knot, as an instance of the ``Link`` class.
+    Return a `(p,q)`-torus knot, as an instance of the ``Link`` class.
 
-    If exactly one of p and q is negative, it returns the mirror of
-    T(|p|, |q|).
+    If exactly one of `p` and `q` is negative, it returns the mirror of
+    `T(|p|, |q|)`.
     """
     p, q = map(int, name[2:-1].split(','))
 

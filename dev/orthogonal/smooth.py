@@ -1,4 +1,7 @@
-import snappy, orthogonal, plink, hobby
+import snappy
+import orthogonal
+import plink
+import hobby
 
 L = orthogonal.link_from_manifold(snappy.Manifold('16n12345'))
 M = snappy.Manifold()

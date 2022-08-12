@@ -1,4 +1,8 @@
-import os, shutil, sys, sysconfig, subprocess
+import os
+import shutil
+import sys
+import sysconfig
+import subprocess
 from glob import glob
 from setuptools import setup, Command, Extension
 

@@ -21,10 +21,10 @@ correspond to integers 2, 1, and 0 respectively.  The geometric
 conditions are
 
 * Every vertex has either a single "large" angle or two "flat" ones which
-are opposite.
+  are opposite.
 
 * The sum of the corner types around every face is degree - 2, with the
-exception of the exterior face (which is degree + 2).
+  exception of the exterior face (which is degree + 2).
 
 This code written by Nathan Dunfield who claims (not very plausibly) that
 he will write a paper about this algorithm at some point.  The bit that

@@ -488,17 +488,20 @@ class DTFatGraph(FatGraph):
     def KLP_dict(self, vertex, indices):
         """
         Return a dict describing this vertex and its neighbors
-        in KLP terminology.  The translation from our convention is
-        as follows:
-                  Y                    Y
-                  3                    0
-                  ^                    ^
-                  |                    |
-           0 -----+----> 2 X     1 ----+---> 3 X
-                  |                    |
-                  |                    |
-                  1                    2
-              not flipped           flipped
+        in KLP terminology.
+
+        The translation from our convention is as follows::
+
+                    Y                    Y
+                    3                    0
+                    ^                    ^
+                    |                    |
+             0 -----+----> 2 X     1 ----+---> 3 X
+                    |                    |
+                    |                    |
+                    1                    2
+               not flipped           flipped
+
         The indices argument is a dict that assigns an integer
         index to each vertex of the graph.
         """

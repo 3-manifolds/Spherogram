@@ -372,22 +372,22 @@ def all_cross_strands(self):
         for loop in loops:
             for cs in loop:
                 if cs[0] in seen_once:
-                     loop = loop_strand((cs[0],(cs[1]+1)%4))
-                     loops.append(loop)
-                     cs_seen.extend(loop)
-                     for loop_cs in loop:
-                         if loop_cs[0] in seen_once:
-                             for seen_cs in cs_seen:
-                                 if loop_cs[0] == seen_cs[0]:
-                                     orientation = (loop_cs[1]-seen_cs[1])%4
-                                     if orientation == 3:
-                                         orientation = -1
-                                     orientations[loop_cs[0]]=orientation
-                                     over_or_under[loop_cs[0]]= loop_cs[1]%2
-                                     seen_once.remove(loop_cs[0])
-                                     break
-                         else:
-                             seen_once.add(loop_cs[0])
+                    loop = loop_strand((cs[0],(cs[1]+1)%4))
+                    loops.append(loop)
+                    cs_seen.extend(loop)
+                    for loop_cs in loop:
+                        if loop_cs[0] in seen_once:
+                            for seen_cs in cs_seen:
+                                if loop_cs[0] == seen_cs[0]:
+                                    orientation = (loop_cs[1]-seen_cs[1])%4
+                                    if orientation == 3:
+                                        orientation = -1
+                                    orientations[loop_cs[0]]=orientation
+                                    over_or_under[loop_cs[0]]= loop_cs[1]%2
+                                    seen_once.remove(loop_cs[0])
+                                    break
+                        else:
+                            seen_once.add(loop_cs[0])
     crossings = map(lambda x: x[0], cs_seen)
     crossing_order = []
     for c in crossings:
