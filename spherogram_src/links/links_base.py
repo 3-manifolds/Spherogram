@@ -1158,7 +1158,7 @@ class Link():
             DT = ''.join([DT_alphabet[x] for x in init_data] +
                          [DT_alphabet[x >> 1] for x in sum(DT, tuple())])
             if flips:
-                DT += '.' + ''.join([repr(flip) for flip in the_flips])
+                DT += '.' + ''.join(repr(flip) for flip in the_flips)
             return "DT[" + DT + "]"
         else:
             if flips:
@@ -1170,10 +1170,10 @@ class Link():
         peer = dict([c.peer_info() for c in self.crossings])
         even_labels = enumerate_lists(
             self.link_components, n=0, filter=lambda x: x % 2 == 0)
-        ans = '[' + ','.join([repr([peer[c][0] for c in comp])
-                              [1:-1].replace(',', '') for comp in even_labels])
-        ans += '] / ' + ' '.join([['_', '+', '-'][peer[c][1]]
-                                  for c in sum(even_labels, [])])
+        ans = '[' + ','.join(repr([peer[c][0] for c in comp])
+                             [1:-1].replace(',', '') for comp in even_labels)
+        ans += '] / ' + ' '.join(['_', '+', '-'][peer[c][1]]
+                                 for c in sum(even_labels, []))
         return ans
 
     def KLPProjection(self):
