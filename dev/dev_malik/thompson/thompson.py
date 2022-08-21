@@ -404,7 +404,7 @@ class ABWord:
             self.word_string = self.word_string.replace('Bb','')
 
     def __mul__(self,other):
-        return ABWord(''.join([self.word_string,other.word_string]),self.a,self.b)
+        return ABWord(''.join([self.word_string, other.word_string]), self.a, self.b)
         
 
 def random_word(complexity):
@@ -413,7 +413,7 @@ def random_word(complexity):
     for i in range(complexity-1):
         last_let = word[i].swapcase()
         new_lets = lets.replace(last_let,'')
-        word = ''.join([word,new_lets[randint(0,2)]])
+        word = ''.join([word, new_lets[randint(0, 2)]])
     return word
     
 a = TreeMap( TreeSequence([DyadicRational(3,2)]) , TreeSequence([DyadicRational(1,2)]) )
@@ -478,4 +478,3 @@ def random_xs(length, complexity):
 #    if word.is_reduced() and word_ev.size() <= 3:
 #        print(word)
 #        print(word_ev)
-

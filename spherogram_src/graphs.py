@@ -234,8 +234,8 @@ class Graph():
         pass
 
     def __repr__(self):
-        V = 'Vertices:\n  ' + '\n  '.join([str(v) for v in self.vertices])
-        E = 'Edges:\n  ' + '\n  '.join([str(e) for e in self.edges])
+        V = 'Vertices:\n  ' + '\n  '.join(str(v) for v in self.vertices)
+        E = 'Edges:\n  ' + '\n  '.join(str(e) for e in self.edges)
         return '%s\n%s' % (V, E)
 
     def __call__(self, vertex):
