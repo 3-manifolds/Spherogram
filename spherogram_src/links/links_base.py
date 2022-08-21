@@ -581,11 +581,21 @@ class Link():
                     next_label = l2
                     direction = (c2, j2)
                 else:
-                    # have a component of length 2, so now rely on the
-                    # convention that the first position at a PD
-                    # crossing is a directed entry point.
+                    # We have a component of length 2, so now rely on
+                    # the convention that the first position at a PD
+                    # crossing is a directed entry point. (If both
+                    # crossings are over or both under, the
+                    # orientation is arbitary anyway.)
                     next_label = l1
-                    direction = (c2, j2) if j2 % 2 == 1 else (c1, j1)
+
+                    # The strand labeled m is oriented c2 --> c1 if
+                    # and only if either l1 = l2 is the incoming
+                    # understrand of c2 or m is incoming understrand
+                    # at c1.
+                    if code[c2][0] == l1 or code[c1][0] == m:
+                        direction = (c1, j1)
+                    else:
+                        direction = (c2, j2)
 
                 starts.append(direction)
             while next_label != m:
