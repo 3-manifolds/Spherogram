@@ -12,12 +12,12 @@ and
 Bridgeman et. al., Turn-Regularity and Planar Orthogonal Drawings
 ftp://ftp.cs.brown.edu/pub/techreports/99/cs99-04.pdf
 
-A more concise summary of the algorithm is contained in 
+A more concise summary of the algorithm is contained in
 
-Hashemi and Tahmasbi, A better heuristic for area-compaction of orthogonal 
+Hashemi and Tahmasbi, A better heuristic for area-compaction of orthogonal
 representations.  http://dx.doi.org/10.1016/j.amc.2005.03.007
 
-As all vertices (=crossings) of the underlying graph are 4-valent, things simpify; 
+As all vertices (=crossings) of the underlying graph are 4-valent, things simpify;
 the associated network N(P) has A_V empty and A_F has no self-loops.
 """
 
@@ -60,7 +60,7 @@ def basic_topological_numbering(G):
     curr_number = 0
     while len(in_valences):
         new_sources = []
-        for v in curr_sources: 
+        for v in curr_sources:
             in_valences.pop(v)
             numbering[v] = curr_number
             for e in G.outgoing(v):
@@ -90,7 +90,7 @@ def topological_numbering(G):
             if above != below:
                 if above > below:
                     new_pos = min( n[e.head] for e in G.outgoing(v) ) - 1
-                else: 
+                else:
                     new_pos = max( n[e.tail] for e in G.incoming(v) ) + 1
                 if new_pos != n[v]:
                     n[v] = new_pos
@@ -108,7 +108,7 @@ def kitty_corner(turns):
 
 #---------------------------------------------------
 #
-# Orthogonal Representations 
+# Orthogonal Representations
 #
 #---------------------------------------------------
 
@@ -134,7 +134,7 @@ class OrthogonalFace(CyclicList):
                 self.append( (edge, vertex) )
 
         self._add_turns()
-        
+
     def _add_turns(self):
         self.turns = turns = []
         for i, (e0, v0) in enumerate(self):
@@ -158,20 +158,20 @@ class OrthogonalFace(CyclicList):
 
     def switches(self, swap_hor_edges):
         """
-        Returns a list of (index, source|sink, -1|1). 
+        Returns a list of (index, source|sink, -1|1).
         """
         def edge_to_endpoints(e):
             if swap_hor_edges and e.kind == 'horizontal':
                 return e.head, e.tail
-            return e.tail, e.head 
-        
+            return e.tail, e.head
+
         ans = []
         for i, (e0, v0) in enumerate(self):
             t0, h0 = edge_to_endpoints(e0)
             t1, h1 = edge_to_endpoints(self[i+1][0])
             if t0 == t1 == v0:
                 ans.append( LabeledFaceVertex(i, 'source', self.turns[i]) )
-            elif h0 == h1 == v0: 
+            elif h0 == h1 == v0:
                 ans.append( LabeledFaceVertex(i, 'sink', self.turns[i]) )
 
 
@@ -191,14 +191,14 @@ class OrthogonalFace(CyclicList):
                     remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
                     return [ (a.index, b.index)  ] + saturate_face(remaining)
             return []
-        
+
         new_edges = saturate_face(self.switches(swap_hor_edges))
         return [ (self[a][1], self[b][1]) for a, b in new_edges]
 
     def __repr__(self):
         ext = '*' if self.exterior else ''
         return list.__repr__(self) + ext
-            
+
 def saturate_face( face_info ):
             # Normalize so it starts with a -1 turn, if any
             for i, a in enumerate(face_info):
@@ -212,16 +212,16 @@ def saturate_face( face_info ):
                     remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
                     return [ (a.index, b.index)  ] + saturate_face(remaining)
             return []
-        
+
 class OrthogonalRep(Digraph):
     """
     An orthogonal representation is an equivalence class of planar
     embeddings of a graph where all edges are either vertical or
     horizontal. We assume there are no degree 1 vertices.
-    
+
     Horizontal edges are oriented to the right, and vertical edges
     oriented upwards.
-    
+
     >>> square = OrthogonalRep([(0, 1), (3, 2)], [(0, 3), (1,2)])
     """
     def __init__(self, horizonal_pairs=[], vertical_pairs=[]):
@@ -253,7 +253,7 @@ class OrthogonalRep(Digraph):
         """
         link = self.link(vertex)
         return link[ (link.index(edge) + 1) % len(link) ]
-        
+
     def _build_faces(self):
         self.faces = []
         edge_sides = set([ (e, e.head) for e in self.edges] + [ (e, e.tail) for e in self.edges ])
@@ -321,7 +321,7 @@ class OrthogonalRep(Digraph):
 
     def basic_grid_embedding(self, rotate=False):
         """
-        Returns the positions of vertices under the grid embedding. 
+        Returns the positions of vertices under the grid embedding.
         """
         V = self.chain_coordinates('horizontal')
         H = self.chain_coordinates('vertical')
@@ -354,8 +354,8 @@ class Face(CyclicList):
         list.__init__(self, crossing_strands)
         self.edges = dict( (c.oriented(),c) for c in crossing_strands)
         self.exterior = exterior
-        self.turns =[1 for e in self] 
-    
+        self.turns =[1 for e in self]
+
     def edge_of_intersection(self, other):
         """
         Returns edge as the pair of CrossingStrands for self and other which
@@ -365,7 +365,7 @@ class Face(CyclicList):
         if common_edges:
             e = common_edges.pop()
             return (self.edges[e], other.edges[e])
-            
+
     def source_capacity(self):
         if self.exterior:
             return 0
@@ -383,7 +383,7 @@ class Face(CyclicList):
     def bend(self, edge, turns):
         """
         Assumes edge has already been subdivided by adding in len(turns) new
-        vertices. 
+        vertices.
         """
         i = self.index(edge)
         for t in reversed(turns):
@@ -410,7 +410,7 @@ class Face(CyclicList):
             return True
         else:
             return kitty_corner(self.turns) is None
-    
+
     def __repr__(self):
         ext = '*' if self.exterior else ''
         return list.__repr__(self) + ext
@@ -433,13 +433,13 @@ def subdivide_edge(crossing_strand, n):
         strands[i][1] = strands[i+1][0]
     strands[-1][1] = head.crossing[head.entry_point]
 
-        
+
 class OrthogonalLinkDiagram(list):
     """
     A link diagram where all edges are made up of horizontal and vertical
     segments.
     """
-    
+
     def __init__(self, link):
         self.link = link = link.copy()
         list.__init__(self, [Face(link, F) for F in link.faces()])
@@ -486,7 +486,7 @@ class OrthogonalLinkDiagram(list):
 
         return G
 
-    
+
     def bend(self):
         """
         Computes a minimal size set of edge bends that allows the link diagram
@@ -561,7 +561,7 @@ class OrthogonalLinkDiagram(list):
             for a in arrow[1:-1]:
                 if a.is_over_crossing():
                     crossings.append( (undercrossings[a.other()], i) )
-            
+
         return arrows, crossings
 
     def plink_data(self, spacing=None, canvas_width=None):
@@ -579,7 +579,7 @@ class OrthogonalLinkDiagram(list):
             spacing = max(25, canvas_width // (max(x_max, y_max) + 2))
 
         # We rotate things so the long direction is horizontal.  The Plink canvas
-        # coordinate system forces us to flip things to preserve crossing type.  
+        # coordinate system forces us to flip things to preserve crossing type.
         vertex_positions = []
         for v in self.strand_CEPs:
             if x_max >= y_max:
@@ -594,17 +594,17 @@ class OrthogonalLinkDiagram(list):
         arrows = [ (vert_indices[a[0]], vert_indices[a[-1]]) for a in arrows]
 
         if x_max < y_max:
-            x_max, y_max = y_max, x_max        
+            x_max, y_max = y_max, x_max
         if spacing == 25:
             size = (spacing*(x_max+2), spacing*(y_max+2))
         else:
             size = None
         return size, vertex_positions, arrows, crossings
-        
-        
+
+
 #---------------------------------------------------
 #
-#  Opening in plink.  
+#  Opening in plink.
 #
 #---------------------------------------------------
 
@@ -673,7 +673,7 @@ def element(S):
 def appears_hyperbolic(M):
     acceptable = ['all tetrahedra positively oriented',
                   'contains negatively oriented tetrahedra']
-    return M.solution_type() in acceptable and M.volume() > 1.0 
+    return M.solution_type() in acceptable and M.volume() > 1.0
 
 
 def test(manifold_with_DT, plink_manifold=None):
