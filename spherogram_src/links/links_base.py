@@ -445,8 +445,8 @@ class Link():
             crossings = []  # empty link
 
         # Make sure everything is tied up.
-        if True in [None in c.adjacent for c in crossings]:
-            raise ValueError('No loose strands allowed')
+        if any(None in c.adjacent for c in crossings):
+            raise ValueError('no loose strands allowed')
 
         # Fuse the strands.  If there any components made up
         # only of strands, these are thrown out here.

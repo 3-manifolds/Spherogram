@@ -45,7 +45,8 @@ class OrderedSet():
 
     def __eq__(self, other):
         if isinstance(other, OrderedSet):
-            return len(self) == len(other) and list(self) == list(other)
+            return len(self) == len(other) and all(x == y
+                                                   for x, y in zip(self, other))
         return set(self) == set(other)
 
 
