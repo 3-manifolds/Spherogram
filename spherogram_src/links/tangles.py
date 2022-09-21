@@ -12,7 +12,7 @@ kind of horizontal composition using ``+`` where the rightmost strands of the to
 and bottom of the first tangle are glued to the leftmost strands of the top and
 bottom of the second tangle.
 
-Rational tangles (created using ``RationalTangle``) are following
+Rational tangles (created using ``RationalTangle``) are following the paper
 
 Classifying and Applying Rational Knots and Rational Tangles
 http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
