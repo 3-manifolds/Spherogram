@@ -80,7 +80,8 @@ class Tangle():
         including the horizontal and vertical compositions of the tangle category.
 
         Inputs:
-        - When boundary is an integer, then the tangle has n strands coming into both
+
+        * When boundary is an integer, then the tangle has n strands coming into both
           the top and the bottom of the tangle. When boundary is a pair of integers
           (m, n), then the tangle has m strands coming into the bottom and n coming
           into the top.
@@ -88,11 +89,11 @@ class Tangle():
           The strands are numbered 0 to m-1 on the bottom and m to m+n-1 on the
           top, both from left to right.
 
-        - crossings is a list of Crossing or Strand that comprise the tangle.
-        - entry_points is a list of pairs (c, i) where c is a Crossing or Strand
+        * crossings is a list of Crossing or Strand that comprise the tangle.
+        * entry_points is a list of pairs (c, i) where c is a Crossing or Strand
           and i indexes into c.adjacent. These pairs describe the boundary strands
           in order of the strand numbering.
-        - label is an arbitrary label for the tangle.
+        * label is an arbitrary label for the tangle.
 
         Usually tangles should not be created directly using this constructor since the
         tangle operations and various primitive tangles.
@@ -126,7 +127,11 @@ class Tangle():
         self.label = label
 
     def __add__(self, other):
-        "Put self to left of other and fuse inside strands"
+        """Put self to left of other and fuse inside strands.
+
+        >>> (IdentityBraid(2) + BraidTangle([1])).describe()
+        'Tangle[{1,2}, {3,4}, P[1,3], X[2,4,5,5]]'
+        """
         A, B = self.copy(), other.copy()
         (mA, nA), (mB, nB) = A.boundary, B.boundary
         if mA == 0 or mB == 0 or nA == 0 or nB == 0:
@@ -138,7 +143,13 @@ class Tangle():
         return Tangle((mA + mB - 2, nA + nB - 2), A.crossings + B.crossings, entry_points)
 
     def __mul__(self, other):
-        "Join with self *above* other, as with braid multiplication"
+        """Join with self *above* other, as with braid multiplication.
+
+        >>> BraidTangle([1,1]).describe()
+        'Tangle[{1,2}, {3,4}, X[5,4,3,6], X[2,5,6,1]]'
+        >>> (BraidTangle([1])*BraidTangle([1])).describe()
+        'Tangle[{1,2}, {3,4}, X[5,4,3,6], X[2,5,6,1]]'
+        """
         A, B = self.copy(), other.copy()
         (mA, nA), (mB, nB) = A.boundary, B.boundary
         if mA != nB:
@@ -150,7 +161,10 @@ class Tangle():
         return Tangle((mB, nA), A.crossings + B.crossings, b[:mB] + a[mA:])
 
     def __neg__(self):
-        "Mirror image of self"
+        """Mirror image of self.
+
+        >>> (-BraidTangle([1])).describe()
+        'Tangle[{1,2}, {3,4}, X[4,3,1,2]]'"""
         T = self.copy()
         for c in T.crossings:
             if not isinstance(c, Strand):
@@ -158,7 +172,10 @@ class Tangle():
         return T
 
     def __or__(self, other):
-        "Put self to left of other, no fusing of strands"
+        """Put self to left of other, no fusing of strands.
+        >>> (IdentityBraid(1)|CupTangle()).describe()
+        'Tangle[{1}, {2,3,4}, P[1,2], P[3,4]]'
+        """
         A, B = self.copy(), other.copy()
         (mA, nA), (mB, nB) = A.boundary, B.boundary
         a, b = A.adjacent, B.adjacent
@@ -169,7 +186,7 @@ class Tangle():
         return pickle.loads(pickle.dumps(self))
 
     def rotate(self, s):
-        "Rotate anticlockwise by s*90 degrees"
+        """Rotate anticlockwise by s*90 degrees. This is only for (2,2) tangles."""
         if self.boundary != (2, 2):
             raise ValueError("Only boundary=(2,2) tangles can be rotated")
         anticlockwise = [0, 1, 3, 2]
@@ -181,7 +198,7 @@ class Tangle():
         return T
 
     def invert(self):
-        "Rotate anticlockwise by 90 and take the mirror image"
+        """Rotate anticlockwise by 90 and take the mirror image. This is only for (2,2) tangles."""
         if self.boundary != (2,2):
             raise ValueError("Only boundary=(2,2) tangles can be inverted")
         return -self.rotate(1)
@@ -192,6 +209,11 @@ class Tangle():
         strands at the top and bottom must both be even.
 
         A synonym for this is ``Tangle.bridge_closure()``.
+
+        >>> BraidTangle([1,1,1]).braid_closure().exterior().identify()
+        [3_1(0,0), K3a1(0,0)]
+        >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify()
+        [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
         """
         m, n = self.boundary
         if m % 2 or n % 2:
@@ -333,7 +355,7 @@ class Tangle():
             if isinstance(c, Crossing):
                 parts.append("X[%s,%s,%s,%s]" % tuple(arcs))
             elif isinstance(c, Strand):
-                if c.component_idx:
+                if c.component_idx != None:
                     parts.append(f"P[{arcs[0]},{arcs[1]}, component->{c.component_idx}]")
                 else:
                     parts.append(f"P[{arcs[0]},{arcs[1]}]")
@@ -454,6 +476,9 @@ def IntegerTangle(n):
 def continued_fraction_expansion(a, b):
     """
     The continued fraction expansion of a/b.
+
+    >>> continued_fraction_expansion(3141,1000)
+    [3, 7, 10, 1, 5, 2]
     """
     if b == 0:
         return []
@@ -474,8 +499,12 @@ class RationalTangle(Tangle):
     corresponding rational tangle.
 
     This is a class that extends Tangle since it provides some additional information as
-    attributes: fraction gives (a, b) and partial_quotients gives the continued
+    attributes: ``fraction`` gives (a, b) and ``partial_quotients`` gives the continued
     fraction expansion.
+
+    >>> import snappy
+    >>> RationalTangle(2,5).braid_closure().exterior().identify()
+    [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
     """
     def __init__(self, a, b=1):
         if b == 1 and hasattr(a, 'numerator') and hasattr(a, 'denominator') and not isinstance(a, int):
@@ -501,7 +530,18 @@ class RationalTangle(Tangle):
 
 def IdentityBraid(n):
     """
-    The braid with n strands and no crossings
+    The braid with n strands and no crossings.
+
+    >>> IdentityBraid(0).describe()
+    'Tangle[{}, {}]'
+    >>> IdentityBraid(1).describe()
+    'Tangle[{1}, {2}, P[1,2]]'
+    >>> IdentityBraid(2).describe()
+    'Tangle[{1,2}, {3,4}, P[1,3], P[2,4]]'
+    >>> IdentityBraid(-1)
+    Traceback (most recent call last):
+        ...
+    ValueError: Expecting non-negative int
     """
     if n < 0:
         raise ValueError("Expecting non-negative int")
@@ -509,3 +549,44 @@ def IdentityBraid(n):
     entry_points = [(s, 0) for s in strands] + [(s, 1) for s in strands]
     return Tangle(n, strands, entry_points,
                   f"IdentityBraid({n})")
+
+def BraidTangle(gens, n=None):
+    """
+    Create an (n,n) tangle from a braid word.
+
+    Input:
+
+    * gens is a list of nonzero integers, positive for the positive generator
+      and negative for the negative generator
+    * n is the number of strands. By default it is inferred to be the least
+      number of strands that works for the given list of generators
+
+    >>> BraidTangle([], 1)
+    <Tangle: IdentityBraid(1)>
+    >>> BraidTangle([1]).describe()
+    'Tangle[{1,2}, {3,4}, X[2,4,3,1]]'
+    >>> BraidTangle([-1]).describe()
+    'Tangle[{1,2}, {3,4}, X[1,2,4,3]]'
+    >>> BraidTangle([1],3).describe()
+    'Tangle[{1,2,3}, {4,5,6}, P[3,6], X[2,5,4,1]]'
+    >>> BraidTangle([2],3).describe()
+    'Tangle[{1,2,3}, {4,5,6}, P[1,4], X[3,6,5,2]]'
+    >>> BraidTangle([1,2]).describe()
+    'Tangle[{1,2,3}, {4,5,6}, X[7,5,4,1], X[3,6,7,2]]'
+    >>> BraidTangle([1,2,1]).describe()
+    'Tangle[{1,2,3}, {4,5,6}, X[7,5,4,8], X[3,6,7,9], X[2,9,8,1]]'
+    """
+    if n == None:
+        n = max(-min(gens), max(gens)) + 1
+    # n is the braid index
+
+    def gen(i):
+        g = OneTangle() if i < 0 else MinusOneTangle()
+        return IdentityBraid(abs(i) - 1) | g | IdentityBraid(n - abs(i) - 1)
+
+    b = IdentityBraid(n)
+    for i in gens:
+        if i == 0 : raise ValueError("Generators must be nonzero integers")
+        if abs(i) >= n : raise ValueError("Generators must have magnitude less than n")
+        b = b * gen(i)
+    return b
