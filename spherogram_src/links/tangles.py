@@ -27,13 +27,13 @@ from . import planar_isotopy
 
 def join_strands(x, y):
     """
-    Takes two (c, i) pairs where c is a Crossing, Strand, or Tangle and i is an index into
-    c.adjacent and joins them by having them refer to each other at those positions.
+    Input: two (c, i) pairs where c is a Crossing, Strand, or Tangle object and i is an index into
+    c.adjacent. Joins the objects by having them refer to each other at those positions.
 
-    Having c be a Tangle is conceptually a special case since its c.adjacent is being
+    When c is a Tangle it is conceptually a special case since its c.adjacent is being
     used to record the boundary strands.
 
-    This is the same as creating a Strand s with s.adjacent = [x, y] and then
+    This function equivalent to creating a Strand s with s.adjacent = [x, y] and then
     doing s.fuse()
     """
     (a, i), (b, j) = x, y
@@ -47,9 +47,10 @@ def rotate_list(L, s):
     return [L[(i + s) % n] for i in range(n)]
 
 def decode_boundary(boundary):
-    """The boundary is either an nonnegative integer or a pair of non-negative integers.
+    """The boundary is either a nonnegative integer or a pair of non-negative integers.
 
-    If it is an integer n, then returns (n, n). If it is a pair (m, n) then returns it.
+    * When the input is an integer n, this returns (n, n).
+    * When the input is a pair (m, n), then it returns (m, n).
 
     >>> decode_boundary(2)
     (2, 2)
@@ -89,15 +90,15 @@ class Tangle():
           The strands are numbered 0 to m-1 on the bottom and m to m+n-1 on the
           top, both from left to right.
 
-        * crossings is a list of Crossing or Strand that comprise the tangle.
+        * crossings is a list of Crossing or Strand objects that comprise the tangle.
         * entry_points is a list of pairs (c, i) where c is a Crossing or Strand
           and i indexes into c.adjacent. These pairs describe the boundary strands
           in order of the strand numbering.
-        * label is an arbitrary label for the tangle.
+        * label is an arbitrary label for the tangle for informational purposes, which
+          appears in the ``repr`` form of the tangle.
 
         Usually tangles should not be created directly using this constructor since the
-        tangle operations and various primitive tangles.
-
+        tangle operations and various primitive tangles are sufficient to create any tangle.
         """
 
         m, n = decode_boundary(boundary)
@@ -127,7 +128,8 @@ class Tangle():
         self.label = label
 
     def __add__(self, other):
-        """Put self to left of other and fuse inside strands.
+        """Put self to left of other and fuse the top-right strand of self to the top-left
+        strand of other and the bottom-right strand of self to the bottom-left strand of other.
 
         >>> (IdentityBraid(2) + BraidTangle([1])).describe()
         'Tangle[{1,2}, {3,4}, P[1,3], X[2,4,5,5]]'
@@ -144,6 +146,7 @@ class Tangle():
 
     def __mul__(self, other):
         """Join with self *above* other, as with braid multiplication.
+        (See doc.pdf)
 
         >>> BraidTangle([1,1]).describe()
         'Tangle[{1,2}, {3,4}, X[5,4,3,6], X[2,5,6,1]]'
@@ -172,8 +175,9 @@ class Tangle():
         return T
 
     def __or__(self, other):
-        """Put self to left of other, no fusing of strands.
-        >>> (IdentityBraid(1)|CupTangle()).describe()
+        """Put self to left of other. This is like tangle addition but without the fusing of strands.
+
+        >>> (IdentityBraid(1) | CupTangle()).describe()
         'Tangle[{1}, {2,3,4}, P[1,2], P[3,4]]'
         """
         A, B = self.copy(), other.copy()
@@ -186,7 +190,9 @@ class Tangle():
         return pickle.loads(pickle.dumps(self))
 
     def rotate(self, s):
-        """Rotate anticlockwise by s*90 degrees. This is only for (2,2) tangles."""
+        """Rotate anticlockwise by s*90 degrees. This is only for (2,2) tangles.
+
+        See ``Tangle.reshape()`` for a generalization to all tangle shapes."""
         if self.boundary != (2, 2):
             raise ValueError("Only boundary=(2,2) tangles can be rotated")
         anticlockwise = [0, 1, 3, 2]
@@ -204,9 +210,9 @@ class Tangle():
         return -self.rotate(1)
 
     def numerator_closure(self):
-        """The bridge closure, where consecutive pairs of strands at the top and
+        """The bridge closure, where consecutive pairs of strands at both the top and
         at the bottom are respectively joined by caps and cups. The numbers of
-        strands at the top and bottom must both be even.
+        strands at both the top and the bottom must be even. Returns a Link.
 
         A synonym for this is ``Tangle.bridge_closure()``.
 
@@ -228,20 +234,20 @@ class Tangle():
     def denominator_closure(self):
         """The braid closure, where corresponding strands between the top and bottom
         are joined. The number of strands at the top must equal the number of strands at
-        the bottom.
+        the bottom. Returns a Link.
 
         A synonym for this is ``Tangle.braid_closure()``.
         """
         m, n = self.boundary
         if m != n:
-            raise ValueError("To do braid closure, both the top and bottom number of strands must be equal")
+            raise ValueError("To do braid closure, both the top and bottom numbers of strands must be equal")
         T = self.copy()
         for i in range(0, n):
             join_strands(T.adjacent[i], T.adjacent[m + i])
         return Link(T.crossings, check_planarity=False)
 
     def link(self):
-        """Get the tangle as a link if its boundary is (0, 0)."""
+        """If its boundary is (0, 0), return this Tangle as a Link."""
         if self.boundary != (0, 0):
             raise ValueError("The boundary must be (0, 0)")
         return Link(self.copy().crossings, check_planarity=False)
@@ -250,9 +256,11 @@ class Tangle():
         """Renumber the boundary strands so that the tangle has the new boundary
         shape. This is performed by either repeatedly moving the last strands from the
         bottom right to the top right or vice versa. Simultaneously, displace controls
-        a rotation of the tangle where the tangle is rotated clockwise 'displace' units
-        (so, for example, if 0 <= displace < m then that strand number becomes the new
-        lower-left strand).
+        a rotation of the tangle where the tangle is rotated clockwise by ``displace`` steps
+        (so, for example, if 0 <= displace < m then the strand numbered ``displace``
+        becomes the new lower-left strand).
+
+        This is a generalization of ``Tangle.rotate()``.
         """
         m, n = self.boundary
         Tm, Tn = decode_boundary(boundary)
@@ -272,19 +280,21 @@ class Tangle():
     def circular_rotate(self, n):
         """
         Rotate a tangle in a circular fashion clockwise, keeping the same boundary.
+
+        This generalizes ``Tangle.rotate()``, and it is a mild specialization of ``Tangle.reshape()``.
         """
         return self.reshape(self.boundary, n)
 
     def circular_sum(self, other, n=0):
         """
         Glue two tangles together to form a link by gluing them vertically and then taking
-        the braid closure (the denominator_closure).
-        The second tangle is rotated clockwise by n strands.
+        the braid closure (the ``Tangle.denominator_closure()``).
+        The second tangle is rotated clockwise by n strands using ``Tangle.circular_rotate()``.
         """
         Am, An = self.boundary
         Bm, Bn = self.boundary
         if (Am, An) != (Bn, Bm):
-            raise Exception("Tangles must have a compatible number of strands")
+            raise Exception("Tangles must have compatible boundary shapes")
         return (self * (other.circular_rotate(n))).denominator_closure()
 
     def isosig(self, root=None, over_or_under=False):
@@ -304,11 +314,11 @@ class Tangle():
         return self.isosig() == other.isosig()
 
     def _fuse_strands(self, preserve_boundary=False, preserve_components=False):
-        """Fuse all strands and delete them, even ones incident only to the boundary (unless
-        preserve_boundary is True). This will eliminate Strands that are loops as well.
+        """Fuse all strands and delete them, even ones incident to only the boundary (unless
+        ``preserve_boundary`` is True). This will eliminate Strands that are loops as well.
 
-        If preserve_components is True, then do not fuse strands that have the
-        component_idx attribute."""
+        If ``preserve_components`` is True, then do not fuse strands that have the
+        ``component_idx`` attribute."""
         for s in reversed(self.crossings):
             if isinstance(s, Strand):
                 # check that the strand is not only incident to the boundary
@@ -363,28 +373,6 @@ class Tangle():
                 raise Exception("Unexpected entity")
         return f"Tangle[{lower}, {upper}{''.join(', ' + p for p in parts)}]"
 
-    def to_python(self):
-        """Return a string that gives Python code that re-creates this tangle."""
-        T = self.copy()
-        code = []
-        vs = [] # variable names for crossing entities
-        for i, c in enumerate(T.crossings):
-            vs.append(f"c{i}")
-            cons = None
-            args = []
-            if c.label != None:
-                args.append(f"label={c.label!r}")
-            if isinstance(c, Crossing):
-                cons = "Crossing"
-            elif isinstance(c, Strand):
-                cons = "Strand"
-                if c.component_idx != None:
-                    args.append(f"component_idx={c.component_idx}")
-            else:
-                raise Exception("Unexpected entity")
-            code.append(f"{vs[i]}={cons}({', '.join(args)})")
-        return "\n".join(code)
-
 Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
 
@@ -412,7 +400,7 @@ def ComponentTangle(component_idx):
     >>> T.braid_closure()
     Traceback (most recent call last):
         ...
-    ValueError: Two Strand objects in different components had have the same component_idx values
+    ValueError: Two Strand objects in different components have the same component_idx values
 
     """
     s = Strand(component_idx=component_idx)
@@ -429,14 +417,16 @@ def CupTangle():
     return Tangle((0, 2), [cup], [(cup, 0), (cup, 1)])
 
 def ZeroTangle():
-    """The zero tangle, equivalent to ``RationalTangle(0)``."""
+    """The zero tangle, equivalent to ``RationalTangle(0)`` or
+    ``CupTangle() * CapTangle()``."""
     bot, top = Strand('B'), Strand('T')
     return Tangle(2, [bot, top],
                   [(bot, 0), (bot, 1), (top, 0), (top, 1)],
                   "ZeroTangle")
 
 def InfinityTangle():
-    """The infinity tangle, equivalen to ``InfinityTangle(1, 0)``."""
+    """The infinity tangle, equivalent to ``RationalTangle(1, 0)`` or
+    ``IdentityBraid(2)``."""
     left, right = Strand('L'), Strand('R')
     return Tangle(2, [left, right],
                   [(left, 0), (right, 0), (left, 1), (right, 1)],
@@ -500,7 +490,7 @@ class RationalTangle(Tangle):
 
     This is a class that extends Tangle since it provides some additional information as
     attributes: ``fraction`` gives (a, b) and ``partial_quotients`` gives the continued
-    fraction expansion.
+    fraction expansion of ``abs(a)/b``.
 
     >>> import snappy
     >>> RationalTangle(2,5).braid_closure().exterior().identify()

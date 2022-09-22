@@ -73,7 +73,7 @@ def min_isosig(tangle, root=None, over_or_under=False):
         cs_name = cslabel(root)
     isosigs = []
     for i in range(tangle.boundary[0] + tangle.boundary[1]):
-        rotated_tangle = tangle.circular_rotate(i)
+        rotated_tangle = tangle.reshape((tangle.boundary[0] + tangle.boundary[1], 0), i)
         if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
@@ -91,16 +91,15 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
         cs_name = cslabel(root)
     isosigs = []
     for i in range(tangle.boundary[0] + tangle.boundary[1]):
-        rotated_tangle = tangle.circular_rotate(i)
+        rotated_tangle = tangle.reshape((tangle.boundary[0] + tangle.boundary[1], 0), i)
         if root is not None:
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
         # permuting the indices in the gluings
-        perm = range(len(tangle.adjacent))
-        perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
+        perm = range(tangle.boundary[0] + tangle.boundary[1])
+        perm[tangle.boundary[0]:] = reversed(perm[tangle.boundary[0]:])
         perm = rotate_list(perm,i)
-        perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
         rotated_gluings = []
         for g in gluings:
             new_g = [perm[g[0]],perm[g[1]]]

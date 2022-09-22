@@ -427,7 +427,7 @@ class Link():
 
         component_starts = None
         start_orientations = None
-        component_spec = None # a list of (CrossingStrand, int) pairs
+        component_spec = None # either None or a list of (CrossingStrand, int) pairs
 
         if crossings is not None and braid_closure is not None:
             raise ValueError('Specified *both* crossings and braid_closure')
@@ -481,6 +481,7 @@ class Link():
                 c, i = s.adjacent[0]
                 assert isinstance(c, Crossing)
                 component_spec.append((CrossingStrand(c, i), s.component_idx))
+                assert not s.is_loop() # at this point it is impossible to be a loop
                 s.fuse()
 
         # Finally remove all the Strand objects from the crossing list
@@ -503,7 +504,7 @@ class Link():
                         if cs in comp:
                             if component_perm[idx] == i:
                                 # This is a second Strand in the same component
-                                # with the same component_idx
+                                # with the same component_idx, which is OK
                                 break
                             elif component_perm[idx] == None:
                                 if i not in unused_comps:
@@ -514,12 +515,12 @@ class Link():
                                 break
                             else:
                                 raise ValueError("Two Strand objects in different components"
-                                                 " had have the same component_idx values")
+                                                 " have the same component_idx values")
                     else:
                         raise Exception() # This should not happen
                 for i in range(len(self.link_components)):
                     if component_perm[i] == None:
-                        # This is why unused_comps is initialized with reverse
+                        # This is why unused_comps is initialized with reversed order
                         component_perm[i] = unused_comps.pop()
                 assert len(unused_comps) == 0
 
