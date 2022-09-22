@@ -216,9 +216,9 @@ class Tangle():
 
         A synonym for this is ``Tangle.bridge_closure()``.
 
-        >>> BraidTangle([1,1,1]).braid_closure().exterior().identify()
+        >>> BraidTangle([1,1,1]).braid_closure().exterior().identify() # doctest: +SNAPPY
         [3_1(0,0), K3a1(0,0)]
-        >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify()
+        >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify() # doctest: +SNAPPY
         [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
         """
         m, n = self.boundary
@@ -383,17 +383,22 @@ def ComponentTangle(component_idx):
     this tangle should be the last component when it is turned into
     a Link.
 
-    >>> import snappy
     >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(-1))
-    >>> M=T.braid_closure().exterior()
-    >>> M.dehn_fill([(1,0),(0,0)])
-    >>> M.filled_triangulation().identify()
+    >>> T.describe()
+    'Tangle[{1,2}, {3,4}, X[5,6,7,3], X[8,7,6,9], X[1,8,9,5], X[10,11,12,4], X[13,14,11,10], X[15,16,14,17], X[2,15,17,13], P[16,12, component->-1]]'
+
+    >>> M=T.braid_closure().exterior() # doctest: +SNAPPY
+    >>> M.dehn_fill([(1,0),(0,0)]) # doctest: +SNAPPY
+    >>> M.filled_triangulation().identify() # doctest: +SNAPPY
     [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
 
     >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(0))
-    >>> M=T.braid_closure().exterior()
-    >>> M.dehn_fill([(0,0),(1,0)])
-    >>> M.filled_triangulation().identify()
+    >>> T.describe()
+    'Tangle[{1,2}, {3,4}, X[5,6,7,3], X[8,7,6,9], X[1,8,9,5], X[10,11,12,4], X[13,14,11,10], X[15,16,14,17], X[2,15,17,13], P[16,12, component->0]]'
+
+    >>> M=T.braid_closure().exterior() # doctest: +SNAPPY
+    >>> M.dehn_fill([(0,0),(1,0)]) # doctest: +SNAPPY
+    >>> M.filled_triangulation().identify() # doctest: +SNAPPY
     [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
 
     >>> T=(RationalTangle(2,3)+ComponentTangle(0))|(RationalTangle(2,5)+ComponentTangle(0))
@@ -492,8 +497,7 @@ class RationalTangle(Tangle):
     attributes: ``fraction`` gives (a, b) and ``partial_quotients`` gives the continued
     fraction expansion of ``abs(a)/b``.
 
-    >>> import snappy
-    >>> RationalTangle(2,5).braid_closure().exterior().identify()
+    >>> RationalTangle(2,5).braid_closure().exterior().identify() # doctest: +SNAPPY
     [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
     """
     def __init__(self, a, b=1):
