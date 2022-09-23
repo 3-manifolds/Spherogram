@@ -216,10 +216,10 @@ class Tangle():
 
         A synonym for this is ``Tangle.bridge_closure()``.
 
-        >>> BraidTangle([1,1,1]).braid_closure().exterior().identify() # doctest: +SNAPPY
-        [3_1(0,0), K3a1(0,0)]
-        >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify() # doctest: +SNAPPY
-        [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
+        >>> BraidTangle([2,-1,2],4).numerator_closure().alexander_polynomial()
+        t^2 - t + 1
+        >>> BraidTangle([1,1,1]).rotate(1).numerator_closure().alexander_polynomial()
+        t^2 - t + 1
         """
         m, n = self.boundary
         if m % 2 or n % 2:
@@ -227,7 +227,7 @@ class Tangle():
         T = self.copy()
         for i in range(0, m, 2):
             join_strands(T.adjacent[i], T.adjacent[i + 1])
-        for j in range(0, n, 2):
+        for i in range(0, n, 2):
             join_strands(T.adjacent[m + i], T.adjacent[m + i + 1])
         return Link(T.crossings, check_planarity=False)
 
@@ -237,6 +237,13 @@ class Tangle():
         the bottom. Returns a Link.
 
         A synonym for this is ``Tangle.braid_closure()``.
+
+        >>> BraidTangle([1,1,1]).braid_closure().alexander_polynomial()
+        t^2 - t + 1
+        >>> BraidTangle([1,-2,1,-2]).braid_closure().alexander_polynomial()
+        t^2 - 3*t + 1
+        >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify() # doctest: +SNAPPY
+        [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
         """
         m, n = self.boundary
         if m != n:
