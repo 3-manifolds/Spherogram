@@ -172,7 +172,7 @@ def all_cross_strands(tangle):
     strands_with_ends = []
     loops = []
     tm, tn = tangle.boundary
-    clockwise_order = range(tm + tn)
+    clockwise_order = list(range(tm))
     clockwise_order.extend(reversed(range(tm, tm + tn)))
     for i in clockwise_order:
         if i not in other_ends_seen:

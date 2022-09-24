@@ -312,6 +312,11 @@ class Tangle():
         and ``over_or_under`` toggles whether only the underlying
         shadow (4-valent planar map) is considered or the tangle with the
         over/under data at each crossing.
+
+        >>> BraidTangle([1]).isosig() == BraidTangle([1]).circular_rotate(1).isosig()
+        True
+        >>> BraidTangle([1]).isosig() == BraidTangle([-1]).isosig()
+        True
         """
         copy = self.copy()
         copy._fuse_strands()
@@ -343,7 +348,11 @@ class Tangle():
         """Give a PD-like description of the tangle in the form
         Tangle[{lower arcs}, {upper arcs}, P and X codes].
 
-        If fuse_strands is True, then fuse all internal Strand nodes first."""
+        If fuse_strands is True, then fuse all internal Strand nodes first.
+
+        >>> BraidTangle([1]).describe()
+        'Tangle[{1,2}, {3,4}, X[2,4,3,1]]'
+        """
         T = self.copy()
         if fuse_strands:
             T._fuse_strands(preserve_boundary=True, preserve_components=True)
