@@ -216,9 +216,9 @@ class Tangle():
 
         A synonym for this is ``Tangle.bridge_closure()``.
 
-        >>> BraidTangle([2,-1,2],4).numerator_closure().alexander_polynomial()
+        sage: BraidTangle([2,-1,2],4).numerator_closure().alexander_polynomial()
         t^2 - t + 1
-        >>> BraidTangle([1,1,1]).rotate(1).numerator_closure().alexander_polynomial()
+        sage: BraidTangle([1,1,1]).rotate(1).numerator_closure().alexander_polynomial()
         t^2 - t + 1
         """
         m, n = self.boundary
@@ -238,9 +238,9 @@ class Tangle():
 
         A synonym for this is ``Tangle.braid_closure()``.
 
-        >>> BraidTangle([1,1,1]).braid_closure().alexander_polynomial()
+        sage: BraidTangle([1,1,1]).braid_closure().alexander_polynomial()
         t^2 - t + 1
-        >>> BraidTangle([1,-2,1,-2]).braid_closure().alexander_polynomial()
+        sage: BraidTangle([1,-2,1,-2]).braid_closure().alexander_polynomial()
         t^2 - 3*t + 1
         >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify() # doctest: +SNAPPY
         [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
