@@ -289,7 +289,7 @@ class DTFatGraph(FatGraph):
                 if V == vertex:
                     raise ValueError('Marked graph is a circle')
                 edges = [e for e in self(V) if e.marked and e != edge]
-                if not edges:
+                if len(edges) == 0:
                     raise ValueError('Marked graph has a dead end at %s.' % V)
                 if len(edges) > 1:
                     break
@@ -377,7 +377,7 @@ class DTFatGraph(FatGraph):
                     vertex_path.append(vertex)
                     vertex_set.add(vertex)
                 except IndexError:  # Cannot continue: back up.
-                    if not edge_path:
+                    if len(edge_path) == 0:
                         break
                     edge_path.pop()
                     vertex_set.remove(vertex_path.pop())
@@ -604,7 +604,7 @@ class DTcodec():
         N = start = 1
         last_odd = -1
         for c, component in enumerate(code):
-            if not component:
+            if len(component) == 0:
                 continue
             last_odd += 2 * len(component)
             V = self[N]

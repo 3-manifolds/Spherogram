@@ -123,7 +123,7 @@ class VElement():
     def __repr__(self):
         matchings = sorted(self.dict)
         terms = ['(%s)*%s' % (self.dict[m], m) for m in matchings]
-        if not terms:
+        if len(terms) == 0:
             return '0'
         return ' + '.join(terms)
 
