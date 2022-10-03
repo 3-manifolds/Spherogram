@@ -121,7 +121,7 @@ class VElement():
         return VElement(ans_dict)
 
     def __repr__(self):
-        matchings = sorted(self.dict.keys())
+        matchings = sorted(self.dict)
         terms = ['(%s)*%s' % (self.dict[m], m) for m in matchings]
         if len(terms) == 0:
             return '0'

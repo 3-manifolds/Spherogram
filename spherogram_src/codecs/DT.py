@@ -588,7 +588,7 @@ class DTcodec():
         else:
             self.code = dt
         code = self.code
-        overcrossings = [sign(x) for comp in code for x in comp]
+        overcrossings = (sign(x) for comp in code for x in comp)
         evens = [abs(x) for comp in code for x in comp]
         self.size = size = 2 * len(evens)
         pairs = zip(range(1, size, 2), evens)
