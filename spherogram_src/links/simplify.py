@@ -367,7 +367,7 @@ def extend_strand_backward(kind, strand, start_cep):
             break
 
 
-def pickup_strand(link, dual_graph, kind, strand):
+def pickup_strand(link, dual_graph, kind, strand, level=True):
     """
     Simplify the given (over/under)crossing strand by erasing it from
     the diagram and then finding a path that minimizes the number of
@@ -412,7 +412,18 @@ def pickup_strand(link, dual_graph, kind, strand):
     new_len = sum(G[f0][f1]['weight'] for f0, f1 in zip(path, path[1:]))
     crossingsremoved = len(crossing_set) - new_len
     if crossingsremoved == 0:
-        return 0
+        if not level:
+            return 0
+        else:
+            poss_paths = []
+            for path in nx.shortest_simple_paths(G, source, dest, weight='weight'):
+                this_len = sum(G[f0][f1]['weight'] for f0, f1 in zip(path, path[1:]))
+                if this_len > new_len:
+                    break
+                poss_paths.append(path)
+            if len(poss_paths) == 1:
+                return 0
+            path = random.choice(poss_paths)
 
     # creating a new list of crossings from which to rebuild the link,
     # remove old overcross
@@ -765,6 +776,39 @@ def pickup_simplify(link, type_III=0):
 
         new_cross = len(L.crossings)
         stabilized = new_cross == 0 or new_cross == old_cross
+
+    L._rebuild()
+    return len(L.crossings) != init_num_crossings
+
+
+def pickup_simplify_with_level(link, type_III=0, max_failures=0):
+    """
+    Optimizes the overcrossings on a diagram, then the undercrossings,
+    simplifying in between until the process stabilizes.
+    """
+    L = link
+    init_num_crossings = len(L.crossings)
+    if type_III:
+        simplify_via_level_type_III(L, type_III)
+    else:
+        basic_simplify(L, build_components=False)
+
+    failures = 0
+    while failures < max_failures:
+        old_cross = len(L.crossings)
+        strand_pickup(L, 'over')
+        if type_III:
+            simplify_via_level_type_III(link, type_III)
+
+        strand_pickup(L, 'under')
+        if type_III:
+            simplify_via_level_type_III(link, type_III)
+
+        new_cross = len(L.crossings)
+        if new_cross == 0:
+            break
+        if new_cross == old_cross:
+            failures += 1
 
     L._rebuild()
     return len(L.crossings) != init_num_crossings
