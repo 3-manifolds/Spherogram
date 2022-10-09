@@ -371,8 +371,9 @@ def pickup_strand(link, dual_graph, kind, strand, level=True):
     """
     Simplify the given (over/under)crossing strand by erasing it from
     the diagram and then finding a path that minimizes the number of
-    edges it has to cross over to connect the same endpoints. Returns
-    number of crossings removed.
+    edges it has to cross over to connect the same endpoints. 
+
+    Returns whether the diagram was modified.
     """
     init_link_cross_count = len(link.crossings)
     G = dual_graph
@@ -420,10 +421,13 @@ def pickup_strand(link, dual_graph, kind, strand, level=True):
                 this_len = sum(G[f0][f1]['weight'] for f0, f1 in zip(path, path[1:]))
                 if this_len > new_len:
                     break
-                poss_paths.append(path)
+                if all:
+                    poss_paths.append(path)
             if len(poss_paths) == 1:
                 return 0
             path = random.choice(poss_paths)
+            if path == [e[0] for e in edges_crossed]:
+                return 0
 
     # creating a new list of crossings from which to rebuild the link,
     # remove old overcross
@@ -458,7 +462,7 @@ def pickup_strand(link, dual_graph, kind, strand, level=True):
 
     final_cross_removed = init_link_cross_count - len(link.crossings)
     assert final_cross_removed >= crossingsremoved
-    return final_cross_removed
+    return 1
 
 
 def strand_pickup(link, kind):
