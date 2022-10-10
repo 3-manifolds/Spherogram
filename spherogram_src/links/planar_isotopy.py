@@ -37,48 +37,51 @@ def isosig(tangle, root=None, over_or_under=False):
         want_root = False
     found_root = False
     root_isosig = None
-    for strand,end in strands:
-        isst = map(lambda cs: crossing_order.index(cs[0]),strand)
+    for strand, end in strands:
+        isst = (crossing_order.index(cs[0]) for cs in strand)
         if (want_root) and (not found_root) and (root_position in isst):
-            root_strand_indices = [i for i in range(len(isst)) if isst[i]==root_position]
+            root_strand_indices = [i for i, isti in enumerate(isst)
+                                   if isti == root_position]
             for root_strand_index in root_strand_indices:
                 if root_tuple == strand[root_strand_index]:
                     found_root = True
-                    root_isosig = (root_position,(strands.index((strand,end)),root_strand_index),-1,'s')
+                    root_isosig = (root_position, (strands.index((strand, end)), root_strand_index), -1, 's')
                 elif root_tuple_op == strand[root_strand_index]:
                     found_root = True
-                    root_isosig = (root_position,(strands.index((strand,end)),root_strand_index),1,'s')
-        isosig_strands.append((tuple(isst),end))
+                    root_isosig = (root_position, (strands.index((strand, end)), root_strand_index), 1, 's')
+        isosig_strands.append((tuple(isst), end))
     for loop in loops:
-        isl = map(lambda cs: crossing_order.index(cs[0]),loop)
+        isl = (crossing_order.index(cs[0]) for cs in loop)
         if (want_root) and (not found_root) and (root_position in isl):
-            root_loop_indices = [i for i in range(len(isl)) if isl[i]==root_position]
+            root_loop_indices = [i for i, isli in enumerate(isl)
+                                 if isli == root_position]
             for root_loop_index in root_loop_indices:
                 if root_tuple == loop[root_loop_index]:
                     found_root = True
-                    root_isosig = (root_position,(loops.index(loop),root_loop_index),-1,'l')
+                    root_isosig = (root_position, (loops.index(loop), root_loop_index), -1, 'l')
                 elif root_tuple_op == loop[root_loop_index]:
                     found_root = True
-                    root_isosig = (root_position,(loops.index(loop),root_loop_index),1,'l')
+                    root_isosig = (root_position, (loops.index(loop), root_loop_index), 1, 'l')
         isosig_loops.append(tuple(isl))
     isosig_over_or_under = []
     if over_or_under:
         isosig_over_or_under = [over_or_under_data[c] for c in crossing_order]
     isosig_orientations = [orientations[c] for c in crossing_order]
-    return (len(tangle.crossings),tangle.n),tuple(isosig_strands),tuple(isosig_loops),tuple(isosig_orientations), tuple(isosig_over_or_under), root_isosig
+    return (len(tangle.crossings), tangle.n), tuple(isosig_strands), tuple(isosig_loops), tuple(isosig_orientations), tuple(isosig_over_or_under), root_isosig
 
 
 def min_isosig(tangle, root=None, over_or_under=False):
     if root is not None:
         cs_name = cslabel(root)
     isosigs = []
-    for i in range(tangle.n*2):
+    for i in range(tangle.n * 2):
         rotated_tangle = tangle.circular_rotate(i)
         if root is not None:
-            rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
+            rotated_root = crossing_strand_from_name(rotated_tangle, cs_name)
         else:
             rotated_root = None
-        isosigs.append(isosig(rotated_tangle, root=rotated_root,over_or_under=over_or_under))
+        isosigs.append(isosig(rotated_tangle, root=rotated_root,
+                              over_or_under=over_or_under))
     return min(isosigs)
 
 
@@ -90,25 +93,25 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
     if root is not None:
         cs_name = cslabel(root)
     isosigs = []
-    for i in range(tangle.n*2):
+    for i in range(tangle.n * 2):
         rotated_tangle = tangle.circular_rotate(i)
         if root is not None:
-            rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
+            rotated_root = crossing_strand_from_name(rotated_tangle, cs_name)
         else:
             rotated_root = None
         # permuting the indices in the gluings
         perm = range(len(tangle.adjacent))
-        perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
-        perm = rotate_list(perm,i)
-        perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
+        perm[len(perm) // 2:] = reversed(perm[len(perm) // 2:])
+        perm = rotate_list(perm, i)
+        perm[len(perm) // 2:] = reversed(perm[len(perm) // 2:])
         rotated_gluings = []
         for g in gluings:
-            new_g = [perm[g[0]],perm[g[1]]]
+            new_g = [perm[g[0]], perm[g[1]]]
             new_g.sort()
             rotated_gluings.append(tuple(new_g))
         rotated_gluings.sort()
-        isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,root=rotated_root))
-
+        isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,
+                                           root=rotated_root))
     return min(isosigs)
 
 
@@ -141,7 +144,7 @@ def cross_strand(tangle, i):
     end of that strand.
     """
     if i >= 2 * tangle.n:
-        raise Exception("Not a valid start position for strand")
+        raise ValueError("not a valid start position for strand")
     cs = tangle.adjacent[i]
     strand = [cs]
     while (cs[0], (cs[1] + 2) % 4) not in tangle.adjacent:
@@ -181,7 +184,7 @@ def all_cross_strands(tangle):
             end = tangle.adjacent.index((cs[0], (cs[1] + 2) % 4))
             if end not in other_ends_seen:
                 strands.append(strand)
-                strands_with_ends.append((strand,end))
+                strands_with_ends.append((strand, end))
                 other_ends_seen.append(end)
     orientations, over_or_under = crossing_orientations(strands)
     cs_seen = [cs for strand in strands for cs in strand]
@@ -201,7 +204,7 @@ def all_cross_strands(tangle):
                                 orientation = (loop_cs[1] - seen_cs[1]) % 4
                                 if orientation == 3:
                                     orientation = -1
-                                orientations[loop_cs[0]]=orientation
+                                orientations[loop_cs[0]] = orientation
                                 over_or_under[loop_cs[0]] = loop_cs[1] % 2
                                 seen_once.remove(loop_cs[0])
                                 break
@@ -227,7 +230,7 @@ def all_cross_strands(tangle):
                                     break
                         else:
                             seen_once.add(loop_cs[0])
-    crossings = map(lambda x: x[0], cs_seen)
+    crossings = (x[0] for x in cs_seen)
     crossing_order = []
     for c in crossings:
         if c not in crossing_order:
@@ -249,14 +252,14 @@ def crossing_strand_from_name(link, csname):
     for c in link.crossings:
         if c.label == csname[0]:
             return c.crossing_strands()[csname[1]]
-    raise Exception("Crossing not found")
+    raise ValueError("crossing not found")
 
 
 def crossing_from_name(link, crossname):
     for c in link.crossings:
         if c.label == crossname:
             return c
-    raise Exception("Crossing not found")
+    raise ValueError("crossing not found")
 
 
 def analogous_crossing_strand(link, cs):
@@ -271,12 +274,13 @@ def cut_strand(link, cs):
     Cut a link along a strand to get a tangle with 1 strand
     """
     link_copy = link.copy()
-    cs_copy = crossing_strand_from_name(link_copy,cslabel(cs))
+    cs_copy = crossing_strand_from_name(link_copy, cslabel(cs))
     op = cs_copy.opposite()
     cs_copy.crossing.adjacent[cs_copy.strand_index] = None
     op.crossing.adjacent[op.strand_index] = None
-    T = spherogram.Tangle(1, link_copy.crossings, [(cs_copy.crossing,cs_copy.strand_index),(op.crossing,op.strand_index)])
-    return T
+    return spherogram.Tangle(1, link_copy.crossings,
+                             [(cs_copy.crossing, cs_copy.strand_index),
+                              (op.crossing, op.strand_index)])
 
 
 def link_isosig(link, root=None, over_or_under=False):
