@@ -9,7 +9,7 @@ def find_bridges(G):
     global preorder
     global bridges
 
-    cnt = 0    
+    cnt = 0
     low = dict()
     pre = dict()
     bridges = []
@@ -49,4 +49,3 @@ def _recursive_bridge_finding(G, u, v):
 
 def connections(G, a, b):
     return len([x for x in G.edges() if x[0] == a and x[1] == b] + [x for x in G.edges() if x[0] == b and x[1] == a])
-    

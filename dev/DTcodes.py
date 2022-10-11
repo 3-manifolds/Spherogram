@@ -13,7 +13,7 @@ def char_to_int(x):
     if 96 < n < 123:
         return n - 96
     if 64 < n < 91:
-        return 64 - n  
+        return 64 - n
     raise ValueError('Not an ascii letter.')
 
 
@@ -48,7 +48,7 @@ def partition_list(L, parts):
 #        ^
 #        |
 #        |
-# W <--------- E second         Initial vertex orientation 
+# W <--------- E second         Initial vertex orientation
 #        |
 #        |
 #        S
@@ -144,7 +144,7 @@ class DTPath():
         return self.next_edge
 
     __next__ = next
-    
+
 class DTFatEdge(FatEdge):
     """
     A fat edge which can be marked and belongs to a link component.
@@ -224,7 +224,7 @@ class DTFatGraph(FatGraph):
             self.pushed = True
             return
         #print 'pushing %s'%flips
-        self.stack.append( 
+        self.stack.append(
             [flips,
              [ ( (e[0], e.slots[0]), (e[1], e.slots[1]), e.component )
                for e in self.edges if e.marked],
@@ -299,7 +299,7 @@ class DTFatGraph(FatGraph):
                     edge = edges.pop()
         left_path.reverse()
         return left_path + right_path
-                
+
     def unmarked_arc(self, vertex):
         """
         Starting at this vertex, find an unmarked edge and follow its
@@ -368,8 +368,8 @@ class DTFatGraph(FatGraph):
             edge_path, vertex_path, seen_edges = [], [], set()
             while True:
                 edges = [e for e in self(vertex) if
-                         not e.marked 
-                         and e not in seen_edges 
+                         not e.marked
+                         and e not in seen_edges
                          and e(vertex) not in vertex_set]
                 try:
                     new_edge = edges.pop()
@@ -406,7 +406,7 @@ class DTFatGraph(FatGraph):
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
         result = set()
-        first_vertex = vertex = edge[1] 
+        first_vertex = vertex = edge[1]
         while True:
             end = 0 if edge[0] is vertex else 1
             slot = edge.slots[end]
@@ -415,7 +415,7 @@ class DTFatGraph(FatGraph):
                 interior_edge = self(vertex)[slot]
                 if not interior_edge.marked:
                     # For lookups, slot values must be in 0,1,2,3
-                    yield vertex, slot%4  
+                    yield vertex, slot%4
                 else:
                     break
             if k == 0:
@@ -438,7 +438,7 @@ class DTFatGraph(FatGraph):
         Return the (vertex, slot) pairs on the right boundary curve.
         """
         return set(self._boundary_slots(edge, side=1))
-        
+
     def flip(self, vertex):
         """
         Move the edge at the North slot to the South slot, and
@@ -464,7 +464,7 @@ class DTFatGraph(FatGraph):
         """
         Has this vertex been flipped?
         """
-        return bool(len([e for e in self(vertex) 
+        return bool(len([e for e in self(vertex)
                          if e[1] is vertex and e.slots[1] in (2,3)])%2)
 
     def sign(self, vertex):
@@ -484,7 +484,7 @@ class DTFatGraph(FatGraph):
         W = edge(vertex)
         slot = edge.slot(W)
         return 'X' if (slot==0 or slot==2) ^ self.flipped(W) else 'Y'
-    
+
     def KLP_dict(self, vertex, indices):
         """
         Return a dict describing this vertex and its neighbors
@@ -511,7 +511,7 @@ class DTFatGraph(FatGraph):
         neighbors = self[vertex]
         strands = [self.KLP_strand(vertex, edge) for edge in edges]
         ids = [ indices[v] for v in neighbors ]
-        
+
         KLP['sign'] = 'R' if self.sign(vertex) == 1 else 'L'
         slot = 1 if flipped else 0
         KLP['Xbackward_neighbor'] = ids[slot]
@@ -589,7 +589,7 @@ class DTcodec():
         self.size = size = 2*len(evens)
         pairs = zip(range(1, size, 2), evens)
         # Build a lookup table for the vertices.
-        # (DT codes are 1-based; we just waste the 0 entry.) 
+        # (DT codes are 1-based; we just waste the 0 entry.)
         self.lookup = lookup = [None for n in range(1+size)]
         for pair, overcrossing in zip(pairs, overcrossings):
             V = DTvertex(pair, overcrossing)
@@ -727,7 +727,7 @@ class DTcodec():
         G = self.fat_graph
         vslot = G(v).index(v_edge)
         wslot = G(w).index(w_edge)
-        #print 'do_flips: %s[%s] %s[%s]'%(v, vslot, w, wslot) 
+        #print 'do_flips: %s[%s] %s[%s]'%(v, vslot, w, wslot)
         not_unique = ( G.marked_valences[v] == G.marked_valences[w] == 2 )
         # starting from the v_edge, go ccw to a marked edge
         for k in range(1,3):

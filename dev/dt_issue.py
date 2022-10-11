@@ -37,7 +37,7 @@ def manifolds_match(M0, M1):
     isoms = M0.is_isometric_to(M1, True)
     assert len(isoms) == 1
     return matches_peripheral_data(isoms[0])
-            
+
 def test_DT(dt, M2=None):
     if M2 is None:
         M2 = snappy.Manifold()

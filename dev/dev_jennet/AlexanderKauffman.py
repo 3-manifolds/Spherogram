@@ -54,7 +54,7 @@ def Kauffman_states(K):
     marked_edge = ((K.crossings[0],0), K.crossings[0].adjacent[0]) #We (arbitrarily) mark an edge in K.
     states = list()
     for T in trees:
-        #Find the root of T. 
+        #Find the root of T.
         for v in T.vertices():
             if marked_edge[0] in v:
                 root = v
@@ -62,7 +62,7 @@ def Kauffman_states(K):
         oT = orient_tree(T,root)
         #Find the planar dual spanning tree for the white graph
         dT = _dual_spanning_tree(K,T)
-        #Find the root of dT. 
+        #Find the root of dT.
         for v in dT.vertices():
             if marked_edge[0] in v:
                 droot = v
