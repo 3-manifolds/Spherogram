@@ -118,7 +118,7 @@ class DrorDatum():
     def __init__(self, link, ordered_crossings):
         self.strand_indices = StrandIndices(link, ordered_crossings)
         self.ring = R = PolynomialRing(ZZ, 'a').fraction_field()
-        self.omega = R.one()        
+        self.omega = R.one()
         self.A = matrix(R, 0, 0)
 
     def add_crossing(self, crossing):
@@ -141,7 +141,7 @@ class DrorDatum():
         self.A = strand_matrix_merge(A, a, b)
         indices.merge(cs_a, cs_b)
 
-# --- Alternate approach, which actually seems a bit slower --- 
+# --- Alternate approach, which actually seems a bit slower ---
 
 def strand_matrix_merge_alt(A, omega, a, b):
     assert a != b
@@ -184,7 +184,7 @@ class DrorDatumAlt(DrorDatum):
         self.omega *= mu
         indices.merge(cs_a, cs_b)
 
-# --- End alternate approach --- 
+# --- End alternate approach ---
 
 def num_overlap(crossing, frontier):
     neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
@@ -240,7 +240,7 @@ class Exhaustion():
         all_gluings = sum(self.gluings, [])[:-1]
         for a, b in all_gluings[:-1]:
             indices.merge(a, b)
-            
+
     def alexander_polynomial(self):
         D = DrorDatum(self.link, self.crossings)
         gluings = self.gluings[:]
@@ -250,7 +250,7 @@ class Exhaustion():
             D.add_crossing(C)
             for a, b in gluings:
                 D.merge(a, b)
-    
+
         C = self.crossings[-1]
         D.add_crossing(C)
         for a, b in self.gluings[-1][:-1]:
@@ -264,7 +264,7 @@ class Exhaustion():
             p = -p
         t, e = p.parent().gen(), min(p.exponents())
         return p//t**e
-        
+
 
 def good_exhaustion(link, max_failed_tries=20):
     """
@@ -293,7 +293,7 @@ def alexander(K):
     return E.alexander_polynomial()
 
 
-# --- code which will be removed in final version ---- 
+# --- code which will be removed in final version ----
 
 def test():
     import spherogram
