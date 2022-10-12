@@ -1026,6 +1026,11 @@ class Poset(set):
     def XXclosed_subsets(self, start=None):
         """
         Generator for all transitively closed subsets.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> len(list(P.XXclosed_subsets()))
+        7
         """
         if start is None:
             if self.closed:
@@ -1047,6 +1052,11 @@ class Poset(set):
         """
         Generator for all transitively closed subsets.  The subsets
         are computed once, then cached for use in subsequent calls.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> len(list(P.XXXclosed_subsets()))
+        7
         """
         if start is None:
             if self.closed:
@@ -1069,6 +1079,11 @@ class Poset(set):
     def closed_subsets(self):
         """
         Generator for all nonempty transitively closed subsets.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> len(list(P.closed_subsets()))
+        7
         """
         # A closed subset is the closure of its set of maximal
         # elements, which is an arbitrary subset of pairwise
@@ -1095,7 +1110,12 @@ class Poset(set):
 
 
 def powerset(S):
-    """Recursive generator for all subsets of a set."""
+    """
+    Recursive generator for all subsets of a set.
+
+    >>> [len(u) for u in powerset({2,3,5})]
+    >>> [2, 2, 1, 2, 1, 1, 0]
+    """
     X = S.copy()
     while X:
         for x in X:
@@ -1103,7 +1123,7 @@ def powerset(S):
         X.remove(x)
         singleton = set([x])
         for Y in powerset(X):
-            yield(singleton | Y)
+            yield (singleton | Y)
         yield X
 
 
