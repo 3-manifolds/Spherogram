@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-latest 
     strategy:
       matrix:
-        version: [9.1, develop]
+        version: [9.1]
+        options: --user root
 
     container:
       image: sagemath/sagemath:${{ matrix.version }}
@@ -18,15 +19,15 @@ jobs:
       - name: Sage version
         run: sage --version
 
-      - name: Go home
-        # https://github.com/actions/runner/issues/863
-        run: sudo chown sage:sage $HOME           
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Install snappy_manifolds
         run: sage -pip install -U https://github.com/3-manifolds/snappy_manifolds/archive/master.zip
-
       - name: Install spherogram
-        run: sage -pip install -U https://github.com/3-manifolds/spherogram/archive/master.zip
+        run: |
+          cd /__w/Spherogram/Spherogram
+          sage -python setup.py pip_install
 
       - name: Test spherogram
         run: sage -python -m spherogram.test 
