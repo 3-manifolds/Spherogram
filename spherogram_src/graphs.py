@@ -1114,7 +1114,7 @@ def powerset(S):
     Recursive generator for all subsets of a set.
 
     >>> [len(u) for u in powerset({2,3,5})]
-    >>> [2, 2, 1, 2, 1, 1, 0]
+    [2, 2, 1, 2, 1, 1, 0]
     """
     X = S.copy()
     while X:
