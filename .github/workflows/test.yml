@@ -27,6 +27,7 @@ jobs:
         run: sage -pip install -U https://github.com/3-manifolds/snappy_manifolds/archive/master.zip
       - name: Install spherogram
         run: |
+          sage -pip install wheel
           cd /__w/Spherogram/Spherogram
           sage -python setup.py pip_install
 
