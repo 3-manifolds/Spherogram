@@ -6,15 +6,14 @@ on: [push, pull_request]
 jobs:
   test:
     name: Test on Sage
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         version: [9.1, 9.3, 9.4, 9.5, 9.6, 9.7]
 
     container:
       image: sagemath/sagemath:${{ matrix.version }}
-      options: --user root 
-              
+      options: --user root
 
     steps:
       - name: Sage version
@@ -25,6 +24,7 @@ jobs:
 
       - name: Install snappy_manifolds
         run: sage -pip install -U https://github.com/3-manifolds/snappy_manifolds/archive/master.zip
+
       - name: Install spherogram
         run: |
           sage -pip install wheel
@@ -32,4 +32,4 @@ jobs:
           sage -python setup.py pip_install
 
       - name: Test spherogram
-        run: sage -python -m spherogram.test 
+        run: sage -python -m spherogram.test
