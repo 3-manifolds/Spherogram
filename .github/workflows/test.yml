@@ -10,10 +10,11 @@ jobs:
     strategy:
       matrix:
         version: [9.1]
-        options: --user root
 
     container:
       image: sagemath/sagemath:${{ matrix.version }}
+      options: --user root 
+              
 
     steps:
       - name: Sage version
