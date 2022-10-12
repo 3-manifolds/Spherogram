@@ -40,7 +40,7 @@ def braid_closure_via_crossings(braid):
                     crossings[i][0] = crossings[j][1]
                     foundrightstrand = True
             j = (j+1)%l
-            
+
     for i in range(l):
         if braid[i]>0:
             crossings[i].rotate_by_90()

@@ -40,7 +40,7 @@ def add_random_crossing(self,label):
     old_crossing[old_strand]=new_crossing[new_strand]
     for i in range(1,4):
         adj.insert(old_position,(new_crossing,(new_strand-i)%4))
-    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])    
+    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
     tangle_copy.crossings.append(new_crossing)
     tangle_copy.n = self.n+1
     return tangle_copy
@@ -123,7 +123,7 @@ def min_isosig_with_gluings(self, gluings, root=None):
             new_g.sort()
             rotated_gluings.append(tuple(new_g))
         rotated_gluings.sort()
-        isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))        
+        isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))
 
 
     return min(isosigs)
@@ -301,7 +301,7 @@ def trace_boundary_component(start_cs,full_boundary):
     boundary_comp.pop(-1) #code aboves adds the start_cs twice
     return boundary_comp
 
-    
+
 
 def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
     """
@@ -337,7 +337,7 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
             print('adjacent: '+str(adjacent))
             c = comp.pop()
             cs = choice(c.crossing_strands())
-            
+
             print('cs: ' + str(cs))
             exit_strand = meander(cs,sides)[1] #meander until you hit boundary
             exit_strand = exit_strand[0].crossing_strands()[exit_strand[1]]
@@ -448,7 +448,7 @@ def tangle_cut(link, cycle):
                     side0.append(edge2_cs2)
                 else:
                     side0.append(edge2_cs1)
-                    side1.append(edge2_cs2)                    
+                    side1.append(edge2_cs2)
 #                print('case 1')
                 break
             if edge1_cs1 == edge2_cs2:
@@ -459,7 +459,7 @@ def tangle_cut(link, cycle):
                     side1.append(edge2_cs2)
                 else:
                     side1.append(edge2_cs1)
-                    side0.append(edge2_cs2)                    
+                    side0.append(edge2_cs2)
 #                print('case 2')
                 break
             if edge1_cs1.opposite() == edge1_cs2: #returned without seeing them
@@ -481,7 +481,7 @@ def tangle_cut(link, cycle):
                     side1.append(edge2_cs2)
                 else:
                     side1.append(edge2_cs1)
-                    side0.append(edge2_cs2)                    
+                    side0.append(edge2_cs2)
                 break
             if edge1_cs2 == edge2_cs2:
  #               print('case 5')
@@ -496,14 +496,14 @@ def tangle_cut(link, cycle):
                 break
             if edge1_cs2.opposite() == edge1_cs1: #returned without seeing them again, must be error
                 raise Exception("Neither side worked")
-    
+
     crossing_sides = fill_in_crossings(link,sides)
     n = len(cycle)
     side0[n/2:] = reversed(side0[n/2:]) #flip to use as adjacent in tangle
     side1[n/2:] = reversed(side1[n/2:])
     crossings0 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 0]
     crossings1 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 1]
-    
+
     #clear crossing info
     clear_orientations(crossings0)
     clear_orientations(crossings1)
@@ -568,7 +568,7 @@ def meander(cs,sides):
             break
         crossings_encountered.append(cs.crossing)
     return set(crossings_encountered),end_side
-    
+
 def cslabel(cs):
     """
     Label of crossing strand, without frills

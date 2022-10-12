@@ -31,7 +31,7 @@ for perm in itertools.permutations(range(4)):
     L = spherogram.Link([[perm[i] for i in PD] for PD in base1])
     test_link(L, 1)
 
-    
+
 
 # From issue 35
 
@@ -56,12 +56,10 @@ for perm in itertools.permutations([3, 4, 5, 8, 9]):
     for i, j in zip([3, 4, 5, 8, 9], perm):
         full_perm[i] = j
     assert len(set(full_perm)) == 10
-    
+
     L = spherogram.Link([[full_perm[i] for i in PD] for PD in base2])
     assert L.signature() == -3
     assert all(c.sign == 1 for c in L.crossings)
 
     L = spherogram.Link([[full_perm[i] for i in PD] for PD in base3])
     assert L.signature() == -1
-    
-

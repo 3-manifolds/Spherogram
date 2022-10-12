@@ -1,7 +1,7 @@
 import spherogram
 import string
 
-# Unknots from 
+# Unknots from
 
 unknot_28 = [1,-4,-3,6,5,-2,-7,8,4,-5,-9,10,2,-1,-11,7,12,-13,-6,3,14,-12,
              -10,9,13,-14,-8,11,15,-18,-17,20,19,-16,-21,17,22,-23,-20,21,
@@ -71,7 +71,3 @@ def regina_DT(code):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    
-    
-
-

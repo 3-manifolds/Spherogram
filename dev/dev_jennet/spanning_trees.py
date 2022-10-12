@@ -36,7 +36,7 @@ def rec(part_G,G):
 
         # let e be an edge not in part_G
         X = G.edges()
-  
+
         for y in part_G.edges():
             X.remove(y)
         e = X[0]
@@ -60,16 +60,16 @@ def rec(part_G,G):
 
         # let C be the set of bridges which are not tree edges
         C = bridge_finding.find_bridges(G)
- 
+
         for x in part_G.edges():
             if x in C:
                 C.remove(x)
- 
+
         # add all edges in C to part_G
         part_G.add_edges(C)
 
         # rec
-        trees += rec(part_G, G)        
+        trees += rec(part_G, G)
         part_G.delete_edges(C)
         G.add_edge(e)
 
@@ -85,14 +85,13 @@ def get_B(part_G,G):
     for i in range(len(comps)):
         for v in comps[i]:
             vc_dict[v] = i
-    
+
     X = G.edges()
-    for y in part_G.edges(): 
+    for y in part_G.edges():
         X.remove(y)
-    
+
     for e in X:
         if vc_dict[e[0]] == vc_dict[e[1]]:
             B.append(e)
-  
-    return B
 
+    return B

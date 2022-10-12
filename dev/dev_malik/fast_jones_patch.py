@@ -1,5 +1,5 @@
 from spherogram.links.alexander import Exhaustion
-import sympy 
+import sympy
 
 def kauffman_bracket(self):
     n = len(self.link)
@@ -30,7 +30,7 @@ def jones_polynomial(self):
     w = self.link.writhe()
     A,q = sympy.symbols('A,q')
     return ((-A**3)**w*B/(-A**2-(1/A)**2)).subs(A,q**(1/4))
-    
+
 def test_kauffman():
     from spherogram import Link
     L = Link('L11a548')
@@ -63,13 +63,13 @@ def test_simplify():
     P13c19,P14c18,P14c19,P15c20 = sympy.symbols('P13c19,P14c18,P14c19,P15c20')
     monomial = P13c19*P14c18*P14c19*P15c20
     print(simplify_monomial(monomial))
-    
+
 def simplify_jones_expression(poly):
     monomials = poly.args
     for monomial in monomials[:]:
         print('monomial:')
         print(monomial)
-        
+
 #        print('monomials:')
 #        print(monomials)
 
@@ -101,7 +101,7 @@ def simplify_monomial(monomial):
                 if sl[0] == sl[1]:
                     monomial = monomial.subs(new_v,-A**2-(1/A)**2)
                 break
-            
+
 #        monomial = remove_squares(monomial)
 #        monomial = remove_loops(monomial)
 
@@ -115,8 +115,8 @@ def all_labels(strand_vars):
     for v in strand_vars:
         strand_labels.extend(var_to_strand_labels(v))
     return strand_labels
-    
-                
+
+
 def combine_strands(v1,v2, common_label):
     labels1 = var_to_strand_labels(v1)
     labels2 = var_to_strand_labels(v2)
@@ -124,7 +124,7 @@ def combine_strands(v1,v2, common_label):
     l2 = labels2[1 - labels2.index(common_label)]
     l1, l2 = sorted([l1,l2])
     return sympy.Symbol('P'+str(l1)+'c'+str(l2))
-                
+
 def remove_squares(monomial):
     A, B = sympy.symbols('A,B')
     strand_vars = monomial.free_symbols - set([A,B])
@@ -147,7 +147,7 @@ def var_to_strand_labels(v):
 
 def join_strands(v1, v2):
     pass
-            
+
 """
 def jones_ring(n):
     names_dict = {(i,j):'P'+str(i)+'c'+str(j) for i in range(2*n) for j in range(i,2*n)}

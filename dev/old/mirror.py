@@ -10,9 +10,9 @@ def mirror(link):
     Create the mirror image of the link, preserving link orientations and
     component order.
     """
-    # Basically, we just mirror every crossing, but the particular data 
+    # Basically, we just mirror every crossing, but the particular data
     # structures used make this a little involved.
-    
+
     new_crossings = dict()
     for C in link.crossings:
         C_new = Crossing(label=C.label)
@@ -26,7 +26,7 @@ def mirror(link):
         the crossing.
         """
         return new_crossings[C], (c + C.sign) % 4
-        
+
     for A in link.crossings:
         entry_points = [CEP.entry_point for CEP in A.entry_points()]
         for a in entry_points:
@@ -39,7 +39,7 @@ def mirror(link):
 
     # Build the link components, starting in the same place as
     # the original link.
-    
+
     component_starts = []
     for component in link.link_components:
         C_new, c_new = convert(*component[0])
@@ -47,7 +47,7 @@ def mirror(link):
 
     new_link._build_components(component_starts)
     return new_link
-        
+
 
 def test_link(L):
     Lbar = mirror(L)
@@ -63,6 +63,3 @@ def basic_test():
         if M.solution_type().startswith('all tetra'):
             L = Link(M.name())
             test_link(L)
-
-        
-

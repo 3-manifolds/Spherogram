@@ -100,4 +100,3 @@ import doctest
 from sage.all import gap
 
 print(doctest.testmod())
-
