@@ -74,7 +74,7 @@ class BaseEdge(tuple):
     """
 
     def __new__(cls, x, y, **kwargs):
-        return tuple.__new__(cls, (x,y))
+        return tuple.__new__(cls, (x, y))
 
     def __call__(self, end):
         """
@@ -184,10 +184,10 @@ class FatEdge(Edge):
     whether the edge is twisted or not.
     """
     def __new__(cls, x, y, twists=0):
-        return tuple.__new__(cls, (x[0],y[0]))
+        return tuple.__new__(cls, (x[0], y[0]))
 
     def __init__(self, x, y, twists=0):
-        self.slots = [x[1],y[1]]
+        self.slots = [x[1], y[1]]
         self.twisted = bool(twists % 2)
 
     def __repr__(self):
@@ -257,7 +257,7 @@ class Graph():
         """
         return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
 
-    def edges_between(self,vertex1,vertex2):
+    def edges_between(self, vertex1, vertex2):
         return self.incident(vertex1).intersection(self.incident(vertex2))
 
     # Allow flows to go in either direction across an edge.
@@ -547,7 +547,7 @@ class Graph():
         """
         V = [frozenset([v]) for v in self.vertices]
         E = [self.Edge(frozenset([x]), frozenset([y])) for x, y in self.edges]
-        return self.__class__(E,V)
+        return self.__class__(E, V)
 
     def to_networkx(self):
         """
@@ -572,14 +572,14 @@ class ReducedGraph(Graph):
         Graph.__init__(self, pairs, singles)
 
     def add_edge(self, x, y):
-        if (x,y) in self.find_edge:
+        if (x, y) in self.find_edge:
             edge = self.find_edge[(x, y)]
             edge.multiplicity += 1
         else:
             edge = self.Edge(x, y)
-            self.vertices.update([x,y])
+            self.vertices.update([x, y])
             self.edges.add(edge)
-            self.find_edge[(x,y)] = edge
+            self.find_edge[(x, y)] = edge
             for v in edge:
                 try:
                     self.incidence_dict[v].append(edge)
@@ -642,7 +642,7 @@ class ReducedGraph(Graph):
             v, V = majors
             if self.valence(v) == 3:
                 return []
-            edge = self.find_edge[(v,V)]
+            edge = self.find_edge[(v, V)]
             if not edge or edge.multiplicity < 2:
                 return []
             return majors
@@ -733,7 +733,7 @@ class FatGraph(Graph):
                 else:  # go clockwise
                     e = self(v).pred(e)
                     s = 'L' if e.twisted or v == e[0] else 'R'
-                if (e[0],e,s) == start:
+                if (e[0], e, s) == start:
                     cycles.append(cycle)
                     break
                 sides.remove((e[0], e, s))
@@ -934,20 +934,17 @@ class StrongConnector():
 class Poset(set):
     """
     A partially ordered set, generated from a directed acyclic graph.
-    Instantiate with a Digraph.  A ValueError exception is raised if the
+
+    Instantiate with a Digraph.  A ``ValueError`` exception is raised if the
     Digraph contains a cycle.
     """
     def __init__(self, digraph):
         self.elements = set(digraph.vertices)
-        self.larger = {}
-        self.smaller = {}
-        self.successors = {}
+        self.larger = {vertex: set() for vertex in self}
+        self.smaller = {vertex: set() for vertex in self}
+        self.successors = {vertex: set(digraph[vertex]) for vertex in self}
         self.closed = set()
-        for vertex in self:
-            self.larger[vertex] = set()
-            self.smaller[vertex] = set()
-            self.successors[vertex] = set(digraph[vertex])
-        seen = []
+        seen = set()
         for vertex in self:
             if vertex not in seen:
                 self.search(vertex, seen, digraph)
@@ -959,7 +956,7 @@ class Poset(set):
         return len(self.elements)
 
     def search(self, vertex, seen, digraph):
-        seen.append(vertex)
+        seen.add(vertex)
         for child in digraph.children(vertex):
             if child in self.smaller[vertex]:
                 raise ValueError('Digraph is not acyclic.')
@@ -972,28 +969,42 @@ class Poset(set):
     def compare(self, x, y):
         if x == y:
             return 0
-        elif x in self.smaller[y]:
+        if x in self.smaller[y]:
             return 1
-        elif y in self.smaller[x]:
+        if y in self.smaller[x]:
             return -1
-        else:
-            return None
+        return None
 
     def incomparable(self, x):
         """
         Return the elements which are not comparable to x.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> sorted(P.incomparable(3))
+        [1, 2]
         """
         return self.elements - self.smaller[x] - self.larger[x] - set([x])
 
     def smallest(self):
         """
         Return the subset of minimal elements.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> sorted(P.smallest())
+        [0]
         """
         return frozenset([x for x in self if not self.smaller[x]])
 
     def largest(self):
         """
         Return the subset of maximal elements.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> sorted(P.largest())
+        [4]
         """
         return frozenset([x for x in self if not self.larger[x]])
 
@@ -1001,18 +1012,25 @@ class Poset(set):
         """
         Return the smallest set X containing A which is is closed
         under < , i.e. such that (x in X and y < x) => y in X.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> sorted(P.closure([1, 3]))
+        [0, 1, 3]
         """
         result = frozenset(A)
         for a in A:
             result |= self.smaller[a]
-        if len(result) == len(A):
-            return result
-        else:
-            return self.closure(result)
+        return result
 
     def XXclosed_subsets(self, start=None):
         """
         Generator for all transitively closed subsets.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> len(list(P.XXclosed_subsets()))
+        7
         """
         if start is None:
             if self.closed:
@@ -1034,6 +1052,11 @@ class Poset(set):
         """
         Generator for all transitively closed subsets.  The subsets
         are computed once, then cached for use in subsequent calls.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> len(list(P.XXXclosed_subsets()))
+        7
         """
         if start is None:
             if self.closed:
@@ -1056,6 +1079,11 @@ class Poset(set):
     def closed_subsets(self):
         """
         Generator for all nonempty transitively closed subsets.
+
+        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
+        >>> P = Poset(G)
+        >>> len(list(P.closed_subsets()))
+        7
         """
         # A closed subset is the closure of its set of maximal
         # elements, which is an arbitrary subset of pairwise
@@ -1069,19 +1097,25 @@ class Poset(set):
         # just iterate through all subsets and check each one.
 
         for X in powerset(self.elements):
-            if 0 < len(X):
-                pairwise_incomparable = True
-                for x in X:
-                    if (X.intersection(self.smaller[x]) or
-                        X.intersection(self.larger[x])):
-                        pairwise_incomparable = False
-                        break
-                if pairwise_incomparable:
-                    yield self.closure(X)
+            if not X:
+                continue
+            pairwise_incomparable = True
+            for x in X:
+                if any(y in self.smaller[x] or y in self.larger[x]
+                       for y in X):
+                    pairwise_incomparable = False
+                    break
+            if pairwise_incomparable:
+                yield self.closure(X)
 
 
 def powerset(S):
-    """Recursive generator for all subsets of a set."""
+    """
+    Recursive generator for all subsets of a set.
+
+    >>> [len(u) for u in powerset({2,3,5})]
+    [2, 2, 1, 2, 1, 1, 0]
+    """
     X = S.copy()
     while X:
         for x in X:
@@ -1089,7 +1123,7 @@ def powerset(S):
         X.remove(x)
         singleton = set([x])
         for Y in powerset(X):
-            yield(singleton | Y)
+            yield (singleton | Y)
         yield X
 
 

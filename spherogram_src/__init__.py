@@ -23,5 +23,5 @@ __all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
-           'RationalTangle', 'Crossing', 'Strand', 'Tangle','WhiteheadMove',
+           'RationalTangle', 'Crossing', 'Strand', 'Tangle', 'WhiteheadMove',
            'Word', 'ZeroTangle', 'random_link']

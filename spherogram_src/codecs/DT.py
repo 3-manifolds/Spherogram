@@ -258,7 +258,7 @@ class DTFatGraph(FatGraph):
 
     def path(self, vertex, edge):
         """
-        Return an iteratator which iterates through the edges of a
+        Return an iterator which iterates through the edges of a
         component, starting at the given edge, in the direction
         determined by the vertex.
         """
