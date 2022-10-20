@@ -19,7 +19,7 @@ else:
 try:
     import sage.libs
     ext_modules = []
-except ImportError:    
+except ImportError:
     planarity_dir = 'planarity_src/c/'
     planarity_ui_sources = glob(planarity_dir + 'planarity*.c')
     planarity_sources = [file for file in glob('planarity_src/c/*.c')
@@ -32,7 +32,7 @@ except ImportError:
 
     Planarity = Extension(
         name = 'spherogram.planarity',
-        sources = ['planarity_src/planarity.c'] + planarity_sources, 
+        sources = ['planarity_src/planarity.c'] + planarity_sources,
         include_dirs = [planarity_dir],
         extra_compile_args = extra_compile_args,
         extra_link_args = extra_link_args
@@ -45,7 +45,7 @@ except ImportError:
 class SpherogramClean(Command):
     user_options = []
     def initialize_options(self):
-        pass 
+        pass
     def finalize_options(self):
         pass
     def run(self):
@@ -59,17 +59,17 @@ class SpherogramClean(Command):
                 shutil.rmtree(dir)
             except OSError:
                 pass
-        junkfiles = glob('*/*.so*') + glob('*/*.pyc') + glob('*/*.c') 
+        junkfiles = glob('*/*.so*') + glob('*/*.pyc') + glob('*/*.c')
         for file in junkfiles:
             try:
                 os.remove(file)
             except OSError:
                 pass
-        
+
 class SpherogramTest(Command):
     user_options = []
     def initialize_options(self):
-        pass 
+        pass
     def finalize_options(self):
         pass
     def run(self):
@@ -90,7 +90,7 @@ def check_call(args):
         executable = args[0]
         command = [a for a in args if not a.startswith('-')][-1]
         raise RuntimeError(command + ' failed for ' + executable)
-        
+
 class SpherogramRelease(Command):
     user_options = [('install', 'i', 'install the release into each Python')]
     def initialize_options(self):
@@ -150,7 +150,7 @@ pmap_src_files = [pmap_src_dir + file for file in
 
 Planarmap = Extension(
     name = 'spherogram.planarmap',
-    sources =  [pmap_dir + 'planarmap.c'] + pmap_src_files, 
+    sources =  [pmap_dir + 'planarmap.c'] + pmap_src_files,
     include_dirs = [pmap_src_dir],
     extra_link_args = extra_link_args
     )
@@ -193,7 +193,7 @@ setup( name = 'spherogram',
                    'spherogram.links.test', 'spherogram.codecs',
                    'spherogram.dev', 'spherogram.dev.dev_jennet'],
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
-       package_data = {'spherogram.links'  :  ['doc.pdf']}, 
+       package_data = {'spherogram.links'  :  ['doc.pdf']},
        ext_modules = ext_modules,
        cmdclass =  {'clean': SpherogramClean,
                     'test': SpherogramTest,
@@ -202,7 +202,7 @@ setup( name = 'spherogram',
        },
        zip_safe = False,
 
-       description= 'Spherical diagrams for 3-manifold topology', 
+       description= 'Spherical diagrams for 3-manifold topology',
        long_description = long_description,
        author = 'Marc Culler and Nathan M. Dunfield',
        author_email = 'culler@marc-culler.info, nathan@dunfield.info',
@@ -219,4 +219,3 @@ setup( name = 'spherogram',
         ],
         keywords = 'knot, link, SnapPy',
 )
-

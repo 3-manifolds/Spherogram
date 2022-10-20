@@ -29,6 +29,6 @@ for i in range(num_samples):
     isosig = K.isosig(root,over_or_under=True)
     isosig_to_link[isosig]=(K,root)
     isosigs.append(isosig)
-    
+
 C = Counter(isosigs)
 print(C.most_common(10))

@@ -47,7 +47,7 @@ def add_random_crossing(self,label):
     old_crossing[old_strand]=new_crossing[new_strand]
     for i in range(1,4):
         adj.insert(old_position,(new_crossing,(new_strand-i)%4))
-    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])    
+    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
     tangle_copy.crossings.append(new_crossing)
     tangle_copy.n = self.n+1
     return tangle_copy
@@ -79,7 +79,7 @@ def random_tree_knot(size, simplify=None, prime_decomp=False):
         knot.simplify(mode=simplify)
         if len(knot) > 0:
             found_nontrivial=True
-    
+
     if prime_decomp:
         cant_deconnect = False
         while cant_deconnect:
@@ -256,7 +256,7 @@ def min_isosig_with_gluings(self, gluings, root=None):
             new_g.sort()
             rotated_gluings.append(tuple(new_g))
         rotated_gluings.sort()
-        isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))        
+        isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))
 
 
     return min(isosigs)
@@ -272,7 +272,7 @@ def crossing_orientations(strands):
     css_seen = []
     for strand in strands:
         for cs in strand:
-            for seen_cs in css_seen: 
+            for seen_cs in css_seen:
                 if cs[0] == seen_cs[0]:
                     orientation = (cs[1]-seen_cs[1])%4
                     if orientation == 3:
@@ -283,7 +283,7 @@ def crossing_orientations(strands):
             css_seen.append(cs) #didn't find cs
     return orientations, over_or_under
 
-    
+
 
 """
 Helper function, determines if a list of pairs defines an injection
@@ -576,7 +576,7 @@ def trace_boundary_component(start_cs,full_boundary):
     boundary_comp.pop(-1) #code aboves adds the start_cs twice
     return boundary_comp
 
-    
+
 
 """
 Splits a link into two tangles along a ball around a crossing of the given
@@ -610,7 +610,7 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
             print('adjacent: '+str(adjacent))
             c = comp.pop()
             cs = choice(c.crossing_strands())
-            
+
             print('cs: ' + str(cs))
             exit_strand = meander(cs,sides)[1] #meander until you hit boundary
             exit_strand = exit_strand[0].crossing_strands()[exit_strand[1]]
@@ -623,7 +623,7 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
                 print('updated adjacent: ' +str(adjacent))
                 crossings.append(c)
                 crossings.extend(list(comp))
-            
+
     adjacent[n:] = reversed(adjacent[n:])
     opposites[n:] = reversed(opposites[n:])
     gluings = []
@@ -691,7 +691,7 @@ def all_mutants(link):
     mutants.extend( [mutate_reflect(link,four_cycle) for four_cycle in fcs] )
     mutants.extend( [mutate_reflect(link,four_cycle) for four_cycle in fcs] )
     return mutants
-    
+
 
 def random_mutate(link):
     G = link.dual_graph()
@@ -755,7 +755,7 @@ def tangle_cut(link, cycle):
                     side0.append(edge2_cs2)
                 else:
                     side0.append(edge2_cs1)
-                    side1.append(edge2_cs2)                    
+                    side1.append(edge2_cs2)
 #                print('case 1')
                 break
             if edge1_cs1 == edge2_cs2:
@@ -766,7 +766,7 @@ def tangle_cut(link, cycle):
                     side1.append(edge2_cs2)
                 else:
                     side1.append(edge2_cs1)
-                    side0.append(edge2_cs2)                    
+                    side0.append(edge2_cs2)
 #                print('case 2')
                 break
             if edge1_cs1.opposite() == edge1_cs2: #returned without seeing them
@@ -788,7 +788,7 @@ def tangle_cut(link, cycle):
                     side1.append(edge2_cs2)
                 else:
                     side1.append(edge2_cs1)
-                    side0.append(edge2_cs2)                    
+                    side0.append(edge2_cs2)
                 break
             if edge1_cs2 == edge2_cs2:
  #               print('case 5')
@@ -803,14 +803,14 @@ def tangle_cut(link, cycle):
                 break
             if edge1_cs2.opposite() == edge1_cs1: #returned without seeing them again, must be error
                 raise Exception("Neither side worked")
-    
+
     crossing_sides = fill_in_crossings(link,sides)
     n = len(cycle)
     side0[n/2:] = reversed(side0[n/2:]) #flip to use as adjacent in tangle
     side1[n/2:] = reversed(side1[n/2:])
     crossings0 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 0]
     crossings1 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 1]
-    
+
     #clear crossing info
     clear_orientations(crossings0)
     clear_orientations(crossings1)
@@ -876,7 +876,7 @@ def meander(cs,sides):
             break
         crossings_encountered.append(cs.crossing)
     return set(crossings_encountered),end_side
-    
+
 """
 Label of crossing strand, without frills
 """
@@ -1016,7 +1016,7 @@ def isosig_dist_with_gluings(num_samples,size,radius,edge_conn=2):
         root = crossing_strand_from_name(T1,cslabel(root))
         nhds.append(T1.min_isosig_with_gluings(gluings,root))
     return Counter(nhds)
-    
+
 
 
 def unrooted_isosig_dist(num_samples,size,radius,edge_conn=2):
@@ -1038,8 +1038,8 @@ def nhd_size_dist(num_samples,link_size,radius):
         T1, T2 = tangle_neighborhood(link,c,radius)
         nhds.append((len(T1.crossings),T1.n))
     return Counter(nhds)
-    
-    
+
+
 def neighborhood_distribution_different_links(num_samples,size,radius):
     nhd_classes = []
     nhds = []
@@ -1060,7 +1060,7 @@ def neighborhood_distribution_different_links(num_samples,size,radius):
                 already_found = True
                 break
         if not already_found:
-            nhd_classes.append([nhd,1])    
+            nhd_classes.append([nhd,1])
     return nhd_classes
 
 
