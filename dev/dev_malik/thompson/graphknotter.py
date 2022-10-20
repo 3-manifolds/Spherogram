@@ -7,15 +7,15 @@ import random
 
 def faces(G):
     i_dict = G.incidence_dict
-    
+
     #direction = (e,v) #on edge e looking towards v (i.e. left arm holding edge)
     #when you traverse the faces counterclockwise
 
     unseen_pairs = { (edge,vertex) for edge in G.edges for vertex in edge.incident_to()}
     face_list = []
-    
+
     while len(unseen_pairs)>0:
-        
+
         direction = unseen_pairs.pop()
         face = [direction]
         next_edge = i_dict[direction[1]].succ(direction[0])
@@ -25,7 +25,7 @@ def faces(G):
             unseen_pairs.remove(next_direction)
             face.append(next_direction)
             direction = next_direction
-            
+
             next_edge = i_dict[direction[1]].succ(direction[0])
             vert_pair = next_edge.incident_to()
             next_direction = (next_edge, vert_pair[1 - vert_pair.index(direction[1])])
@@ -43,7 +43,7 @@ def link_diagram(G):
     for edge in G.edges: #create one crossing per edge
         l = label(edge)
         crossing_dict[l] = spherogram.Crossing(l)
-    
+
     for face in face_list: #connect along faces
         for n, direction in enumerate(face):
             edge = direction[0]
@@ -143,8 +143,8 @@ def group_by_quadruples(crossings):
         l2 = label2.split('\'')[1].split('[')[0], label2.split('\'')[3].split('[')[0]
         common = set(l1).intersection(set(l2)).pop()
         labels[common].append(i)
-    return labels    
-    
+    return labels
+
 def face_two_coloring(G,faces):
     colors = {}
     colors[tuple(faces[0])] = 0
@@ -159,7 +159,7 @@ def face_two_coloring(G,faces):
                     faces.remove(f)
                     break
     return colors
-            
+
 def share_edge(face1,face2):
     s1 = set([e for e,v in face1])
     s2 = set([e for e,v in face2])
@@ -194,7 +194,7 @@ def identify_pair(link):
                 second_zero = 3 - list(reversed(signs)).index(0)
                 if comps[second_zero] != comps[(second_zero+2)%4]:
                     return face[second_zero],face[(second_zero+2)%4]
-                
+
     raise Exception()
 
 
@@ -206,13 +206,13 @@ def build_face(cs):
         f.append(next_cs)
     f.pop()
     return f
-    
+
 def component_index(link,cs):
     cs = cs.oriented()
     for i,comp in enumerate(link.link_components):
         if cs in comp:
             return i
-            
+
 
 def whitehead_double(link):
     D = double(link)
@@ -255,7 +255,7 @@ def random_four_connect(link1,link2):
     css1 = sample(choice(link1.faces()),2)
     css2 = sample(choice(link2.faces()),2)
     return four_connect(link1,css1,link2,css2)
-    
+
 
 def find_face_color(e, colors):
     pair = doubled_edge_to_str_pair(e)

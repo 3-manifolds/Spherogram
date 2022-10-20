@@ -32,8 +32,8 @@ def random_open_string(n):
 
 #        print('available after')
 #        print(available)
-        loose_cs = cross_strand(crossings, loose_cs, 
-                                           strand_to_cross, str(i+1)) 
+        loose_cs = cross_strand(crossings, loose_cs,
+                                           strand_to_cross, str(i+1))
 #        print('crossings after')
 #        [c.info() for c in crossings]
 
@@ -82,7 +82,7 @@ def next_available_corner(cs):
 
 
 def connect_loose_strands(crossings, loose_cs, final_cs):
-    G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs, 
+    G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs,
                                                        final_cs)
     path = nx.shortest_path(G,loose_face,final_face)
     for i in range(len(path)-1):
@@ -119,7 +119,7 @@ def open_string_dual_graph(crossings, loose_cs, final_cs):
     for face in faces:
         for other_face in faces:
             if edges_between(face, other_face):
-                G.add_edge(face,other_face)    
+                G.add_edge(face,other_face)
     return G, loose_face,  final_face
 
 def edges_between(face1, face2):
