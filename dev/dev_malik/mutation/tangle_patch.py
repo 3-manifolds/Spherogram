@@ -258,7 +258,6 @@ def min_isosig_with_gluings(self, gluings, root=None):
         rotated_gluings.sort()
         isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))
 
-
     return min(isosigs)
 
 
@@ -284,7 +283,6 @@ def crossing_orientations(strands):
     return orientations, over_or_under
 
 
-
 """
 Helper function, determines if a list of pairs defines an injection
 """
@@ -297,7 +295,7 @@ def _is_injection(pairs):
                 return False
     return True
 """
-Give a list of the crossing strands encountered starting at 
+Give a list of the crossing strands encountered starting at
 a strand on the boundary of a tangle and moving to the other
 end of that strand.
 """
@@ -325,7 +323,7 @@ def loop_strand(cs):
 
 """
 Returns all the strands but without duplicate in the opposite direction,
-starting at position 0 and going clockwise, and then components that 
+starting at position 0 and going clockwise, and then components that
 don't intersect the boundary.
 """
 def all_cross_strands(self):
@@ -575,7 +573,6 @@ def trace_boundary_component(start_cs,full_boundary):
         boundary_comp.append(cs)
     boundary_comp.pop(-1) #code aboves adds the start_cs twice
     return boundary_comp
-
 
 
 """
@@ -899,7 +896,6 @@ def crossing_from_name(link,crossname):
     raise Exception("Crossing not found")
 
 
-
 """
 T = spherogram.links.tangles.OneTangle()
 Ts = T*T
@@ -1016,7 +1012,6 @@ def isosig_dist_with_gluings(num_samples,size,radius,edge_conn=2):
         root = crossing_strand_from_name(T1,cslabel(root))
         nhds.append(T1.min_isosig_with_gluings(gluings,root))
     return Counter(nhds)
-
 
 
 def unrooted_isosig_dist(num_samples,size,radius,edge_conn=2):

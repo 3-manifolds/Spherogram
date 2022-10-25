@@ -141,7 +141,7 @@ def connect_vertices(e1, v1, e2, v2):
 
 def braid_word(link):
     """
-    Return a list of integers which defines a braid word whose closure is the 
+    Return a list of integers which defines a braid word whose closure is the
     given link.  The natural numbers 1, 2, 3, etc are the generators and the
     negatives are the inverses.
     """
@@ -210,7 +210,7 @@ def seifert_matrix(link, return_type_matrix=False):
     """
     Returns the Seifert matrix of a link by first making it isotopic to a braid
     closure, and using the algorithm described in:
-    J. Collins, "An algorithm for computing the Seifert matrix of a link 
+    J. Collins, "An algorithm for computing the Seifert matrix of a link
     from a braid representation." (2007).
     """
     arrows = braid_arrows(link)
@@ -231,7 +231,6 @@ def seifert_matrix(link, return_type_matrix=False):
                 else: #both left handed
                     matrix[entries.index((n,m))][entries.index((n,m))] = 1
                     type_matrix[entries.index((n,m))][entries.index((n,m))] = 2
-
 
         #two gens on same strand, one after the other
         for m, gen in enumerate(strand[:-1]):

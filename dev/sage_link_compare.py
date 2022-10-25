@@ -42,11 +42,9 @@ def test_knot(snappy_manifold):
     U_alt = spherogram.Link(T.braid())
     assert U.signature() == U_alt.signature()
 
-
     #q = var('q')
     #print (SR(K_us.jones_poly()) - K_them.jones_polynomial(variab='q').subs(q=1/q)).simplify()
     #print K_us.signature(), K_them.signature()
-
 
 
 M = snappy.Manifold('K11n42')

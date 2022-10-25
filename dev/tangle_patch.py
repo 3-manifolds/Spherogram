@@ -5,7 +5,7 @@ from random import randint,choice,sample
 from spherogram.links.random_links import map_to_link, random_map
 
 """
-This file contains some unfinished code to work with tangles, including 
+This file contains some unfinished code to work with tangles, including
 getting tangles out of link diagrams, as well as some Conway mutation.
 """
 
@@ -125,7 +125,6 @@ def min_isosig_with_gluings(self, gluings, root=None):
         rotated_gluings.sort()
         isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))
 
-
     return min(isosigs)
 
 Tangle.all_circular_sums = all_circular_sums
@@ -133,7 +132,7 @@ Tangle.add_random_crossing = add_random_crossing
 
 def cycle_basis(G):
     """
-    Uses networkx's cycle basis function on dual graph and converts to 
+    Uses networkx's cycle basis function on dual graph and converts to
     form with spherogram objects
     """
 
@@ -229,7 +228,7 @@ def all_four_cycles(G):
 
 def edge_cycle(vert_list,G):
     """
-    Converts from list of vertices of dual graph to list of edges.  
+    Converts from list of vertices of dual graph to list of edges.
     If multiple edges, just chooses one.
     """
     edges = list(G.edges)
@@ -300,7 +299,6 @@ def trace_boundary_component(start_cs,full_boundary):
         boundary_comp.append(cs)
     boundary_comp.pop(-1) #code aboves adds the start_cs twice
     return boundary_comp
-
 
 
 def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
@@ -408,7 +406,7 @@ def tangle_cut(link, cycle):
     """
     Creates two Tangle objects from a given cycle (with no self intersections)
     in the dual graph of a link (inside and outside).  Cycle is given
-    as a list of (oriented) edges in the dual graph. Make sure crossings 
+    as a list of (oriented) edges in the dual graph. Make sure crossings
     are uniquely labeled. Destroys original link.
     """
 
@@ -589,7 +587,6 @@ def crossing_from_name(link,crossname):
         if c.label == crossname:
             return c
     raise Exception("Crossing not found")
-
 
 
 def crossing_by_label(label,link):

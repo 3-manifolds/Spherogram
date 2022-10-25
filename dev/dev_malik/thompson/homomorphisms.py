@@ -60,7 +60,7 @@ f = open('knotted_words.txt','r')
 split_lines = [line.split() for line in f]
 f.close()
 powers = []
-n = 0 
+n = 0
 for word, cn in split_lines:
     print(n)
     n += 1

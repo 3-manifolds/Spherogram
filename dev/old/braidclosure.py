@@ -15,7 +15,7 @@ def braid_closure_via_tangles(braid):
 def braid_closure_via_crossings(braid):
     """
     Compute the braid closure of a word given in the form of a list of integers,
-    where 1, 2, 3, etc correspond to the generators sigma_1, sigma_2, sigma_3, 
+    where 1, 2, 3, etc correspond to the generators sigma_1, sigma_2, sigma_3,
     and so on, and negative numbers to their inverses.
     """
     l = len(braid)

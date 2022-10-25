@@ -1,5 +1,5 @@
 """
-This file implement's Dror Bar-Natan's fast tangle-based algorithm for computing the Alexander polynomial of a knot in S^3, as described in 
+This file implement's Dror Bar-Natan's fast tangle-based algorithm for computing the Alexander polynomial of a knot in S^3, as described in
 
 http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
 
@@ -32,7 +32,7 @@ def cep(crossing_strand):
 def entry_pts_ab(crossing):
     """
     The two entry points of a crossing with Dror's convention that the
-    overcrossing ("a") is first and the undercrossing ("b") is second. 
+    overcrossing ("a") is first and the undercrossing ("b") is second.
     """
     verts = [1, 0] if crossing.sign == -1 else [3, 0]
     return [CrossingEntryPoint(crossing, v) for v in verts]
@@ -92,7 +92,7 @@ def strand_matrix_merge(A, a, b):
 
 def test_meta_associativity():
     """
-    Tests strand_matrix_merge for required invariance properties. 
+    Tests strand_matrix_merge for required invariance properties.
     """
     def eval_merges(merges):
         R = PolynomialRing(QQ, 'x', 49).fraction_field()
@@ -112,7 +112,7 @@ def test_meta_associativity():
 
 class DrorDatum():
     """
-    The (omega, A) pair which is the invariant defined in the first column of 
+    The (omega, A) pair which is the invariant defined in the first column of
     http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
     """
     def __init__(self, link, ordered_crossings):
@@ -162,7 +162,7 @@ def strand_matrix_merge_alt(A, omega, a, b):
 class DrorDatumAlt(DrorDatum):
     """
     Store the pair (omega, A*omega) instead so that the matrix has
-    Laurent entries.  
+    Laurent entries.
     """
     def add_crossing(self, crossing):
         indices = self.strand_indices
@@ -268,7 +268,7 @@ class Exhaustion():
 
 def good_exhaustion(link, max_failed_tries=20):
     """
-    Uses a random search to try to find an Exhaustion with small width. 
+    Uses a random search to try to find an Exhaustion with small width.
     """
     crossings = list(link.crossings)
     C = random.choice(crossings)
