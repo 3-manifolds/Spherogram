@@ -67,7 +67,6 @@ def regina_DT(code):
     return spherogram.Link(dt_prefix + code)
 
 
-
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

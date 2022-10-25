@@ -130,7 +130,6 @@ def edges_between(face1, face2):
     return edges
 
 
-
 """
 def random_dual_graph(n):
 #    G = FatGraph()
@@ -156,7 +155,7 @@ def random_dual_graph(n):
         print(next_edge)
         print('current_face, current_corner')
         print(current_face, current_corner)
-        current_face, current_corner = split_face(G, next_edge, 
+        current_face, current_corner = split_face(G, next_edge,
                                                   current_corner, current_face)
 
     return G
@@ -303,7 +302,7 @@ def close_up(G):
         G.remove_edge(s.pop())
     else:
         raise Exception("Not closeable")
-        
+
 
 def knot(G):
     face_list = faces(G)
@@ -469,7 +468,7 @@ def old_split_face(G, next_edge, current_corner, current_face):
 
     G.remove_vertex(current_face)
     new_next_corner = get_edge_at_slot(G, other_face, other_slot)
-    
+
     cyclify(G)
     return other_face, new_next_corner
 """

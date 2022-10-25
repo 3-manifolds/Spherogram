@@ -95,7 +95,6 @@ class TreeSequence:
                         self.dyadic_seq.append(d.parent())
         self.dyadic_seq.sort()
 
-
     def _has_all_parents(self):
         for d in self.dyadic_seq:
             if d not in [DyadicRational(0,1), DyadicRational(1,1), DyadicRational(1,0)]:

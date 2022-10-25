@@ -82,7 +82,6 @@ def signature_via_numpy(A):
     return np.sum(eigs > 0) - np.sum(eigs < 0)
 
 
-
 def signature_function_of_integral_matrix(V, prec=53):
     """
     Computes the signature function sigma of V via numerical methods.
@@ -126,7 +125,6 @@ def signature_function(L, prec=53):
     return signature_function_of_integral_matrix(V)
 
 
-
 def basic_knot_test():
     # All passed!
     for M in snappy.HTLinkExteriors(cusps=1):
@@ -143,7 +141,6 @@ def basic_knot_test():
         assert n % 2 == 1
         m = (n - 1)//2
         assert K.signature() == values[m]
-
 
 
 if __name__ == '__main__':

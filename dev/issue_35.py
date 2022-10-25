@@ -32,7 +32,6 @@ for perm in itertools.permutations(range(4)):
     test_link(L, 1)
 
 
-
 # From issue 35
 
 A = spherogram.Link([(1, 2, 0, 3), (2, 1, 3, 0)])

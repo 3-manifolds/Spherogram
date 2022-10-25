@@ -167,7 +167,7 @@ def condense_polynomial(poly, A, B, R, gd):
                 no_simplifications = False
         if no_simplifications:
             break
-            
+
     return poly
 
 def condense_term(monomial, poly, A, B, R, gd):
@@ -176,7 +176,6 @@ def condense_term(monomial, poly, A, B, R, gd):
     gens = R.gens()
     found_simplification = False
 
-    
     if A in variables:
         variables.remove(A)
     if B in variables:
@@ -200,7 +199,7 @@ def condense_term(monomial, poly, A, B, R, gd):
 
     for i,v in enumerate(var_labels):
         if v[0] == v[1]:
-            poly = poly.subs({variables[i]:-A*A-B*B})            
+            poly = poly.subs({variables[i]:-A*A-B*B})
             found_simplification = True
             seen_var_indices.append(i)
 
@@ -249,5 +248,4 @@ def test_jones():
     poly = 2*gd['P0c0']*gd['P1c1']+gd['P1c2']*gd['P2c3']-A*gd['P1c4']*gd['P2c3']+B*gd['P4c5']*gd['P3c4']+gd['P0c1']*gd['P0c1']
     poly = condense_polynomial(poly,A,B, R, gd)
 
-    
 """

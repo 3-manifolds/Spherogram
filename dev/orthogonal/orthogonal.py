@@ -174,7 +174,6 @@ class OrthogonalFace(CyclicList):
             elif h0 == h1 == v0:
                 ans.append( LabeledFaceVertex(i, 'sink', self.turns[i]) )
 
-
         return ans
 
     def saturation_edges(self, swap_hor_edges):
@@ -485,7 +484,6 @@ class OrthogonalLinkDiagram(list):
                     G.add_edge(faces.index(A), faces.index(B), weight=1)  # infinite capacity
 
         return G
-
 
     def bend(self):
         """

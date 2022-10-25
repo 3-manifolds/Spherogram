@@ -76,7 +76,7 @@ def rec(part_G,G):
     return trees
 
 def get_B(part_G,G):
-    """ 
+    """
     Returns the set of edges not in part_G joining vertices already connected in part_G
     """
     B = []
