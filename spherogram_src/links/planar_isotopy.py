@@ -111,7 +111,6 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
         rotated_gluings.sort()
         isosigs.append(isosig_with_gluings(rotated_tangle, rotated_gluings,
                                            root=rotated_root))
-
     return min(isosigs)
 
 
