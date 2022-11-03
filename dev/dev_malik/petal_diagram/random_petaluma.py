@@ -56,7 +56,7 @@ def petaluma_knot(height_perm):
                         end_position = 1
             visited_dict[a,b] = True
             old_crossing = next_crossing
-            
+
     first = crossing_dict[0,1]
     last = crossing_dict[size-2,size-1]
     first_open = first.adjacent.index(None) #last open spot

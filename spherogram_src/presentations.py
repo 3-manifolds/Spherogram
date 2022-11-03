@@ -29,9 +29,8 @@ class Alphabet():
         Convert a sequence of integers to a string.
         """
         if int_list:
-            return self.separator.join([self[x] for x in int_list])
-        else:
-            return self[0]
+            return self.separator.join(self[x] for x in int_list)
+        return self[0]
 
 
 abc = Alphabet('1',
@@ -169,7 +168,7 @@ class CyclicWord(Word):
         The set of keys must equal the set of values up to sign.
         """
         abs_image = set(map(operator.abs, perm_dict.values()))
-        if set(perm_dict.keys()) != abs_image:
+        if set(perm_dict) != abs_image:
             raise ValueError('Not a permutation!')
         for n in range(len(self)):
             x = self[n]
@@ -490,9 +489,9 @@ class Presentation():
         return tuple([tuple(R.rewrite(ordering)) for R in relators]), generators
 
     def magma_string(self):
-        gens = sorted([self.alphabet[g] for g in self.generators])
+        gens = sorted(self.alphabet[g] for g in self.generators)
         ans = 'Group<' + ', '.join(gens) + ' | '
-        ans += ', '.join([R.verbose_string() for R in self.relators])
+        ans += ', '.join(R.verbose_string() for R in self.relators)
         return ans + '>'
 
 

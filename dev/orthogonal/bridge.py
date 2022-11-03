@@ -14,13 +14,13 @@ To each corner of a face of D is classified into "large", "flat", or
 2, 1, and 0 respectively.  The geometric conditions are
 
 * Every vertex has either a single "large" angle or two "flat" ones which
-are opposite.
+  are opposite.
 
 * The sum of the corner types around every face is degree - 2, with the
-exception of the exterior face (which is degree + 2).
+  exception of the exterior face (which is degree + 2).
 """
-
-import spherogram, snappy, random
+import snappy
+import random
 from spherogram import DTcodec, RationalTangle, Digraph, CyclicList, Link, join_strands
 from spherogram.links.links import CrossingStrand, Crossing, Strand
 from orthogonal import basic_topological_numbering
@@ -57,20 +57,20 @@ def bridge_LP(link):
         for ce in c.entry_points():
             s = CrossingStrand(c, ce.entry_point)
             t = s.opposite()
-            LP.add_constraint( flat_edge[s] == flat_edge[t] )
-            LP.add_constraint( flat_edge[s] + large_edge[s] + large_edge[t] == 1 )
+            LP.add_constraint(flat_edge[s] == flat_edge[t])
+            LP.add_constraint(flat_edge[s] + large_edge[s] + large_edge[t] == 1)
 
     for i, face in enumerate(faces):
         eqn = 0
         for cs in face:
             flat = hor_cross if cs.entry_point % 2 == 0 else vert_cross
-            eqn += flat[cs.crossing] + flat_edge[cs] + 2*large_edge[cs]
-        LP.add_constraint(eqn == (2*len(face) - 2 + 4*exterior[i]))
+            eqn += flat[cs.crossing] + flat_edge[cs] + 2 * large_edge[cs]
+        LP.add_constraint(eqn == (2 * len(face) - 2 + 4 * exterior[i]))
 
     LP.set_objective(sum(large_edge.values()))
     bridge = int(LP.solve())
     assert bridge % 2 == 0
-    return bridge//2, LP.get_values([hor_cross, vert_cross, flat_edge, large_edge, exterior])
+    return bridge // 2, LP.get_values([hor_cross, vert_cross, flat_edge, large_edge, exterior])
 
 
 def have_positive_value(D):
@@ -102,34 +102,35 @@ class UpwardSnake(tuple):
     """
     def __new__(self, crossing_strand, link):
         cs, kind = crossing_strand, link.orientations
-        assert kind[cs] is 'min'
+        assert kind[cs] == 'min'
         snake = [cs]
         while True:
             ca, cb = cs.rotate(1).opposite(), cs.rotate(-1).opposite()
-            if kind[ca] is 'max' or kind[cb] is 'max':
+            if kind[ca] == 'max' or kind[cb] == 'max':
                 break
-            if kind[ca] is 'up':
+            if kind[ca] == 'up':
                 cs = ca
             else:
-                assert kind[cb] is 'up'
+                assert kind[cb] == 'up'
                 cs = cb
             snake.append(cs)
 
         ans = tuple.__new__(UpwardSnake, snake)
-        ans.final = ca if kind[ca] is 'max' else cb
+        ans.final = ca if kind[ca] == 'max' else cb
 
         heights = [link.heights[cs.crossing] for cs in ans]
         assert heights == sorted(heights)
-        #assert heights[-1] == link.heights[ans.final.crossing]
+        # assert heights[-1] == link.heights[ans.final.crossing]
         ans.heights = heights
         return ans
 
-class UpwardLinkDiagram(object):
+
+class UpwardLinkDiagram():
     def __init__(self, link):
         self.link = link = link.copy()
         bridge, values = bridge_LP(link)
         self.bends = set(have_positive_value(values[3]))
-        self.faces = faces = link.faces()
+        self.faces = link.faces()
         self.exterior = self.faces[have_positive_value(values[4])[0]]
         for c in have_positive_value(values[0]):
             c.kind = 'horizontal'
@@ -149,7 +150,7 @@ class UpwardLinkDiagram(object):
                 s = 1 if i in [2, 3] else 3
             if kind in ['down', 'max']:
                 s += 2
-            return [ (CrossingStrand(c,i), kinds[i+s]) for i in range(4) ]
+            return [(CrossingStrand(c, i), kinds[i + s]) for i in range(4)]
 
         orientations = ImmutableValueDict()
         cs = list(self.bends)[0]
@@ -167,12 +168,14 @@ class UpwardLinkDiagram(object):
                     if co not in orientations:
                         new.append(co)
                     orientations[cn] = kind
-                    orientations[co] = {'up':'down', 'down':'up', 'max':'max', 'min':'min'}[kind]
+                    orientations[co] = {'up': 'down',
+                                        'down': 'up',
+                                        'max': 'max',
+                                        'min': 'min'}[kind]
 
             current = new
 
         self.orientations = orientations
-
 
     def strands_below(self, crossing):
         """
@@ -206,7 +209,7 @@ class UpwardLinkDiagram(object):
 
         for cs, kind in kinds.iteritems():
             if kind == 'up':
-                c, d  = cs.crossing, cs.opposite().crossing
+                c, d = cs.crossing, cs.opposite().crossing
                 G.add_edge(d, c)
 
         return G
@@ -219,7 +222,7 @@ class UpwardLinkDiagram(object):
         kinds = self.orientations
         self.snakes = snakes = []
         for cs in self.bends:
-            if kinds[cs] is 'min':
+            if kinds[cs] == 'min':
                 snakes += [UpwardSnake(cs, self), UpwardSnake(cs.opposite(), self)]
 
         self.strand_to_snake = dict()
@@ -229,7 +232,6 @@ class UpwardLinkDiagram(object):
             self.strand_to_snake[snake.final] = snake
 
         self.pack_snakes()
-
 
     def pack_snakes(self):
         snakes, to_snake = self.snakes, self.strand_to_snake
@@ -247,15 +249,15 @@ class UpwardLinkDiagram(object):
         heights = self.heights
         max_height = max(heights.values())
         snakes_at_height = dict()
-        for h in range(0, max_height+1):
+        for h in range(max_height + 1):
             at_this_height = []
             for snake in snakes:
                 if heights[snake[0].crossing] <= h <= heights[snake[-1].crossing]:
                     at_this_height.append(snake)
 
-            at_this_height.sort(key=lambda s:snake_pos[s])
+            at_this_height.sort(key=lambda s: snake_pos[s])
             for i, s in enumerate(at_this_height):
-                snakes_at_height[ (s, h) ] = i
+                snakes_at_height[(s, h)] = i
 
         self.snakes_at_height = snakes_at_height
 
@@ -275,7 +277,7 @@ class UpwardLinkDiagram(object):
             i, j = to_index(a), to_index(b)
             assert i < j
             cross = (i, j) if a.entry_point % 2 == 1 else (j, i)
-            cross_data.append( (self.heights[c], cross) )
+            cross_data.append((self.heights[c], cross))
         cross_data.sort()
 
         def bottom_pairing(snake):
@@ -294,15 +296,15 @@ class UpwardLinkDiagram(object):
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
 
 
-class BridgeDiagram(object):
+class BridgeDiagram():
     def __init__(self, bottom, crossings, top):
         self.bottom, self.crossings, self.top = bottom, crossings, top
-        self.width = 2*len(bottom)
+        self.width = 2 * len(bottom)
         self.name = 'None'
 
     def link(self):
         crossings = []
-        curr_endpoints = self.width*[None]
+        curr_endpoints = self.width * [None]
 
         for x, y in self.bottom:
             s = Strand()
@@ -314,9 +316,9 @@ class BridgeDiagram(object):
             c = Crossing()
             crossings.append(c)
             if a < b:
-                ins, outs = (3, 0), (2,1)
+                ins, outs = (3, 0), (2, 1)
             else:
-                ins, outs = (0, 1), (3,2)
+                ins, outs = (0, 1), (3, 2)
                 a, b = b, a
 
             c[ins[0]] = curr_endpoints[a]
@@ -330,7 +332,7 @@ class BridgeDiagram(object):
         return Link(crossings)
 
     def bohua_code(self):
-        b = self.width//2
+        b = self.width // 2
         ans = [b]
         ans += pairing_to_permuation(self.bottom)
         ans += [len(self.crossings)] + list(sum(self.crossings, tuple()))
@@ -365,7 +367,6 @@ def bridge(link, tries=20, check=True):
                         except ImportError:
                             pass
 
-
                 return B
 
 
@@ -393,7 +394,7 @@ hopf = RationalTangle(2).numerator_closure()
 for i, c in enumerate(hopf.crossings):
     c.label = i
 
-trefoil = DTcodec([(4,6,2)]).link()
+trefoil = DTcodec([(4, 6, 2)]).link()
 big_knot = DTcodec([(4, 12, 14, 22, 20, 2, 28, 24, 6, 10, 26, 16, 8, 18)]).link()
 big_link = DTcodec([(8, 12, 16), (18, 22, 24, 20), (4, 26, 14, 2, 10, 6)]).link()
 

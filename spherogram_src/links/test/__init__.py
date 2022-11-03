@@ -158,7 +158,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(Sum.alexander_polynomial(), k1.alexander_polynomial()*k2.alexander_polynomial())
             self.assertEqual(Sum.signature(),      k1.signature()+k2.signature())
             self.assertEqual(Sum.determinant(),    k1.determinant()*k2.determinant())
-            repeat -=1
+            repeat -= 1
 
     def testSignature(self):
         self.assertEqual(abs(self.Tref.signature()),       2)
@@ -181,7 +181,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k1.writhe(),         k1_prime.writhe())
             self.assertEqual(k1.signature(),      k1_prime.signature())
             self.assertEqual(k1.alexander_polynomial(), k1_prime.alexander_polynomial())
-            repeat-=1
+            repeat -= 1
 
         repeat = 3
         while repeat > 0:
@@ -191,7 +191,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k2.writhe(),         k2_prime.writhe())
             self.assertEqual(k2.signature(),      k2_prime.signature())
             self.assertEqual(k2.alexander_polynomial(), k2_prime.alexander_polynomial())
-            repeat-=1
+            repeat -= 1
 
     def testMirror(self):
         return
@@ -199,9 +199,9 @@ class TestLinkFunctions(unittest.TestCase):
         while repeat > 0:
             k1 = self.random_knot()
             k1_prime = k1.mirror()
-            self.assertTrue(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for "+ repr(k1))
-            self.assertTrue(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for "+repr(k1))
-            repeat-=1
+            self.assertTrue(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for " + repr(k1))
+            self.assertTrue(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for " + repr(k1))
+            repeat -= 1
 
         repeat = 3
         while repeat > 0:
@@ -209,7 +209,7 @@ class TestLinkFunctions(unittest.TestCase):
             k2_prime = k2.mirror()
             self.assertTrue(k2.signature() == -1*k2_prime.signature(), msg="link signature failed for " + repr(k2))
             self.assertTrue(k2.writhe() == -1*k2_prime.writhe(), msg="link writhe failed for " + repr(k2))
-            repeat-=1
+            repeat -= 1
 
     def testDet(self):
         self.assertEqual(self.K3_1.determinant(),                 3)
@@ -257,13 +257,13 @@ class TestLinkFunctions(unittest.TestCase):
         while repeat > 0:
             k1 = self.random_knot()
             self.assertTrue(k1.white_graph().is_planar())
-            repeat-=1
+            repeat -= 1
 
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
             self.assertTrue(k2.white_graph().is_planar())
-            repeat-=1
+            repeat -= 1
 
     def testJonesPolynomial(self):
         L = LaurentPolynomialRing(QQ,'q')
@@ -278,7 +278,8 @@ class TestLinkFunctions(unittest.TestCase):
                 ('L10n1', ('q^8 - 2*q^7 + 2*q^6 - 4*q^5 + 3*q^4 - 3*q^3 + 2*q^2 - 2*q + 1', -2))]
         for link_name, (poly, exp) in data:
             link = getattr(self, link_name)
-            self.assertEqual(link.jones_polynomial(new_convention=False), L(poly)*q**exp)
+            self.assertEqual(link.jones_polynomial(new_convention=False),
+                             L(poly) * q**exp)
 
 
 def run():

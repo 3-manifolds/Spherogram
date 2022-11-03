@@ -19,7 +19,7 @@ def compact_form(p):
     R = p.parent()
     x = R.gen()
     f, g = p, R(0)
-    
+
     while f != 0:
         c = f.leading_coefficient()
         assert f.degree() % 2 == 0
@@ -79,9 +79,9 @@ def signature_via_numpy(A):
     eigs = np.linalg.eigh(A)[0]
     smallest = min(np.abs(eigs))
     assert smallest > 1e-5
-    return np.sum(eigs > 0) - np.sum(eigs < 0) 
+    return np.sum(eigs > 0) - np.sum(eigs < 0)
 
-    
+
 
 def signature_function_of_integral_matrix(V, prec=53):
     """
@@ -103,12 +103,13 @@ def signature_function_of_integral_matrix(V, prec=53):
     n = len(partition) - 1
     values = []
     for i in range(n):
-         omega = exp((2*pi*I)*(partition[i] + partition[i + 1])/2)
-         A = (1 - omega)*V + (1 - omega.conjugate())*V.transpose()
-         values.append(signature_via_numpy(A))
+        omega = exp((2*pi*I)*(partition[i] + partition[i + 1])/2)
+        A = (1 - omega)*V + (1 - omega.conjugate())*V.transpose()
+        values.append(signature_via_numpy(A))
 
     assert list(reversed(values)) == values
     return partition, values
+
 
 def signature_function(L, prec=53):
     """
@@ -123,8 +124,8 @@ def signature_function(L, prec=53):
     """
     V = L.seifert_matrix()
     return signature_function_of_integral_matrix(V)
-        
-    
+
+
 
 def basic_knot_test():
     # All passed!
@@ -142,8 +143,8 @@ def basic_knot_test():
         assert n % 2 == 1
         m = (n - 1)//2
         assert K.signature() == values[m]
-    
-    
+
+
 
 if __name__ == '__main__':
     K = spherogram.Link('K12n123')

@@ -3,7 +3,7 @@ from spherogram.graphs import FatGraph, CyclicList
 from random import choice, randint
 import networkx as nx
 from itertools import combinations, product
-import pickle    
+import pickle
 
 
 def start_string():
@@ -13,7 +13,9 @@ def start_string():
     loose_cs = crossings[0].crossing_strands()[1]
     return crossings, loose_cs, final_cs
 
-def random_knot(n, method='close_under', alternate=False, bias = False, num_opportunities=1):
+
+def random_knot(n, method='close_under', alternate=False,
+                bias=False, num_opportunities=1):
     if method == 'close_under':
         crossings, loose_cs, final_cs = random_open_string(n, alternate=alternate, bias=bias)
         connect_loose_strands(crossings, loose_cs, final_cs)
@@ -28,10 +30,10 @@ def random_knot(n, method='close_under', alternate=False, bias = False, num_oppo
             available = available_strands(loose_cs)
             strand_to_cross = choice(available)
             if alternate:
-                over_or_under = 1-(i%2) 
+                over_or_under = 1-(i%2)
             else:
                 over_or_under = randint(0,1)
-            loose_cs = cross_strand(crossings, loose_cs, 
+            loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), over_or_under)
             same_face = set(available_strands(loose_cs)) == set(available_strands(final_cs))
             if same_face:
@@ -40,9 +42,10 @@ def random_knot(n, method='close_under', alternate=False, bias = False, num_oppo
             if i >= n:
                 raise Exception('Not closeable after n crossings')
         connect_loose_strands(crossings, loose_cs, final_cs)
-        return Link(crossings)                
+        return Link(crossings)
 
-def random_open_string(n, alternate = False, bias = False):
+
+def random_open_string(n, alternate=False, bias=False):
     crossings = [Crossing('0')]
     crossings[0][2]=crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
@@ -54,11 +57,11 @@ def random_open_string(n, alternate = False, bias = False):
         else:
             strand_to_cross = choice(available)
         if alternate:
-            over_or_under = 1-(i%2)            
+            over_or_under = 1-(i%2)
         else:
             over_or_under = randint(0,1)
-        loose_cs = cross_strand(crossings, loose_cs, 
-                                strand_to_cross, str(i+1), over_or_under) 
+        loose_cs = cross_strand(crossings, loose_cs,
+                                strand_to_cross, str(i+1), over_or_under)
     return crossings, loose_cs, final_cs
 
 def bias_middle(start_list):
@@ -80,13 +83,13 @@ def distance_drift(n):
         available = available_strands(loose_cs)
         strand_to_cross = choice(available)
         over_or_under = randint(0,1)
-        loose_cs = cross_strand(crossings, loose_cs, 
+        loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), over_or_under)
         dists.append(distance(crossings, loose_cs, final_cs))
     return dists
 
 def distance(crossings, loose_cs, final_cs):
-    G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs, 
+    G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs,
                                                        final_cs)
     path = nx.shortest_path(G,loose_face,final_face)
     return len(path)
@@ -103,7 +106,7 @@ def volume_evolution(n):
         if final_cs in available:
             available.remove(final_cs)
         strand_to_cross = choice(available)
-        loose_cs = cross_strand(crossings, loose_cs, 
+        loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), randint(0,1))
         vols.append(open_string_volume(crossings))
     return vols
@@ -132,14 +135,13 @@ def alexander_evolution(n):
         if final_cs in available:
             available.remove(final_cs)
         strand_to_cross = choice(available)
-        loose_cs = cross_strand(crossings, loose_cs, 
+        loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), randint(0,1))
         alex_polys.append(open_string_alexander(crossings))
     return alex_polys
 
 
-
-def function_evolution(n, function, simplify = 'level', skip_first = 0):
+def function_evolution(n, function, simplify='level', skip_first=0):
     crossings = [Crossing('0')]
     crossings[0][2]=crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
@@ -151,7 +153,7 @@ def function_evolution(n, function, simplify = 'level', skip_first = 0):
         if final_cs in available:
             available.remove(final_cs)
         strand_to_cross = choice(available)
-        loose_cs = cross_strand(crossings, loose_cs, 
+        loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), randint(0,1))
         if i >= skip_first:
             values.append(open_string_evaluation(crossings, function, simplify))
@@ -173,22 +175,24 @@ def turn_list_from_open_string(crossings, loose_cs, final_cs):
         turn_list.insert(0,turn_index*old_crossing_sign)
     return turn_list
 
+
 def fix_turn_list(turn_list):
     return turn_list_from_open_string(*open_string_from_turn_list(turn_list))
 
 
-
-def function_evolution_deterministic(n, function, simplify = 'level', start_turn_list = [1]):
+def function_evolution_deterministic(n, function, simplify='level',
+                                     start_turn_list=[1]):
     crossings, loose_cs, final_cs = open_string_from_turn_list(start_turn_list)
     turn_list = start_turn_list
     values = []
     for i in range(n):
-        print(i,turn_list)
+        print(i, turn_list)
         values.append(open_string_evaluation(crossings, function, simplify))
         crossings, loose_cs, final_cs, turn_list = next_open_string_with_over_under(crossings, loose_cs, final_cs, turn_list)
     return values
 
-def trivial_jones_search(n, simplify='global', start_turn_list = [1]):
+
+def trivial_jones_search(n, simplify='global', start_turn_list=[1]):
     crossings, loose_cs, final_cs = open_string_from_turn_list(start_turn_list)
     turn_list = start_turn_list
     trivial_jones = []
@@ -202,7 +206,7 @@ def trivial_jones_search(n, simplify='global', start_turn_list = [1]):
         print(i,turn_list, K)
         crossings, loose_cs, final_cs, turn_list = next_open_string_with_over_under(crossings, loose_cs, final_cs, turn_list)
     return trivial_jones
-    
+
 
 def knot_search(turn_list, max_steps):
     crossings, loose_cs, final_cs = open_string_from_turn_list(turn_list)
@@ -266,8 +270,8 @@ def open_string_from_turn_list(turn_list):
 
 #        print('available after')
 #        print(available)
-        loose_cs = cross_strand(crossings, loose_cs, 
-                                strand_to_cross, str(i+1), (turn>0)) 
+        loose_cs = cross_strand(crossings, loose_cs,
+                                strand_to_cross, str(i+1), (turn>0))
 #        print('crossings after')
 #        [c.info() for c in crossings]
 
@@ -304,7 +308,7 @@ def all_possible_next_crossings(crossings, loose_cs, final_cs):
     available = available_strands(loose_cs)
     open_strands = []
     for strand_to_cross in available:
-        loose_cs = cross_strand(crossings, loose_cs, 
+        loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), 0)
 
     return crossings, loose_cs, final_cs
@@ -393,7 +397,7 @@ def hard_unknot_search(turn_list, max_steps):
                     if K.alexander_polynomial().is_one():
                         print(turn_list)
                         unknots.append(tuple(turn_list))
-            
+
     return unknots
 
 
@@ -520,7 +524,7 @@ def next_available_corner(cs):
 
 
 def connect_loose_strands(crossings, loose_cs, final_cs):
-    G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs, 
+    G, loose_face, final_face = open_string_dual_graph(crossings, loose_cs,
                                                        final_cs)
     path = nx.shortest_path(G,loose_face,final_face)
     for i in range(len(path)-1):
@@ -557,7 +561,7 @@ def open_string_dual_graph(crossings, loose_cs, final_cs):
     for face in faces:
         for other_face in faces:
             if edges_between(face, other_face):
-                G.add_edge(face,other_face)    
+                G.add_edge(face,other_face)
     return G, loose_face,  final_face
 
 def edges_between(face1, face2):

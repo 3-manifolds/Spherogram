@@ -19,7 +19,7 @@ class OrderedSet():
             self.elts.pop(key)
 
     def __iter__(self):
-        return iter(self.elts.keys())
+        return iter(self.elts)
 
     def pop(self):
         return self.elts.popitem()[0]
@@ -45,7 +45,8 @@ class OrderedSet():
 
     def __eq__(self, other):
         if isinstance(other, OrderedSet):
-            return len(self) == len(other) and list(self) == list(other)
+            return len(self) == len(other) and all(x == y
+                                                   for x, y in zip(self, other))
         return set(self) == set(other)
 
 

@@ -59,7 +59,7 @@ def map_to_link(map):
 
 def num_self_crossings(component):
     comp_set = set(component)
-    return len([ce for ce in component if ce.other() in comp_set])
+    return len([1 for ce in component if ce.other() in comp_set])
 
 
 def longest_components(link, num_components):
@@ -71,22 +71,18 @@ def longest_components(link, num_components):
 
 
 def simplified_prime_pieces(link, simplify_fun):
-    ans = []
     cur = link.deconnect_sum(True)
-    while len(cur):
+    while cur:
         L = cur.pop()
         if simplify_fun(L):
             cur += L.deconnect_sum(True)
         else:
-            ans.append(L)
-    return ans
+            yield L
 
 
 def largest_prime_piece(link, simplify_fun):
     pieces = simplified_prime_pieces(link, simplify_fun)
-    if len(pieces) == 0:
-        return links.Link([])
-    return max(pieces, key=lambda L: len(L.crossings))
+    return max(pieces, key=lambda L: len(L.crossings), default=links.Link([]))
 
 
 def random_link(crossings,
@@ -215,7 +211,7 @@ def random_link(crossings,
 
     if prime_decomposition:
         if return_all_pieces:
-            return simplified_prime_pieces(link, simplify_func)
+            return list(simplified_prime_pieces(link, simplify_func))
         else:
             return largest_prime_piece(link, simplify_func)
     else:

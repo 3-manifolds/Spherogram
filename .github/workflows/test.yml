@@ -6,27 +6,30 @@ on: [push, pull_request]
 jobs:
   test:
     name: Test on Sage
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [9.1, develop]
+        version: [9.1, 9.3, 9.4, 9.5, 9.6, 9.7]
 
     container:
       image: sagemath/sagemath:${{ matrix.version }}
+      options: --user root
 
     steps:
       - name: Sage version
         run: sage --version
 
-      - name: Go home
-        # https://github.com/actions/runner/issues/863
-        run: sudo chown sage:sage $HOME           
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Install snappy_manifolds
         run: sage -pip install -U https://github.com/3-manifolds/snappy_manifolds/archive/master.zip
 
       - name: Install spherogram
-        run: sage -pip install -U https://github.com/3-manifolds/spherogram/archive/master.zip
+        run: |
+          sage -pip install wheel
+          cd /__w/Spherogram/Spherogram
+          sage -python setup.py pip_install
 
       - name: Test spherogram
-        run: sage -python -m spherogram.test 
+        run: sage -python -m spherogram.test

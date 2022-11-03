@@ -37,7 +37,8 @@ def entry_pts_ab(crossing):
     verts = [1, 0] if crossing.sign == -1 else [3, 0]
     return [CrossingEntryPoint(crossing, v) for v in verts]
 
-class StrandIndices(object):
+
+class StrandIndices():
     """
     A map from the crossings strands of a link L onto range(n).
     """
@@ -107,9 +108,9 @@ def test_meta_associativity():
         ]
     for m1, m2 in associative_merges:
         assert eval_merges(m1) == eval_merges(m2)
-    
-        
-class DrorDatum(object):
+
+
+class DrorDatum():
     """
     The (omega, A) pair which is the invariant defined in the first column of 
     http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
@@ -117,7 +118,7 @@ class DrorDatum(object):
     def __init__(self, link, ordered_crossings):
         self.strand_indices = StrandIndices(link, ordered_crossings)
         self.ring = R = PolynomialRing(ZZ, 'a').fraction_field()
-        self.omega = R.one()        
+        self.omega = R.one()
         self.A = matrix(R, 0, 0)
 
     def add_crossing(self, crossing):
@@ -140,7 +141,7 @@ class DrorDatum(object):
         self.A = strand_matrix_merge(A, a, b)
         indices.merge(cs_a, cs_b)
 
-# --- Alternate approach, which actually seems a bit slower --- 
+# --- Alternate approach, which actually seems a bit slower ---
 
 def strand_matrix_merge_alt(A, omega, a, b):
     assert a != b
@@ -183,16 +184,17 @@ class DrorDatumAlt(DrorDatum):
         self.omega *= mu
         indices.merge(cs_a, cs_b)
 
-# --- End alternate approach --- 
+# --- End alternate approach ---
 
 def num_overlap(crossing, frontier):
     neighbor_strands = {cs.opposite() for cs in crossing.crossing_strands()}
     return len(neighbor_strands.intersection(frontier))
-        
-class Exhaustion(object):
+
+
+class Exhaustion():
     """
     An exhaustion of a link where crossings are added in one-by-one
-    so that the resulting tangle is connected at every stage.  
+    so that the resulting tangle is connected at every stage.
 
     Starting at the given crossing, it uses a greedy algorithm to try
     to minimize the sizes of the frontiers of the intermediate tangles.
@@ -238,7 +240,7 @@ class Exhaustion(object):
         all_gluings = sum(self.gluings, [])[:-1]
         for a, b in all_gluings[:-1]:
             indices.merge(a, b)
-            
+
     def alexander_polynomial(self):
         D = DrorDatum(self.link, self.crossings)
         gluings = self.gluings[:]
@@ -248,7 +250,7 @@ class Exhaustion(object):
             D.add_crossing(C)
             for a, b in gluings:
                 D.merge(a, b)
-    
+
         C = self.crossings[-1]
         D.add_crossing(C)
         for a, b in self.gluings[-1][:-1]:
@@ -262,7 +264,7 @@ class Exhaustion(object):
             p = -p
         t, e = p.parent().gen(), min(p.exponents())
         return p//t**e
-        
+
 
 def good_exhaustion(link, max_failed_tries=20):
     """
@@ -291,10 +293,11 @@ def alexander(K):
     return E.alexander_polynomial()
 
 
-# --- code which will be removed in final version ---- 
+# --- code which will be removed in final version ----
 
 def test():
-    import spherogram, snappy
+    import spherogram
+    import snappy
     import sys
     sys.path.append('/Users/dunfield/r')
     import knot_sample

@@ -20,7 +20,7 @@ class DyadicRational:
         l = DyadicRational(2*self.numerator-1, self.denom_exp+1)
         r = DyadicRational(2*self.numerator+1, self.denom_exp+1)
         return (l,r)
-        
+
     def parent(self):
         if self.numerator % 4 == 1:
             return DyadicRational(self.numerator+1,self.denom_exp)
@@ -146,7 +146,7 @@ class TreeSequence:
             if dyadic_rational == dyadic:
                 return True
 
-    def tree_vertices(self, start_node=DyadicRational(1,1)):
+    def tree_vertices(self, start_node=DyadicRational(1, 1)):
         if start_node not in self:
             raise Exception('Starting node not in TreeSequence')
         left_child, right_child = start_node.children()
@@ -154,19 +154,19 @@ class TreeSequence:
         if not left_in and not right_in:
             return [left_child, right_child]
         if left_in and not right_in:
-            L = self.tree_vertices(start_node = left_child)
+            L = self.tree_vertices(start_node=left_child)
             L.append(right_child)
             return L
         if not left_in and right_in:
             L = [left_child]
-            L.extend(self.tree_vertices(start_node = right_child))
+            L.extend(self.tree_vertices(start_node=right_child))
             return L
         if left_in and right_in:
-            L = self.tree_vertices(start_node = left_child)
-            L.extend(self.tree_vertices(start_node = right_child))
+            L = self.tree_vertices(start_node=left_child)
+            L.extend(self.tree_vertices(start_node=right_child))
             return L
 
-    def exponents(self, start_node = DyadicRational(1,1)):
+    def exponents(self, start_node=DyadicRational(1, 1)):
         vertices = self.tree_vertices()
         exps = []
         for v in vertices:
@@ -202,7 +202,7 @@ class TreeMap:
         self.images = TreeSeq2
         if not TreeSeq1.length() == TreeSeq2.length():
             raise Exception("Sequences have different lengths")
-    
+
     def size(self):
         return self.break_points.length()
 
@@ -293,7 +293,7 @@ class TreeMap:
                 G = G2
             dyadics = tree_seq.dyadic_seq[1:-1] #trim off 0 and 1
             geodesic_endpts = [[tree_seq.geodesic_endpoints(d.children()[0]),d] for d in dyadics]
-            
+
             vertices = tree_seq.tree_vertices()
             if not inverted:
                 vertices_copy = [str(v) for v in vertices]
@@ -320,10 +320,9 @@ class TreeMap:
                 for other_triple in group: #remove grouped elements from bank of elements
                     edges_copy.remove(other_triple)
                 #sort by biggest denom first
-                group.sort(key= lambda x: x[1].denom_exp, reverse=True)
-                if len(group) > 0:
+                group.sort(key=lambda x: x[1].denom_exp, reverse=True)
+                if group:
                     grouped_edges.append(group)
-
 
             #switch out denominators for indices
             #prep to add edge
@@ -360,7 +359,7 @@ class TreeMap:
             v1G, v2G = graph_nodes[inverted_vertices_copy.index(vert1)], graph_nodes[inverted_vertices_copy.index(vert2)]
             G.add_edge( (v1G,edge.slot(vert1)), (v2G,edge.slot(vert2)), 1)
         return G
-                    
+
 
 class ABWord:
 
@@ -405,8 +404,8 @@ class ABWord:
             self.word_string = self.word_string.replace('Bb','')
 
     def __mul__(self,other):
-        return ABWord(''.join([self.word_string,other.word_string]),self.a,self.b)
-        
+        return ABWord(''.join([self.word_string, other.word_string]), self.a, self.b)
+
 
 def random_word(complexity):
     lets = 'abAB'
@@ -414,9 +413,9 @@ def random_word(complexity):
     for i in range(complexity-1):
         last_let = word[i].swapcase()
         new_lets = lets.replace(last_let,'')
-        word = ''.join([word,new_lets[randint(0,2)]])
+        word = ''.join([word, new_lets[randint(0, 2)]])
     return word
-    
+
 a = TreeMap( TreeSequence([DyadicRational(3,2)]) , TreeSequence([DyadicRational(1,2)]) )
 b = TreeMap( TreeSequence([DyadicRational(7,3)]) , TreeSequence([DyadicRational(5,3)]) )
 A = a.inverse()
@@ -433,7 +432,7 @@ for i in range(num_gens-2):
     xs.append(x)
     x = A*x*a
 x_invs = [i.inverse() for i in xs]
-    
+
 def exponents_to_tree_map(exps_domain, exps_range):
     result = a*A
     inv = a*A
@@ -463,7 +462,7 @@ def random_xs(length, complexity):
             forbidden_let = (next_pos,1-inverse)
             word += 'x'+str(next_pos)+' '
     return result, word
-        
+
 
 #letters = 'abAB'
 #letters_list = [letters for i in range(10)]
@@ -479,4 +478,3 @@ def random_xs(length, complexity):
 #    if word.is_reduced() and word_ev.size() <= 3:
 #        print(word)
 #        print(word_ev)
-

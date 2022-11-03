@@ -4,7 +4,7 @@ Simplifying link diagrams.
 Important notes:
 
 * The link diagram is modified in place.  All the relevant parts of the
-data structure are updated at each step.
+  data structure are updated at each step.
 
 * Unknot components which are also unlinked may be silently discarded.
 """
@@ -51,7 +51,7 @@ def reidemeister_I(link, C):
     elim, changed = set(), set()
     for i in range(4):
         if C.adjacent[i] == (C, (i + 1) % 4):
-            (A, a), (B, b) = C.adjacent[i+2], C.adjacent[i+3]
+            (A, a), (B, b) = C.adjacent[i + 2], C.adjacent[i + 3]
             elim = set([C])
             if C != A:
                 A[a] = B[b]
@@ -71,16 +71,16 @@ def reidemeister_I_and_II(link, A):
     eliminated, changed = reidemeister_I(link, A)
     if not eliminated:
         for a in range(4):
-            (B, b), (C, c) = A.adjacent[a], A.adjacent[a+1]
-            if B == C and (b-1) % 4 == c and (a+b) % 2 == 0:
+            (B, b), (C, c) = A.adjacent[a], A.adjacent[a + 1]
+            if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
                 eliminated, changed = reidemeister_I(link, B)
                 if eliminated:
                     break
                 else:
-                    W, w = A.adjacent[a+2]
-                    X, x = A.adjacent[a+3]
-                    Y, y = B.adjacent[b+1]
-                    Z, z = B.adjacent[b+2]
+                    W, w = A.adjacent[a + 2]
+                    X, x = A.adjacent[a + 3]
+                    Y, y = B.adjacent[b + 1]
+                    Z, z = B.adjacent[b + 2]
                     eliminated = set([A, B])
                     if W != B:
                         W[w] = Z[z]
@@ -168,12 +168,13 @@ def reidemeister_III(link, triple):
     a, b, c = [t.strand_index for t in triple]
     # We insert Strands around the border of the triple to make the code more
     # transparent and eliminate some special cases.
-    old_border = [(C, c-1), (C, c-2), (A, a-1), (A, a-2), (B, b-1), (B, b-2)]
+    old_border = [(C, c - 1), (C, c - 2), (A, a - 1),
+                  (A, a - 2), (B, b - 1), (B, b - 2)]
     border_strands = [insert_strand(*P) for P in old_border]
-    new_boarder = [(A,a), (B, b+1), (B, b), (C, c+1), (C, c), (A, a+1)]
-    for i, (X,x) in enumerate(new_boarder):
+    new_boarder = [(A, a), (B, b + 1), (B, b), (C, c + 1), (C, c), (A, a + 1)]
+    for i, (X, x) in enumerate(new_boarder):
         X[x] = border_strands[i][0]
-    A[a-1], B[b-1], C[c-1] = B[b+2], C[c+2], A[a+2]
+    A[a - 1], B[b - 1], C[c - 1] = B[b + 2], C[c + 2], A[a + 2]
     [S.fuse() for S in border_strands]
 
 
@@ -236,7 +237,7 @@ class DualGraphOfFaces(graphs.Graph):
             if face.label < neighbor.label:
                 dual_edge = self.add_edge(face, neighbor)
                 dual_edge.interface = (edge, edge.opposite())
-                dual_edge.label= len(self.edges) - 1
+                dual_edge.label = len(self.edges) - 1
 
         # assert self.is_planar()
 
@@ -280,14 +281,14 @@ def dual_graph_as_nx(link):
                 face.append(next)
 
     G = nx.Graph()
-    to_face = {edge:faces[f] for edge, f in to_face_index.items()}
+    to_face = {edge: faces[f] for edge, f in to_face_index.items()}
 
     for edge, face in to_face.items():
         opp_edge = edge.opposite()
         neighbor = to_face[opp_edge]
         if face.label < neighbor.label:
             G.add_edge(face.label, neighbor.label,
-                       interface={face.label:edge, neighbor.label:opp_edge})
+                       interface={face.label: edge, neighbor.label: opp_edge})
 
     G.edge_to_face = to_face_index
     return G
@@ -338,7 +339,10 @@ def extend_strand_forward(kind, strand, end_cep):
     """
     cep = end_cep.next()
     strand.append(end_cep)
+    start_cep = strand[0].previous()
     while getattr(cep, 'is_' + kind + '_crossing')():
+        if cep.next() == start_cep:  # prevents extending too far
+            break
         strand.append(cep)
         cep = cep.next()
         if cep == strand[0]:
@@ -351,11 +355,13 @@ def extend_strand_backward(kind, strand, start_cep):
     until you hit a crossing which is not of the given kind
     (over/under).
     """
-
     cep = start_cep.previous()
     strand.insert(0, start_cep)
+    end_cep = strand[-1].next()
     while getattr(cep, 'is_' + kind + '_crossing')():
-        strand.insert(0,cep)
+        if cep.previous() == end_cep:  # prevents extending too far
+            break
+        strand.insert(0, cep)
         cep = cep.previous()
         if cep == strand[-1]:
             break
@@ -377,7 +383,7 @@ def pickup_strand(link, dual_graph, kind, strand):
         # unknotted
         remove_strand(link, strand)
         return len(strand)
-    if startcep == strand[-1].next():
+    if startcep == strand[-1].next() and startcep.other() in strand:
         # We have a figure-8 curve with a single crossing in front
         # of the rest of the components.
         remove_strand(link, [startcep] + strand)
@@ -416,9 +422,9 @@ def pickup_strand(link, dual_graph, kind, strand):
     loose_end = startcep.rotate(2)
 
     # find new sequence of overcrossings to create
-    for i in range(len(path)-1):
+    for i in range(len(path) - 1):
         label = 'new%d' % i
-        f1, f2 = path[i:i+2]
+        f1, f2 = path[i:i + 2]
         edge = G[f1][f2]
         if edge['weight'] > 0:
             cep_to_cross = G[f1][f2]['interface'][f1]
@@ -495,7 +501,7 @@ def remove_strand(link, strand):
             bridge_strands[c][0] = right_cs.crossing[right_cs.strand_index]
         if left_cs.crossing in crossing_set:
             signs_equal = (c.sign == left_cs.crossing.sign)
-            bridge_strands[c][1] = bridge_strands[left_cs.crossing][1-signs_equal]
+            bridge_strands[c][1] = bridge_strands[left_cs.crossing][1 - signs_equal]
         else:
             bridge_strands[c][1] = left_cs.crossing[left_cs.strand_index]
     remove_crossings(link, set(crossings_seen))
@@ -503,7 +509,7 @@ def remove_strand(link, strand):
     for s in bridge_strands.values():
         s.fuse()
 
-    return crossing_set
+    return set(crossings_seen)
 
 
 def cross(link, cep_to_cross, kind, loose_end, label):
@@ -596,7 +602,7 @@ def randomize_within_lengths(items):
     return ans
 
 
-def reverse_type_I(link,crossing_strand,label,hand,rebuild=False):
+def reverse_type_I(link, crossing_strand, label, hand, rebuild=False):
     """
     Add a loop on the strand at crossing_strand with a given label and
     'handedness' hand (twisting left or right).
@@ -623,14 +629,13 @@ def reverse_type_I(link,crossing_strand,label,hand,rebuild=False):
         link._rebuild(component_starts=comp_sts)
 
 
-def random_reverse_type_I(link,label,rebuild=False):
+def random_reverse_type_I(link, label, rebuild=False):
     """
     Randomly adds a loop in a strand, adding one crossing with given label
     """
-
     cs = random.choice(link.crossing_strands())
-    lr = random.choice(['left','right'])
-    reverse_type_I(link,cs,label,lr,rebuild=rebuild)
+    lr = random.choice(['left', 'right'])
+    reverse_type_I(link, cs, label, lr, rebuild=rebuild)
 
 
 def reverse_type_II(link, c, d, label1, label2, rebuild=False):
@@ -664,10 +669,10 @@ def random_reverse_type_II(link, label1, label2, rebuild=False):
     faces = link.faces()
     while True:
         face = random.choice(faces)
-        if len(face)>1:
+        if len(face) > 1:
             break
-    c, d = random.sample(face,2)
-    reverse_type_II(link,c,d,label1,label2,rebuild=rebuild)
+    c, d = random.sample(face, 2)
+    reverse_type_II(link, c, d, label1, label2, rebuild=rebuild)
 
 
 def random_reverse_move(link, t, n):
@@ -676,9 +681,9 @@ def random_reverse_move(link, t, n):
     n is for labeling the new crossings
     """
     if t == 1:
-        random_reverse_type_I(link,'new'+str(n))
+        random_reverse_type_I(link, 'new' + str(n))
     elif t == 2:
-        random_reverse_type_II(link,'new'+str(n),'new'+str(n+1))
+        random_reverse_type_II(link, 'new' + str(n), 'new' + str(n + 1))
     else:
         poss_moves = possible_type_III_moves(link)
         if len(poss_moves) != 0:

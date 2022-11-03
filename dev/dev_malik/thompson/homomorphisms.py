@@ -2,7 +2,7 @@ import snappy
 from thompson import *
 from graphknotter import *
 import itertools
-    
+
 a = TreeMap( TreeSequence([DyadicRational(3,2)]) , TreeSequence([DyadicRational(1,2)]) )
 b = TreeMap( TreeSequence([DyadicRational(7,3)]) , TreeSequence([DyadicRational(5,3)]) )
 A = a.inverse()
@@ -51,7 +51,7 @@ def word_image(word, image_a, image_b):
     return ''.join(images)
 
 def inverse(word):
-    return word[::-1].swapcase()    
+    return word[::-1].swapcase()
 
 def link(word):
     return link_diagram(ABWord(word,a,b).evaluate().planar_graph())

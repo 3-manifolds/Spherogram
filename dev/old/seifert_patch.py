@@ -76,7 +76,7 @@ def seifert_tree(link):
             for j in range(2):
                 if len(e1[i].intersection(e2[j])) > 1:
                     connect_vertices(e1,i,e2,j)
-    
+
     return [(frozenset(e[0]),frozenset(e[1])) for e in edges]
 
 def remove_admissible_move(link):
@@ -205,7 +205,8 @@ def braid_arrows(link):
         arrow.pop(1) #start and end positions are now the same
     return arrows
 
-def seifert_matrix(link, return_type_matrix = False):
+
+def seifert_matrix(link, return_type_matrix=False):
     """
     Returns the Seifert matrix of a link by first making it isotopic to a braid
     closure, and using the algorithm described in:
@@ -231,7 +232,7 @@ def seifert_matrix(link, return_type_matrix = False):
                     matrix[entries.index((n,m))][entries.index((n,m))] = 1
                     type_matrix[entries.index((n,m))][entries.index((n,m))] = 2
 
-        
+
         #two gens on same strand, one after the other
         for m, gen in enumerate(strand[:-1]):
             if gen[3] == 0: #shared crossing is right handed
@@ -252,7 +253,7 @@ def seifert_matrix(link, return_type_matrix = False):
                     elif gen[0] < next_gen[0] < gen[1] < next_gen[1]:
                         matrix[entries.index((n+1,l))][entries.index((n,m))] = -1
                         type_matrix[entries.index((n+1,l))][entries.index((n,m))] = 6
-    
+
     if return_type_matrix:
         return matrix, type_matrix
     else:
@@ -286,4 +287,3 @@ def straighten_arrows(arrows):
                 for other_arrow in one_strand_ahead:
                     other_arrow[0] += diff
                 totally_straightened = False
-

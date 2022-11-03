@@ -80,16 +80,16 @@ class Crossing():
     * label: Arbitrary name used for printing the crossing.
 
     * directions: store the orientations of the link components passing
-    through the crossing.  For a +1 crossing this is { (0, 2), (3, 1) }.
-    Set with calls to make_tail.
+      through the crossing.  For a +1 crossing this is { (0, 2), (3, 1) }.
+      Set with calls to make_tail.
 
     * adjacent: The other Crossings that this Crossing is attached to.
 
     * strand_labels: Numbering of the strands, used for DT codes and
-    such.
+      such.
 
     * strand_components: Which element of the parent
-    Link.link_components each input's strand belongs to.
+      Link.link_components each input's strand belongs to.
     """
 
     def __init__(self, label=None):
@@ -447,8 +447,8 @@ class Link():
             crossings = []  # empty link
 
         # Make sure everything is tied up.
-        if True in [None in c.adjacent for c in crossings]:
-            raise ValueError('No loose strands allowed')
+        if any(None in c.adjacent for c in crossings):
+            raise ValueError('no loose strands allowed')
 
         # Fuse the strands.  If there any components made up
         # only of strands, these are thrown out here.
@@ -644,11 +644,21 @@ class Link():
                     next_label = l2
                     direction = (c2, j2)
                 else:
-                    # have a component of length 2, so now rely on the
-                    # convention that the first position at a PD
-                    # crossing is a directed entry point.
+                    # We have a component of length 2, so now rely on
+                    # the convention that the first position at a PD
+                    # crossing is a directed entry point. (If both
+                    # crossings are over or both under, the
+                    # orientation is arbitary anyway.)
                     next_label = l1
-                    direction = (c2, j2) if j2 % 2 == 1 else (c1, j1)
+
+                    # The strand labeled m is oriented c2 --> c1 if
+                    # and only if either l1 = l2 is the incoming
+                    # understrand of c2 or m is incoming understrand
+                    # at c1.
+                    if code[c2][0] == l1 or code[c1][0] == m:
+                        direction = (c1, j1)
+                    else:
+                        direction = (c2, j2)
 
                 starts.append(direction)
             while next_label != m:
@@ -1223,7 +1233,7 @@ class Link():
             DT = ''.join([DT_alphabet[x] for x in init_data] +
                          [DT_alphabet[x >> 1] for x in sum(DT, tuple())])
             if flips:
-                DT += '.' + ''.join([repr(flip) for flip in the_flips])
+                DT += '.' + ''.join(repr(flip) for flip in the_flips)
             return "DT[" + DT + "]"
         else:
             if flips:
@@ -1235,10 +1245,10 @@ class Link():
         peer = dict([c.peer_info() for c in self.crossings])
         even_labels = enumerate_lists(
             self.link_components, n=0, filter=lambda x: x % 2 == 0)
-        ans = '[' + ','.join([repr([peer[c][0] for c in comp])
-                              [1:-1].replace(',', '') for comp in even_labels])
-        ans += '] / ' + ' '.join([['_', '+', '-'][peer[c][1]]
-                                  for c in sum(even_labels, [])])
+        ans = '[' + ','.join(repr([peer[c][0] for c in comp])
+                             [1:-1].replace(',', '') for comp in even_labels)
+        ans += '] / ' + ' '.join(['_', '+', '-'][peer[c][1]]
+                                 for c in sum(even_labels, []))
         return ans
 
     def KLPProjection(self):

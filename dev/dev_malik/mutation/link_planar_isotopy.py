@@ -4,13 +4,16 @@ from spherogram.links.random_links import map_to_link, random_map
 from random import choice
 from collections import Counter
 
-def random_rooted_link(size,edge_conn = 2):
-    K = map_to_link(random_map(size,edge_conn))
-    root = choice(K.crossing_strands())
-    return K,root
 
-def isosig(self,root = None, over_or_under = False):
-    return link_isosig(self,root,over_or_under)
+def random_rooted_link(size, edge_conn=2):
+    K = map_to_link(random_map(size, edge_conn))
+    root = choice(K.crossing_strands())
+    return K, root
+
+
+def isosig(self, root=None, over_or_under=False):
+    return link_isosig(self, root, over_or_under)
+
 
 spherogram.Link.isosig = isosig
 
@@ -26,6 +29,6 @@ for i in range(num_samples):
     isosig = K.isosig(root,over_or_under=True)
     isosig_to_link[isosig]=(K,root)
     isosigs.append(isosig)
-    
+
 C = Counter(isosigs)
 print(C.most_common(10))
