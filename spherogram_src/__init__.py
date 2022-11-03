@@ -21,7 +21,11 @@ __version__ = version()
 __all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
-           'FatGraph', 'Graph', 'IdentityBraid', 'InfinityTangle',
+           'FatGraph', 'Graph',
            'Link', 'MultiEdge', 'Poset', 'Presentation',
-           'RationalTangle', 'Crossing', 'Strand', 'Tangle', 'WhiteheadMove',
-           'Word', 'ZeroTangle', 'random_link']
+           'Crossing', 'Strand', 'WhiteheadMove',
+           'Word', 'random_link',
+           # from spherogram.links.tangles:
+           'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
+           'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
+           'IdentityBraid', 'ComponentTangle', 'join_strands']
