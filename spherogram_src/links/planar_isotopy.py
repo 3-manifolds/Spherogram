@@ -102,7 +102,7 @@ def min_isosig_with_gluings(tangle, gluings, root=None):
         # permuting the indices in the gluings
         perm = range(tangle.boundary[0] + tangle.boundary[1])
         perm[tangle.boundary[0]:] = reversed(perm[tangle.boundary[0]:])
-        perm = rotate_list(perm,i)
+        perm = rotate_list(perm, i)
         rotated_gluings = []
         for g in gluings:
             new_g = [perm[g[0]], perm[g[1]]]

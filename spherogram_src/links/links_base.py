@@ -427,7 +427,7 @@ class Link():
 
         component_starts = None
         start_orientations = None
-        component_spec = None # either None or a list of (CrossingStrand, int) pairs
+        component_spec = None  # either None or a list of (CrossingStrand, int) pairs
 
         if crossings is not None and braid_closure is not None:
             raise ValueError('Specified *both* crossings and braid_closure')
@@ -459,7 +459,7 @@ class Link():
         component_strands = []
         for s in crossings:
             if isinstance(s, Strand):
-                if s.component_idx != None:
+                if s.component_idx is not None:
                     # defer fusing
                     component_strands.append(s)
                 elif s.is_loop():
@@ -481,7 +481,7 @@ class Link():
                 c, i = s.adjacent[0]
                 assert isinstance(c, Crossing)
                 component_spec.append((CrossingStrand(c, i), s.component_idx))
-                assert not s.is_loop() # at this point it is impossible to be a loop
+                assert not s.is_loop()  # at this point it is impossible to be a loop
                 s.fuse()
 
         # Finally remove all the Strand objects from the crossing list
@@ -506,7 +506,7 @@ class Link():
                                 # This is a second Strand in the same component
                                 # with the same component_idx, which is OK
                                 break
-                            elif component_perm[idx] == None:
+                            elif component_perm[idx] is None:
                                 if i not in unused_comps:
                                     raise ValueError("Two Strand objects in the same component"
                                                      " have different component_idx values")
@@ -517,9 +517,9 @@ class Link():
                                 raise ValueError("Two Strand objects in different components"
                                                  " have the same component_idx values")
                     else:
-                        raise Exception() # This should not happen
+                        raise Exception()  # This should not happen
                 for i in range(len(self.link_components)):
-                    if component_perm[i] == None:
+                    if component_perm[i] is None:
                         # This is why unused_comps is initialized with reversed order
                         component_perm[i] = unused_comps.pop()
                 assert len(unused_comps) == 0

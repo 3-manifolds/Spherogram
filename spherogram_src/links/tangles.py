@@ -46,6 +46,7 @@ def rotate_list(L, s):
     n = len(L)
     return [L[(i + s) % n] for i in range(n)]
 
+
 def decode_boundary(boundary):
     """The boundary is either a nonnegative integer or a pair of non-negative integers.
 
@@ -69,9 +70,12 @@ def decode_boundary(boundary):
         m, n = boundary
     else:
         m = n = boundary
-    if m < 0: raise ValueError("Number of bottom boundary strands cannot be negative")
-    if n < 0: raise ValueError("Number of top boundary strands cannot be negative")
+    if m < 0:
+        raise ValueError("Number of bottom boundary strands cannot be negative")
+    if n < 0:
+        raise ValueError("Number of top boundary strands cannot be negative")
     return (m, n)
+
 
 class Tangle():
     def __init__(self, boundary=2, crossings=None, entry_points=None, label=None):
@@ -205,7 +209,7 @@ class Tangle():
 
     def invert(self):
         """Rotate anticlockwise by 90 and take the mirror image. This is only for (2,2) tangles."""
-        if self.boundary != (2,2):
+        if self.boundary != (2, 2):
             raise ValueError("Only boundary=(2,2) tangles can be inverted")
         return -self.rotate(1)
 
@@ -336,7 +340,7 @@ class Tangle():
                 # check that the strand is not only incident to the boundary
                 if preserve_boundary and all(a[0] == self for a in s.adjacent):
                     continue
-                if preserve_components and s.component_idx != None:
+                if preserve_components and s.component_idx is not None:
                     continue
                 s.fuse()
                 self.crossings.remove(s)
@@ -362,12 +366,14 @@ class Tangle():
         for i, c in enumerate(T.crossings):
             c.label = i + 1
         arc_ids = {}
+
         def arc_key(c, i):
             """For the given entity c and index into c.adjacent,
             create a name for the incident arc. This gives something
             that's suitable for use as a dictionary key."""
             d, j = c.adjacent[i]
             return tuple(sorted([(c.label, i), (d.label, j)]))
+
         def arc_id(c, i):
             """Get the unique integer id associated to the arc, generating
             a fresh one if needed."""
@@ -381,7 +387,7 @@ class Tangle():
             if isinstance(c, Crossing):
                 parts.append("X[%s,%s,%s,%s]" % tuple(arcs))
             elif isinstance(c, Strand):
-                if c.component_idx != None:
+                if c.component_idx is not None:
                     parts.append(f"P[{arcs[0]},{arcs[1]}, component->{c.component_idx}]")
                 else:
                     parts.append(f"P[{arcs[0]},{arcs[1]}]")
@@ -389,8 +395,10 @@ class Tangle():
                 raise Exception("Unexpected entity")
         return f"Tangle[{lower}, {upper}{''.join(', ' + p for p in parts)}]"
 
+
 Tangle.bridge_closure = Tangle.numerator_closure
 Tangle.braid_closure = Tangle.denominator_closure
+
 
 def ComponentTangle(component_idx):
     """The unknotted (1,1) tangle with a specified component index.
@@ -427,15 +435,18 @@ def ComponentTangle(component_idx):
     s = Strand(component_idx=component_idx)
     return Tangle((1, 1), [s], [(s, 0), (s, 1)])
 
+
 def CapTangle():
     """The unknotted (2,0) tangle."""
     cap = Strand("cap")
     return Tangle((2, 0), [cap], [(cap, 0), (cap, 1)])
 
+
 def CupTangle():
     """The unknotted (0,2) tangle."""
     cup = Strand("cup")
     return Tangle((0, 2), [cup], [(cup, 0), (cup, 1)])
+
 
 def ZeroTangle():
     """The zero tangle, equivalent to ``RationalTangle(0)`` or
@@ -445,6 +456,7 @@ def ZeroTangle():
                   [(bot, 0), (bot, 1), (top, 0), (top, 1)],
                   "ZeroTangle")
 
+
 def InfinityTangle():
     """The infinity tangle, equivalent to ``RationalTangle(1, 0)`` or
     ``IdentityBraid(2)``."""
@@ -453,17 +465,20 @@ def InfinityTangle():
                   [(left, 0), (right, 0), (left, 1), (right, 1)],
                   "InfinityTangle")
 
+
 def MinusOneTangle():
     """The minus one tangle, equivalent to ``RationalTangle(-1)``."""
     c = Crossing('-one')
     return Tangle(2, [c], [(c, 3), (c, 0), (c, 2), (c, 1)],
                   "MinusOneTangle")
 
+
 def OneTangle():
     """The one tangle, equivalent to ``RationalTangle(1)``."""
     c = Crossing('one')
     return Tangle(2, [c], [(c, 0), (c, 1), (c, 3), (c, 2)],
                   "OneTangle")
+
 
 def IntegerTangle(n):
     """The tangle equivalent to ``RationalTangle(n)``. It is
@@ -483,6 +498,7 @@ def IntegerTangle(n):
         return T
     else:
         raise ValueError("Expecting int")
+
 
 def continued_fraction_expansion(a, b):
     """
@@ -560,6 +576,7 @@ def IdentityBraid(n):
     return Tangle(n, strands, entry_points,
                   f"IdentityBraid({n})")
 
+
 def BraidTangle(gens, n=None):
     """
     Create an (n,n) tangle from a braid word.
@@ -586,7 +603,7 @@ def BraidTangle(gens, n=None):
     >>> BraidTangle([1,2,1]).describe()
     'Tangle[{1,2,3}, {4,5,6}, X[7,5,4,8], X[3,6,7,9], X[2,9,8,1]]'
     """
-    if n == None:
+    if n is None:
         n = max(-min(gens), max(gens)) + 1
     # n is the braid index
 
@@ -596,7 +613,9 @@ def BraidTangle(gens, n=None):
 
     b = IdentityBraid(n)
     for i in gens:
-        if i == 0 : raise ValueError("Generators must be nonzero integers")
-        if abs(i) >= n : raise ValueError("Generators must have magnitude less than n")
+        if i == 0:
+            raise ValueError("Generators must be nonzero integers")
+        if abs(i) >= n:
+            raise ValueError("Generators must have magnitude less than n")
         b = b * gen(i)
     return b

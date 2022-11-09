@@ -21,7 +21,6 @@ def cut(G, T, e):
     Returns: The list of edges in G - e connecting the two different components of T-e."""
     if not T.has_edge(*e):
         raise Exception("e must be an edge of T.")
-    H = G.copy()
     S = T.copy()
     S.delete_edge(e)
     (C1, C2) = S.connected_components()
@@ -43,13 +42,13 @@ def is_internally_active(G, T, e):
     Returns: True if e is in T and e is internally active for T, False otherwise. Uses the ordering on G.edges()."""
     if not T.has_edge(*e):
         return False
-    for f in cut(G,T,e):
+    for f in cut(G, T, e):
         if edge_index(f) < edge_index(e):
             return False
     return True
 
 
-def cyc(G,T,e):
+def cyc(G, T, e):
     """
     Input:
     --A graph G.
@@ -64,12 +63,12 @@ def cyc(G,T,e):
         raise Exception("e must not be an edge of T.")
     # First thing: catch exceptional case that e is a multiple for an edge in T (giving a 2-cycle).
     try:
-        l = T.edge_label(e[0],e[1])
-        if isinstance(l,list):
+        l = T.edge_label(e[0], e[1])
+        if isinstance(l, list):
             l = l[0]  # For multigraphs, edge_label returns a list. In this case, it's a list with one element...
-        if (e[0],e[1], l) in T.edges(sort=True, key=edge_index):
-            return [(e[0],e[1],l),e]
-        return [(e[1],e[0],l),e]
+        if (e[0], e[1], l) in T.edges(sort=True, key=edge_index):
+            return [(e[0], e[1], l), e]
+        return [(e[1], e[0], l), e]
     except Exception:
         pass
 
@@ -99,7 +98,7 @@ def is_externally_active(G, T, e):
     Returns: True is e is not in T and e is externally active for T, False otherwise. Uses the ordering on G.edges()."""
     if T.has_edge(*e):
         return False
-    for f in cyc(G,T,e):
+    for f in cyc(G, T, e):
         if edge_index(f) < edge_index(e):
             return False
     return True
@@ -108,7 +107,7 @@ def is_externally_active(G, T, e):
 def _edge_sign(K, edge):
     "Returns the sign (+/- 1) associated to given edge in the black graph."
     crossing = edge[2]
-    if set(((crossing,0),(crossing,1))).issubset(set(edge[0])) or set(((crossing,0),(crossing,1))).issubset(set(edge[1])):
+    if set(((crossing, 0), (crossing, 1))).issubset(set(edge[0])) or set(((crossing, 0), (crossing, 1))).issubset(set(edge[1])):
         return +1
     return -1
 
@@ -117,14 +116,14 @@ def _Jones_contrib_edge(K, G, T, e, A):
     "Returns the contribution to the Jones polynomial of the specified tree T and edge e."
     # Need to also take crossing sign into account -- A -> 1/A in negative case.
     s = e[2]['sign']
-    if is_internally_active(G,T,e):
-        return -A**(-3*s)
-    if T.has_edge(*e) and (not is_internally_active(G,T,e)):
+    if is_internally_active(G, T, e):
+        return -A**(-3 * s)
+    if T.has_edge(*e) and (not is_internally_active(G, T, e)):
         return A**s
-    if is_externally_active(G,T,e):
-        return -A**(3*s)
-    if (not T.has_edge(*e)) and (not is_externally_active(G,T,e)):
-        return A**(-1*s)
+    if is_externally_active(G, T, e):
+        return -A**(3 * s)
+    if (not T.has_edge(*e)) and (not is_externally_active(G, T, e)):
+        return A**(-1 * s)
 
 
 def _Jones_contrib(K, G, T, A):
@@ -132,7 +131,7 @@ def _Jones_contrib(K, G, T, A):
     answer = 1
     # 2 loops, edges in T and edges not in T
     for e in G.edges(sort=True, key=edge_index):
-        answer = answer*_Jones_contrib_edge(K,G,T,e,A)
+        answer = answer * _Jones_contrib_edge(K, G, T, e, A)
     return answer
 
 
@@ -151,18 +150,18 @@ def Jones_poly(K, variable=None, new_convention=False):
     on Khovanov homology.
     """
     if not variable:
-        L = LaurentPolynomialRing(QQ,'q')
+        L = LaurentPolynomialRing(QQ, 'q')
         variable = L.gen()
     answer = 0
-    L_A = LaurentPolynomialRing(QQ,'A')
+    L_A = LaurentPolynomialRing(QQ, 'A')
     A = L_A.gen()
     G = K.white_graph()
     for i, labels in enumerate(G.edge_labels()):
         labels['edge_index'] = i
     writhe = K.writhe()
     for T in spanning_trees(G):
-        answer = answer + _Jones_contrib(K,G,T,A)
-    answer = answer * (-A)**(3*writhe)
+        answer = answer + _Jones_contrib(K, G, T, A)
+    answer = answer * (-A)**(3 * writhe)
     ans = 0
     for i in range(len(answer.coefficients())):
         coeff = answer.coefficients()[i]
@@ -170,9 +169,9 @@ def Jones_poly(K, variable=None, new_convention=False):
         if new_convention:
             # Now do the substitution A = i q^(1/2) so A^2 = -q
             assert exp % 2 == 0
-            ans = ans + coeff*((-variable)**(exp//2))
+            ans = ans + coeff * ((-variable)**(exp // 2))
         else:
-            ans = ans + coeff*(variable**(exp//4))
+            ans = ans + coeff * (variable**(exp // 4))
     return ans
 
 
@@ -233,7 +232,7 @@ def spanning_trees(G):
       Networks, Volume 5 (1975), numer 3, pages 237-252.
     """
 
-    def _recursive_spanning_trees(G,forest):
+    def _recursive_spanning_trees(G, forest):
         """
         Returns all the spanning trees of G containing forest
         """
@@ -250,7 +249,7 @@ def spanning_trees(G):
 
             # 1) Recursive call with e removed from G
             G.delete_edge(e)
-            trees = _recursive_spanning_trees(G,forest)
+            trees = _recursive_spanning_trees(G, forest)
             G.add_edge(e)
 
             # 2) Recursive call with e include in forest
@@ -261,13 +260,13 @@ def spanning_trees(G):
             c1 = forest.connected_component_containing_vertex(e[0])
             c2 = forest.connected_component_containing_vertex(e[1])
             G.delete_edge(e)
-            B = G.edge_boundary(c1,c2,sort=False)
+            B = G.edge_boundary(c1, c2, sort=False)
             G.add_edge(e)
 
             # Actual call
             forest.add_edge(e)
             G.delete_edges(B)
-            trees.extend(_recursive_spanning_trees(G,forest))
+            trees.extend(_recursive_spanning_trees(G, forest))
             G.add_edges(B)
             forest.delete_edge(e)
 
@@ -277,6 +276,7 @@ def spanning_trees(G):
         forest = graph.Graph()
         forest.add_vertices(G.vertices())
         forest.add_edges(G.bridges())
-        return _recursive_spanning_trees(graph.Graph(G,immutable=False,loops=False), forest)
+        return _recursive_spanning_trees(graph.Graph(G, immutable=False, loops=False),
+                                         forest)
     else:
         return []
