@@ -648,7 +648,7 @@ class Link():
                     # the convention that the first position at a PD
                     # crossing is a directed entry point. (If both
                     # crossings are over or both under, the
-                    # orientation is arbitary anyway.)
+                    # orientation is arbitrary anyway.)
                     next_label = l1
 
                     # The strand labeled m is oriented c2 --> c1 if
