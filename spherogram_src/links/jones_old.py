@@ -229,7 +229,7 @@ def spanning_trees(G):
 
     .. [RT75] Read, R. C. and Tarjan, R. E.
       Bounds on Backtrack Algorithms for Listing Cycles, Paths, and Spanning Trees
-      Networks, Volume 5 (1975), numer 3, pages 237-252.
+      Networks, Volume 5 (1975), number 3, pages 237-252.
     """
 
     def _recursive_spanning_trees(G, forest):
