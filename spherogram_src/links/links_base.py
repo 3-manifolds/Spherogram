@@ -1391,31 +1391,26 @@ class Link():
         else:
             crossings = [Crossing(c.label) for c in self.crossings]
             old_to_new = dict(zip(self.crossings, crossings))
-            loose_strands = set((n, i) for n in range(len(crossings))
-                                for i in range(4))
-            while loose_strands:
-                n, i = loose_strands.pop()
-                adj_c, adj_i = self.crossings[n].adjacent[i]
-                adj_n = self.crossings.index(adj_c)
-                crossings[n][i] = crossings[adj_n][adj_i]
-                loose_strands.remove((adj_n, adj_i))
 
-            # Orient the new crossings.
-            for old, new in old_to_new.items():
-                new.make_tail(0)
-                e = 3 if old.sign == 1 else 1
-                new.make_tail(e)
-                new.orient()
+            for old_cross, new_cross in old_to_new.items():
+                new_cross.sign = old_cross.sign
+                new_cross.directions = old_cross.directions.copy()
+                new_cross.strand_components = old_cross.strand_components.copy()
+                new_cross.strand_labels = old_cross.strand_labels.copy()
+                for i in range(4):
+                    adj_cross, adj_index = old_cross.adjacent[i]
+                    new_cross.adjacent[i] = (old_to_new[adj_cross], adj_index)
 
-            component_starts = []
-            for component in self.link_components:
-                old_crossing, entry_point = component[0]
-                crossing = old_to_new[old_crossing]
-                component_starts.append(
-                    CrossingEntryPoint(crossing, entry_point))
             link = self.__class__(crossings=crossings,
                                   check_planarity=False, build=False)
-            link._build(component_starts=component_starts)
+            link.link_components = []
+            for old_component in self.link_components:
+                new_component = []
+                for old_crossing, entry_point in old_component:
+                    crossing = old_to_new[old_crossing]
+                    new_component.append(CrossingEntryPoint(crossing, entry_point))
+                link.link_components.append(new_component)
+
             link.name = self.name
             return link
 
