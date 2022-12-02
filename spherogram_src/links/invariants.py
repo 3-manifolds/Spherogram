@@ -500,7 +500,7 @@ class Link(links_base.Link):
             5
         """
         G = self.white_graph()
-        V = G.vertices()
+        V = G.vertices(sort=True)
         N = len(V)
         m = matrix(N, N)
         vertex = {v: n for n, v in enumerate(V)}

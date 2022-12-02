@@ -274,7 +274,7 @@ def spanning_trees(G):
 
     if G.is_connected() and len(G):
         forest = graph.Graph()
-        forest.add_vertices(G.vertices())
+        forest.add_vertices(G.vertices(sort=True))
         forest.add_edges(G.bridges())
         return _recursive_spanning_trees(graph.Graph(G, immutable=False, loops=False),
                                          forest)
