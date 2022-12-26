@@ -987,10 +987,14 @@ class Link():
                               for c in self.crossings for i in range(4)])
         faces = []
         while len(corners):
-            face = [corners.pop()]
+            cs0 = corners.pop()
+            face = [cs0]
+            next = cs0
             while True:
-                next = face[-1].next_corner()
-                if next == face[0]:
+                # Next two lines equiv to: next = next.next_corner()
+                c, e = next.crossing, next.strand_index
+                next = CrossingStrand(*c.adjacent[(e + 1) % 4])
+                if next == cs0:
                     faces.append(face)
                     break
                 else:
