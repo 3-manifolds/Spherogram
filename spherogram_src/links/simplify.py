@@ -625,9 +625,7 @@ def reverse_type_I(link, crossing_strand, label, hand, rebuild=False):
         cs2ec, cs2cep = cs2.crossing, cs2.strand_index
         D[1] = cs2ec[cs2cep]
     if rebuild:
-        comp_sts = [comp[0] for comp in link.link_components]
-        link._rebuild(component_starts=comp_sts)
-
+        link._rebuild(same_components_and_orientations=True)
 
 def random_reverse_type_I(link, label, rebuild=False):
     """
@@ -656,8 +654,7 @@ def reverse_type_II(link, c, d, label1, label2, rebuild=False):
     link.crossings.append(new2)
 
     if rebuild:
-        comp_sts = [comp[0] for comp in link.link_components]
-        link._rebuild(component_starts=comp_sts)
+        link._rebuild(same_components_and_orientations=True)
 
 
 def random_reverse_type_II(link, label1, label2, rebuild=False):
