@@ -627,6 +627,7 @@ def reverse_type_I(link, crossing_strand, label, hand, rebuild=False):
     if rebuild:
         link._rebuild(same_components_and_orientations=True)
 
+
 def random_reverse_type_I(link, label, rebuild=False):
     """
     Randomly adds a loop in a strand, adding one crossing with given label
