@@ -691,7 +691,7 @@ class Link():
         consistently with the braid.
         """
         if num_strands is None:
-            num_strands = max([abs(a) for a in word]) + 1
+            num_strands = max(abs(a) for a in word) + 1
 
         strands = [Strand('s' + repr(i)) for i in range(num_strands)]
         current = [(x, 1) for x in strands]
@@ -1225,9 +1225,9 @@ class Link():
         first_to_flip = {first: flip for first, _, flip in DT_info}
         odd_labels = enumerate_lists(
             self.link_components, n=1, filter=lambda x: x % 2 == 1)
-        DT = [tuple([first_to_second[x] for x in component])
+        DT = [tuple(first_to_second[x] for x in component)
               for component in odd_labels]
-        the_flips = [first_to_flip[x] for x in sum(odd_labels, [])]
+        the_flips = (first_to_flip[x] for x in sum(odd_labels, []))
 
         if DT_alpha:
             if len(self) > 52:
@@ -1238,15 +1238,15 @@ class Link():
                          [DT_alphabet[x >> 1] for x in sum(DT, tuple())])
             if flips:
                 DT += '.' + ''.join(repr(flip) for flip in the_flips)
-            return "DT[" + DT + "]"
+            return f"DT[{DT}]"
         else:
             if flips:
-                return DT, the_flips
+                return DT, list(the_flips)
             else:
                 return DT
 
     def peer_code(self):
-        peer = dict([c.peer_info() for c in self.crossings])
+        peer = dict(c.peer_info() for c in self.crossings)
         even_labels = enumerate_lists(
             self.link_components, n=0, filter=lambda x: x % 2 == 0)
         ans = '[' + ','.join(repr([peer[c][0] for c in comp])

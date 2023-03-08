@@ -698,11 +698,11 @@ class DTcodec():
                 prefix_ints = [num_crossings, len(code)]
                 prefix_ints += chunks
                 code_ints = [x for component in code for x in component]
-                alphacode = ''.join(tuple([DT_alphabet[n >> 1]
-                                           for n in code_ints]))
-                prefix = ''.join(tuple([DT_alphabet[n] for n in prefix_ints]))
+                alphacode = ''.join(DT_alphabet[n >> 1]
+                                    for n in code_ints)
+                prefix = ''.join(DT_alphabet[n] for n in prefix_ints)
                 if flips:
-                    alphacode += '.' + ''.join([str(int(f)) for f in self.flips])
+                    alphacode += '.' + ''.join(str(int(f)) for f in self.flips)
                 result += (prefix + alphacode)
         else:
             result += str(code)

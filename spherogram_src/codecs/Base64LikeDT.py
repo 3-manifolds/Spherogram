@@ -75,13 +75,12 @@ def _char_to_unsigned_int(char):
     """
     Convert an ASCII character to an integer 0-63
     """
-
     i = ord(char)
-    if i >= 97 and i <= 122:  # a z
+    if 97 <= i <= 122:  # a z
         return i - 97
-    if i >= 65 and i <= 90:  # A Z
+    if 65 <= i <= 90:  # A Z
         return i - 39
-    if i >= 48 and i <= 57:  # 0 9
+    if 48 <= i <= 57:  # 0 9
         return i + 4
     if i == 43:
         return 62
@@ -93,7 +92,6 @@ def _chars_to_int(chars):
     Take a string of ASCII characters and convert it to integer using the
     base64-like scheme described above.
     """
-
     value = 0
 
     for pos, char in enumerate(chars):
@@ -254,7 +252,7 @@ def decode_base64_like_DT_code(chars):
     """
     code, pos = _decode_DT_code(chars)
 
-    num_crossings = sum([len(component) for component in code])
+    num_crossings = sum(len(component) for component in code)
     flips = _decode_flips(chars[pos:])[:num_crossings]
 
     return code, _empty_to_none(flips)
