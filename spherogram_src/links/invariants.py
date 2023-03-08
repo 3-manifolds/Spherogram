@@ -540,8 +540,8 @@ class Link(links_base.Link):
           2
         """
         m, G = self.goeritz_matrix(return_graph=True)
-        correction = sum([e[2]['sign'] for e in G.edges(sort=False)
-                          if e[2]['sign'] == e[2]['crossing'].sign])
+        correction = sum(e['sign'] for _, _, e in G.edges(sort=False)
+                         if e['sign'] == e['crossing'].sign)
         ans = QuadraticForm(QQ, m).signature() + correction
         if new_convention:
             ans = -ans

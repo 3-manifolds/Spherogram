@@ -626,9 +626,9 @@ class ReducedGraph(Graph):
             return self._embedding
 
     def one_min_cut(self, source, sink):
-        capacity = dict((e, e.multiplicity) for e in self.edges)
+        capacity = {e: e.multiplicity for e in self.edges}
         cut = Graph.one_min_cut(self, source, sink, capacity)
-        cut['size'] = sum([e.multiplicity for e in cut['edges']])
+        cut['size'] = sum(e.multiplicity for e in cut['edges'])
         return cut
 
     def cut_pairs(self):

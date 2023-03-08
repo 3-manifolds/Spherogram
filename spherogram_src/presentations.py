@@ -313,7 +313,7 @@ class Presentation():
         return 'generators: [%s]\nrelators: %s' % (generators, self.relators)
 
     def __len__(self):
-        return sum([len(W) for W in self.relators])
+        return sum(len(W) for W in self.relators)
 
     def __eq__(self, other):
         return (self.relators == other.relators and
@@ -486,7 +486,7 @@ class Presentation():
         relators = queue[0].presentation.relators
         ordering = queue[0].ordering
         generators = tuple(range(1, len(self.generators) + 1))
-        return tuple([tuple(R.rewrite(ordering)) for R in relators]), generators
+        return tuple(tuple(R.rewrite(ordering)) for R in relators), generators
 
     def magma_string(self):
         gens = sorted(self.alphabet[g] for g in self.generators)
