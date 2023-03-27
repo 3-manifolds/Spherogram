@@ -35,7 +35,7 @@ for x, y in G.edges:
 where x and y will be the two endpoints of the edge (ordered as
 tail, head in the case of directed edges).
 """
-from collections import deque, defaultdict
+from collections import deque
 
 try:
     import sage.all

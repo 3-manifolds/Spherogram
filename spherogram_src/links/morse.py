@@ -37,7 +37,7 @@ from ..sage_helper import _within_sage
 from ..graphs import CyclicList, Digraph
 from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
-from .tangles import join_strands, RationalTangle
+from .tangles import join_strands
 if _within_sage:
     from sage.numerical.mip import MixedIntegerLinearProgram
 
@@ -47,12 +47,14 @@ def morse_via_LP(link, solver='GLPK'):
     An integer linear program which computes the Morse number of the given
     link diagram.
 
-    sage: K = RationalTangle(23, 43).denominator_closure()
-    sage: morse, details = morse_via_LP(K)
-    sage: morse
-    2
-    sage: morse_via_LP(Link('8_20'))[0]
-    3
+    EXAMPLES::
+
+        sage: K = RationalTangle(23, 43).denominator_closure()
+        sage: morse, details = morse_via_LP(K)
+        sage: morse
+        2
+        sage: morse_via_LP(Link('8_20'))[0]
+        3
     """
     LP = MixedIntegerLinearProgram(maximization=False, solver=solver)
 
@@ -96,7 +98,9 @@ def morse_via_LP(link, solver='GLPK'):
 
 
 def have_positive_value(D):
-    return [k for k, v in D.items() if v > 0]
+    for k, v in D.items():
+        if v > 0:
+            yield k
 
 
 class ImmutableValueDict(dict):
@@ -159,7 +163,7 @@ class MorseLinkDiagram():
         self.morse_number = morse
         self.bends = set(have_positive_value(values[3]))
         self.faces = link.faces()
-        self.exterior = self.faces[have_positive_value(values[4])[0]]
+        self.exterior = self.faces[next(iter(have_positive_value(values[4])))]
         for c in have_positive_value(values[0]):
             c.kind = 'horizontal'
         for c in have_positive_value(values[1]):
@@ -225,10 +229,13 @@ class MorseLinkDiagram():
         a = CrossingStrand(crossing, 0)
         b = a.rotate()
         upmin = set(['up', 'min'])
+        test_a = kinds[a] in upmin
         while True:
-            if set([kinds[a], kinds[b]]).issubset(upmin):
+            test_b = kinds[b] in upmin
+            if test_a and test_b:
                 return a, b
             a, b = b, b.rotate()
+            test_a = test_b
 
     def adjacent_upwards(self, crossing_strand):
         a, b = crossing_strand.rotate(), crossing_strand.rotate(-1)
@@ -290,7 +297,7 @@ class MorseLinkDiagram():
                 snakes += [UpwardSnake(cs, self),
                            UpwardSnake(cs.opposite(), self)]
 
-        self.strand_to_snake = dict()
+        self.strand_to_snake = {}
         for snake in snakes:
             for s in snake:
                 self.strand_to_snake[s] = snake
@@ -316,7 +323,7 @@ class MorseLinkDiagram():
         self.S, self.snake_pos = S, snake_pos
         heights = self.heights
         max_height = max(heights.values())
-        snakes_at_height = dict()
+        snakes_at_height = {}
         for h in range(max_height + 1):
             at_this_height = []
             for snake in snakes:
@@ -334,7 +341,8 @@ class MorseLinkDiagram():
         Returns whether the link is in bridge position with respect to this
         height function.
         """
-        return sorted(self.snake_pos.values()) == list(range(len(self.snakes)))
+        return all(i == j
+                   for i, j in enumerate(sorted(self.snake_pos.values())))
 
     def bridge(self):
         if not self.is_bridge():

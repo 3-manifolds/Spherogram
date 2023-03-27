@@ -19,8 +19,6 @@ except Exception:
 
 
 import doctest
-import re
-import types
 
 
 class SageNotAvailable(Exception):
