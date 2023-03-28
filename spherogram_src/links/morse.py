@@ -37,7 +37,7 @@ from ..sage_helper import _within_sage
 from ..graphs import CyclicList, Digraph
 from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
-from .tangles import join_strands
+from .tangles import join_strands, RationalTangle
 if _within_sage:
     from sage.numerical.mip import MixedIntegerLinearProgram
 
