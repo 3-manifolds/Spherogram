@@ -6,7 +6,6 @@ import spherogram.links.morse
 import spherogram.links.seifert
 
 import spherogram.test_helper as test_helper
-import re
 import getopt
 import sys
 
