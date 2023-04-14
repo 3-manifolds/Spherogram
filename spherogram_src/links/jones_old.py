@@ -20,7 +20,7 @@ def cut(G, T, e):
     Cutting T along e separates T into two components.
     Returns: The list of edges in G - e connecting the two different components of T-e."""
     if not T.has_edge(*e):
-        raise Exception("e must be an edge of T.")
+        raise ValueError("e must be an edge of T.")
     S = T.copy()
     S.delete_edge(e)
     (C1, C2) = S.connected_components()
@@ -58,9 +58,9 @@ def cyc(G, T, e):
     Adjoining e to T creates a cycle.
     Returns: this cycle."""
     if not G.has_edge(*e):
-        raise Exception("e must be an edge of G.")
+        raise ValueError("e must be an edge of G.")
     if T.has_edge(*e):
-        raise Exception("e must not be an edge of T.")
+        raise ValueError("e must not be an edge of T.")
     # First thing: catch exceptional case that e is a multiple for an edge in T (giving a 2-cycle).
     try:
         l = T.edge_label(e[0], e[1])

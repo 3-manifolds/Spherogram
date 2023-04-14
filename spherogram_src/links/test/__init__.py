@@ -7,7 +7,7 @@ from . import test_montesinos
 from ...sage_helper import _within_sage
 if _within_sage:
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
-    from sage.all import QQ
+    from sage.rings.rational_field import QQ
 
 
 class TestLinkFunctions(unittest.TestCase):
