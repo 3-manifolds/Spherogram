@@ -80,10 +80,10 @@ class MorseEncoding():
     4
     >>> me_copy = MorseEncoding(me.events)
     >>> L = me.link()
-    >>> L.exterior().identify()[0]
+    >>> L.exterior().identify()[0]  #doctest: +SNAPPY
     m004(0,0)
     >>> U = MorseEncoding([('cup', 0, 1), ('cap', 0, 1)]).link()
-    >>> U.exterior().fundamental_group().num_generators()
+    >>> U.exterior().fundamental_group().num_generators()  #doctest: +SNAPPY
     1
     """
 
@@ -309,7 +309,7 @@ class MorseExhaustion():
     >>> mexhaust
     [('cup', 0, 1), ('cup', 0, 1), ('cross', 1, 2), ('cross', 1, 2), ('cap', 0, 1), ('cap', 0, 1)]
     >>> me = MorseEncoding(mexhaust)
-    >>> me.link().exterior().fundamental_group().relators()
+    >>> me.link().exterior().fundamental_group().relators() #doctest: +SNAPPY
     ['abAB']
 
     >>> K = Link([[0, 0, 1, 1]])  # Unknot
@@ -380,7 +380,7 @@ class MorseExhaustion():
         c = link.unlinked_unknot_components
         events += c*[('cup', 0, 1), ('cap', 0, 1)]
         frontier_lengths += c*[2, 0]
-        
+
         self.link = link
         self.crossings = crossings
         self.frontier_lengths = frontier_lengths
