@@ -12,12 +12,16 @@ https://www.youtube.com/watch?v=3VwcGHycyAE
 
 """
 
-from sage.all import ZZ, LaurentPolynomialRing, PerfectMatchings, PerfectMatching
+from ..sage_helper import _within_sage
 from . import exhaust
 from .links_base import Link
 
-R = LaurentPolynomialRing(ZZ, 'q')
-q = R.gen()
+if _within_sage:
+    from sage.all import ZZ, LaurentPolynomialRing, PerfectMatchings, PerfectMatching
+    R = LaurentPolynomialRing(ZZ, 'q')
+    q = R.gen()
+else:
+    pass
 
 
 def num_Pn(n):
@@ -33,12 +37,12 @@ def insert_cup(matching, i):
     """
     Insert a new adjacent matching which joins i and i + 1.
 
-    >>> m = PerfectMatching([(0, 1), (2, 5), (3, 4)])
-    >>> insert_cup(m, 0)
+    sage: m = PerfectMatching([(0, 1), (2, 5), (3, 4)])
+    sage: insert_cup(m, 0)
     [(0, 1), (2, 3), (4, 7), (5, 6)]
-    >>> insert_cup(m, 1)
+    sage: insert_cup(m, 1)
     [(0, 3), (1, 2), (4, 7), (5, 6)]
-    >>> insert_cup(m, 6)
+    sage: insert_cup(m, 6)
     [(0, 1), (2, 5), (3, 4), (6, 7)]
     """
     assert len(matching.base_set()) >= i
@@ -53,10 +57,10 @@ def cap_off(matching, i):
     Merge i and i + 1 with a cap.  Returns a new matching and whether
     or not a circle was created.
 
-    >>> m = PerfectMatching([(0, 5), (1, 4), (2, 3)])
-    >>> cap_off(m, 2)
+    sage: m = PerfectMatching([(0, 5), (1, 4), (2, 3)])
+    sage: cap_off(m, 2)
     ([(0, 3), (1, 2)], True)
-    >>> cap_off(m, 3)
+    sage: cap_off(m, 3)
     ([(0, 3), (1, 2)], False)
     """
     def shift(a):
@@ -86,19 +90,19 @@ class VElement():
     """
     An element of some V_{0, n} which is the free R-module on P_{0, n}
 
-    >>> m = PerfectMatching([(0, 1), (3, 4), (2, 5)])
-    >>> v1 = VElement(m)
-    >>> v1
+    sage: m = PerfectMatching([(0, 1), (3, 4), (2, 5)])
+    sage: v1 = VElement(m)
+    sage: v1
     (1)*[(0, 1), (2, 5), (3, 4)]
-    >>> v2 = (q + q**-1)*v1
-    >>> v2
+    sage: v2 = (q + q**-1)*v1
+    sage: v2
     (q^-1 + q)*[(0, 1), (2, 5), (3, 4)]
-    >>> v3 = q* VElement(PerfectMatching([(5, 0), (4, 3), (1, 2)]))
-    >>> v1 + v2 + v3
+    sage: v3 = q* VElement(PerfectMatching([(5, 0), (4, 3), (1, 2)]))
+    sage: v1 + v2 + v3
     (q^-1 + 1 + q)*[(0, 1), (2, 5), (3, 4)] + (q)*[(0, 5), (1, 2), (3, 4)]
-    >>> v2.insert_cup(6)
+    sage: v2.insert_cup(6)
     (q^-1 + q)*[(0, 1), (2, 5), (3, 4), (6, 7)]
-    >>> (v1 + v2 + v3).cap_off(1)
+    sage: (v1 + v2 + v3).cap_off(1)
     (q^-1 + 2 + q + q^2)*[(0, 3), (1, 2)]
     """
     def __init__(self, spec=None):
@@ -162,17 +166,17 @@ class VElement():
 
 def kauffman_bracket(link):
     """
-    >>> L = Link('T(2, 3)')
-    >>> kauffman_bracket(L)
+    sage: L = Link('T(2, 3)')
+    sage: kauffman_bracket(L)
     q^-2 + 1 + q^2 - q^6
 
-    >>> U4 = Link(braid_closure=[1, -1, 2, -2, 3, -3])
-    >>> kauffman_bracket(U4)
+    sage: U4 = Link(braid_closure=[1, -1, 2, -2, 3, -3])
+    sage: kauffman_bracket(U4)
     -q^-1 - 4*q - 6*q^3 - 4*q^5 - q^7
 
-    >>> U3 = Link([])
-    >>> U3.unlinked_unknot_components = 3
-    >>> kauffman_bracket(U3) == (q + q**-1)**3
+    sage: U3 = Link([])
+    sage: U3.unlinked_unknot_components = 3
+    sage: kauffman_bracket(U3) == (q + q**-1)**3
     True
     """
     ans = VElement()
