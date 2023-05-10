@@ -15,7 +15,7 @@ if _within_sage:
     from sage.groups.free_group import FreeGroup
     import sage.graphs.graph as graph
     from sage.groups.braid import Braid, BraidGroup
-    from sage.all import QQ
+    from sage.rings.rational_field import QQ
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
     from sage.quadratic_forms.quadratic_form import QuadraticForm
     try:

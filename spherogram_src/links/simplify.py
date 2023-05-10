@@ -701,7 +701,7 @@ def backtrack(link, num_steps=10, prob_type_1=.3, prob_type_2=.3):
 
     n = 0
     if prob_type_1 + prob_type_2 > 1:
-        raise Exception("Probabilities add to more than 1")
+        raise ValueError("Probabilities add to more than 1")
     p1 = prob_type_1
     p2 = p1 + prob_type_2
     for i in range(num_steps):

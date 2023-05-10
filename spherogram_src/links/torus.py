@@ -14,7 +14,7 @@ def torus_knot(name: str) -> Link:
     p, q = map(int, name[2:-1].split(','))
 
     if p == 0 or q == 0:
-        raise Exception("torus_knot(p,q) requires non zero p and q")
+        raise ValueError("torus_knot(p,q) requires non zero p and q")
     to_mirror = p * q < 0
     p, q = abs(p), abs(q)
     if p == 2:

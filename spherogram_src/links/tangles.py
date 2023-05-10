@@ -253,7 +253,7 @@ class Tangle():
         if m != n:
             raise ValueError("To do braid closure, both the top and bottom numbers of strands must be equal")
         T = self.copy()
-        for i in range(0, n):
+        for i in range(n):
             join_strands(T.adjacent[i], T.adjacent[m + i])
         return Link(T.crossings, check_planarity=False)
 
@@ -305,7 +305,7 @@ class Tangle():
         Am, An = self.boundary
         Bm, Bn = self.boundary
         if (Am, An) != (Bn, Bm):
-            raise Exception("Tangles must have compatible boundary shapes")
+            raise ValueError("Tangles must have compatible boundary shapes")
         return (self * (other.circular_rotate(n))).denominator_closure()
 
     def isosig(self, root=None, over_or_under=False):
@@ -379,7 +379,7 @@ class Tangle():
             a fresh one if needed."""
             return arc_ids.setdefault(arc_key(c, i), len(arc_ids) + 1)
         m, n = T.boundary
-        lower = "{" + ",".join(str(arc_id(T, i)) for i in range(0, m)) + "}"
+        lower = "{" + ",".join(str(arc_id(T, i)) for i in range(m)) + "}"
         upper = "{" + ",".join(str(arc_id(T, i)) for i in range(m, m + n)) + "}"
         parts = []
         for c in T.crossings:
@@ -392,7 +392,7 @@ class Tangle():
                 else:
                     parts.append(f"P[{arcs[0]},{arcs[1]}]")
             else:
-                raise Exception("Unexpected entity")
+                raise TypeError("Unexpected entity")
         return f"Tangle[{lower}, {upper}{''.join(', ' + p for p in parts)}]"
 
 

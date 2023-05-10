@@ -663,7 +663,7 @@ if __name__ == '__main__':
     def check_faces(link):
         faces = link.faces()
         assert len(link.vertices) - len(link.edges) + len(faces) == 2
-        assert set(Counter(sum(faces, [])).values()) == set([1])
+        assert all(val == 1 for val in Counter(sum(faces, [])).values())
         assert link.is_planar()
 
     def test_face_method(N):
