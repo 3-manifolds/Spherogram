@@ -1,16 +1,20 @@
 """
 
 Computing the Jones polynomial following the conventions of Jake
-Rasmussen's lectures at PCMI, Summer 2019.
+Rasmussen's lectures at PCMI, Summer 2019:
 
+https://www.dpmms.cam.ac.uk/~jar60/PCMINotes.pdf
 https://www.youtube.com/watch?v=--l-XOhDXOU
 https://www.youtube.com/watch?v=3VwcGHycyAE
+
+
 
 
 """
 
 from sage.all import ZZ, LaurentPolynomialRing, PerfectMatchings, PerfectMatching
 from . import exhaust
+from .links_base import Link
 
 R = LaurentPolynomialRing(ZZ, 'q')
 q = R.gen()
@@ -161,6 +165,15 @@ def kauffman_bracket(link):
     >>> L = Link('T(2, 3)')
     >>> kauffman_bracket(L)
     q^-2 + 1 + q^2 - q^6
+
+    >>> U4 = Link(braid_closure=[1, -1, 2, -2, 3, -3])
+    >>> kauffman_bracket(U4)
+    -q^-1 - 4*q - 6*q^3 - 4*q^5 - q^7
+
+    >>> U3 = Link([])
+    >>> U3.unlinked_unknot_components = 3
+    >>> kauffman_bracket(U3) == (q + q**-1)**3
+    True
     """
     ans = VElement()
     if isinstance(link, exhaust.MorseEncoding):
@@ -195,12 +208,6 @@ def jones_polynomial(link, normalized=True):
     signs = [c.sign for c in link.crossings]
     n_minus, n_plus = signs.count(-1), signs.count(1)
     return (-1)**n_minus * q**(n_plus - 2 * n_minus) * norm_bracket
-
-
-def test_one_link(link):
-    new_poly = jones_polynomial(link)
-    old_poly = link.jones_polynomial(new_convention=True)
-    return new_poly - old_poly == 0
 
 
 def test_links(N):

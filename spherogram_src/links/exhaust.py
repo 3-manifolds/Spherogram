@@ -311,17 +311,27 @@ class MorseExhaustion():
     >>> me = MorseEncoding(mexhaust)
     >>> me.link().exterior().fundamental_group().relators()
     ['abAB']
-    """
 
+    >>> K = Link([[0, 0, 1, 1]])  # Unknot
+    >>> MorseExhaustion(K)
+    [('cup', 0, 1), ('cup', 0, 1), ('cross', 1, 2), ('cap', 0, 1), ('cap', 0, 1)]
+    """
     def __init__(self, link, crossing=None):
         events = []
-        if crossing is None:
-            crossing = random.choice(link.crossings)
-        crossings = [crossing]
-        events = [('cup', 0, 1), ('cup', 0, 1), ('cross', 1, 2)]
-        css = crossing.crossing_strands()
-        frontier = Frontier({0: css[3], 1: css[2], 2: css[1], 3: css[0]})
-        frontier_lengths = [4]
+        if link.crossings:
+            if crossing is None:
+                crossing = random.choice(link.crossings)
+            crossings = [crossing]
+            events = [('cup', 0, 1), ('cup', 0, 1), ('cross', 1, 2)]
+            css = crossing.crossing_strands()
+            frontier = Frontier({0: css[3], 1: css[2], 2: css[1], 3: css[0]})
+            frontier_lengths = [4]
+            if len(link.crossings) == 1:
+                events += [('cap', 0, 1), ('cap', 0, 1)]
+        else: # Only unlinked unknotted components
+            crossings = []
+            frontier_lengths = []
+
         while len(crossings) < len(link.crossings):
             overlap, i, C = frontier.biggest_all_consecutive_overlap()
             cs = frontier[i]
@@ -367,6 +377,10 @@ class MorseExhaustion():
             assert frontier._check()
             frontier_lengths.append(len(frontier))
 
+        c = link.unlinked_unknot_components
+        events += c*[('cup', 0, 1), ('cap', 0, 1)]
+        frontier_lengths += c*[2, 0]
+        
         self.link = link
         self.crossings = crossings
         self.frontier_lengths = frontier_lengths
