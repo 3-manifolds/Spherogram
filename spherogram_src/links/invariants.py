@@ -6,7 +6,7 @@ and Jennet Dickinson.
 
 from . import links_base, alexander
 from .links_base import CrossingStrand, Crossing
-from ..sage_helper import _within_sage, sage_method
+from ..sage_helper import _within_sage, sage_method, sage_pd_clockwise
 
 deprecation_warnings_issued = set()
 
@@ -101,8 +101,11 @@ class Link(links_base.Link):
             if isinstance(braid_closure, Braid):
                 braid_closure = sage_braid_as_int_word(braid_closure)
             if crossings is not None and isinstance(crossings, (SageKnot, SageLink)):
-                # Sage's PD_code lists strands *clockwise* not our *anticlockwise*.
-                crossings = [[x[0], x[3], x[2], x[1]] for x in crossings.pd_code()]
+                # Sage's PD_code lists strands *clockwise* not our
+                # *anticlockwise* prior to Sage 10.1.
+                crossings = crossings.pd_code()
+                if sage_pd_clockwise:
+                    crossings = [[x[0], x[3], x[2], x[1]] for x in crossings]
 
         links_base.Link.__init__(self, crossings, braid_closure, check_planarity, build)
 

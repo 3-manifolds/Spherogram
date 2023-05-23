@@ -29,9 +29,14 @@ if _within_sage:
     def sage_method(function):
         function._sage_method = True
         return function
+    from packaging.version import parse
+    from sage.version import version as _sage_version
+    sage_pd_clockwise = (parse(_sage_version) <= parse('10.1.beta0'))
 else:
     def _sage_method(function, *args, **kw):
         raise SageNotAvailable('Sorry, this feature requires using SnapPy inside Sage.')
 
     def sage_method(function):
         return decorator.decorator(_sage_method, function)
+
+    sage_pd_clockwise = None
