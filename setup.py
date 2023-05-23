@@ -13,6 +13,18 @@ if sys.platform.startswith('linux'):
 else:
     extra_link_args=[]
 
+# Install a custpom build environ for MSVC, if necessary.
+if sys.platform == 'win32':
+    try:
+        # To customize your msvc environment create msvc_env.py
+        # and define the dict dev_env to be a copy of the os.environ
+        # that you have when you run python in the Command Prompt for
+        # your installation of Visual Studio.
+        from msvc_env import dev_env
+        os.environ.update(dev_env)
+        MSVC_extra_objects = []    
+    except:
+        pass
 
 # The planarity extension
 
@@ -26,9 +38,18 @@ except ImportError:
                          if file not in planarity_ui_sources]
 
     if sys.platform.startswith('win'):
-        extra_compile_args = ['-D_CRT_SECURE_NO_WARNINGS']
+        extra_compile_args = [
+            '-D_CRT_SECURE_NO_WARNINGS',
+            r'-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\ucrt',
+            r'-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\shared'
+        ]
+        extra_link_args = [
+            r'/LIBPATH:C:\Program Files (x86)\Windows Kits\10\Lib\10.0.17134.0\um\x64',
+            r'/LIBPATH:C:\Program Files (x86)\Windows Kits\10\Lib\10.0.17134.0\ucrt\x64',
+        ]
     else:
         extra_compile_args = []
+        extra_link_args = []
 
     Planarity = Extension(
         name = 'spherogram.planarity',
