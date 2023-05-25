@@ -9,7 +9,7 @@ Important notes:
 * Unknot components which are also unlinked may be silently discarded.
 """
 
-from .links import Strand, Crossing, CrossingStrand
+from .links import Link, Strand, Crossing, CrossingStrand
 from .ordered_set import OrderedSet
 from .. import graphs
 import random
