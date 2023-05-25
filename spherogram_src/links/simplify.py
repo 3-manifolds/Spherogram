@@ -9,7 +9,7 @@ Important notes:
 * Unknot components which are also unlinked may be silently discarded.
 """
 
-from .links import Link, Strand, Crossing, CrossingStrand
+from .links import Strand, Crossing, CrossingStrand
 from .ordered_set import OrderedSet
 from .. import graphs
 import random
@@ -110,7 +110,7 @@ def basic_simplify(link, build_components=True, to_visit=None,
         to_visit.difference_update(elim)
         to_visit.update(changed)
 
-    success = len(eliminated) > 0
+    success = bool(eliminated)
 
     # Redo the strand labels (used for DT codes)
     if (success and build_components) or force_build_components:
@@ -132,24 +132,22 @@ def basic_simplify(link, build_components=True, to_visit=None,
 
 def possible_type_III_moves(link):
     """
-    Returns all triples of crossings where a type III move is possible.
+    Iterates over all triples of crossings where a type III move is possible.
 
     In this example, one type III move is forbidden since a crossing
     repeats twice.
 
     >>> L = Link([(2,1,3,2),(3,8,4,1),(4,6,5,5),(6,8,7,7)])
-    >>> len(possible_type_III_moves(L))
+    >>> len(list(possible_type_III_moves(L)))
     1
     """
-    ans = []
     for face in link.faces():
         if len(face) == 3:
             if sum(ce.strand_index % 2 for ce in face) in [1, 2]:
-                while(face[1][1] % 2 != 0 or face[2][1] % 2 != 1):    # renumber face_list
+                while face[1][1] % 2 != 0 or face[2][1] % 2 != 1:    # renumber face_list
                     face = [face[1], face[2], face[0]]
                 if len(set(e.crossing for e in face)) == 3:  # No repeated crossings
-                    ans.append(face)
-    return ans
+                    yield face
 
 
 def insert_strand(X, x):
@@ -187,8 +185,8 @@ def simplify_via_level_type_III(link, max_consecutive_failures=100):
     if basic_simplify(link):
         success = True
     while failures < max_consecutive_failures:
-        poss_moves = possible_type_III_moves(link)
-        if len(poss_moves) == 0:
+        poss_moves = list(possible_type_III_moves(link))
+        if poss_moves:
             break
         reidemeister_III(link, random.choice(poss_moves))
         if basic_simplify(link):
@@ -315,20 +313,16 @@ def dual_edges(overstrand, graph):
     by moving along the link starting at startcep for length crossings.
     Also returns the next crossing entry point immediately after.
     """
-
-    edges_crossed = []
     for cep in overstrand:
         f1 = graph.edge_to_face[cep]
         f2 = graph.edge_to_face[cep.opposite()]
-        edges_crossed.append((f1, f2))
+        yield (f1, f2)
 
     # want one more edge
     endpoint = overstrand[-1].next()
     final_f1 = graph.edge_to_face[endpoint]
     final_f2 = graph.edge_to_face[endpoint.opposite()]
-    edges_crossed.append((final_f1, final_f2))
-
-    return edges_crossed
+    yield (final_f1, final_f2)
 
 
 def extend_strand_forward(kind, strand, end_cep):
@@ -400,7 +394,7 @@ def pickup_strand(link, dual_graph, kind, strand):
         extend_strand_backward(kind, strand, startcep)
         return pickup_strand(link, G, kind, strand)
 
-    edges_crossed = dual_edges(strand, G)
+    edges_crossed = list(dual_edges(strand, G))
     source = edges_crossed[0][0]
     dest = edges_crossed[-1][0]
 
@@ -595,11 +589,9 @@ def randomize_within_lengths(items):
     by_lens = collections.defaultdict(list)
     for item in items:
         by_lens[len(item)].append(item)
-    ans = []
     for length, some_items in sorted(by_lens.items(), reverse=True):
         random.shuffle(some_items)
-        ans += some_items
-    return ans
+        yield from some_items
 
 
 def reverse_type_I(link, crossing_strand, label, hand, rebuild=False):
@@ -683,8 +675,8 @@ def random_reverse_move(link, t, n):
     elif t == 2:
         random_reverse_type_II(link, 'new' + str(n), 'new' + str(n + 1))
     else:
-        poss_moves = possible_type_III_moves(link)
-        if len(poss_moves) != 0:
+        poss_moves = list(possible_type_III_moves(link))
+        if poss_moves:
             reidemeister_III(link, random.choice(poss_moves))
 
 
