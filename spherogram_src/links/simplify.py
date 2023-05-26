@@ -186,7 +186,7 @@ def simplify_via_level_type_III(link, max_consecutive_failures=100):
         success = True
     while failures < max_consecutive_failures:
         poss_moves = list(possible_type_III_moves(link))
-        if poss_moves:
+        if not poss_moves:
             break
         reidemeister_III(link, random.choice(poss_moves))
         if basic_simplify(link):
@@ -224,7 +224,7 @@ class DualGraphOfFaces(graphs.Graph):
     """
     def __init__(self, link):
         graphs.Graph.__init__(self)
-        faces = [Face(face, i) for i, face in enumerate(link.faces())]
+        faces = (Face(face, i) for i, face in enumerate(link.faces()))
         self.edge_to_face = to_face = {}
         for face in faces:
             for edge in face:
