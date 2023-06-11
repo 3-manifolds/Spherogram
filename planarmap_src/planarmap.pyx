@@ -1,4 +1,10 @@
 #cython: language_level=3
+#cython: legacy_implicit_noexcept=True
+#
+# The above line is for Cython 3; to remove, need to declare
+# "randrange_callback" via:
+#
+# cdef long randrange_callback(long n) noexcept:
 
 from libc.stdlib cimport malloc, free
 import random
