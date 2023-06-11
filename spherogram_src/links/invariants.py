@@ -779,8 +779,11 @@ class Link(links_base.Link):
         if SageKnot is None:
             raise ValueError('Your SageMath does not seem to have a native link type')
         sage_type = SageKnot if len(self.link_components) == 1 else SageLink
-        # Sage's PD_code lists strands *clockwise* not our *anticlockwise*.
-        code = [[x[0], x[3], x[2], x[1]] for x in self.PD_code(min_strand_index=1)]
+        # Sage's PD_code lists strands *clockwise* not our
+        # *anticlockwise* prior to Sage 10.1.
+        code = self.PD_code(min_strand_index=1)
+        if sage_pd_clockwise:
+            code = [[x[0], x[3], x[2], x[1]] for x in code]
         return sage_type(code)
 
     @sage_method
