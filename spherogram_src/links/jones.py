@@ -106,7 +106,7 @@ class VElement():
     (q^-1 + 2 + q + q^2)*[(0, 3), (1, 2)]
     """
     def __init__(self, spec=None):
-        self.dict = dict()
+        self.dict = {}
         if spec is None:
             spec = PerfectMatching([])
         if isinstance(spec, dict):
@@ -142,7 +142,7 @@ class VElement():
         return VElement({insert_cup(m, i): c for m, c in self.dict.items()})
 
     def cap_off(self, i):
-        ans_dict = dict()
+        ans_dict = {}
         for matching, coeff in self.dict.items():
             new_matching, has_circle = cap_off(matching, i)
             cur_coeff = ans_dict.get(new_matching, R.zero())

@@ -84,7 +84,7 @@ class DTvertex(tuple):
     # it never changes vertices either.
 
     def __new__(self, pair, overcrossing=1):
-        even_over = True if overcrossing == -1 else False
+        even_over = bool(overcrossing == -1)
         return tuple.__new__(self, (min(pair), max(pair), even_over))
 
     def __repr__(self):
@@ -259,13 +259,13 @@ class DTFatGraph(FatGraph):
 
     def path(self, vertex, edge):
         """
-        Return an iteratator which iterates through the edges of a
+        Return an iterator which iterates through the edges of a
         component, starting at the given edge, in the direction
         determined by the vertex.
         """
         if vertex not in edge:
             raise ValueError('That vertex is not an endpoint of the edge.')
-        forward = True if vertex == edge[0] else False
+        forward = bool(vertex == edge[0])
         return DTPath(edge, self, forward)
 
     def marked_arc(self, vertex):
@@ -273,7 +273,7 @@ class DTFatGraph(FatGraph):
         Given a vertex with marked valence 2, find the maximal marked
         arc containing the vertex for which all interior edges have
         marked valence 2.  If the marked subgraph is a circle, or a
-        dead end is reached, raise ValueError.  Return a list of
+        dead end is reached, raise :class:`ValueError`.  Return a list of
         edges in the arc.
         """
         left_path, right_path, vertices = [], [], set()
@@ -337,7 +337,7 @@ class DTFatGraph(FatGraph):
         Try to find an embedded path of unmarked edges joining a
         vertex in the given arc to a vertex of the marked subgraph
         which lies in the complement of the interior of the arc.  This
-        uses a depth-first search, and raises ValueError on failure.
+        uses a depth-first search, and raises :class:`ValueError` on failure.
         Returns a triple (first vertex, last vertex, edge path).
 
         Suppose the marked subgraph has no vertices with marked
@@ -358,8 +358,6 @@ class DTFatGraph(FatGraph):
         for edge in marked_arc[:-1]:
             v = edge(v)
             vertex_list.append(v)
-        #print 'bridge:', marked_arc
-        #print 'avoiding:', vertex_list
         for start_vertex in vertex_list:
             # the vertex_set gets expanded to include vertices visited
             # by the bridge path.
@@ -375,12 +373,12 @@ class DTFatGraph(FatGraph):
                     new_edge = edges.pop()
                     vertex = new_edge(vertex)
                     edge_path.append(new_edge)
-                    if ( self.marked_valence(vertex) > 0 ):
+                    if self.marked_valence(vertex) > 0:
                         return start_vertex, vertex, edge_path
                     seen_edges.add(new_edge)
                     vertex_path.append(vertex)
                     vertex_set.add(vertex)
-                except IndexError: # Cannot continue: back up.
+                except IndexError:  # Cannot continue: back up.
                     if len(edge_path) == 0:
                         break
                     edge_path.pop()
@@ -578,7 +576,7 @@ class DTcodec():
                 parts = dt.split('.')
                 self.code = self.convert_alpha(parts[0])
                 if len(parts) > 1:
-                    self.flips = [False if d == '0' else True for d in parts[1]]
+                    self.flips = [d != '0' for d in parts[1]]
         elif isinstance(dt, bytes):
             self.code, self.flips = self.unpack_signed_DT(dt)
         else:

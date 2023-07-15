@@ -41,7 +41,7 @@ def random_map(num_verts, edge_conn_param=4,
             adjacencies = adjacencies[1:] + adjacencies[:1]
         vertex_adjacencies.append(adjacencies)
 
-    edge_adjacencies = dict()
+    edge_adjacencies = {}
     for v, edges in enumerate(vertex_adjacencies):
         for i, edge in enumerate(edges):
             edge_adjacencies[edge] = (v, i)

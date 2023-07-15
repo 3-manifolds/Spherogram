@@ -225,7 +225,7 @@ class UpwardLinkDiagram():
             if kinds[cs] == 'min':
                 snakes += [UpwardSnake(cs, self), UpwardSnake(cs.opposite(), self)]
 
-        self.strand_to_snake = dict()
+        self.strand_to_snake = {}
         for snake in snakes:
             for s in snake:
                 self.strand_to_snake[s] = snake
@@ -248,7 +248,7 @@ class UpwardLinkDiagram():
         self.S, self.snake_pos = S, snake_pos
         heights = self.heights
         max_height = max(heights.values())
-        snakes_at_height = dict()
+        snakes_at_height = {}
         for h in range(max_height + 1):
             at_this_height = []
             for snake in snakes:

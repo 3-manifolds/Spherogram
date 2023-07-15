@@ -264,7 +264,7 @@ def dual_graph_as_nx(link):
     corners = OrderedSet([CrossingStrand(c, i)
                           for c in link.crossings for i in range(4)])
     faces = []
-    to_face_index = dict()
+    to_face_index = {}
     while len(corners):
         count = len(faces)
         first_cs = corners.pop()

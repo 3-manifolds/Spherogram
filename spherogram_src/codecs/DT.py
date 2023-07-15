@@ -272,7 +272,7 @@ class DTFatGraph(FatGraph):
         Given a vertex with marked valence 2, find the maximal marked
         arc containing the vertex for which all interior edges have
         marked valence 2.  If the marked subgraph is a circle, or a
-        dead end is reached, raise ValueError.  Return a list of
+        dead end is reached, raise :class:`ValueError`.  Return a list of
         edges in the arc.
         """
         left_path, right_path, vertices = [], [], set()
@@ -336,7 +336,7 @@ class DTFatGraph(FatGraph):
         Try to find an embedded path of unmarked edges joining a
         vertex in the given arc to a vertex of the marked subgraph
         which lies in the complement of the interior of the arc.  This
-        uses a depth-first search, and raises ValueError on failure.
+        uses a depth-first search, and raises :class:`ValueError` on failure.
         Returns a triple (first vertex, last vertex, edge path).
 
         Suppose the marked subgraph has no vertices with marked
@@ -960,7 +960,7 @@ class DTcodec():
         """
         G = self.fat_graph
         vertices = list(G.vertices)
-        KLP_indices = dict((v, n) for n, v in enumerate(vertices))
+        KLP_indices = {v: n for n, v in enumerate(vertices)}
         KLP_crossings = [G.KLP_dict(v, KLP_indices) for v in vertices]
         return len(G.vertices), 0, len(self.code), KLP_crossings
 

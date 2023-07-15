@@ -409,7 +409,7 @@ class Face(CyclicList):
         """
         dirs = CyclicList(["left", "up", "right", "down"])
         dir = dirs.index(orientation)
-        ans = dict()
+        ans = {}
         for e, t in self.iterate_from(edge):
             ans[e] = dirs[dir]
             ans[e.opposite()] = dirs[dir + 2]
@@ -521,7 +521,7 @@ class OrthogonalLinkDiagram(list):
         """
         self.link.link_components = [component[0].component()
                                      for component in self.link.link_components]
-        self.strand_CEP_to_component = stc = dict()
+        self.strand_CEP_to_component = stc = {}
         self.strand_CEPs = []
         for n, component in enumerate(self.link.link_components):
             for ce in component:
@@ -570,7 +570,7 @@ class OrthogonalLinkDiagram(list):
                 arrow.append(arrow[-1].next())
             arrows.append(arrow)
 
-        undercrossings = dict()
+        undercrossings = {}
         for i, arrow in enumerate(arrows):
             for a in arrow[1:-1]:
                 if a.is_under_crossing():
