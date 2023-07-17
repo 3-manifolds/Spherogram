@@ -3,7 +3,7 @@ class OrderedSet():
         if iterable is not None:
             self.elts = {e: None for e in iterable}
         else:
-            self.elts = dict()
+            self.elts = {}
 
     def __len__(self):
         return len(self.elts)

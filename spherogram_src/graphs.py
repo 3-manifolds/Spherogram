@@ -568,7 +568,7 @@ class ReducedGraph(Graph):
 
     def __init__(self, pairs=[], singles=[]):
         self.Edge = self.__class__.edge_class
-        self.find_edge = dict()
+        self.find_edge = {}
         Graph.__init__(self, pairs, singles)
 
     def add_edge(self, x, y):
@@ -935,8 +935,8 @@ class Poset(set):
     """
     A partially ordered set, generated from a directed acyclic graph.
 
-    Instantiate with a Digraph.  A ``ValueError`` exception is raised if the
-    Digraph contains a cycle.
+    Instantiate with a Digraph. A :class:`ValueError` exception is raised
+    if the Digraph contains a cycle.
     """
     def __init__(self, digraph):
         self.elements = set(digraph.vertices)
@@ -1034,8 +1034,7 @@ class Poset(set):
         """
         if start is None:
             if self.closed:
-                for subset in self.closed:
-                    yield subset
+                yield from self.closed
                 return
             else:
                 start = self.smallest()
@@ -1045,8 +1044,7 @@ class Poset(set):
             yield start
         for element in complement:
             extended = self.closure(start | set([element]))
-            for subset in self.XXclosed_subsets(extended):
-                yield subset
+            yield from self.XXclosed_subsets(extended)
 
     def XXXclosed_subsets(self, start=None):
         """
@@ -1060,8 +1058,7 @@ class Poset(set):
         """
         if start is None:
             if self.closed:
-                for subset in self.closed:
-                    yield subset
+                yield from self.closed
                 return
             else:
                 start = self.smallest()
@@ -1073,8 +1070,7 @@ class Poset(set):
             children.update(self.successors[element] - start)
         for child in children:
             extended = self.closure(start | set([child]))
-            for subset in self.XXXclosed_subsets(extended):
-                yield subset
+            yield from self.XXXclosed_subsets(extended)
 
     def closed_subsets(self):
         """

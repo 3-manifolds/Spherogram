@@ -51,7 +51,7 @@ class StrandIndices():
     A map from the crossings strands of a link L onto range(n).
     """
     def __init__(self, link, ordered_crossings=None):
-        indices = dict()
+        indices = {}
         if ordered_crossings is None:
             ordered_crossings = link.crossings
         for i, C in enumerate(ordered_crossings):

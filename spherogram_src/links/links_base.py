@@ -904,7 +904,8 @@ class Link():
     def is_planar(self):
         """
         Whether the 4-valent graph underlying the link projection is planar.
-        Should always be True for any actual Link.
+
+        Should always be ``True`` for any actual Link.
 
         >>> c = Crossing()
         >>> c[0], c[1] = c[2], c[3]   # Punctured torus gluing
@@ -1251,7 +1252,8 @@ class Link():
             self.link_components, n=0, filter=lambda x: x % 2 == 0)
         ans = '[' + ','.join(repr([peer[c][0] for c in comp])
                              [1:-1].replace(',', '') for comp in even_labels)
-        ans += '] / ' + ' '.join(['_', '+', '-'][peer[c][1]]
+        table = ['_', '+', '-']
+        ans += '] / ' + ' '.join(table[peer[c][1]]
                                  for c in sum(even_labels, []))
         return ans
 
@@ -1426,7 +1428,7 @@ class Link():
         # Basically, we just mirror every crossing, but the particular data
         # structures used make this a little involved.
 
-        new_crossings = dict()
+        new_crossings = {}
         for C in self.crossings:
             C_new = Crossing(label=C.label)
             C_new.sign = -C.sign

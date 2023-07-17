@@ -39,7 +39,7 @@ def is_internally_active(G, T, e):
     --A spanning tree T for G
     --And edge e of G
 
-    Returns: True if e is in T and e is internally active for T, False otherwise. Uses the ordering on G.edges()."""
+    Returns: ``True`` if e is in T and e is internally active for T, ``False`` otherwise. Uses the ordering on G.edges()."""
     if not T.has_edge(*e):
         return False
     for f in cut(G, T, e):
@@ -95,7 +95,7 @@ def is_externally_active(G, T, e):
     --A spanning tree T for G
     --And edge e of G
 
-    Returns: True is e is not in T and e is externally active for T, False otherwise. Uses the ordering on G.edges()."""
+    Returns: ``True`` is e is not in T and e is externally active for T, ``False`` otherwise. Uses the ordering on G.edges()."""
     if T.has_edge(*e):
         return False
     for f in cyc(G, T, e):

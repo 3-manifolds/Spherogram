@@ -29,20 +29,22 @@ import string
 from spherogram.links.links import CrossingStrand, CrossingEntryPoint, Strand
 from spherogram import CyclicList, Digraph, RationalTangle, DTcodec
 import spherogram.graphs
-from collections import *
+from collections import namedtuple
 
-#---------------------------------------------------
+
+# --------------------------------------------------
 #
 # Utility code
 #
-#---------------------------------------------------
+# --------------------------------------------------
 
 def element_map(partition):
-    ans = dict()
+    ans = {}
     for P in partition:
         for x in P:
             ans[x] = P
     return ans
+
 
 def partial_sums(L):
     ans = [0]
@@ -50,13 +52,14 @@ def partial_sums(L):
         ans.append(ans[-1] + x)
     return ans
 
+
 def basic_topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
     """
-    in_valences = dict( (v,G.indegree(v)) for v in G.vertices  )
+    in_valences = {v: G.indegree(v) for v in G.vertices}
     numbering = {}
-    curr_sources = [v for v,i in in_valences.iteritems() if i == 0]
+    curr_sources = [v for v, i in in_valences.iteritems() if i == 0]
     curr_number = 0
     while len(in_valences):
         new_sources = []
@@ -102,15 +105,18 @@ def kitty_corner(turns):
     rotations = partial_sums(turns)
     reflex_corners = [i for i, t in enumerate(turns) if t == -1]
     for r0 in reflex_corners:
-            for r1 in [r for r in reflex_corners if r > r0]:
-                if rotations[r1] - rotations[r0] == 2:
-                    return (r0, r1)
+        for r1 in reflex_corners:
+            if not r1 > r0:
+                continue
+            if rotations[r1] - rotations[r0] == 2:
+                return (r0, r1)
 
-#---------------------------------------------------
+
+# --------------------------------------------------
 #
 # Orthogonal Representations
 #
-#---------------------------------------------------
+# --------------------------------------------------
 
 LabeledFaceVertex = namedtuple('LabeledFaceVertex', ['index', 'kind', 'turn'])
 
@@ -198,19 +204,21 @@ class OrthogonalFace(CyclicList):
         ext = '*' if self.exterior else ''
         return list.__repr__(self) + ext
 
+
 def saturate_face( face_info ):
-            # Normalize so it starts with a -1 turn, if any
-            for i, a in enumerate(face_info):
-                if a.turn == -1:
-                    face_info = face_info[i:] + face_info[:i]
-                    break
-            for i in range(len(face_info) - 2):
-                x, y, z = face_info[i:i+3]
-                if x.turn == -1 and y.turn== z.turn == 1:
-                    a,b = (x, z) if  x.kind == 'sink' else (z, x)
-                    remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
-                    return [ (a.index, b.index)  ] + saturate_face(remaining)
-            return []
+    # Normalize so it starts with a -1 turn, if any
+    for i, a in enumerate(face_info):
+        if a.turn == -1:
+            face_info = face_info[i:] + face_info[:i]
+            break
+    for i in range(len(face_info) - 2):
+        x, y, z = face_info[i:i+3]
+        if x.turn == -1 and y.turn== z.turn == 1:
+            a,b = (x, z) if  x.kind == 'sink' else (z, x)
+            remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
+            return [ (a.index, b.index)  ] + saturate_face(remaining)
+    return []
+
 
 class OrthogonalRep(Digraph):
     """
@@ -333,10 +341,10 @@ class OrthogonalRep(Digraph):
         if not labels:
             verts = [ circle(p, 1, fill=True) for p in pos.itervalues() ]
         else:
-            verts =  [ text(repr(v), p, fontsize=20, color='black') for v, p in pos.iteritems() ]
+            verts = [ text(repr(v), p, fontsize=20, color='black') for v, p in pos.iteritems() ]
             verts += [ circle(p, 1.5, fill=False) for p in pos.itervalues() ]
-        edges = [ line( [pos[e.tail], pos[e.head]] ) for e in
-                  self.edges if e not in self.dummy]
+        edges = [line([pos[e.tail], pos[e.head]])
+                 for e in self.edges if e not in self.dummy]
         G = sum(verts + edges, Graphics())
         G.axes(False)
         return G
@@ -397,7 +405,7 @@ class Face(CyclicList):
         """
         dirs = CyclicList(["left", "up", "right", "down"])
         dir = dirs.index(orientation)
-        ans = dict()
+        ans = {}
         for e, t in self.iterate_from(edge):
             ans[e] = dirs[dir]
             ans[e.opposite()] = dirs[dir + 2]
@@ -413,6 +421,7 @@ class Face(CyclicList):
     def __repr__(self):
         ext = '*' if self.exterior else ''
         return list.__repr__(self) + ext
+
 
 def subdivide_edge(crossing_strand, n):
     """
@@ -450,7 +459,7 @@ class OrthogonalLinkDiagram(list):
         self.edges = sum([F for F in self], [])
         strands = set(e.crossing for e in self.edges
                       if isinstance(e.crossing, Strand))
-        self.strand_CEPs =  [CrossingEntryPoint(s, 0) for s in strands]
+        self.strand_CEPs = [CrossingEntryPoint(s, 0) for s in strands]
         for i, c in enumerate(link.crossings):
             c.label = i
         for a, s in zip(string.ascii_letters, list(strands)):
@@ -548,7 +557,7 @@ class OrthogonalLinkDiagram(list):
                 arrow.append(arrow[-1].next())
             arrows.append(arrow)
 
-        undercrossings = dict()
+        undercrossings = {}
         for i, arrow in enumerate(arrows):
             for a in arrow[1:-1]:
                 if a.is_under_crossing():
@@ -628,20 +637,24 @@ def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
     if adjust_plink_size and size:
         self.window.geometry('%sx%s'% (size[0], size[1] + 25))
 
+
 plink.LinkEditor.load_from_spherogram = load_from_spherogram
+
 
 def orthogonal_draw(self, link_editor=None):
     if link_editor is None:
         link_editor = plink.LinkEditor()
     link_editor.load_from_spherogram(self)
 
+
 spherogram.Link.draw = orthogonal_draw
 
-#---------------------------------------------------
+
+# --------------------------------------------------
 #
 #  Testing code
 #
-#---------------------------------------------------
+# --------------------------------------------------
 
 
 def link_from_manifold(manifold):
@@ -703,7 +716,7 @@ if __name__ == '__main__':
 
     square = OrthogonalRep([(0, 1), (3, 2)], [(0, 3), (1,2)])
     OR = OrthogonalRep([ (0,1), (2, 3), (3, 4), (5, 6), (6, 7), (7, 8), (9, 10)],
-                         [(0, 2), (1, 3), (2, 6), (3, 7), (4,8),(5,9),(6, 10)])
+                       [(0, 2), (1, 3), (2, 6), (3, 7), (4,8),(5,9),(6, 10)])
     kinked = OrthogonalRep([ (0, 1), (1, 2), (3, 4), (6, 7) ],
                            [(0,3),(4,6), (2,5), (5,7)])
     kinked2 = OrthogonalRep([ (0,1), (2,3), (4,5), (6,7)], [(1,2), (0, 4), (3,7), (5,6)])

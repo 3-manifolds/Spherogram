@@ -7,10 +7,10 @@ def insert_space(point_dict, i):
     """
     Insert two new points which will be labeled i and i + 1.
         """
-    ans = dict()
+    ans = {}
     for a, v in point_dict.items():
         if a >= i:
-            a = a + 2
+            a += 2
         ans[a] = v
     return ans
 
@@ -19,7 +19,7 @@ def remove_space(point_dict, i):
     """
     Remove the points i and i + 1
     """
-    ans = dict()
+    ans = {}
     for a, v in point_dict.items():
         if a < i:
             ans[a] = v
@@ -112,7 +112,7 @@ class MorseEncoding():
         self.width = max_width
 
     def link(self):
-        active = dict()
+        active = {}
         crossings = []
         for event in self.events:
             if event.kind == 'cup':
@@ -328,7 +328,7 @@ class MorseExhaustion():
             frontier_lengths = [4]
             if len(link.crossings) == 1:
                 events += [('cap', 0, 1), ('cap', 0, 1)]
-        else: # Only unlinked unknotted components
+        else:  # Only unlinked unknotted components
             crossings = []
             frontier_lengths = []
 
@@ -378,8 +378,8 @@ class MorseExhaustion():
             frontier_lengths.append(len(frontier))
 
         c = link.unlinked_unknot_components
-        events += c*[('cup', 0, 1), ('cap', 0, 1)]
-        frontier_lengths += c*[2, 0]
+        events += c * [('cup', 0, 1), ('cap', 0, 1)]
+        frontier_lengths += c * [2, 0]
 
         self.link = link
         self.crossings = crossings
