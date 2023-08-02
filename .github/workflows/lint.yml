@@ -23,7 +23,7 @@ jobs:
         run: pycodestyle --select=E111,E302,E306,E401,E701,E702,E703,E704,W391,W605,E711,E713,E721 spherogram_src/
       - name: Run cython-lint
         shell: bash -l {0}
-        run: cython-lint spherogram_src
+        run: cython-lint .
 
 env:
   MAKEFLAGS: -j2
