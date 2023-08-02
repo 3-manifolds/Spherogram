@@ -21,6 +21,7 @@ def spanning_trees(G):
     else:
         return []
 
+
 def rec(part_G,G):
     """
     Recursive function 'rec' from Read paper
@@ -31,7 +32,7 @@ def rec(part_G,G):
         return []
 
     if len(G.edges()) == len(part_G.edges()):
-        trees +=[part_G.copy()]
+        trees += [part_G.copy()]
     else:
 
         # let e be an edge not in part_G

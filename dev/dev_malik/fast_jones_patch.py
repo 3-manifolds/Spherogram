@@ -80,6 +80,7 @@ def simplify_jones_expression(poly):
 #        print(poly)
     return poly
 
+
 def simplify_monomial(monomial):
     monomial = remove_squares(monomial)
     monomial = remove_loops(monomial)
@@ -87,7 +88,7 @@ def simplify_monomial(monomial):
     strand_vars = monomial.free_symbols - set(sympy.symbols('A,B'))
     strand_labels = all_labels(strand_vars)
 
-    while len(set(strand_labels))<len(strand_labels):
+    while len(set(strand_labels)) < len(strand_labels):
 #        collections.Counter
 #        print(monomial)
         for l in strand_labels:

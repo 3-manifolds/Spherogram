@@ -44,7 +44,7 @@ def add_random_crossing(self,label):
     old_position = randint(0,len(adj)-1)
     old_crossing, old_strand = adj.pop(old_position)
     new_strand = randint(0,3)
-    old_crossing[old_strand]=new_crossing[new_strand]
+    old_crossing[old_strand] = new_crossing[new_strand]
     for i in range(1,4):
         adj.insert(old_position,(new_crossing,(new_strand-i)%4))
     adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
@@ -78,14 +78,14 @@ def random_tree_knot(size, simplify=None, prime_decomp=False):
         knot = link.sublink(max(link.link_components,key=len))
         knot.simplify(mode=simplify)
         if len(knot) > 0:
-            found_nontrivial=True
+            found_nontrivial = True
 
     if prime_decomp:
         cant_deconnect = False
         while cant_deconnect:
             ds = knot.deconnect_sum()
             knot = max(ds,key=len)
-            cant_deconnect = (len(ds)>1)
+            cant_deconnect = (len(ds) > 1)
     return knot
 
 """
@@ -190,7 +190,7 @@ def isosig(self, root=None, over_or_under=False):
     for strand,end in strands:
         isst = map(lambda cs: crossing_order.index(cs[0]),strand)
         if (want_root) and (not found_root) and (root_position in isst):
-            root_strand_indices = [i for i in range(len(isst)) if isst[i]==root_position]
+            root_strand_indices = [i for i in range(len(isst)) if isst[i] == root_position]
             for root_strand_index in root_strand_indices:
                 if root_tuple == strand[root_strand_index]:
                     found_root = True
@@ -202,7 +202,7 @@ def isosig(self, root=None, over_or_under=False):
     for loop in loops:
         isl = map(lambda cs: crossing_order.index(cs[0]),loop)
         if (want_root) and (not found_root) and (root_position in isl):
-            root_loop_indices = [i for i in range(len(isl)) if isl[i]==root_position]
+            root_loop_indices = [i for i in range(len(isl)) if isl[i] == root_position]
             for root_loop_index in root_loop_indices:
                 if root_tuple == loop[root_loop_index]:
                     found_root = True
@@ -273,11 +273,11 @@ def crossing_orientations(strands):
         for cs in strand:
             for seen_cs in css_seen:
                 if cs[0] == seen_cs[0]:
-                    orientation = (cs[1]-seen_cs[1])%4
+                    orientation = (cs[1]-seen_cs[1]) % 4
                     if orientation == 3:
                         orientation = -1
-                    orientations[cs[0]]=orientation
-                    over_or_under[cs[0]] = (cs[1]%2)
+                    orientations[cs[0]] = orientation
+                    over_or_under[cs[0]] = (cs[1] % 2)
                     break
             css_seen.append(cs) #didn't find cs
     return orientations, over_or_under
@@ -357,16 +357,16 @@ def all_cross_strands(self):
                     if loop_cs[0] in seen_once:
                         for seen_cs in cs_seen:
                             if loop_cs[0] == seen_cs[0]:
-                                orientation = (loop_cs[1]-seen_cs[1])%4
+                                orientation = (loop_cs[1]-seen_cs[1]) % 4
                                 if orientation == 3:
                                     orientation = -1
-                                orientations[loop_cs[0]]=orientation
-                                over_or_under[loop_cs[0]] = loop_cs[1]%2
+                                orientations[loop_cs[0]] = orientation
+                                over_or_under[loop_cs[0]] = loop_cs[1] % 2
                                 seen_once.remove(loop_cs[0])
                                 break
                     else:
                         seen_once.add(loop_cs[0])
-    while len(orientations)<len(self.crossings):
+    while len(orientations) < len(self.crossings):
         for loop in loops:
             for cs in loop:
                 if cs[0] in seen_once:
@@ -380,8 +380,8 @@ def all_cross_strands(self):
                                     orientation = (loop_cs[1]-seen_cs[1])%4
                                     if orientation == 3:
                                         orientation = -1
-                                    orientations[loop_cs[0]]=orientation
-                                    over_or_under[loop_cs[0]]= loop_cs[1]%2
+                                    orientations[loop_cs[0]] = orientation
+                                    over_or_under[loop_cs[0]] = loop_cs[1] % 2
                                     seen_once.remove(loop_cs[0])
                                     break
                         else:
@@ -423,7 +423,7 @@ def all_four_cycles_at_vertex(G, start_vertex):
     four_cycles = set()
     for v in adjacent:
         for w in adjacent:
-            if v==w:
+            if v == w:
                 continue
             new_adj = G.children(v).intersection(G.children(w))
             new_adj.remove(start_vertex)
@@ -442,8 +442,8 @@ def all_four_cycles_at_vertex(G, start_vertex):
 
 def unknot_search(num_attempts, backtrack_height, num_mutations):
     c = spherogram.Crossing(0)
-    c[0]=c[1]
-    c[2]=c[3]
+    c[0] = c[1]
+    c[2] = c[3]
     U = spherogram.Link([c])
     for i in range(num_attempts):
         print(i)
@@ -452,16 +452,17 @@ def unknot_search(num_attempts, backtrack_height, num_mutations):
         for i in range(num_mutations):
             Uc = random_mutate(Uc)
         Uc.simplify(mode='level')
-        if len(Uc)>0:
+        if len(Uc) > 0:
             return Uc
     return None
+
 
 #Returns first nontrivial 4-cycle found
 def get_four_cycle(G, start_vertex):
     adjacent = G.children(start_vertex)
     for v in adjacent:
         for w in adjacent:
-            if v==w:
+            if v == w:
                 continue
             new_adj = G.children(v).intersection(G.children(w))
             new_adj.remove(start_vertex)
@@ -567,11 +568,11 @@ def trace_boundary_component(start_cs,full_boundary):
             print(cs)
             cs = cs.next_corner()
             i += 1
-            if i>100:
+            if i > 100:
                 raise Exception()
         cs = cs.rotate(1)
         boundary_comp.append(cs)
-    boundary_comp.pop(-1) #code aboves adds the start_cs twice
+    boundary_comp.pop(-1)  # code aboves adds the start_cs twice
     return boundary_comp
 
 
@@ -602,22 +603,22 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
         print('all comps: '+str(comps))
         comps.remove(largest_comp) #remove largest component
         for comp in comps:
-            print('crossings: ' +str(crossings))
-            print('filling in comp:'+str(comp))
-            print('adjacent: '+str(adjacent))
+            print('crossings: ' + str(crossings))
+            print('filling in comp:' + str(comp))
+            print('adjacent: ' + str(adjacent))
             c = comp.pop()
             cs = choice(c.crossing_strands())
 
             print('cs: ' + str(cs))
             exit_strand = meander(cs,sides)[1] #meander until you hit boundary
             exit_strand = exit_strand[0].crossing_strands()[exit_strand[1]]
-            print('exit_strand: ' +str(exit_strand))
+            print('exit_strand: ' + str(exit_strand))
             bound_comp = trace_boundary_component(exit_strand,adjacent)
             print('traced component: ' + str(bound_comp))
             if exit_strand not in main_boundary_comp:
                 for x in bound_comp:
                     adjacent.remove(x)
-                print('updated adjacent: ' +str(adjacent))
+                print('updated adjacent: ' + str(adjacent))
                 crossings.append(c)
                 crossings.extend(list(comp))
 
@@ -846,13 +847,13 @@ def fill_in_crossings(link,sides):
     crossing_sides = {x[0]:sides[x] for x in sides}
     crossing_labels = map(lambda c: c.label,link.crossings)
     crossings_to_sort = set(crossing_labels)-set(x[0] for x in sides)
-    while len(crossings_to_sort)>0:
+    while len(crossings_to_sort) > 0:
         start_crossing = crossings_to_sort.pop()
         accumulated_crossings = [start_crossing]
         m,end_side = meander(crossing_strand_from_name(link,(start_crossing,randint(0,3))),sides)
         accumulated_crossings.extend(map(lambda x: x.label,m))
         for c in accumulated_crossings:
-            crossing_sides[c]=end_side
+            crossing_sides[c] = end_side
     return crossing_sides
 
 
@@ -948,11 +949,12 @@ def hamilton(G):
             conf_g.remove_node(path[-1])
             confs.append((conf_g,conf_p))
         for g,p in confs:
-            if len(p)==n:
+            if len(p) == n:
                 return p
             else:
-                F.append((g,p))
+                F.append((g, p))
     return None
+
 
 def hamiltonian_cycle(G):
     return edge_cycle(hamilton(G.to_networkx()),G)
@@ -1079,7 +1081,7 @@ def all_nhd_vol_dists(link,radius,tolerance):
         double_volumes = map(lambda x: x.exterior().volume(),T1.all_circular_sums(T1))
         double_volumes.sort()
         for i in range(len(double_volumes)):
-            if double_volumes[i]<tolerance:
+            if double_volumes[i] < tolerance:
                 double_volumes[i] = 0
         new_dist = True
         for dist in nhds:
@@ -1121,21 +1123,21 @@ vols = map(lambda x: x.exterior().volume(), tsums)
 print(v,avg_vol)
 """
 
-a,b,c,d,e,f,g,h = [spherogram.Crossing(x) for x in 'abcdefgh']
-a[0]=e[2]
-a[1]=b[3]
-a[3]=e[3]
-b[0]=f[2]
-b[1]=c[3]
-b[2]=c[2]
-c[0]=g[2]
-c[1]=d[3]
-d[0]=h[2]
-d[1]=h[1]
-e[1]=f[3]
-f[0]=g[0]
-f[1]=g[3]
-g[1]=h[3]
-crossings = [a,b,c,d,e,f,g,h]
-adj = [(e,0),(h,0),(a,2),(d,2)]
-testT = spherogram.Tangle(2,crossings,adj)
+a, b, c, d, e, f, g, h = [spherogram.Crossing(x) for x in 'abcdefgh']
+a[0] = e[2]
+a[1] = b[3]
+a[3] = e[3]
+b[0] = f[2]
+b[1] = c[3]
+b[2] = c[2]
+c[0] = g[2]
+c[1] = d[3]
+d[0] = h[2]
+d[1] = h[1]
+e[1] = f[3]
+f[0] = g[0]
+f[1] = g[3]
+g[1] = h[3]
+crossings = [a, b, c, d, e, f, g, h]
+adj = [(e, 0), (h, 0), (a, 2), (d, 2)]
+testT = spherogram.Tangle(2, crossings, adj)

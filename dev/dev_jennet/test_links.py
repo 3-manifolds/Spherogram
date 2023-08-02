@@ -25,10 +25,10 @@ class TestLinkFunctions(unittest.TestCase):
         # Hopf Link
         a = spherogram.Crossing('a')
         b = spherogram.Crossing('b')
-        a[0]=b[1]
-        a[1]=b[0]
-        a[2]=b[3]
-        a[3]=b[2]
+        a[0] = b[1]
+        a[1] = b[0]
+        a[2] = b[3]
+        a[3] = b[2]
         self.L2a1 = spherogram.Link([a,b])
 
         #Borromean Link (3)
@@ -142,7 +142,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(Sum.alexander_poly(), k1.alexander_poly()*k2.alexander_poly())
             self.assertEqual(Sum.signature(),      k1.signature()+k2.signature())
             self.assertEqual(Sum.determinant(),    k1.determinant()*k2.determinant())
-            repeat -=1
+            repeat -= 1
 
     def testSignature(self):
         self.assertEqual(abs(self.Tref.signature()),       2)
@@ -165,7 +165,7 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k1.writhe(),         k1_prime.writhe())
             self.assertEqual(k1.signature(),      k1_prime.signature())
             self.assertEqual(k1.alexander_poly(), k1_prime.alexander_poly())
-            repeat-=1
+            repeat -= 1
 
         repeat = 3
         while repeat > 0:
@@ -175,16 +175,16 @@ class TestLinkFunctions(unittest.TestCase):
             self.assertEqual(k2.writhe(),         k2_prime.writhe())
             self.assertEqual(k2.signature(),      k2_prime.signature())
             self.assertEqual(k2.alexander_poly(), k2_prime.alexander_poly())
-            repeat-=1
+            repeat -= 1
 
     def testMirror(self):
         repeat = 3
         while repeat > 0:
             k1 = self.random_knot()
             k1_prime = k1.mirror()
-            self.assert_(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for "+ repr(k1))
-            self.assert_(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for "+repr(k1))
-            repeat-=1
+            self.assert_(k1.signature() == -1*k1_prime.signature(), msg="knot signature failed for " + repr(k1))
+            self.assert_(k1.writhe() == -1*k1_prime.writhe(), msg="knot writhe failed for " + repr(k1))
+            repeat -= 1
 
         repeat = 3
         while repeat > 0:
@@ -192,7 +192,7 @@ class TestLinkFunctions(unittest.TestCase):
             k2_prime = k2.mirror()
             self.assert_(k2.signature() == -1*k2_prime.signature(), msg="link signature failed for " + repr(k2))
             self.assert_(k2.writhe() == -1*k2_prime.writhe(), msg="link writhe failed for " + repr(k2))
-            repeat-=1
+            repeat -= 1
 
     def testDet(self):
         self.assertEqual(self.K3_1.determinant(),                 3)
@@ -240,13 +240,13 @@ class TestLinkFunctions(unittest.TestCase):
         while repeat > 0:
             k1 = self.random_knot()
             self.assert_(k1.black_graph().is_planar())
-            repeat-=1
+            repeat -= 1
 
         repeat = 3
         while repeat > 0:
             k2 = self.random_link()
             self.assert_(k2.black_graph().is_planar())
-            repeat-=1
+            repeat -= 1
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestLinkFunctions)

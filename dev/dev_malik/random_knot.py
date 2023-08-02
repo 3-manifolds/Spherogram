@@ -8,7 +8,7 @@ import pickle
 
 def start_string():
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     return crossings, loose_cs, final_cs
@@ -22,7 +22,7 @@ def random_knot(n, method='close_under', alternate=False,
         return Link(crossings)
     elif method == 'close_on_opportunity':
         crossings = [Crossing('0')]
-        crossings[0][2]=crossings[0][3]
+        crossings[0][2] = crossings[0][3]
         final_cs = crossings[0].crossing_strands()[0]
         loose_cs = crossings[0].crossing_strands()[1]
         i = 0
@@ -47,7 +47,7 @@ def random_knot(n, method='close_under', alternate=False,
 
 def random_open_string(n, alternate=False, bias=False):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     for i in range(n):
@@ -96,7 +96,7 @@ def distance(crossings, loose_cs, final_cs):
 
 def volume_evolution(n):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     vols = []
@@ -125,7 +125,7 @@ def open_string_volume(crossings):
 
 def alexander_evolution(n):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     alex_polys = []
@@ -143,7 +143,7 @@ def alexander_evolution(n):
 
 def function_evolution(n, function, simplify='level', skip_first=0):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     values = []
@@ -199,7 +199,7 @@ def trivial_jones_search(n, simplify='global', start_turn_list=[1]):
     for i in range(n):
         K = open_string_evaluation(crossings, lambda K: K, simplify)
         if K:
-            if len(K)>17:
+            if len(K) > 17:
                 p = K.jones_polynomial()
                 if p.is_one():
                     trivial_jones.append(K)
@@ -252,7 +252,7 @@ def open_string_alexander(crossings):
 
 def open_string_from_turn_list(turn_list):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     for i, turn in enumerate(turn_list):
@@ -271,7 +271,7 @@ def open_string_from_turn_list(turn_list):
 #        print('available after')
 #        print(available)
         loose_cs = cross_strand(crossings, loose_cs,
-                                strand_to_cross, str(i+1), (turn>0))
+                                strand_to_cross, str(i+1), (turn > 0))
 #        print('crossings after')
 #        [c.info() for c in crossings]
 
@@ -279,7 +279,7 @@ def open_string_from_turn_list(turn_list):
 
 def knot_tree(depth):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     tree = nx.Graph()
@@ -391,9 +391,9 @@ def hard_unknot_search(turn_list, max_steps):
             print(turn_list)
             K = open_string_evaluation(crossings, lambda x: x, simplify=None)
             K.simplify()
-            if len(K)>3:
+            if len(K) > 3:
                 K.simplify(mode='global')
-                if len(K)>3:
+                if len(K) > 3:
                     if K.alexander_polynomial().is_one():
                         print(turn_list)
                         unknots.append(tuple(turn_list))
