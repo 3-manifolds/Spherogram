@@ -13,6 +13,7 @@ jobs:
         run: |
           sudo apt-get install -y codespell
           sudo apt-get install -y pycodestyle
+          sudo pip install cython-lint
       - name: Run codespell
         shell: bash -l {0}
         run: codespell -L pres,ans spherogram_src
@@ -20,6 +21,9 @@ jobs:
         shell: bash -l {0}
         # We currently only check for some warnings. We should enable & fix more of them.
         run: pycodestyle --select=E111,E302,E306,E401,E701,E702,E703,E704,W391,W605,E711,E713,E721 spherogram_src/
+      - name: Run cython-lint
+        shell: bash -l {0}
+        run: cython-lint spherogram_src
 
 env:
   MAKEFLAGS: -j2
