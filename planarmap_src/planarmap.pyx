@@ -1,18 +1,17 @@
-#cython: language_level=3
-#cython: legacy_implicit_noexcept=True
+# cython: language_level=3
+# cython: legacy_implicit_noexcept=True
 #
 # The above line is for Cython 3; to remove, need to declare
 # "randrange_callback" via:
 #
 # cdef long randrange_callback(long n) noexcept:
 
-from libc.stdlib cimport malloc, free
 import random
 
 cdef extern from 'PMdef.h':
     ctypedef struct pmSize:
-        char m, b  #  map and basic map type
-        long e, v, f  # edges, vertices, faces 
+        char m, b     # map and basic map type
+        long e, v, f  # edges, vertices, faces
         long r, g, d  # red and black vertices, max degree
         long t        # tolerance on e
         long *dgArr   # pt on vertex list
@@ -32,7 +31,7 @@ cdef extern from 'PMdef.h':
         long mark
         short type
         long label
-        
+
     ctypedef struct pm_edge:
         pm_vertex* c_from "from"
         pm_vertex* face
@@ -92,11 +91,11 @@ def random_map(num_vertices, int edge_connectivity=4,
     cdef pm_edge *edge
     cdef pm_vertex *vert
 
-    if edge_connectivity==2:
+    if edge_connectivity == 2:
         size.m, size.b = 4, 4
-    elif edge_connectivity==4:
+    elif edge_connectivity == 4:
         size.m, size.b = 5, 5
-    elif edge_connectivity==6:
+    elif edge_connectivity == 6:
         size.m, size.b = 6, 5
     else:
         raise ValueError("Invalid edge_connectivity parameter")
@@ -117,8 +116,8 @@ def random_map(num_vertices, int edge_connectivity=4,
             pmPlanMap(&size, &method, &memory, &the_map)
             tries += 1
 
-        if tries==max_tries:
-            return 
+        if tries == max_tries:
+            return
 
     ans = []
     vert = the_map.root.c_from
@@ -129,7 +128,7 @@ def random_map(num_vertices, int edge_connectivity=4,
             edges_at_vert.append(edge.label)
             edge = edge.next
         edges_at_vert.append(edge.label)
-        ans.append( (vert.label, tuple(edges_at_vert)) )
+        ans.append((vert.label, tuple(edges_at_vert)))
         vert = vert.next
     pmFreeMap(&the_map)
     return ans

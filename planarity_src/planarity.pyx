@@ -1,4 +1,4 @@
-#cython: language_level=3
+# cython: language_level=3
 """
 Wrapper for Boyer's (C) planarity algorithm.
 """
@@ -23,16 +23,17 @@ cdef extern from "c/graph.h":
         int N
         int M
     ctypedef baseGraphStructure * graphP
-    
+
     cdef int OK, EMBEDFLAGS_PLANAR, NOTOK, NONEMBEDDABLE
-    
+
     cdef graphP gp_New()
     cdef void gp_Free(graphP *pGraph)
     cdef int gp_InitGraph(graphP theGraph, int N)
     cdef int gp_AddEdge(graphP theGraph, int u, int ulink, int v, int vlink)
     cdef int gp_Embed(graphP theGraph, int embedFlags)
     cdef int gp_SortVertices(graphP theGraph)
-    
+
+
 def planar(fatgraph):
     if len(fatgraph.edges) == 0:
         return True, None
@@ -60,13 +61,12 @@ def planar(fatgraph):
     if status == NONEMBEDDABLE:
         return False, None
     embedding = {}
-    for i from 0 <= i < theGraph.N:
+    for i in range(theGraph.N):
         adjacency_list = []
-        j = theGraph.V[i].link[0]    # the first edge
-        last = theGraph.V[i].link[1] # the last edge
+        j = theGraph.V[i].link[0]      # the first edge
         while j >= 0:
             adjacency_list.append(vertices[theGraph.E[j].neighbor])
-            j = theGraph.E[j].link[0] # the next edge
+            j = theGraph.E[j].link[0]  # the next edge
         embedding[vertices[i]] = adjacency_list
     gp_Free(&theGraph)
     return True, embedding
