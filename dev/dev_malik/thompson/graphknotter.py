@@ -14,7 +14,7 @@ def faces(G):
     unseen_pairs = { (edge,vertex) for edge in G.edges for vertex in edge.incident_to()}
     face_list = []
 
-    while len(unseen_pairs)>0:
+    while len(unseen_pairs) > 0:
 
         direction = unseen_pairs.pop()
         face = [direction]
@@ -56,7 +56,7 @@ def link_diagram(G):
 #            print(c,o)
 #            print('cnext,u: ')
 #            print(cnext,u)
-            c[o]=cnext[u]
+            c[o] = cnext[u]
 
     for edge in G.edges: #switch twisted edges
         c = crossing_dict[label(edge)]
@@ -155,7 +155,7 @@ def face_two_coloring(G,faces):
         for f in faces:
             for other_face in colors:
                 if share_edge(f,other_face):
-                    colors[tuple(f)]=1-colors[other_face]
+                    colors[tuple(f)] = 1 - colors[other_face]
                     faces.remove(f)
                     break
     return colors
@@ -163,10 +163,12 @@ def face_two_coloring(G,faces):
 def share_edge(face1,face2):
     s1 = set([e for e,v in face1])
     s2 = set([e for e,v in face2])
-    return len(s1.intersection(s2))>0
+    return len(s1.intersection(s2)) > 0
+
 
 def edge_to_str_pair(edge):
     return set(map(lambda s: s.strip(), str(edge).split('---')))
+
 
 def doubled_edge_to_str_pair(e):
     s1 = set([e[0].split()[0].split('\'')[1], e[0].split()[1].split('\'')[1]])
@@ -190,10 +192,10 @@ def identify_pair(link):
         if len(face) == 4:
             signs = [(cs.strand_index % 2) for cs in face]
             comps = [component_index(link,cs) for cs in face]
-            if sorted(signs) == [0,0,1,1] and len(set(comps))>1:
+            if sorted(signs) == [0, 0, 1, 1] and len(set(comps)) > 1:
                 second_zero = 3 - list(reversed(signs)).index(0)
-                if comps[second_zero] != comps[(second_zero+2)%4]:
-                    return face[second_zero],face[(second_zero+2)%4]
+                if comps[second_zero] != comps[(second_zero+2) % 4]:
+                    return face[second_zero],face[(second_zero+2) % 4]
 
     raise Exception()
 
@@ -217,24 +219,25 @@ def component_index(link,cs):
 def whitehead_double(link):
     D = double(link)
     cs1, cs2 = identify_pair(D)
-    T1 = simple_cut(D,cs1,cs2)
+    T1 = simple_cut(D, cs1, cs2)
     T2 = clasp()
     clear_orientations(T1)
     clear_orientations(T2)
-    L = T1.circular_sum(T2,1)
+    L = T1.circular_sum(T2, 1)
     L._rebuild()
     return L
 
+
 def make_writhe_zero(link):
     writhe = link.writhe()
-    if writhe>0:
+    if writhe > 0:
         hand = 'left'
     else:
         hand = 'right'
     writhe = abs(writhe)
     for i in range(writhe):
         cs = random.choice(link.crossing_strands())
-        reverse_type_I(link,cs, i, hand, False)
+        reverse_type_I(link, cs, i, hand, False)
         link._rebuild()
         print(link.writhe())
 
@@ -242,13 +245,16 @@ def make_writhe_zero(link):
 def clear_orientations(link):
     for c in link.crossings:
         c._clear()
+
+
 def clasp():
     c, d = spherogram.Crossing('c'),spherogram.Crossing('d')
     c[0] = d[1]
     c[1] = d[0]
-    d2, d3= d.crossing_strands()[2],d.crossing_strands()[3]
-    c2, c3= c.crossing_strands()[2],c.crossing_strands()[3]
+    d2, d3 = d.crossing_strands()[2],d.crossing_strands()[3]
+    c2, c3 = c.crossing_strands()[2],c.crossing_strands()[3]
     return Tangle(2,[c,d],[d2, d3, c3, c2])
+
 
 def random_four_connect(link1,link2):
     from random import choice, sample

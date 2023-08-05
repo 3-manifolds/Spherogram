@@ -37,6 +37,7 @@ def compact_form(p):
     assert p == y**(p.degree() // 2) * g(y + 1/y)
     return g
 
+
 def roots_on_unit_circle(poly, prec=53):
     """
     For a palindromic polynomial p(x) of even degree, return all the
@@ -48,7 +49,7 @@ def roots_on_unit_circle(poly, prec=53):
     assert is_palindromic(poly) and poly.degree() % 2 == 0
     assert poly.parent().is_exact()
     # Deal with these corner cases at some point if needed.
-    assert poly(1) != 0 and poly(-1) !=0
+    assert poly(1) != 0 and poly(-1) != 0
 
     ans = []
     RR = RealField(prec)
@@ -60,6 +61,7 @@ def roots_on_unit_circle(poly, prec=53):
         args += [1-a for a in args]
         ans += [ (arg, e) for arg in args]
     return sorted(ans)
+
 
 def alexander_poly_from_seifert(V):
     R = PolynomialRing(ZZ, 't')

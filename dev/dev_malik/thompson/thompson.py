@@ -3,6 +3,7 @@ import itertools
 from spherogram.graphs import FatGraph
 from random import randint
 
+
 class DyadicRational:
     def __init__(self, numerator, denom_exp):
         self.numerator = numerator
@@ -19,7 +20,7 @@ class DyadicRational:
     def children(self):
         l = DyadicRational(2*self.numerator-1, self.denom_exp+1)
         r = DyadicRational(2*self.numerator+1, self.denom_exp+1)
-        return (l,r)
+        return (l, r)
 
     def parent(self):
         if self.numerator % 4 == 1:
@@ -28,7 +29,7 @@ class DyadicRational:
             return DyadicRational(self.numerator-1,self.denom_exp)
 
     def __repr__(self):
-        return '%s/2^%s' %(self.numerator,self.denom_exp)
+        return '%s/2^%s' % (self.numerator,self.denom_exp)
 
     def __eq__(self,otherdyadic):
         if self.numerator == 0:

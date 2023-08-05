@@ -30,7 +30,7 @@ def petaluma_knot(height_perm):
             a,b = sorted([i,j]) #must be ordered
             next_crossing = crossing_dict[a,b]
             ordered_or_backward = 0
-            if i>j:
+            if i > j:
                 ordered_or_backward = 1
             if height_perm[i] < height_perm[j]: # strand i passes under strand j
                 if not visited_dict[a,b]: #if first time crossing has come up

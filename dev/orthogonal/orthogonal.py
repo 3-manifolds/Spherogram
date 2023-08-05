@@ -92,9 +92,9 @@ def topological_numbering(G):
             above = len([e for e in G.outgoing(v) if e.dummy is False])
             if above != below:
                 if above > below:
-                    new_pos = min( n[e.head] for e in G.outgoing(v) ) - 1
+                    new_pos = min(n[e.head] for e in G.outgoing(v)) - 1
                 else:
-                    new_pos = max( n[e.tail] for e in G.incoming(v) ) + 1
+                    new_pos = max(n[e.tail] for e in G.incoming(v)) + 1
                 if new_pos != n[v]:
                     n[v] = new_pos
                     success = True
@@ -191,10 +191,10 @@ class OrthogonalFace(CyclicList):
                     break
             for i in range(len(face_info) - 2):
                 x, y, z = face_info[i:i+3]
-                if x.turn == -1 and y.turn== z.turn == 1:
-                    a,b = (x, z) if  x.kind == 'sink' else (z, x)
+                if x.turn == -1 and y.turn == z.turn == 1:
+                    a, b = (x, z) if x.kind == 'sink' else (z, x)
                     remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
-                    return [ (a.index, b.index)  ] + saturate_face(remaining)
+                    return [(a.index, b.index)] + saturate_face(remaining)
             return []
 
         new_edges = saturate_face(self.switches(swap_hor_edges))
@@ -213,7 +213,7 @@ def saturate_face( face_info ):
             break
     for i in range(len(face_info) - 2):
         x, y, z = face_info[i:i+3]
-        if x.turn == -1 and y.turn== z.turn == 1:
+        if x.turn == -1 and y.turn == z.turn == 1:
             a,b = (x, z) if  x.kind == 'sink' else (z, x)
             remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
             return [ (a.index, b.index)  ] + saturate_face(remaining)
@@ -273,10 +273,10 @@ class OrthogonalRep(Digraph):
     def _make_turn_regular(self):
         dummy = set()
         regular = [F for F in self.faces if F.is_turn_regular()]
-        irregular =[F for F in self.faces if not F.is_turn_regular()]
+        irregular = [F for F in self.faces if not F.is_turn_regular()]
         while len(irregular):
             F = irregular.pop()
-            i,j = F.kitty_corner()
+            i, j = F.kitty_corner()
             v0, v1 = F[i][1], F[j][1]
             kind = random.choice( ('vertical', 'horizontal'))
             if len([e for e in self.incoming(v0) if e.kind == kind]):
@@ -359,9 +359,9 @@ class OrthogonalRep(Digraph):
 class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):
         list.__init__(self, crossing_strands)
-        self.edges = dict( (c.oriented(),c) for c in crossing_strands)
+        self.edges = {c.oriented(): c for c in crossing_strands}
         self.exterior = exterior
-        self.turns =[1 for e in self]
+        self.turns = [1 for e in self]
 
     def edge_of_intersection(self, other):
         """
@@ -623,7 +623,7 @@ def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
     size, vertices, arrows, crossings = OrthogonalLinkDiagram(link).plink_data(spacing, width)
     self.clear()
     self.clear_text()
-    for (x, y) in vertices:
+    for x, y in vertices:
         self.Vertices.append(Vertex(x, y, self.canvas))
     for u, v in arrows:
         U, V = self.Vertices[u], self.Vertices[v]
@@ -635,7 +635,7 @@ def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
     self.create_colors()
     self.goto_start_state()
     if adjust_plink_size and size:
-        self.window.geometry('%sx%s'% (size[0], size[1] + 25))
+        self.window.geometry('%sx%s' % (size[0], size[1] + 25))
 
 
 plink.LinkEditor.load_from_spherogram = load_from_spherogram

@@ -101,21 +101,20 @@ class DTvertex(tuple):
     def exit_slot(self, N):
         if N == self[0]:
             return North
-        elif N == self[1]:
+        if N == self[1]:
             return West
-        else:
-            raise ValueError('%d is not a label of %s'% (N, self))
+        raise ValueError('%d is not a label of %s' % (N, self))
 
     def first_under(self):
         first, second, even_over = self
         if even_over:
-            return first-1 if first%2 == 1 else second-1
+            return first-1 if first % 2 == 1 else second-1
         else:
-            return first-1 if first%2 == 0 else second-1
+            return first-1 if first % 2 == 0 else second-1
 
     def upper_pair(self):
         first, second, even_over = self
-        return (0,2) if bool(first%2) ^ even_over else (1,3)
+        return (0,2) if bool(first % 2) ^ even_over else (1,3)
 
 
 class DTPath():
@@ -471,7 +470,7 @@ class DTFatGraph(FatGraph):
         See the documentation for Spherogram.link.
         """
         flipped = self.flipped(vertex)
-        even_first = bool(vertex[0] %2 == 0)
+        even_first = bool(vertex[0] % 2 == 0)
         return -1 if (flipped ^ vertex[2] ^ even_first) else 1
 
     def KLP_strand(self, vertex, edge):
@@ -481,7 +480,7 @@ class DTFatGraph(FatGraph):
         """
         W = edge(vertex)
         slot = edge.slot(W)
-        return 'X' if (slot==0 or slot==2) ^ self.flipped(W) else 'Y'
+        return 'X' if (slot == 0 or slot == 2) ^ self.flipped(W) else 'Y'
 
     def KLP_dict(self, vertex, indices):
         """

@@ -12,9 +12,10 @@ def random_knot(n):
     connect_loose_strands(crossings, loose_cs, final_cs)
     return Link(crossings)
 
+
 def random_open_string(n):
     crossings = [Crossing('0')]
-    crossings[0][2]=crossings[0][3]
+    crossings[0][2] = crossings[0][3]
     final_cs = crossings[0].crossing_strands()[0]
     loose_cs = crossings[0].crossing_strands()[1]
     for i in range(n):
@@ -39,10 +40,12 @@ def random_open_string(n):
 
     return crossings, loose_cs, final_cs
 
+
 def flip_crossings(crossings, loose_cs, final_cs):
     for c in crossings:
         if c != loose_cs.crossing and c != final_cs.crossing:
-            c.rotate(randint(0,1))
+            c.rotate(randint(0, 1))
+
 
 def cross_strand(crossings, loose_cs, strand_to_cross, new_label):
     opposite = strand_to_cross.opposite()

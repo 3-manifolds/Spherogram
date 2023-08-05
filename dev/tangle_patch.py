@@ -37,7 +37,7 @@ def add_random_crossing(self,label):
     old_position = randint(0,len(adj)-1)
     old_crossing, old_strand = adj.pop(old_position)
     new_strand = randint(0,3)
-    old_crossing[old_strand]=new_crossing[new_strand]
+    old_crossing[old_strand] = new_crossing[new_strand]
     for i in range(1,4):
         adj.insert(old_position,(new_crossing,(new_strand-i)%4))
     adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
@@ -153,7 +153,7 @@ def all_four_cycles_at_vertex(G, start_vertex):
     four_cycles = set()
     for v in adjacent:
         for w in adjacent:
-            if v==w:
+            if v == w:
                 continue
             new_adj = G.children(v).intersection(G.children(w))
             new_adj.remove(start_vertex)
@@ -170,10 +170,11 @@ def all_four_cycles_at_vertex(G, start_vertex):
 
     return four_cycles
 
+
 def unknot_search(num_attempts, backtrack_height, num_mutations):
     c = spherogram.Crossing(0)
-    c[0]=c[1]
-    c[2]=c[3]
+    c[0] = c[1]
+    c[2] = c[3]
     U = spherogram.Link([c])
     for i in range(num_attempts):
         print(i)
@@ -182,7 +183,7 @@ def unknot_search(num_attempts, backtrack_height, num_mutations):
         for i in range(num_mutations):
             Uc = random_mutate(Uc)
         Uc.simplify(mode='level')
-        if len(Uc)>0:
+        if len(Uc) > 0:
             return Uc
     return None
 
@@ -194,7 +195,7 @@ def get_four_cycle(G, start_vertex):
     adjacent = G.children(start_vertex)
     for v in adjacent:
         for w in adjacent:
-            if v==w:
+            if v == w:
                 continue
             new_adj = G.children(v).intersection(G.children(w))
             new_adj.remove(start_vertex)
@@ -330,22 +331,22 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
         print('all comps: '+str(comps))
         comps.remove(largest_comp) #remove largest component
         for comp in comps:
-            print('crossings: ' +str(crossings))
-            print('filling in comp:'+str(comp))
-            print('adjacent: '+str(adjacent))
+            print('crossings: ' + str(crossings))
+            print('filling in comp:' + str(comp))
+            print('adjacent: ' + str(adjacent))
             c = comp.pop()
             cs = choice(c.crossing_strands())
 
             print('cs: ' + str(cs))
             exit_strand = meander(cs,sides)[1] #meander until you hit boundary
             exit_strand = exit_strand[0].crossing_strands()[exit_strand[1]]
-            print('exit_strand: ' +str(exit_strand))
+            print('exit_strand: ' + str(exit_strand))
             bound_comp = trace_boundary_component(exit_strand,adjacent)
             print('traced component: ' + str(bound_comp))
             if exit_strand not in main_boundary_comp:
                 for x in bound_comp:
                     adjacent.remove(x)
-                print('updated adjacent: ' +str(adjacent))
+                print('updated adjacent: ' + str(adjacent))
                 crossings.append(c)
                 crossings.extend(list(comp))
 
@@ -531,7 +532,7 @@ def tangle_cut(link, cycle):
         flip(side1)
     return Tangle(n/2,crossings0,side0),Tangle(n/2,crossings1,side1)
 
-def fill_in_crossings(link,sides):
+def fill_in_crossings(link, sides):
     """
     Given boundary as above , fill in crossings on either side from sides.
     Returns a dictionary with the side (0 or 1) of each crossing.
@@ -540,17 +541,17 @@ def fill_in_crossings(link,sides):
     crossing_sides = dict([(x[0], sides[x]) for x in sides])
     crossing_labels = map(lambda c: c.label,link.crossings)
     crossings_to_sort = set(crossing_labels)-set(x[0] for x in sides)
-    while len(crossings_to_sort)>0:
+    while crossings_to_sort:
         start_crossing = crossings_to_sort.pop()
         accumulated_crossings = [start_crossing]
         m,end_side = meander(crossing_strand_from_name(link,(start_crossing,randint(0,3))),sides)
         accumulated_crossings.extend(map(lambda x: x.label,m))
         for c in accumulated_crossings:
-            crossing_sides[c]=end_side
+            crossing_sides[c] = end_side
     return crossing_sides
 
 
-def meander(cs,sides):
+def meander(cs, sides):
     """
     Wander randomly starting at crossing strand cs until you hit
     a boundary strand in sides.Assumes the crossing of cs is not on the side.

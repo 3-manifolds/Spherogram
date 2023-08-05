@@ -25,9 +25,9 @@ isosigs = []
 isosig_to_link = {}
 for i in range(num_samples):
     print(i)
-    K, root = random_rooted_link(size,edge_conn)
-    isosig = K.isosig(root,over_or_under=True)
-    isosig_to_link[isosig]=(K,root)
+    K, root = random_rooted_link(size, edge_conn)
+    isosig = K.isosig(root, over_or_under=True)
+    isosig_to_link[isosig] = (K, root)
     isosigs.append(isosig)
 
 C = Counter(isosigs)
