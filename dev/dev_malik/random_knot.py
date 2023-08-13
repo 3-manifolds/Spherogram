@@ -30,9 +30,9 @@ def random_knot(n, method='close_under', alternate=False,
             available = available_strands(loose_cs)
             strand_to_cross = choice(available)
             if alternate:
-                over_or_under = 1-(i%2)
+                over_or_under = 1 - (i % 2)
             else:
-                over_or_under = randint(0,1)
+                over_or_under = randint(0, 1)
             loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), over_or_under)
             same_face = set(available_strands(loose_cs)) == set(available_strands(final_cs))
@@ -57,17 +57,18 @@ def random_open_string(n, alternate=False, bias=False):
         else:
             strand_to_cross = choice(available)
         if alternate:
-            over_or_under = 1-(i%2)
+            over_or_under = 1 - (i % 2)
         else:
-            over_or_under = randint(0,1)
+            over_or_under = randint(0, 1)
         loose_cs = cross_strand(crossings, loose_cs,
                                 strand_to_cross, str(i+1), over_or_under)
     return crossings, loose_cs, final_cs
 
+
 def bias_middle(start_list):
     biased_list = []
     num_copies = range(len(start_list)/2)
-    if len(start_list)%2 == 1:
+    if len(start_list) % 2:
         num_copies.append(len(start_list)/2)
     num_copies.extend(reversed(range(len(start_list)/2)))
     for i, x in enumerate(num_copies):
@@ -159,12 +160,13 @@ def function_evolution(n, function, simplify='level', skip_first=0):
             values.append(open_string_evaluation(crossings, function, simplify))
     return values
 
+
 def turn_list_from_open_string(crossings, loose_cs, final_cs):
     turn_list = []
     while len(crossings) > 1:
 #        print(turn_list)
-        old_position_crossing, old_position_index = loose_cs.crossing.adjacent[(loose_cs.strand_index-1)%4]
-        old_crossing_sign = loose_cs.strand_index%2
+        old_position_crossing, old_position_index = loose_cs.crossing.adjacent[(loose_cs.strand_index-1) % 4]
+        old_crossing_sign = loose_cs.strand_index % 2
         if old_crossing_sign == 0:
             old_crossing_sign = -1
         else:
@@ -480,6 +482,7 @@ def knot_from_turn_list(turn_list):
 #        if c != loose_cs.crossing and c != final_cs.crossing:
 #            c.rotate(randint(0,1))
 
+
 def cross_strand(crossings, loose_cs, strand_to_cross, new_label, over_vs_under):
     opposite = strand_to_cross.opposite()
     new_crossing = Crossing(new_label)
@@ -492,7 +495,7 @@ def cross_strand(crossings, loose_cs, strand_to_cross, new_label, over_vs_under)
     css = new_crossing.crossing_strands()
     connect_crossing_strands(css[0+over_vs_under], loose_cs)
     connect_crossing_strands(css[1+over_vs_under], strand_to_cross)
-    connect_crossing_strands(css[(3+over_vs_under)%4], opposite)
+    connect_crossing_strands(css[(3+over_vs_under) % 4], opposite)
 
     return css[2+over_vs_under]
 

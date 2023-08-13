@@ -37,17 +37,16 @@ def faces(G):
 
 def link_diagram(G):
     face_list = faces(G)
-    #print(face_list)
     crossing_dict = {}
 
-    for edge in G.edges: #create one crossing per edge
+    for edge in G.edges:  # create one crossing per edge
         l = label(edge)
         crossing_dict[l] = spherogram.Crossing(l)
 
-    for face in face_list: #connect along faces
+    for face in face_list:  # connect along faces
         for n, direction in enumerate(face):
             edge = direction[0]
-            next_edge = face[(n+1)%len(face)][0]
+            next_edge = face[(n + 1) % len(face)][0]
             c = crossing_dict[label(edge)]
             cnext = crossing_dict[label(next_edge)]
             o = open_overposition(c)
@@ -58,7 +57,7 @@ def link_diagram(G):
 #            print(cnext,u)
             c[o] = cnext[u]
 
-    for edge in G.edges: #switch twisted edges
+    for edge in G.edges:  # switch twisted edges
         c = crossing_dict[label(edge)]
         if edge.twisted:
             c.rotate_by_90()
@@ -97,19 +96,19 @@ def link_to_fat_graph(link, alternate_around_crossing=False,
     B = link.black_graph()
     visited_slots = []
     for c in link.crossings:
-        for i,adj in enumerate(c.adjacent):
-            if (c.label,i) not in visited_slots:
+        for i, adj in enumerate(c.adjacent):
+            if (c.label, i) not in visited_slots:
                 label = str(c.label)
                 adjlabel = str(adj[0].label)
                 if alternate_around_crossing:
-                    G.add_edge((label,i),(adjlabel,adj[1]),i%2)
+                    G.add_edge((label, i), (adjlabel, adj[1]), i % 2)
                 elif alternate_strand:
-                    diff = (i*adj[1])%2
-                    G.add_edge((label,i),(adjlabel,adj[1]),diff)
+                    diff = (i * adj[1]) % 2
+                    G.add_edge((label, i), (adjlabel, adj[1]), diff)
                 else:
-                    G.add_edge((label,i),(adjlabel,adj[1]),0)
-                visited_slots.append((c.label,i))
-                visited_slots.append((adj[0].label,adj[1]))
+                    G.add_edge((label, i), (adjlabel, adj[1]), 0)
+                visited_slots.append((c.label, i))
+                visited_slots.append((adj[0].label, adj[1]))
     return G
 
 
@@ -256,26 +255,28 @@ def clasp():
     return Tangle(2,[c,d],[d2, d3, c3, c2])
 
 
-def random_four_connect(link1,link2):
+def random_four_connect(link1, link2):
     from random import choice, sample
-    css1 = sample(choice(link1.faces()),2)
-    css2 = sample(choice(link2.faces()),2)
-    return four_connect(link1,css1,link2,css2)
+    css1 = sample(choice(link1.faces()), 2)
+    css2 = sample(choice(link2.faces()), 2)
+    return four_connect(link1, css1, link2, css2)
 
 
 def find_face_color(e, colors):
     pair = doubled_edge_to_str_pair(e)
     for face in colors:
-        edges = [edge_to_str_pair(edge) for edge,v in face]
+        edges = [edge_to_str_pair(edge) for edge, v in face]
         if pair[0] in edges and pair[1] in edges:
             return colors[face]
 
+
 def relabel(link):
-    for i,c in enumerate(link.crossings):
+    for i, c in enumerate(link.crossings):
         c.label = i
+
 
 def cycle(n, signs):
     G = FatGraph()
     for i in range(n):
-        G.add_edge( (str(i),0), (str((i+1)%n),1), signs[i])
+        G.add_edge((str(i), 0), (str((i + 1) % n), 1), signs[i])
     return G

@@ -144,6 +144,7 @@ class DTPath():
 
     __next__ = next
 
+
 class DTFatEdge(FatEdge):
     """
     A fat edge which can be marked and belongs to a link component.
@@ -161,17 +162,17 @@ class DTFatEdge(FatEdge):
         This method returns the edge label.
         """
         v = self[0]
-        if self.slot(v)%2 == 0:
+        if self.slot(v) % 2 == 0:
             return v[0]
-        else:
-            return v[1]
+        return v[1]
+
 
 class DTFatGraph(FatGraph):
     edge_class = DTFatEdge
 
     def __init__(self, pairs=[], singles=[]):
         FatGraph.__init__(self, pairs, singles)
-        self.marked_valences = dict( (v,0) for v in self.vertices )
+        self.marked_valences = {v: 0 for v in self.vertices}
         self.stack = []
         self.pushed = False
 
@@ -290,7 +291,7 @@ class DTFatGraph(FatGraph):
                     raise ValueError('Marked graph is a circle')
                 edges = [e for e in self(V) if e.marked and e != edge]
                 if len(edges) == 0:
-                    raise ValueError('Marked graph has a dead end at %s.'%V)
+                    raise ValueError('Marked graph has a dead end at %s.' % V)
                 if len(edges) > 1:
                     break
                 else:
@@ -402,7 +403,6 @@ class DTFatGraph(FatGraph):
         """
         if not edge.marked:
             raise ValueError('Must begin at a marked edge.')
-        result = set()
         first_vertex = vertex = edge[1]
         while True:
             end = 0 if edge[0] is vertex else 1
@@ -412,7 +412,7 @@ class DTFatGraph(FatGraph):
                 interior_edge = self(vertex)[slot]
                 if not interior_edge.marked:
                     # For lookups, slot values must be in 0,1,2,3
-                    yield vertex, slot%4
+                    yield vertex, slot % 4
                 else:
                     break
             if k == 0:
@@ -441,9 +441,8 @@ class DTFatGraph(FatGraph):
         Move the edge at the North slot to the South slot, and
         move the edge in the South  slot to the North slot.
         """
-        #print 'flipping %s'%vertex
         if self.marked_valences[vertex] > 2:
-            msg = 'Cannot flip %s with marked valence %d.'%(
+            msg = 'Cannot flip %s with marked valence %d.' % (
                 vertex, self.marked_valences[vertex])
             raise FlippingError(msg)
         self.reorder(vertex, (North, East, South, West))
@@ -462,7 +461,7 @@ class DTFatGraph(FatGraph):
         Has this vertex been flipped?
         """
         return bool(len([e for e in self(vertex)
-                         if e[1] is vertex and e.slots[1] in (2,3)])%2)
+                         if e[1] is vertex and e.slots[1] in (2, 3)]) % 2)
 
     def sign(self, vertex):
         """
@@ -507,14 +506,14 @@ class DTFatGraph(FatGraph):
         edges = self(vertex)
         neighbors = self[vertex]
         strands = [self.KLP_strand(vertex, edge) for edge in edges]
-        ids = [ indices[v] for v in neighbors ]
+        ids = [indices[v] for v in neighbors]
 
         KLP['sign'] = 'R' if self.sign(vertex) == 1 else 'L'
         slot = 1 if flipped else 0
         KLP['Xbackward_neighbor'] = ids[slot]
         KLP['Xbackward_strand'] = strands[slot]
         slot = 3 if flipped else 2
-        KLP['Xforward_neighbor']  = ids[slot]
+        KLP['Xforward_neighbor'] = ids[slot]
         KLP['Xforward_strand'] = strands[slot]
         KLP['Xcomponent'] = edges[slot].component
         slot = 2 if flipped else 1
@@ -568,7 +567,7 @@ class DTcodec():
             if dt[:2] == '0x':
                 dt_bytes = [int(dt[n:n+2], 16) for n in range(2,len(dt),2)]
                 self.code, self.flips = self.unpack_signed_DT(dt_bytes)
-            elif ord(dt[-1]) & 1<<7:
+            elif ord(dt[-1]) & 1 << 7:
                 dt_bytes = bytearray(dt)
                 self.code, self.flips = self.unpack_signed_DT(dt)
             else:
@@ -628,12 +627,12 @@ class DTcodec():
         component = []
         flips = []
         for byte in bytearray(signed_dt):
-            flips.append(bool(byte & 1<<6))
-            label = (1 + byte & 0x1f)<<1
-            if byte & 1<<5:
+            flips.append(bool(byte & 1 << 6))
+            label = (1 + byte & 0x1f) << 1
+            if byte & 1 << 5:
                 label = -label
             component.append(label)
-            if byte & 1<<7:
+            if byte & 1 << 7:
                 dt.append(tuple(component))
                 component = []
         return dt, flips
@@ -642,7 +641,7 @@ class DTcodec():
         code = string_to_ints(code)
         num_crossings, components = code[:2]
         comp_lengths = code[2:2+components]
-        crossings = [x<<1 for x in code[2+components:]]
+        crossings = [x << 1 for x in code[2+components:]]
         assert len(crossings) == num_crossings
         return partition_list(crossings, comp_lengths)
 
@@ -810,20 +809,20 @@ class DTcodec():
         for component in self.code:
             for label in component:
                 byte = abs(label)
-                byte = (byte>>1) - 1
+                byte = (byte >> 1) - 1
                 if label < 0:
-                    byte |= 1<<5
+                    byte |= 1 << 5
                 if next_flip():
-                    byte |= 1<<6
+                    byte |= 1 << 6
                 code_bytes.append(byte)
-            code_bytes[-1] |= 1<<7
+            code_bytes[-1] |= 1 << 7
         return bytes(code_bytes)
 
     def hex_signed_DT(self):
         """
         Return the hex encoding of the signed DT byte sequence.
         """
-        return '0x'+''.join('%.2x'%b for b in bytearray(self.signed_DT()))
+        return '0x' + ''.join('%.2x' % b for b in bytearray(self.signed_DT()))
 
     def PD(self, KnotTheory=False):
         G = self.fat_graph

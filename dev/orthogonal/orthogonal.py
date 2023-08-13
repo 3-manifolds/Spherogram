@@ -148,7 +148,7 @@ class OrthogonalFace(CyclicList):
             if e0.kind == e1.kind:
                 turns.append(0)
             else:
-                t = (e0.tail == v0)^(e1.head == v0)^(e0.kind == 'horizontal')
+                t = (e0.tail == v0) ^ (e1.head == v0) ^ (e0.kind == 'horizontal')
                 turns.append(-1 if t else 1)
 
         rotation = sum(turns)

@@ -22,7 +22,7 @@ def seifert_circles(link):
 
 
 def seifert_crossing_entry(crossing_strand):
-    d = (crossing_strand.strand_index,(crossing_strand.strand_index+2)%4)
+    d = (crossing_strand.strand_index, (crossing_strand.strand_index + 2) % 4)
     if d in crossing_strand.crossing.directions:
         return crossing_strand
     else:
@@ -123,21 +123,22 @@ def isotope_to_braid(link):
     while remove_admissible_move(link):
         pass
 
+
 def is_chain(tree):
     tails = [e[0] for e in tree]
     heads = [e[1] for e in tree]
-    if len(set(tails)) == len(tails) and len(set(heads)) == len(heads):
-        return True
-    else:
-        return False
+    return len(set(tails)) == len(tails) and len(set(heads)) == len(heads)
 
-def connect_head_to_tail(e1,e2):
-    e1[1] = e1[1]|e2[0]
-    e2[0] = e1[1]|e2[0]
+
+def connect_head_to_tail(e1, e2):
+    e1[1] = e1[1] | e2[0]
+    e2[0] = e1[1] | e2[0]
+
 
 def connect_vertices(e1, v1, e2, v2):
     e1[v1] = e1[v1] | e2[v2]
     e2[v2] = e1[v1] | e2[v2]
+
 
 def braid_word(link):
     """
@@ -147,7 +148,7 @@ def braid_word(link):
     """
     arrows = braid_arrows(link)
     word = []
-    for position, strand,over_or_under in arrows:
+    for position, strand, over_or_under in arrows:
         if over_or_under == 0:
             word.append(-strand-1)
         else:
@@ -188,21 +189,23 @@ def braid_arrows(link):
             if found_next:
                 break
 
-    for i in range(len(ordered_strands)-1):
+    for i in range(len(ordered_strands) - 1):
         positions = {}
         for n, cep in enumerate(ordered_strands[i]):
-            for m, next_cep in enumerate(ordered_strands[i+1]):
+            for m, next_cep in enumerate(ordered_strands[i + 1]):
                 if cep.crossing == next_cep.crossing:
-                    positions[n] = ((m,cep.strand_index%2))
+                    positions[n] = ((m, cep.strand_index % 2))
                     break
         positions_in_next_strand.append(positions)
 
     ordered_strands = ordered_strands[::-1]
-    arrows = [[i,positions[i][0],n,positions[i][1]] for n, positions in enumerate(positions_in_next_strand) for i in positions]
+    arrows = [[i, positions[i][0], n, positions[i][1]]
+              for n, positions in enumerate(positions_in_next_strand)
+              for i in positions]
     straighten_arrows(arrows)
-    arrows = sorted(arrows,key=lambda x: x[0])
+    arrows = sorted(arrows, key=lambda x: x[0])
     for arrow in arrows:
-        arrow.pop(1) #start and end positions are now the same
+        arrow.pop(1)  # start and end positions are now the same
     return arrows
 
 

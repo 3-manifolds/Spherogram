@@ -20,7 +20,8 @@ jobs:
       - name: Run pycodestyle
         shell: bash -l {0}
         # We currently only check for some warnings. We should enable & fix more of them.
-        run: pycodestyle --select=E111,E225,E302,E306,E401,E701,E702,E703,E704,W391,W605,E711,E713,E721 spherogram_src/
+        run: pycodestyle --select=E111,E221,E222,E225,E227,E228,E302,E306,E401,E701,E702,E703,E704,W391,W605,E711,E713,E721 spherogram_src/
+        run: pycodestyle --select=E111,E221,E222,E225,E227,E228,E306,E401,E701,E702,E703,E704,W391,W605,E711,E713,E721 dev/
       - name: Run cython-lint
         shell: bash -l {0}
         run: cython-lint .

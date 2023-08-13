@@ -57,20 +57,22 @@ def petaluma_knot(height_perm):
             visited_dict[a,b] = True
             old_crossing = next_crossing
 
-    first = crossing_dict[0,1]
-    last = crossing_dict[size-2,size-1]
-    first_open = first.adjacent.index(None) #last open spot
+    first = crossing_dict[0, 1]
+    last = crossing_dict[size-2, size-1]
+    first_open = first.adjacent.index(None)  # last open spot
     last_open = last.adjacent.index(None)
     first[first_open] = last[last_open]
     return sg.Link(crossing_dict.values())
 
-def strands_to_cross(size,i):
-    mid = (size-1)/2
+
+def strands_to_cross(size, i):
+    mid = (size - 1) / 2
     L = []
     for j in range(mid):
-        L.insert(0,(i-(2*(j+1)))%size)
-        L.append( (i+(2*(j+1)))%size )
+        L.insert(0, (i-(2*(j+1))) % size)
+        L.append((i+(2*(j+1))) % size)
     return L
+
 
 def permutation(size):
     L = range(size)
