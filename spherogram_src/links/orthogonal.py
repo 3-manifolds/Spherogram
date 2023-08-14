@@ -25,11 +25,10 @@ import random
 from .links import Strand
 from ..graphs import CyclicList, Digraph
 from collections import namedtuple, Counter
-from pkg_resources import parse_version
 
 try:
     import plink
-    assert parse_version(plink.__version__) > parse_version('2.0.1')
+    assert hasattr(plink, 'LinkDisplay')
 except (ImportError, AssertionError):
     plink = None
 # ---------------------------------------------------
