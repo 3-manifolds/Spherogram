@@ -15,8 +15,6 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.15.0
-        run: |
-          python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: pip install cython
           # Skip Python 2.7 and 3.5, 32 bit Linux, and PyPy
