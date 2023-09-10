@@ -24,22 +24,21 @@ def clear_orientations(crossings):
         c.sign = 0
 
 
-def add_random_crossing(self,label):
+def add_random_crossing(self, label):
     """
     Randomly chooses position on boundary of the tangle and splits into a new
     crossing.
     """
-
     tangle_copy = self.copy()
     adj = tangle_copy.adjacent
     adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
     new_crossing = spherogram.Crossing(label)
-    old_position = randint(0,len(adj)-1)
+    old_position = randint(0, len(adj)-1)
     old_crossing, old_strand = adj.pop(old_position)
-    new_strand = randint(0,3)
+    new_strand = randint(0, 3)
     old_crossing[old_strand] = new_crossing[new_strand]
-    for i in range(1,4):
-        adj.insert(old_position,(new_crossing,(new_strand-i)%4))
+    for i in range(1, 4):
+        adj.insert(old_position, (new_crossing, (new_strand-i) % 4))
     adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
     tangle_copy.crossings.append(new_crossing)
     tangle_copy.n = self.n+1
@@ -130,6 +129,7 @@ def min_isosig_with_gluings(self, gluings, root=None):
 Tangle.all_circular_sums = all_circular_sums
 Tangle.add_random_crossing = add_random_crossing
 
+
 def cycle_basis(G):
     """
     Uses networkx's cycle basis function on dual graph and converts to
@@ -138,14 +138,16 @@ def cycle_basis(G):
 
     Gx = G.to_networkx()
     vert_cycles = nx.cycle_basis(Gx)
-    return [edge_cycle(vert_cycle,G) for vert_cycle in vert_cycles]
+    return [edge_cycle(vert_cycle, G) for vert_cycle in vert_cycles]
+
 
 def is_trivial(four_cycle):
     """
     A trivial four cycle in the dual graph bounds a single quadrilateral
     """
-    crossings = map(lambda x: map(lambda y: y.crossing,x.interface), four_cycle)
-    return len(set(crossings[0])&set(crossings[1])&set(crossings[2])&set(crossings[3])) != 0
+    crossings = map(lambda x: map(lambda y: y.crossing, x.interface),
+                    four_cycle)
+    return bool(len(set(crossings[0]) & set(crossings[1]) & set(crossings[2]) & set(crossings[3])))
 
 
 def all_four_cycles_at_vertex(G, start_vertex):
@@ -158,7 +160,7 @@ def all_four_cycles_at_vertex(G, start_vertex):
             new_adj = G.children(v).intersection(G.children(w))
             new_adj.remove(start_vertex)
             for opposite_vertex in new_adj:
-                for e1 in G.edges_between(start_vertex,v):
+                for e1 in G.edges_between(start_vertex, v):
                     for e2 in G.edges_between(v, opposite_vertex):
                         for e3 in G.edges_between(opposite_vertex, w):
                             for e4 in  G.edges_between(w,start_vertex):
@@ -503,27 +505,27 @@ def tangle_cut(link, cycle):
     crossings0 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 0]
     crossings1 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 1]
 
-    #clear crossing info
+    # clear crossing info
     clear_orientations(crossings0)
     clear_orientations(crossings1)
 
-    #One of the tangles is the 'outside', and needs to be flipped
-    #Just check side0
+    # One of the tangles is the 'outside', and needs to be flipped
+    # Just check side0
     side0_needs_flip = False
-    c,i = side0[0]
+    c, i = side0[0]
     while True:
-        next_cep = c.crossing_strands()[(i+1)%4]
-        c,i = next_cep.crossing,next_cep.strand_index
+        next_cep = c.crossing_strands()[(i+1) % 4]
+        c, i = next_cep.crossing, next_cep.strand_index
 #        print(c,i)
 #        print(side0)
-        if (c,i) in side0:
+        if (c, i) in side0:
 #            print('hit_end')
 #            print(c,i)
 #            print(side0[1])
 #            print((c,i)==side0[1])
-            side0_needs_flip = (c,i) != (side0[1])
+            side0_needs_flip = (c, i) != (side0[1])
             break
-        c,i = next_cep.opposite().crossing,next_cep.opposite().strand_index
+        c, i = next_cep.opposite().crossing,next_cep.opposite().strand_index
     if side0_needs_flip:
 #        print('flipped side 0')
         flip(side0)

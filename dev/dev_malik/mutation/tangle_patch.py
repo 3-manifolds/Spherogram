@@ -46,7 +46,7 @@ def add_random_crossing(self,label):
     new_strand = randint(0,3)
     old_crossing[old_strand] = new_crossing[new_strand]
     for i in range(1,4):
-        adj.insert(old_position,(new_crossing,(new_strand-i)%4))
+        adj.insert(old_position,(new_crossing,(new_strand-i) % 4))
     adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
     tangle_copy.crossings.append(new_crossing)
     tangle_copy.n = self.n+1
@@ -299,13 +299,13 @@ Give a list of the crossing strands encountered starting at
 a strand on the boundary of a tangle and moving to the other
 end of that strand.
 """
-def cross_strand(self,i):
+def cross_strand(self, i):
     if i >= 2*self.n:
         raise Exception("Not a valid start position for strand")
     cs = self.adjacent[i]
     strand = [cs]
-    while (cs[0],(cs[1]+2)%4) not in self.adjacent:
-        cs = cs[0].adjacent[(cs[1]+2)%4]
+    while (cs[0], (cs[1] + 2) % 4) not in self.adjacent:
+        cs = cs[0].adjacent[(cs[1] + 2) % 4]
         strand.append(cs)
     return strand
 
@@ -314,11 +314,11 @@ Get the closed loop starting at crossing strand cs
 """
 def loop_strand(cs):
     strand = [cs]
-    cs = cs[0].adjacent[(cs[1]+2)%4]
+    cs = cs[0].adjacent[(cs[1] + 2) % 4]
     while cs not in strand:
 #        print(strand)
         strand.append(cs)
-        cs = cs[0].adjacent[(cs[1]+2)%4]
+        cs = cs[0].adjacent[(cs[1] + 2) % 4]
     return strand
 
 """
@@ -337,7 +337,7 @@ def all_cross_strands(self):
         if i not in other_ends_seen:
             strand = self.cross_strand(i)
             cs = strand[-1]
-            end = self.adjacent.index((cs[0],(cs[1]+2)%4))
+            end = self.adjacent.index((cs[0],(cs[1]+2) % 4))
             if end not in other_ends_seen:
                 strands.append(strand)
                 strands_with_ends.append((strand,end))
@@ -350,7 +350,7 @@ def all_cross_strands(self):
     for strand in strands:
         for cs in strand:
             if cs[0] in seen_once:
-                loop = loop_strand((cs[0],(cs[1]+1)%4))
+                loop = loop_strand((cs[0],(cs[1]+1) % 4))
                 loops.append(loop)
                 cs_seen.extend(loop)
                 for loop_cs in loop:
@@ -370,14 +370,14 @@ def all_cross_strands(self):
         for loop in loops:
             for cs in loop:
                 if cs[0] in seen_once:
-                    loop = loop_strand((cs[0],(cs[1]+1)%4))
+                    loop = loop_strand((cs[0],(cs[1]+1) % 4))
                     loops.append(loop)
                     cs_seen.extend(loop)
                     for loop_cs in loop:
                         if loop_cs[0] in seen_once:
                             for seen_cs in cs_seen:
                                 if loop_cs[0] == seen_cs[0]:
-                                    orientation = (loop_cs[1]-seen_cs[1])%4
+                                    orientation = (loop_cs[1]-seen_cs[1]) % 4
                                     if orientation == 3:
                                         orientation = -1
                                     orientations[loop_cs[0]] = orientation
@@ -413,9 +413,10 @@ def cycle_basis(G):
     vert_cycles = nx.cycle_basis(Gx)
     return [edge_cycle(vert_cycle,G) for vert_cycle in vert_cycles]
 
+
 def is_trivial(four_cycle):
     crossings = map(lambda x: map(lambda y: y.crossing,x.interface), four_cycle)
-    return len(set(crossings[0])&set(crossings[1])&set(crossings[2])&set(crossings[3])) != 0
+    return bool(len(set(crossings[0]) & set(crossings[1]) & set(crossings[2]) & set(crossings[3])))
 
 
 def all_four_cycles_at_vertex(G, start_vertex):
@@ -813,12 +814,12 @@ def tangle_cut(link, cycle):
     clear_orientations(crossings0)
     clear_orientations(crossings1)
 
-    #One of the tangles is the 'outside', and needs to be flipped
-    #Just check side0
+    # One of the tangles is the 'outside', and needs to be flipped
+    # Just check side0
     side0_needs_flip = False
-    c,i = side0[0]
+    c, i = side0[0]
     while True:
-        next_cep = c.crossing_strands()[(i+1)%4]
+        next_cep = c.crossing_strands()[(i+1) % 4]
         c,i = next_cep.crossing,next_cep.strand_index
 #        print(c,i)
 #        print(side0)

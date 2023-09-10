@@ -2,15 +2,17 @@ from snappy import *
 from spherogram import *
 from sage.all import *
 
+
 def braid_closure_via_tangles(braid):
-    n = max(-min(braid),max(braid))+1
+    n = max(-min(braid), max(braid)) + 1
     l = len(braid)
     B = IdentityBraid(n)
     for i in range(l):
         v = braid[i]
-        nextpiece = IdentityBraid(abs(v)-1)|RationalTangle(sign(v))|IdentityBraid(n-abs(v)-1)
+        nextpiece = IdentityBraid(abs(v)-1) | RationalTangle(sign(v)) | IdentityBraid(n-abs(v)-1)
         B = B*nextpiece
     return B.braid_closure()
+
 
 def braid_closure_via_crossings(braid):
     """
@@ -23,7 +25,7 @@ def braid_closure_via_crossings(braid):
     for i in range(l):
         foundleftstrand = False
         foundrightstrand = False
-        j = (i+1)%l
+        j = (i+1) % l
 
         while ((not foundleftstrand) or (not foundrightstrand)):
             if (not foundleftstrand) and (abs(braid[j]) == abs(braid[i])-1):
