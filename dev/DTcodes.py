@@ -65,13 +65,17 @@ def partition_list(L, parts):
 # equivalent to interchanging the other pair.  So in practice we
 # only interchange the North-South pair.
 
+
 South, East, North, West = 0, 1, 2, 3
+
 
 class FlippingError(Exception):
     pass
 
+
 class EmbeddingError(Exception):
     pass
+
 
 class DTvertex(tuple):
     """

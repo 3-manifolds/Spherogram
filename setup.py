@@ -161,6 +161,7 @@ class SpherogramPipInstall(Command):
                     '--upgrade-strategy', 'only-if-needed',
                     new_wheel])
 
+
 # The planarmap extension
 
 pmap_dir = 'planarmap_src/'

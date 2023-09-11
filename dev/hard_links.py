@@ -14,6 +14,7 @@ def test(link):
         expected = len(link.link_components) + L.unlinked_unknot_components
         print(L, L.unlinked_unknot_components, '\n')
 
+
 C = spherogram.Link([(9, 17, 10, 16), (5, 18, 6, 19), (17, 4, 18, 5), (2, 15, 3, 16), (14, 8, 15, 7), (6, 14, 7, 13), (1, 13, 2, 12), (28, 22, 29, 21), (19, 11, 20, 10), (8, 4, 9, 3), (24, 27, 25, 0), (26, 23, 27, 24), (22, 25, 23, 26), (11, 21, 12, 20), (29, 0, 28, 1)])
 
 test(C)

@@ -50,11 +50,15 @@ def word_image(word, image_a, image_b):
         images.append(image)
     return ''.join(images)
 
+
 def inverse(word):
     return word[::-1].swapcase()
 
+
 def link(word):
-    return link_diagram(ABWord(word,a,b).evaluate().planar_graph())
+    return link_diagram(ABWord(word, a, b).evaluate().planar_graph())
+
+
 """
 f = open('knotted_words.txt','r')
 split_lines = [line.split() for line in f]
