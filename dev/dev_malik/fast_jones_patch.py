@@ -118,7 +118,7 @@ def all_labels(strand_vars):
     return strand_labels
 
 
-def combine_strands(v1,v2, common_label):
+def combine_strands(v1, v2, common_label):
     labels1 = var_to_strand_labels(v1)
     labels2 = var_to_strand_labels(v2)
     l1 = labels1[1 - labels1.index(common_label)]
@@ -126,12 +126,14 @@ def combine_strands(v1,v2, common_label):
     l1, l2 = sorted([l1,l2])
     return sympy.Symbol('P'+str(l1)+'c'+str(l2))
 
+
 def remove_squares(monomial):
     A, B = sympy.symbols('A,B')
     strand_vars = monomial.free_symbols - set([A,B])
     for v in strand_vars:
         monomial = monomial.subs(v*v,-A**2-(1/A)**2)
     return monomial
+
 
 def remove_loops(monomial):
     A, B = sympy.symbols('A,B')
@@ -144,10 +146,12 @@ def remove_loops(monomial):
 
 
 def var_to_strand_labels(v):
-    return map(int,str(v)[1:].split('c'))
+    return map(int, str(v)[1:].split('c'))
+
 
 def join_strands(v1, v2):
     pass
+
 
 """
 def jones_ring(n):

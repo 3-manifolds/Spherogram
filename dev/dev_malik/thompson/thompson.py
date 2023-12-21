@@ -416,13 +416,16 @@ def random_word(complexity):
         word = ''.join([word, new_lets[randint(0, 2)]])
     return word
 
+
 a = TreeMap( TreeSequence([DyadicRational(3,2)]) , TreeSequence([DyadicRational(1,2)]) )
 b = TreeMap( TreeSequence([DyadicRational(7,3)]) , TreeSequence([DyadicRational(5,3)]) )
 A = a.inverse()
 B = b.inverse()
 
+
 def random_sequence(length, bound):
-    return [randint(0,bound) for i in range(length)]
+    return [randint(0, bound) for i in range(length)]
+
 
 num_gens = 100
 
@@ -432,6 +435,7 @@ for i in range(num_gens-2):
     xs.append(x)
     x = A*x*a
 x_invs = [i.inverse() for i in xs]
+
 
 def exponents_to_tree_map(exps_domain, exps_range):
     result = a*A

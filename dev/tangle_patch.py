@@ -1,7 +1,7 @@
 import spherogram
 from spherogram.links.tangles import Tangle, OneTangle, MinusOneTangle
 import networkx as nx
-from random import randint,choice,sample
+from random import randint, choice, sample
 from spherogram.links.random_links import map_to_link, random_map
 
 """
@@ -11,12 +11,14 @@ getting tangles out of link diagrams, as well as some Conway mutation.
 
 def rotate_list(L, s):
     n = len(L)
-    return [ L[(i + s) % n] for i in range(n) ]
+    return [L[(i + s) % n] for i in range(n)]
+
 
 def flip(L):
-    half = len(L)/2
+    half = len(L) // 2
     for i in range(half):
-        L[i],L[i+half] = L[i+half],L[i]
+        L[i], L[i + half] = L[i + half], L[i]
+
 
 def clear_orientations(crossings):
     for c in crossings:
@@ -111,20 +113,22 @@ def min_isosig_with_gluings(self, gluings, root=None):
             rotated_root = crossing_strand_from_name(rotated_tangle,cs_name)
         else:
             rotated_root = None
-        #permuting the indices in the gluings
+        # permuting the indices in the gluings
         perm = range(len(self.adjacent))
-        perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
-        perm = rotate_list(perm,i)
-        perm[len(perm)/2:] = reversed(perm[len(perm)/2:])
+        perm[len(perm)//2:] = reversed(perm[len(perm)//2:])
+        perm = rotate_list(perm, i)
+        perm[len(perm)//2:] = reversed(perm[len(perm)//2:])
         rotated_gluings = []
         for g in gluings:
-            new_g = [perm[g[0]],perm[g[1]]]
+            new_g = [perm[g[0]], perm[g[1]]]
             new_g.sort()
             rotated_gluings.append(tuple(new_g))
         rotated_gluings.sort()
-        isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,root=rotated_root))
+        isosigs.append(rotated_tangle.isosig_with_gluings(rotated_gluings,
+                                                          root=rotated_root))
 
     return min(isosigs)
+
 
 Tangle.all_circular_sums = all_circular_sums
 Tangle.add_random_crossing = add_random_crossing
@@ -318,7 +322,7 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
     outside_crossings = [c for c in link.crossings if c not in crossings]
     if len(outside_crossings) == 0:
         raise Exception("Neighborhood is entire link")
-    n = len(adjacent)/2
+    n = len(adjacent) // 2
 
     if hull:
         comps = list(boundary_components(link,crossing,radius))
@@ -500,10 +504,12 @@ def tangle_cut(link, cycle):
 
     crossing_sides = fill_in_crossings(link,sides)
     n = len(cycle)
-    side0[n/2:] = reversed(side0[n/2:]) #flip to use as adjacent in tangle
-    side1[n/2:] = reversed(side1[n/2:])
-    crossings0 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 0]
-    crossings1 = [crossing_from_name(link,c) for c in crossing_sides if crossing_sides[c] == 1]
+    side0[n//2:] = reversed(side0[n//2:])  # flip to use as adjacent in tangle
+    side1[n//2:] = reversed(side1[n//2:])
+    crossings0 = [crossing_from_name(link, c) for c in crossing_sides
+                  if crossing_sides[c] == 0]
+    crossings1 = [crossing_from_name(link, c) for c in crossing_sides
+                  if crossing_sides[c] == 1]
 
     # clear crossing info
     clear_orientations(crossings0)
@@ -532,7 +538,8 @@ def tangle_cut(link, cycle):
     else:
 #        print('flipped side 1')
         flip(side1)
-    return Tangle(n/2,crossings0,side0),Tangle(n/2,crossings1,side1)
+    return Tangle(n//2, crossings0, side0), Tangle(n//2, crossings1, side1)
+
 
 def fill_in_crossings(link, sides):
     """

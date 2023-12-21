@@ -6,40 +6,44 @@ from spherogram.links.random_links import map_to_link, random_map
 
 def rotate_list(L, s):
     n = len(L)
-    return [ L[(i + s) % n] for i in range(n) ]
+    return [L[(i + s) % n] for i in range(n)]
+
 
 def flip(L):
-    half = len(L)/2
+    half = len(L) // 2
     for i in range(half):
         L[i],L[i+half] = L[i+half],L[i]
+
 
 def clear_orientations(crossings):
     for c in crossings:
         c.directions.clear()
         c.sign = 0
 
-"""
-Rotate a tangle in a circular fashion.
-"""
-def circular_rotate(self,n):
+
+def circular_rotate(self, n):
+    """
+    Rotate a tangle in a circular fashion.
+    """
     tangle_copy = self.copy()
     adj = tangle_copy.adjacent
     #reverse second half
-    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
-    rotated_adj = rotate_list(adj,n)
+    adj[len(adj)//2:] = reversed(adj[len(adj)//2:])
+    rotated_adj = rotate_list(adj, n)
     #undo reversal of second half
-    rotated_adj[len(rotated_adj)/2:] = reversed(rotated_adj[len(rotated_adj)/2:])
+    rotated_adj[len(rotated_adj)//2:] = reversed(rotated_adj[len(rotated_adj)//2:])
     tangle_copy.adjacent = rotated_adj
     return tangle_copy
 
-"""
-Randomly chooses position on boundary of the tangle and splits into a new
-crossing.
-"""
+
 def add_random_crossing(self,label):
+    """
+    Randomly chooses position on boundary of the tangle and splits into a new
+    crossing.
+    """
     tangle_copy = self.copy()
     adj = tangle_copy.adjacent
-    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
+    adj[len(adj)//2:] = reversed(adj[len(adj)//2:])
     new_crossing = spherogram.Crossing(label)
     old_position = randint(0,len(adj)-1)
     old_crossing, old_strand = adj.pop(old_position)
@@ -47,10 +51,11 @@ def add_random_crossing(self,label):
     old_crossing[old_strand] = new_crossing[new_strand]
     for i in range(1,4):
         adj.insert(old_position,(new_crossing,(new_strand-i) % 4))
-    adj[len(adj)/2:] = reversed(adj[len(adj)/2:])
+    adj[len(adj)//2:] = reversed(adj[len(adj)//2:])
     tangle_copy.crossings.append(new_crossing)
     tangle_copy.n = self.n+1
     return tangle_copy
+
 
 """
 Repeatedly splits crossings, starting with a single crossing, resulting
@@ -62,6 +67,7 @@ def random_tree(size):
     for i in range(1,size):
         T = T.add_random_crossing(i)
     return T
+
 
 """
 Generate two random tree tangles and glues together.  Gives a link of size
@@ -88,6 +94,7 @@ def random_tree_knot(size, simplify=None, prime_decomp=False):
             cant_deconnect = (len(ds) > 1)
     return knot
 
+
 """
 Glue two tangles together.  There are many ways to do this.  Choice
 is given by the choice if integer n
@@ -96,6 +103,7 @@ def circular_sum(self,other,n):
     if len(self.adjacent) != len(other.adjacent):
         raise Exception("Tangles do not have the same number of strands")
     return (self*(other.circular_rotate(n))).denominator_closure()
+
 
 """
 All possible tangle sums as above
@@ -294,6 +302,8 @@ def _is_injection(pairs):
             if (pair1[1] == pair2[1]) and (pair1[0] != pair2[0]):
                 return False
     return True
+
+
 """
 Give a list of the crossing strands encountered starting at
 a strand on the boundary of a tangle and moving to the other
@@ -309,6 +319,7 @@ def cross_strand(self, i):
         strand.append(cs)
     return strand
 
+
 """
 Get the closed loop starting at crossing strand cs
 """
@@ -320,6 +331,7 @@ def loop_strand(cs):
         strand.append(cs)
         cs = cs[0].adjacent[(cs[1] + 2) % 4]
     return strand
+
 
 """
 Returns all the strands but without duplicate in the opposite direction,
@@ -405,6 +417,8 @@ Tangle.isosig = isosig
 Tangle.min_isosig = min_isosig
 Tangle.isosig_with_gluings = isosig_with_gluings
 Tangle.min_isosig_with_gluings = min_isosig_with_gluings
+
+
 """
 Uses networkx's cycle basis function on dual graph and converts to form with spherogram objects
 """
@@ -441,6 +455,7 @@ def all_four_cycles_at_vertex(G, start_vertex):
 
     return four_cycles
 
+
 def unknot_search(num_attempts, backtrack_height, num_mutations):
     c = spherogram.Crossing(0)
     c[0] = c[1]
@@ -458,7 +473,7 @@ def unknot_search(num_attempts, backtrack_height, num_mutations):
     return None
 
 
-#Returns first nontrivial 4-cycle found
+# Returns first nontrivial 4-cycle found
 def get_four_cycle(G, start_vertex):
     adjacent = G.children(start_vertex)
     for v in adjacent:
@@ -479,6 +494,7 @@ def get_four_cycle(G, start_vertex):
                                     return four_cycle
     return []
 
+
 def all_four_cycles(G):
     four_cycles = [x for v in G.vertices for x in all_four_cycles_at_vertex(G,v)]
     four_cycles_no_duplicates = []
@@ -492,11 +508,12 @@ def all_four_cycles(G):
             four_cycles_no_duplicates.append(fc)
     return four_cycles_no_duplicates
 
+
 """
 Converts from list of vertices of dual graph to list of edges.  If multiple edges,
 just chooses one.
 """
-def edge_cycle(vert_list,G):
+def edge_cycle(vert_list, G):
     edges = list(G.edges)
     cycle = []
     for i in range(len(vert_list)-1):
@@ -511,6 +528,7 @@ def edge_cycle(vert_list,G):
             cycle.append(edge)
             break
     return cycle
+
 
 """
 Returns the crossings within distance r of the crossing, in the form
@@ -536,8 +554,8 @@ def crossing_ball(crossing,radius):
     return distances, map(lambda x: x.opposite(), opposite_positions)
 
 
-def boundary_components(link,crossing,radius):
-    crossings, adjacent = crossing_ball(crossing,radius)
+def boundary_components(link, crossing, radius):
+    crossings, adjacent = crossing_ball(crossing, radius)
     crossings = list(crossings)
     G = underlying_graph(link)
     for c in crossings:
@@ -549,16 +567,18 @@ def boundary_comp_dist(samples,size,radius,edge_conn=2):
     dist = []
     for i in range(samples):
         print(i)
-        K = map_to_link(random_map(size,edge_conn))
+        K = map_to_link(random_map(size, edge_conn))
         c = choice(K.crossings)
-        dist.append(num_boundary_components(K,c,radius))
+        dist.append(num_boundary_components(K, c, radius))
     return Counter(dist)
+
 
 def underlying_graph(link):
     G = nx.Graph()
     edges = [(c,adj) for c in link.crossings for adj in map(lambda x: x[0],c.adjacent)]
     G.add_edges_from(edges)
     return G
+
 
 def trace_boundary_component(start_cs,full_boundary):
     boundary_comp = [start_cs]
@@ -645,12 +665,14 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
     else:
         return Tangle(n,crossings,adjacent),Tangle(n,outside_crossings,opposites)
 
+
 def mutate(link,four_cycle):
     link_copy = link.copy()
     four_cycle_copy = [corresponding_edge(link_copy,edge) for edge in four_cycle]
     T1,T2 = tangle_cut(link_copy,four_cycle_copy)
-    #print(len(T1.crossings),len(T2.crossings))
+    # print(len(T1.crossings),len(T2.crossings))
     return T1.circular_sum(T2,2)
+
 
 def mutate_reflect(link,four_cycle,other_reflection=False):
     link_copy = link.copy()
@@ -667,6 +689,7 @@ def mutate_reflect(link,four_cycle,other_reflection=False):
     new_link._rebuild()
     return new_link
 
+
 def tangle_reflect(T):
     for c in T.crossings:
         c1adj = c.adjacent[1][:]
@@ -679,9 +702,11 @@ def tangle_reflect(T):
 #    print(T.adjacent)
     return T
 
+
 def all_rotation_mutants(link):
     G = link.dual_graph()
     return [mutate(link,four_cycle) for four_cycle in all_four_cycles(G)]
+
 
 def all_mutants(link):
     G = link.dual_graph()
@@ -711,6 +736,7 @@ def corresponding_edge(new_link,edge):
     for new_edge in G.edges:
         if str(new_edge) == str(edge):
             return new_edge
+
 
 """
 Creates two Tangle objects from a given cycle (with no self intersections)
@@ -865,22 +891,24 @@ Assumes the crossing of cs is not on the side.
 Returns a set of all the crossings encountered along the way, including ones on the boundary,
 and which side (0 or 1) is hit
 """
-def meander(cs,sides):
+def meander(cs, sides):
     crossings_encountered = [cs.crossing]
     end_side = 0
     while True:
-        cs = cs.opposite().rotate(randint(1,3))
-        if cslabel(cs) in sides: # hit the side
+        cs = cs.opposite().rotate(randint(1, 3))
+        if cslabel(cs) in sides:  # hit the side
             end_side = sides[cslabel(cs)]
             break
         crossings_encountered.append(cs.crossing)
-    return set(crossings_encountered),end_side
+    return set(crossings_encountered), end_side
+
 
 """
 Label of crossing strand, without frills
 """
 def cslabel(cs):
     return (cs[0].label,cs[1])
+
 
 """
 Find crossing strand object from it's name in the format of cslabel above
@@ -977,8 +1005,9 @@ def all_neighborhoods(link,radius):
         nhds.append(T1)
     return nhds
 
-def neighborhood_distribution(link,radius):
-    nhds = all_neighborhoods(link,radius)
+
+def neighborhood_distribution(link, radius):
+    nhds = all_neighborhoods(link, radius)
     nhd_classes = []
     for nhd in nhds:
         already_found = False
@@ -991,8 +1020,11 @@ def neighborhood_distribution(link,radius):
             nhd_classes.append([nhd,1])
     return nhd_classes
 
+
 from collections import Counter
-def isosig_dist(num_samples,size,radius,edge_conn=2):
+
+
+def isosig_dist(num_samples, size, radius, edge_conn=2):
     nhds = []
     for i in range(num_samples):
         print(i)
@@ -1058,7 +1090,7 @@ def neighborhood_distribution_different_links(num_samples,size,radius):
                 already_found = True
                 break
         if not already_found:
-            nhd_classes.append([nhd,1])
+            nhd_classes.append([nhd, 1])
     return nhd_classes
 
 
@@ -1072,6 +1104,7 @@ def all_neighborhood_volumes(link,radius):
         v = double.exterior().volume()
         vols.append((double,v))
     return vols
+
 
 def all_nhd_vol_dists(link,radius,tolerance):
     nhds = []
@@ -1105,6 +1138,7 @@ def close_float_sets(L1, L2, tolerance):
         if abs(L1[i] - L2[i]) > tolerance:
             return False
     return True
+
 
 K = map_to_link(random_map(100,2))
 Kc = K.copy()
