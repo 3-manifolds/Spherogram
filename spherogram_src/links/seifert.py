@@ -79,7 +79,7 @@ def seifert_tree(link):
     True
     """
     circles = seifert_circles(link)
-    edges = [[set([n]), set([n])] for n in range(len(circles))]
+    edges = [[{n}, {n}] for n in range(len(circles))]
     for c in link.crossings:
         under, over = c.entry_points()
         under_circle, over_circle = -1, -1
@@ -116,10 +116,10 @@ def remove_admissible_move(link):
     found_move = False
     for e1, e2 in combinations(tree, 2):
         if e1[0] == e2[0]:  # edges start at same point
-            circles = set([tree.index(e1), tree.index(e2)])
+            circles = {tree.index(e1), tree.index(e2)}
             found_move = True
         elif e1[1] == e2[1]:  # edges end at same point
-            circles = set([tree.index(e1), tree.index(e2)])
+            circles = {tree.index(e1), tree.index(e2)}
             found_move = True
         if found_move:
             move_possible = False
@@ -301,7 +301,7 @@ def seifert_matrix(link, return_matrix_of_types=False):
     from a braid representation." (2007).
     """
     arrows = braid_arrows(link)
-    strands = set(x[1] for x in arrows)
+    strands = {x[1] for x in arrows}
     grouped_by_strand = [[x for x in arrows if x[1] == strand]
                          for strand in strands]
     hom_gens = [[(group[i][0], group[i + 1][0], group[i][2], group[i + 1][2])

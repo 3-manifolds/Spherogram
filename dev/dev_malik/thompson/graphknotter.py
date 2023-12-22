@@ -170,8 +170,8 @@ def edge_to_str_pair(edge):
 
 
 def doubled_edge_to_str_pair(e):
-    s1 = set([e[0].split()[0].split('\'')[1], e[0].split()[1].split('\'')[1]])
-    s2 = set([e[1].split()[0].split('\'')[1], e[1].split()[1].split('\'')[1]])
+    s1 = {e[0].split()[0].split('\'')[1], e[0].split()[1].split('\'')[1]}
+    s2 = {e[1].split()[0].split('\'')[1], e[1].split()[1].split('\'')[1]}
     return [s1,s2]
 
 def simple_cut(link, cs1, cs2):

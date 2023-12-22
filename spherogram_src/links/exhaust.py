@@ -6,7 +6,7 @@ import collections
 def insert_space(point_dict, i):
     """
     Insert two new points which will be labeled i and i + 1.
-        """
+    """
     ans = {}
     for a, v in point_dict.items():
         if a >= i:
@@ -28,7 +28,7 @@ def remove_space(point_dict, i):
     return ans
 
 
-class Event():
+class Event:
     """
     There are three kinds of events:
 
@@ -59,7 +59,7 @@ class Event():
         return repr(ans)
 
 
-class MorseEncoding():
+class MorseEncoding:
     """
     A MorseEncoding is a concrete encoding of a Morse diagram of an
     oriented link in the sprit of:
@@ -146,7 +146,7 @@ class MorseEncoding():
         return self.events.__iter__()
 
 
-class BiDict():
+class BiDict:
     """
     A bijective mapping from range(n) to a set of hashable non-integers.
 
@@ -291,7 +291,7 @@ class Frontier(BiDict):
         return random.choice(good_choices)
 
 
-class MorseExhaustion():
+class MorseExhaustion:
     """
     An exhaustion of a link where crossings are added in one-by-one
     so that the resulting tangle is connected at every stage.

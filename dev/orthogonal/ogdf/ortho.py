@@ -17,7 +17,7 @@ def link_to_gml_file(L, filename='graphs/link.gml'):
     edges = collections.Counter(tuple(sorted([verts_to_int[e.tail],
                                               verts_to_int[e.head]]))
                                 for e in L.edges)
-    assert set(edges.values()).issubset(set([1, 2]))
+    assert set(edges.values()).issubset({1, 2})
     for (a, b), m in edges.items():
         if m == 2:
             c = len(verts)

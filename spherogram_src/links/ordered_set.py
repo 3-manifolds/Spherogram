@@ -1,4 +1,4 @@
-class OrderedSet():
+class OrderedSet:
     def __init__(self, iterable=None):
         if iterable is not None:
             self.elts = {e: None for e in iterable}
