@@ -211,7 +211,7 @@ class FatEdge(Edge):
             raise ValueError('Vertex is not an end of this edge.')
 
 
-class Graph():
+class Graph:
     """
     A set of vertices and a set of edges joining pairs of vertices.
     Vertices are arbitrary hashable objects and should not be
@@ -255,7 +255,7 @@ class Graph():
         """
         Return the set of non-loops incident to the vertex.
         """
-        return set(e for e in self.incidence_dict[vertex] if not e.is_loop())
+        return {e for e in self.incidence_dict[vertex] if not e.is_loop()}
 
     def edges_between(self, vertex1, vertex2):
         return self.incident(vertex1).intersection(self.incident(vertex2))
@@ -267,7 +267,7 @@ class Graph():
         """
         Return the set of distinct adjacent vertices.
         """
-        return set(e(vertex) for e in self.incidence_dict[vertex])
+        return {e(vertex) for e in self.incidence_dict[vertex]}
 
     def add_edge(self, *args, **kwargs):
         edge = self.Edge(*args, **kwargs)
@@ -440,7 +440,7 @@ class Graph():
             for e in self.edges:
                 if e not in residual:
                     residual[e] = float('inf')
-        full_edges = set(e for e in self.edges if residual[e] == 0)
+        full_edges = {e for e in self.edges if residual[e] == 0}
         children = {}
         for vertex in self.vertices:
             children[vertex] = set()
@@ -448,7 +448,7 @@ class Graph():
         path_list = []
         while True:
             # Try to find a new path from source to sink
-            parents, cut_set, reached_sink = {}, set([source]), False
+            parents, cut_set, reached_sink = {}, {source}, False
             generator = self.breadth_first_edges(
                 source=source,
                 forbidden=full_edges,
@@ -483,9 +483,9 @@ class Graph():
         # Find the cut edges.
         cut_edges = set()
         for vertex in cut_set:
-            cut_edges |= set(edge for edge in self.edges
+            cut_edges |= {edge for edge in self.edges
                              if vertex in edge
-                             and edge(vertex) not in cut_set)
+                             and edge(vertex) not in cut_set}
         # Find the unsaturated edges.
         unsaturated = [e for e in self.edges if residual[e] > 0]
         flow_dict = dict.fromkeys(self.edges, 0)
@@ -525,7 +525,7 @@ class Graph():
         new_vertex = V1 | V2
         if new_vertex in self.vertices:
             raise ValueError('Merged vertex already exists!')
-        self.edges -= set(e for e in self.edges if V1 in e and V2 in e)
+        self.edges -= {e for e in self.edges if V1 in e and V2 in e}
         self.vertices.remove(V1)
         self.vertices.remove(V2)
         old_vertices = (V1, V2)
@@ -775,8 +775,8 @@ class Digraph(Graph):
         """
         Return the set of non-loop edges which *begin* at the vertex.
         """
-        return set(e for e in self(vertex)
-                   if e.tail is vertex and e.head is not vertex)
+        return {e for e in self(vertex)
+                   if e.tail is vertex and e.head is not vertex}
 
     # Force flows to go in the direction of the edge.
     flow_incident = outgoing
@@ -785,15 +785,15 @@ class Digraph(Graph):
         """
         Return the set of non-loop edges which *end* at the vertex.
         """
-        return set(e for e in self(vertex)
-                   if e.head is vertex and e.tail is not vertex)
+        return {e for e in self(vertex)
+                   if e.head is vertex and e.tail is not vertex}
 
     def children(self, vertex):
         """
         Return the set of distinct vertices which are endpoints of
         outgoing non-loop edges.
         """
-        return set(e(vertex) for e in self.outgoing(vertex))
+        return {e(vertex) for e in self.outgoing(vertex)}
 
     def indegree(self, vertex):
         return len([e for e in self.incidence_dict[vertex] if e.head is vertex])
@@ -868,7 +868,7 @@ class Digraph(Graph):
         return StrongConnector(self).DAG()
 
 
-class StrongConnector():
+class StrongConnector:
     """
     Finds strong components of a digraph using Tarjan's algorithm;
     see http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
@@ -984,7 +984,7 @@ class Poset(set):
         >>> sorted(P.incomparable(3))
         [1, 2]
         """
-        return self.elements - self.smaller[x] - self.larger[x] - set([x])
+        return self.elements - self.smaller[x] - self.larger[x] - {x}
 
     def smallest(self):
         """
@@ -1043,7 +1043,7 @@ class Poset(set):
             self.closed.add(start)
             yield start
         for element in complement:
-            extended = self.closure(start | set([element]))
+            extended = self.closure(start | {element})
             yield from self.XXclosed_subsets(extended)
 
     def XXXclosed_subsets(self, start=None):
@@ -1069,7 +1069,7 @@ class Poset(set):
         for element in start:
             children.update(self.successors[element] - start)
         for child in children:
-            extended = self.closure(start | set([child]))
+            extended = self.closure(start | {child})
             yield from self.XXXclosed_subsets(extended)
 
     def closed_subsets(self):
@@ -1117,7 +1117,7 @@ def powerset(S):
         for x in X:
             break
         X.remove(x)
-        singleton = set([x])
+        singleton = {x}
         for Y in powerset(X):
             yield (singleton | Y)
         yield X

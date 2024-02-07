@@ -52,10 +52,10 @@ def reidemeister_I(link, C):
     for i in range(4):
         if C.adjacent[i] == (C, (i + 1) % 4):
             (A, a), (B, b) = C.adjacent[i + 2], C.adjacent[i + 3]
-            elim = set([C])
+            elim = {C}
             if C != A:
                 A[a] = B[b]
-                changed = set([A, B])
+                changed = {A, B}
 
     remove_crossings(link, elim)
     return elim, changed
@@ -81,13 +81,13 @@ def reidemeister_I_and_II(link, A):
                     X, x = A.adjacent[a + 3]
                     Y, y = B.adjacent[b + 1]
                     Z, z = B.adjacent[b + 2]
-                    eliminated = set([A, B])
+                    eliminated = {A, B}
                     if W != B:
                         W[w] = Z[z]
-                        changed.update(set([W, Z]))
+                        changed.update({W, Z})
                     if X != B:
                         X[x] = Y[y]
-                        changed.update(set([X, Y]))
+                        changed.update({X, Y})
                     remove_crossings(link, eliminated)
                     break
 
@@ -147,7 +147,7 @@ def possible_type_III_moves(link):
             if sum(ce.strand_index % 2 for ce in face) in [1, 2]:
                 while(face[1][1] % 2 != 0 or face[2][1] % 2 != 1):    # renumber face_list
                     face = [face[1], face[2], face[0]]
-                if len(set(e.crossing for e in face)) == 3:  # No repeated crossings
+                if len({e.crossing for e in face}) == 3:  # No repeated crossings
                     ans.append(face)
     return ans
 
@@ -164,8 +164,8 @@ def reidemeister_III(link, triple):
     Performs the given type III move.  Modifies the given link but doesn't
     update its lists of link components.
     """
-    A, B, C = [t.crossing for t in triple]
-    a, b, c = [t.strand_index for t in triple]
+    A, B, C = (t.crossing for t in triple)
+    a, b, c = (t.strand_index for t in triple)
     # We insert Strands around the border of the triple to make the code more
     # transparent and eliminate some special cases.
     old_border = [(C, c - 1), (C, c - 2), (A, a - 1),
@@ -388,7 +388,7 @@ def pickup_strand(link, dual_graph, kind, strand):
         # of the rest of the components.
         remove_strand(link, [startcep] + strand)
         return len(strand)
-    crossing_set = set(cep.crossing for cep in strand)
+    crossing_set = {cep.crossing for cep in strand}
     endpoint = strand[-1].next()
 
     if endpoint.crossing in crossing_set:
