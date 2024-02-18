@@ -1,3 +1,40 @@
 [build-system]
-requires = ["setuptools", "wheel", "cython"]
+requires = [
+    "setuptools>=61.2",
+    "cython",
+]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "spherogram"
+description = "Spherical diagrams for 3-manifold topology"
+authors = [
+    {name = "Marc Culler", email = "culler@marc-culler.info"},
+    {name = "Nathan M. Dunfield", email = "nathan@dunfield.info"},
+]
+dependencies = [
+    "decorator",
+    "knot_floer_homology>=1.2",
+    "networkx",
+    "snappy_manifolds>=1.1.2",
+]
+requires-python = ">=3"
+readme = "README.rst"
+license = {text = "GPLv2+"}
+keywords = ["knot", "link", "SnapPy"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: C",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/3-manifolds/Spherogram"
+
+[tool.setuptools.dynamic]
+version = {attr = "spherogram.version.version"}
