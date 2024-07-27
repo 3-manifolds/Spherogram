@@ -37,6 +37,7 @@ if test_helper._have_snappy:
 def run_doctests(verbose=False, print_info=True):
     return test_helper.doctest_modules(modules, verbose, print_info)
 
+run_doctests.__name__ = spherogram.__name__
 
 def run_all_tests():
     optlist, args = getopt.getopt(sys.argv[1:], 'v', ['verbose'])
