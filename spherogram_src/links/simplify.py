@@ -9,7 +9,7 @@ Important notes:
 * Unknot components which are also unlinked may be silently discarded.
 """
 
-from .links import Link, Strand, Crossing, CrossingStrand
+from .links import Link, Strand, Crossing, CrossingStrand, CrossingEntryPoint
 from .ordered_set import OrderedSet
 from .. import graphs
 import random
@@ -738,6 +738,58 @@ def relabel_crossings(link):
         cr.label = str(i)
 
 
+def untwist_diagram_once(link):
+    """
+    When the diagram is a connect sum "with a twist", remove one such
+    twist.
+
+    Returns the number of crossings removed.
+    """
+    G = dual_graph_as_nx(link)
+    for C in link.crossings:
+        for a, b in [(0, 2), (1, 3)]:
+            face0 = G.edge_to_face[CrossingStrand(C, a)]
+            face1 = G.edge_to_face[CrossingStrand(C, b)]
+            if face0 == face1:
+                strand = [CrossingEntryPoint(C, 0)]
+                num_removed = pickup_strand(link, G, 'under', strand)
+                assert num_removed > 0
+                return num_removed
+
+    return 0
+
+
+def untwist_diagram(link):
+    """
+    When the diagram is a connect sum "with a twist", remove all such
+    twists
+
+    This is in fact a "pickup move", but we don't include it in the
+    main pickup_simplify loop because of the speed penalty: it rarely
+    works, but you'd have to check every crossing.
+
+    Returns the number of crossings removed.
+
+    Here's a connect sum of opposite-handed trefoils with three extra
+    twists.
+
+    >>> L = Link([(2, 0, 3, 17), (16, 2, 17, 1), (0, 16, 1, 15),
+    ...           (9, 6, 10, 7), (7, 10, 8, 11), (11, 8, 12, 9),
+    ...           (3, 15, 4, 14), (13, 5, 14, 4), (5, 13, 6, 12)])
+    >>> untwist_diagram(L)
+    3
+    """
+    total_removed = 0
+    success = True
+    while success:
+        success = False
+        removed = untwist_diagram_once(link)
+        if removed > 0:
+            total_removed += removed
+            success = True
+    return total_removed
+
+
 def pickup_simplify(link, type_III=0):
     """
     Optimizes the overcrossings on a diagram, then the undercrossings,
@@ -763,6 +815,10 @@ def pickup_simplify(link, type_III=0):
 
         new_cross = len(L.crossings)
         stabilized = new_cross == 0 or new_cross == old_cross
+
+    # If the diagram is a "connect sum with twists" remove the
+    # twists. We check for this only once, at the end, for speed.
+    untwist_diagram(L)
 
     L._rebuild()
     return len(L.crossings) != init_num_crossings
