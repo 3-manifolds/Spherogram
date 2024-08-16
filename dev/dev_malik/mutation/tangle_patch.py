@@ -356,7 +356,7 @@ def all_cross_strands(self):
                 other_ends_seen.append(end)
     orientations, over_or_under = crossing_orientations(strands)
     cs_seen = [cs for strand in strands for cs in strand]
-    seen_once = set(cs[0] for cs in cs_seen)
+    seen_once = {cs[0] for cs in cs_seen}
     for crossing in orientations:
         seen_once.remove(crossing)
     for strand in strands:
@@ -873,7 +873,7 @@ a dictionary with the side (0 or 1) of each crossing
 def fill_in_crossings(link,sides):
     crossing_sides = {x[0]:sides[x] for x in sides}
     crossing_labels = map(lambda c: c.label,link.crossings)
-    crossings_to_sort = set(crossing_labels)-set(x[0] for x in sides)
+    crossings_to_sort = set(crossing_labels)-{x[0] for x in sides}
     while len(crossings_to_sort) > 0:
         start_crossing = crossings_to_sort.pop()
         accumulated_crossings = [start_crossing]
@@ -1158,7 +1158,7 @@ vols = map(lambda x: x.exterior().volume(), tsums)
 print(v,avg_vol)
 """
 
-a, b, c, d, e, f, g, h = [spherogram.Crossing(x) for x in 'abcdefgh']
+a, b, c, d, e, f, g, h = (spherogram.Crossing(x) for x in 'abcdefgh')
 a[0] = e[2]
 a[1] = b[3]
 a[3] = e[3]

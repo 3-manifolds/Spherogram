@@ -125,7 +125,7 @@ class UpwardSnake(tuple):
         return ans
 
 
-class UpwardLinkDiagram():
+class UpwardLinkDiagram:
     def __init__(self, link):
         self.link = link = link.copy()
         bridge, values = bridge_LP(link)
@@ -185,7 +185,7 @@ class UpwardLinkDiagram():
         a = CrossingStrand(crossing, 0)
         b = a.rotate()
         while True:
-            if set([kinds[a], kinds[b]]).issubset(set(['up', 'min'])):
+            if {kinds[a], kinds[b]}.issubset({'up', 'min'}):
                 return a, b
             a, b = b, b.rotate()
 
@@ -284,19 +284,19 @@ class UpwardLinkDiagram():
             cs = snake[0]
             return tuple(sorted([to_index(cs), to_index(cs.opposite())]))
 
-        bottom = set(bottom_pairing(snake) for snake in self.snakes)
+        bottom = {bottom_pairing(snake) for snake in self.snakes}
 
         def top_pairing(snake):
             cs = snake[-1]
             cn = self.adjacent_upwards(snake.final)
             return tuple(sorted([to_index(cs), to_index(cn)]))
 
-        top = set(top_pairing(snake) for snake in self.snakes)
+        top = {top_pairing(snake) for snake in self.snakes}
 
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
 
 
-class BridgeDiagram():
+class BridgeDiagram:
     def __init__(self, bottom, crossings, top):
         self.bottom, self.crossings, self.top = bottom, crossings, top
         self.width = 2 * len(bottom)

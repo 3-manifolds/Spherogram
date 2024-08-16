@@ -6,7 +6,7 @@ from random import choice, randint
 def doubly_connected_crossing(link):
     doubly_connected = None
     for c in link.crossings:
-        num_neighbors = len(set(x[0] for x in c.adjacent))
+        num_neighbors = len({x[0] for x in c.adjacent})
         if num_neighbors == 2:
             return c
         elif num_neighbors == 3:

@@ -68,7 +68,7 @@ def lookup_DT_code_by_name(name):
             continue
 
 
-class Crossing():
+class Crossing:
     """
     See "doc.pdf" for the conventions.  The sign of a crossing can be in {0,
     +1, -1}.  In the first case, the strands at the crossings can have
@@ -130,8 +130,8 @@ class Crossing():
             else:
                 self.adjacent[i] = (self, (j - s) % 4)
 
-        self.directions = set((rotate(a), rotate(b))
-                              for a, b in self.directions)
+        self.directions = {(rotate(a), rotate(b))
+                              for a, b in self.directions}
 
     def rotate_by_90(self):
         "Effectively switches the crossing"
@@ -320,7 +320,7 @@ class Labels(OrderedDict):
         self[x] = len(self)
 
 
-class Strand():
+class Strand:
     """
     When constructing links, it's convenient to have strands as well
     as crossings.  These are stripped by the Link class when it
@@ -371,7 +371,7 @@ def enumerate_lists(lists, n=0, filter=lambda x: True):
     return ans
 
 
-class Link():
+class Link:
     """
     Links are made from Crossings.  The general model is that of the PD
     diagrams used in `KnotTheory <http://katlas.org/wiki/Planar_Diagrams>`_.
@@ -591,7 +591,7 @@ class Link():
                 else:
                     gluings[x] = [(c, i)]
 
-        if set(len(v) for v in gluings.values()) != set([2]):
+        if {len(v) for v in gluings.values()} != {2}:
             raise ValueError("PD code isn't consistent")
 
         component_starts = self._component_starts_from_PD(
@@ -629,7 +629,7 @@ class Link():
             if c1 == c2:
                 # loop at strand, take next strand to be next smallest label
                 # on crossing
-                next_label = min(set(code[c1]) - set([m]))
+                next_label = min(set(code[c1]) - {m})
                 direction = (c1, code[c1].index(next_label))
                 starts.append(direction)
             else:
@@ -1527,7 +1527,7 @@ def vertex_to_KLP(c, v):
     return ['Ybackward', 'Xforward', 'Yforward', 'Xbackward'][i]
 
 
-class KLPCrossing():
+class KLPCrossing:
     """
     SnapPea uses a convention where the orientation
     of the strands is fixed in the master picture but
