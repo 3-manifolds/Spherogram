@@ -127,13 +127,13 @@ def random_link(crossings,
 
     2. The 4-valent vertices of G are turned into crossings by flipping a
        fair coin. If you want the unique alternating diagram associated to
-       G, pass ``alternating = True``.  If you want there to be no
+       G, pass ``alternating=True``.  If you want there to be no
        obvious Type II Reidemeister moves, pass
-       ``consistent_twist_regions = False``.
+       ``consistent_twist_regions=True``.
 
     3. ``simplify``: Whether and how to try to reduce the number of
        crossings of the link via Reidemeister moves using the method
-       ``Link.simplify``.  For no simplification, set ``simplify = None``;
+       ``Link.simplify``.  For no simplification, set ``simplify=None``;
        otherwise set ``simplify`` to be the appropriate mode for
        ``Link.simplify``, for example ``basic`` (the default), ``level``,
        or ``global``.
