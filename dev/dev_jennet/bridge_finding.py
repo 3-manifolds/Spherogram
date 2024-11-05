@@ -15,8 +15,8 @@ def find_bridges(G):
     bridges = []
 
     verts = G.vertices()
-    low = dict([(v,-1) for v in verts])
-    preorder = dict([(v,-1) for v in verts])
+    low = {v: -1 for v in verts}
+    preorder = {v: -1 for v in verts}
 
     for v in verts:
         if preorder[v] == -1:

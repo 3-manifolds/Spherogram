@@ -327,7 +327,7 @@ def tangle_neighborhood(link,crossing,radius,return_gluings=True,hull=False):
     if hull:
         comps = list(boundary_components(link,crossing,radius))
         largest_comp = max(comps)
-        sides = dict([(cslabel(cross_strand), cross_strand) for cross_strand in adjacent])
+        sides = {cslabel(cross_strand): cross_strand for cross_strand in adjacent}
         c = largest_comp.pop()
         cs = choice(c.crossing_strands())
         exit_strand = meander(cs,sides)[1]
@@ -547,9 +547,9 @@ def fill_in_crossings(link, sides):
     Returns a dictionary with the side (0 or 1) of each crossing.
     """
 
-    crossing_sides = dict([(x[0], sides[x]) for x in sides])
+    crossing_sides = {x[0]: sides[x] for x in sides}
     crossing_labels = map(lambda c: c.label,link.crossings)
-    crossings_to_sort = set(crossing_labels)-set(x[0] for x in sides)
+    crossings_to_sort = set(crossing_labels)-{x[0] for x in sides}
     while crossings_to_sort:
         start_crossing = crossings_to_sort.pop()
         accumulated_crossings = [start_crossing]

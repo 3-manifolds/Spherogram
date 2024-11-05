@@ -425,7 +425,7 @@ class Link(links_base.Link):
                 b = set(faces[j])
                 s = a.union(b)
                 for x in range(len(self.crossings)):
-                    total = set(self.crossings[x][i] for i in range(4))
+                    total = {self.crossings[x][i] for i in range(4)}
                     if total.issubset(s):
                         coords.append((tuple(faces[i]), tuple(faces[j]),
                                        self.crossings[x]))  # label by the crossing.
