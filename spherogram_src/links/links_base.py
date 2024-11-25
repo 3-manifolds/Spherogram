@@ -729,7 +729,15 @@ class Link():
 
     def _rebuild(self, same_components_and_orientations=False):
         if same_components_and_orientations:
-            start_css = [comp[0] for comp in self.link_components]
+            # Hopefully we have enough of the original components left
+            # to figure out what this is.  Otherwise, new choices will
+            # be made as in the default algorithm.
+            start_css = []
+            for comp in self.link_components:
+                for cs in comp:
+                    if cs.crossing in self.crossings:
+                        start_css.append(cs)
+                        break
         self.link_components = None
         for c in self.crossings:
             c._clear()
@@ -758,6 +766,8 @@ class Link():
             return
         if start_orientations is None:
             start_orientations = list()
+        else: # copy as algorithm modifies this list
+            start_orientations = list(start_orientations)
         remaining = OrderedSet(
             [(c, i) for c in self.crossings for i in range(4) if c.sign == 0])
         while len(remaining):

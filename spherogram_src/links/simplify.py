@@ -197,7 +197,8 @@ def simplify_via_level_type_III(link, max_consecutive_failures=100):
         else:
             failures += 1
 
-    link._build_components()
+    assert link.all_crossings_oriented()
+    link._rebuild(True)
     return success
 
 
@@ -820,5 +821,5 @@ def pickup_simplify(link, type_III=0):
     # twists. We check for this only once, at the end, for speed.
     untwist_diagram(L)
 
-    L._rebuild()
+    L._rebuild(True)
     return len(L.crossings) != init_num_crossings
