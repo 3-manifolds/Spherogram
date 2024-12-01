@@ -196,22 +196,7 @@ except ImportError:
 
 # Main module
 
-exec(open('spherogram_src/version.py').read())
-
-# Get long description from README
-long_description = open('README.rst').read()
-long_description = long_description.split('==\n')[1]
-long_description = long_description.split('\nDeveloped')[0]
-
-install_requires = ['decorator', 'networkx',
-                    'snappy_manifolds>=1.1.2', 'knot_floer_homology>=1.2']
-
-setup( name = 'spherogram',
-       version = version,
-       install_requires = install_requires,
-       python_requires = '>=3',
-       dependency_links = [],
-       packages = ['spherogram', 'spherogram.links',
+setup( packages = ['spherogram', 'spherogram.links',
                    'spherogram.links.test', 'spherogram.codecs',
                    'spherogram.dev', 'spherogram.dev.dev_jennet'],
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
@@ -223,21 +208,4 @@ setup( name = 'spherogram',
                     'pip_install':SpherogramPipInstall,
        },
        zip_safe = False,
-
-       description= 'Spherical diagrams for 3-manifold topology',
-       long_description = long_description,
-       author = 'Marc Culler and Nathan M. Dunfield',
-       author_email = 'culler@marc-culler.info, nathan@dunfield.info',
-       license='GPLv2+',
-       url = 'https://github.com/3-manifolds/Spherogram',
-       classifiers = [
-           'Development Status :: 5 - Production/Stable',
-           'Intended Audience :: Science/Research',
-           'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
-           'Operating System :: OS Independent',
-           'Programming Language :: C',
-           'Programming Language :: Python',
-           'Topic :: Scientific/Engineering :: Mathematics',
-        ],
-        keywords = 'knot, link, SnapPy',
 )
