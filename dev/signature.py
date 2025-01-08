@@ -145,6 +145,87 @@ def basic_knot_test():
         assert K.signature() == values[m]
 
 
+def invertible_representative(seifert_matrix):
+    """
+    For many calculations in the algebraic concordance group, one
+    needs to replace the initial Seifert matrix with an invertible
+    matrix that represents the same class.  See::
+
+      Levine, Invariants of knot cobordism. Invent Math 8, 98–110 (1969).
+      https://doi.org/10.1007/BF01404613
+
+    or the summary in::
+
+      Livingston, The algebraic concordance order of a knot.
+      https://arxiv.org/abs/0806.3068
+
+    To keep the sizes of the entries of the final matrix under
+    control, we use LLL at various points.  We also use a "block
+    matrix" form of Levine's lemma to reduce the amount of recursion.
+
+    Warning: this code has not been extensively tested.
+    """
+    V = seifert_matrix
+    n = V.nrows()
+    assert V.base_ring() == ZZ
+    assert (V - V.transpose()).det().abs() == 1
+    assert (V + V.transpose()).rank() == n
+
+    # Start with the sublattice L that is left-orthogonal to
+    # everything, i.e. the v with v*V = 0.
+
+    L = V.left_kernel_matrix()
+    k = L.nrows()
+    if k == 0:
+        return V
+    L = L.LLL()  # The basis is the rows.
+
+    # Now look at the left-orthogonal complement of L, that is,
+    #
+    #    U = {u with u * V * v = 0 for all v in L}
+
+    U = matrix(V * L.transpose()).left_kernel_matrix()
+    assert U * V * L.transpose() == 0
+
+    # L is a submodule of U, and we now find a basis of U that extends
+    # the one for L.
+
+    L_in_U = U.solve_left(L).change_ring(ZZ)
+    E = extend_to_primitive(L_in_U).change_ring(ZZ)
+    assert E.det().abs() == 1
+
+    # Another basis for U, this time with the basis for L for the
+    # first vectors
+
+    U = E * U
+    assert U[:k, :] == L
+    # cleanup
+    U = L.stack(U[k: , :].LLL())
+
+    # Extend U to a Z-basis of Z^n where the new vectors give the
+    # standard dual basis of Hom(L, Z) via a -> (x -> a*V*x).
+
+    R = extend_to_primitive(U).change_ring(ZZ)
+    A = R[U.nrows(): , :].LLL()
+    F = A * V * L.transpose()
+    assert F.det().abs() == 1
+    A = F.inverse().change_ring(ZZ) * A
+
+    C = L.stack(A).stack(U[k: , :])
+    assert C.det().abs() == 1
+
+    # We apply the block matrix generalization of the lemma in Levine's
+    # Inventiones 1969 paper on page 101, to see that B is equivalent
+    # in G^Q and hence G^Z. The block version follows from applying the
+    # original repeatedly.
+
+    W = C * V * C.transpose()
+    assert W[:k, :] == 0 and W[k:2*k, 0:k] == 1 and W[2*k: , :k] == 0
+    B = W[2*k:, 2*k:]
+    assert (B - B.transpose()).det().abs() == 1
+    return invertible_representative(B)
+
+
 if __name__ == '__main__':
     K = spherogram.Link('K12n123')
     V = matrix(ZZ, K.seifert_matrix())
