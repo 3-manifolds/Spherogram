@@ -1,3 +1,18 @@
 [build-system]
 requires = ["setuptools", "wheel", "cython"]
 build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+build = "cp38* cp39* cp310* cp311* cp312* cp313*"
+skip = "*musllinux*"
+test-command = "python -m spherogram.test"
+
+[tool.cibuildwheel.macos]
+archs = "x86_64 arm64 universal2"
+
+[tool.cibuildwheel.linux]
+archs = "native"
+repair-wheel-command = "auditwheel repair --strip -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.windows]
+archs = "native"
