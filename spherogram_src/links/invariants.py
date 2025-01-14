@@ -370,19 +370,18 @@ class Link(links_base.Link):
           is recorded.)
 
         For example, to compute the vertical differential, whose homology
-        is HFhat(S^3), you can do:
+        is HFhat(S^3), you can do::
 
-        >>> data = L.knot_floer_homology(prime=31991, complex=True)
-        >>> gens, diff = data['generators'], data['differentials']
-        >>> vert = {(i,j):diff[i, j] for i, j in diff
-        ...                          if gens[i][1] == gens[j][1] + 1}
-
-        sage: from sage.all import matrix, GF
-        sage: M = matrix(GF(31991), len(gens), len(gens), vert, sparse=True)
-        sage: M*M == 0
-        True
-        sage: M.right_kernel().rank() - M.rank()
-        1
+          sage: data = L.knot_floer_homology(prime=31991, complex=True)
+          sage: gens, diff = data['generators'], data['differentials']
+          sage: vert = {(i,j):diff[i, j] for i, j in diff
+          ...            if gens[i][1] == gens[j][1] + 1}
+          sage: from sage.all import matrix, GF
+          sage: M = matrix(GF(31991), len(gens), len(gens), vert, sparse=True)
+          sage: M*M == 0
+          True
+          sage: M.right_kernel().rank() - M.rank()
+          1
         """
         import knot_floer_homology
         if len(self.link_components) + self.unlinked_unknot_components > 1:
