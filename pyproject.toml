@@ -15,4 +15,4 @@ archs = "native"
 repair-wheel-command = "auditwheel repair --strip -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.windows]
-archs = "auto"
+archs = "AMD64 ARM64"
