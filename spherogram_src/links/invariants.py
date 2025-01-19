@@ -486,7 +486,7 @@ class Link(links_base.Link):
 
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
-        components = G.connected_components()
+        components = G.connected_components(sort=True)
         if len(components) > 2:
             raise ValueError('The link diagram is split.')
         return G.subgraph(components[1])

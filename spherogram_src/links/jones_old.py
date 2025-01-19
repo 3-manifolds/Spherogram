@@ -23,7 +23,7 @@ def cut(G, T, e):
         raise ValueError("e must be an edge of T.")
     S = T.copy()
     S.delete_edge(e)
-    (C1, C2) = S.connected_components()
+    (C1, C2) = S.connected_components(sort=True)
     answer = list()
     for f in G.edges(sort=True, key=edge_index):
         if (f[0] in C1 and f[1] in C2) or (f[0] in C2 and f[1] in C1):
@@ -257,8 +257,8 @@ def spanning_trees(G):
             # e=xy links the CC (connected component) of forest containing x
             # with the CC containing y. Any other edge which does that
             # cannot be added to forest anymore, and B is the list of them
-            c1 = forest.connected_component_containing_vertex(e[0])
-            c2 = forest.connected_component_containing_vertex(e[1])
+            c1 = forest.connected_component_containing_vertex(e[0], sort=True)
+            c2 = forest.connected_component_containing_vertex(e[1], sort=True)
             G.delete_edge(e)
             B = G.edge_boundary(c1, c2, sort=False)
             G.add_edge(e)
