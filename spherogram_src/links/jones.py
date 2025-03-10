@@ -86,7 +86,7 @@ def cap_off(matching, i):
     return PerfectMatching(new_match), circle
 
 
-class VElement():
+class VElement:
     """
     An element of some V_{0, n} which is the free R-module on P_{0, n}
 

@@ -117,7 +117,7 @@ class DTvertex(tuple):
         return (0, 2) if bool(first % 2) ^ even_over else (1, 3)
 
 
-class DTPath():
+class DTPath:
     """
     An iterator which starts at a FatEdge and walks around the
     link component containing that edge.  A DTPath raises
@@ -278,7 +278,7 @@ class DTFatGraph(FatGraph):
         left_path, right_path, vertices = [], [], set()
         vertices.add(vertex)
         try:
-            left, right = [e for e in self(vertex) if e.marked]
+            left, right = (e for e in self(vertex) if e.marked)
         except ValueError:
             raise RuntimeError('Vertex must have two marked edges.')
         for edge, path in (left, left_path), (right, right_path):
@@ -533,7 +533,7 @@ class DTFatGraph(FatGraph):
 # meets the next one (so in particular the diagram is connected.
 
 
-class DTcodec():
+class DTcodec:
     """
     Codec for DT codes of a link projection.
     """

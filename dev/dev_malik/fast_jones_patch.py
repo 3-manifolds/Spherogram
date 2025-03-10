@@ -106,7 +106,7 @@ def simplify_monomial(monomial):
 #        monomial = remove_squares(monomial)
 #        monomial = remove_loops(monomial)
 
-        strand_vars = monomial.free_symbols - set([A])
+        strand_vars = monomial.free_symbols - {A}
         strand_labels = all_labels(strand_vars)
 
     return monomial
@@ -129,7 +129,7 @@ def combine_strands(v1, v2, common_label):
 
 def remove_squares(monomial):
     A, B = sympy.symbols('A,B')
-    strand_vars = monomial.free_symbols - set([A,B])
+    strand_vars = monomial.free_symbols - {A,B}
     for v in strand_vars:
         monomial = monomial.subs(v*v,-A**2-(1/A)**2)
     return monomial
@@ -137,7 +137,7 @@ def remove_squares(monomial):
 
 def remove_loops(monomial):
     A, B = sympy.symbols('A,B')
-    strand_vars = monomial.free_symbols - set([A,B])
+    strand_vars = monomial.free_symbols - {A,B}
     for v in strand_vars:
         l1, l2 = var_to_strand_labels(v)
         if l1 == l2:

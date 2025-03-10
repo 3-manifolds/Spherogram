@@ -188,7 +188,7 @@ def all_cross_strands(tangle):
                 other_ends_seen.append(end)
     orientations, over_or_under = crossing_orientations(strands)
     cs_seen = [cs for strand in strands for cs in strand]
-    seen_once = set(cs[0] for cs in cs_seen)
+    seen_once = {cs[0] for cs in cs_seen}
     for crossing in orientations:
         seen_once.remove(crossing)
     for strand in strands:

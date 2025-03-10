@@ -36,7 +36,7 @@ def test1():
 def test2():
     keys = G.incidence_dict.keys()
     v = keys[0]
-    D = dict( (k, (i, range(10*i, 10*(i+10)))) for i, k in enumerate(keys))
+    D = { k: (i, range(10*i, 10*(i+10))) for i, k in enumerate(keys)}
     for i in range(155000):
         D[v]
 
@@ -44,7 +44,7 @@ def test2():
 def test3():
     keys = G.incidence_dict.keys()
     v = keys[0]
-    D = dict((k, None) for i, k in enumerate(keys))
+    D = {k: None for i, k in enumerate(keys)}
     for i in range(155000):
         D[v]
 
@@ -58,19 +58,19 @@ def test4():
     return v
 
 
-class TestObject():
+class TestObject:
     pass
 
 
 def test5():
-    D = dict([(TestObject(), i) for i in range(10)])
+    D = {TestObject(): i for i in range(10)}
     k = D.keys()[0]
     for i in range(10000000):
         D[k]
 
 
 def test6():
-    D = dict([(i, TestObject()) for i in range(10)])
+    D = {i: TestObject() for i in range(10)}
     k = D.keys()[0]
     for i in range(10000000):
         D[k]
