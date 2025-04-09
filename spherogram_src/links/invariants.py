@@ -762,7 +762,7 @@ class Link(links_base.Link):
            sage: L.signature(), M.signature()
            (-2, -2)
 
-        Can also take a braid group perspective.
+        Can also take a braid group perspective::
 
             sage: B = BraidGroup(4)
             sage: a, b, c = B.gens()
