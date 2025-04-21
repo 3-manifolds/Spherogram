@@ -710,6 +710,37 @@ class Link(links_base.Link):
             ans = matrix(ans)
         return ans
 
+    def bridge_upper_bound(self, method='plain sphere', return_meridians=False):
+        """
+        Computes an upper bound on the bridge number of the given link.
+        By default, it computes the plain sphere number rho(D) of the
+        diagram D from [BKP2025]_, but with ``method='wirtinger'``, it
+        computes the weaker Wirtinger number omega(D) from [BKVV2020]_.
+        The latter is significantly faster to compute.
+
+        If ``return_meridians=True`` is set, returns a list of meridians
+        generating the knot group, where each meridian is specified by the
+        index of the crossing for which it is the 0 input strand.
+
+        >>> K = Link('14n1527')
+        >>> K.bridge_upper_bound()
+        3
+        >>> K.bridge_upper_bound(method='wirtinger')
+        4
+        >>> K.bridge_upper_bound(return_meridians=True)
+        [2, 3, 9]
+
+        .. [BKP2025] R. Blair, A. Kjuchukova, and E. Pfaff,
+                     *The Plain Sphere Number of a Link.*
+                     https://arxiv.org/abs/2504.10517
+
+        .. [BKVV2020] R. Blair, A. Kjuchukova, R. Velazquez, and P. Villanueva,
+                      *Wirtinger systems of generators of knot groups.*
+                      https://dx.doi.org/10.4310/CAG.2020.v28.n2.a2
+        """
+        from . import bridge_bound
+        return bridge_bound.bridge_upper_bound(self, method, return_meridians)
+
     def braid_word(self, as_sage_braid=False):
         """
         Return a list of integers which defines a braid word whose closure is the
