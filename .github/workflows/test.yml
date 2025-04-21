@@ -10,6 +10,7 @@ jobs:
     strategy:
       matrix:
         version: [9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 10.1, 10.2, 10.3, 10.4, latest]
+      fail-fast: false
 
     container:
       image: sagemath/sagemath:${{ matrix.version }}
