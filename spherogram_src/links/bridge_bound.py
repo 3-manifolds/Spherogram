@@ -15,6 +15,17 @@ Implements the upper bounds on bridge number from:
 from .simplify import dual_graph_as_nx
 from .links_base import CrossingStrand, Link
 import networkx as nx
+from packaging.version import Version
+
+
+# Finding simple_cycles in *undirected* graphs was only added in
+# NetworkX 3.1, circa March 2023.  For earlier vesions of NetworkX, we
+# use the local backport.
+
+if Version(nx.__version__) >= Version('3.1'):
+    simple_cycles = nx.simple_cycles
+else:
+    from .nx_simple_cycles import simple_cycles
 
 
 def number_strands(link):
@@ -23,7 +34,7 @@ def number_strands(link):
     maps each CrossingStrand or CrossingEntryPoint to the
     corresponding strand number.
 
-    >>> K = Link('8n1')
+    >>> K = Link('K8n1')
     >>> len(set(number_strands(K).values()))
     8
     """
@@ -98,7 +109,7 @@ def meridian_relations(link):
     to_meridian = number_strands(link)
     G = dual_graph_as_nx(link)
     relations = []
-    for cycle in nx.simple_cycles(G):
+    for cycle in simple_cycles(G):
         relation = []
         n = len(cycle)
         for i in range(n):
@@ -221,7 +232,7 @@ def bridge_upper_bound(link, method='plain sphere', return_meridians=False):
     generating the knot group, where each meridian is specified by the
     index of the crossing for which it is the 0 input strand.
 
-    >>> K = Link('14n1527')
+    >>> K = Link('K14n1527')
     >>> bridge_upper_bound(K)
     3
     >>> bridge_upper_bound(K, method='wirtinger')

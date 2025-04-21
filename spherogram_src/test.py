@@ -6,6 +6,7 @@ import spherogram.links.simplify
 import spherogram.links.morse
 import spherogram.links.seifert
 import spherogram.links.exhaust
+import spherogram.links.bridge_bound
 
 import spherogram.test_helper as test_helper
 import getopt
@@ -24,6 +25,7 @@ modules = [spherogram.codecs.DT,
            spherogram.links.random_links,
            spherogram.links.orthogonal,
            spherogram.links.simplify,
+           spherogram.links.bridge_bound,
            spherogram.links.invariants,
            spherogram.links.morse,
            spherogram.links.seifert]
