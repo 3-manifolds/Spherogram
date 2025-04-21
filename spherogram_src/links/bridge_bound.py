@@ -19,7 +19,7 @@ from packaging.version import Version
 
 
 # Finding simple_cycles in *undirected* graphs was only added in
-# NetworkX 3.1, circa March 2023.  For earlier vesions of NetworkX, we
+# NetworkX 3.1, circa March 2023.  For earlier versions of NetworkX, we
 # use the local backport.
 
 if Version(nx.__version__) >= Version('3.1'):
