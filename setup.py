@@ -204,7 +204,7 @@ long_description = long_description.split('==\n')[1]
 long_description = long_description.split('\nDeveloped')[0]
 
 install_requires = ['decorator',
-                    'networkx',
+                    'networkx>=3.1',
                     'snappy_manifolds>=1.1.2',
                     'knot_floer_homology>=1.2.2']
 
