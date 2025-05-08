@@ -38,7 +38,7 @@ def entry_pts_ab(crossing):
     return [CrossingEntryPoint(crossing, v) for v in verts]
 
 
-class StrandIndices():
+class StrandIndices:
     """
     A map from the crossings strands of a link L onto range(n).
     """
@@ -111,7 +111,7 @@ def test_meta_associativity():
         assert eval_merges(m1) == eval_merges(m2)
 
 
-class DrorDatum():
+class DrorDatum:
     """
     The (omega, A) pair which is the invariant defined in the first column of
     http://www.math.toronto.edu/drorbn/Talks/Aarhus-1507/
@@ -192,7 +192,7 @@ def num_overlap(crossing, frontier):
     return len(neighbor_strands.intersection(frontier))
 
 
-class Exhaustion():
+class Exhaustion:
     """
     An exhaustion of a link where crossings are added in one-by-one
     so that the resulting tangle is connected at every stage.
