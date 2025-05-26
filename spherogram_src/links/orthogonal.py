@@ -53,7 +53,7 @@ def basic_topological_numbering(G):
     """
     Finds an optimal weighted topological numbering a directed acyclic graph
     """
-    in_valences = dict((v, G.indegree(v)) for v in G.vertices)
+    in_valences = {v: G.indegree(v) for v in G.vertices}
     numbering = {}
     curr_sources = [v for v, i in in_valences.items() if i == 0]
     curr_number = 0
@@ -325,7 +325,7 @@ class OrthogonalRep(Digraph):
     def chain_coordinates(self, kind):
         D = self.DAG_from_direction(kind)
         chain_coors = topological_numbering(D)
-        return dict((v, chain_coors[D.vertex_to_chain[v]]) for v in self.vertices)
+        return {v: chain_coors[D.vertex_to_chain[v]] for v in self.vertices}
 
     def basic_grid_embedding(self, rotate=False):
         """
@@ -333,7 +333,7 @@ class OrthogonalRep(Digraph):
         """
         V = self.chain_coordinates('horizontal')
         H = self.chain_coordinates('vertical')
-        return dict((v, (H[v], V[v])) for v in self.vertices)
+        return {v: (H[v], V[v]) for v in self.vertices}
 
     def show(self, unit=10, labels=True):
         from sage.all import circle, text, line, Graphics
@@ -362,7 +362,7 @@ class OrthogonalRep(Digraph):
 class Face(CyclicList):
     def __init__(self, link, crossing_strands, exterior=False):
         list.__init__(self, crossing_strands)
-        self.edges = dict((c.oriented(), c) for c in crossing_strands)
+        self.edges = {c.oriented(): c for c in crossing_strands}
         self.exterior = exterior
         self.turns = [1 for e in self]
 
@@ -502,7 +502,7 @@ class OrthogonalLinkDiagram(list):
         flow = networkx.min_cost_flow(N)
         for a, flows in flow.items():
             for b, w_a in flows.items():
-                if w_a and set(['s', 't']).isdisjoint(set([a, b])):
+                if w_a and {'s', 't'}.isdisjoint({a, b}):
                     w_b = flow[b][a]
                     A, B = self[a], self[b]
                     e_a, e_b = A.edge_of_intersection(B)
@@ -607,7 +607,7 @@ class OrthogonalLinkDiagram(list):
                 b, a = emb[v.crossing]
             vertex_positions.append((10 * (a + 1), 10 * (b + 1)))
 
-        vert_indices = dict((v, i) for i, v in enumerate(self.strand_CEPs))
+        vert_indices = {v: i for i, v in enumerate(self.strand_CEPs)}
         arrows, crossings = self.break_into_arrows()
         arrows = [(vert_indices[a[0]], vert_indices[a[-1]]) for a in arrows]
 

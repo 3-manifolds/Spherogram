@@ -324,7 +324,7 @@ class OrthogonalRep(Digraph):
     def chain_coordinates(self, kind):
         D = self.DAG_from_direction(kind)
         chain_coors = topological_numbering(D)
-        return dict( (v,chain_coors[D.vertex_to_chain[v]]) for v in self.vertices )
+        return { v: chain_coors[D.vertex_to_chain[v]] for v in self.vertices }
 
     def basic_grid_embedding(self, rotate=False):
         """
@@ -332,7 +332,7 @@ class OrthogonalRep(Digraph):
         """
         V = self.chain_coordinates('horizontal')
         H = self.chain_coordinates('vertical')
-        return dict( (v,(H[v], V[v])) for v in self.vertices)
+        return { v: (H[v], V[v]) for v in self.vertices}
 
     def show(self, unit=10, labels=True):
         pos = self.basic_grid_embedding()
@@ -457,8 +457,8 @@ class OrthogonalLinkDiagram(list):
         self.bend()
         self.orient_edges()
         self.edges = sum([F for F in self], [])
-        strands = set(e.crossing for e in self.edges
-                      if isinstance(e.crossing, Strand))
+        strands = {e.crossing for e in self.edges
+                      if isinstance(e.crossing, Strand)}
         self.strand_CEPs = [CrossingEntryPoint(s, 0) for s in strands]
         for i, c in enumerate(link.crossings):
             c.label = i
@@ -504,7 +504,7 @@ class OrthogonalLinkDiagram(list):
         flow = networkx.min_cost_flow(N)
         for a, flows in flow.iteritems():
             for b, w_a in flows.iteritems():
-                if w_a and set(['s', 't']).isdisjoint(set([a, b])):
+                if w_a and {'s', 't'}.isdisjoint({a, b}):
                     w_b = flow[b][a]
                     A, B = self[a], self[b]
                     e_a, e_b = A.edge_of_intersection(B)
@@ -596,7 +596,7 @@ class OrthogonalLinkDiagram(list):
                 b, a = emb[v.crossing]
             vertex_positions.append( (spacing*(a+1), spacing*(b+1)) )
 
-        vert_indices = dict( (v,i) for i, v in enumerate(self.strand_CEPs))
+        vert_indices = { v: i for i, v in enumerate(self.strand_CEPs)}
         arrows, crossings = self.break_into_arrows()
         arrows = [ (vert_indices[a[0]], vert_indices[a[-1]]) for a in arrows]
 
@@ -668,7 +668,7 @@ def random_link():
 def check_faces(link):
     faces = link.faces()
     assert len(link.vertices) - len(link.edges) + len(faces) == 2
-    assert set(Counter(sum( faces, [] )).values()) == set([1])
+    assert set(Counter(sum( faces, [] )).values()) == {1}
     assert link.is_planar()
 
 

@@ -107,7 +107,7 @@ def is_externally_active(G, T, e):
 def _edge_sign(K, edge):
     "Returns the sign (+/- 1) associated to given edge in the black graph."
     crossing = edge[2]
-    if set(((crossing, 0), (crossing, 1))).issubset(set(edge[0])) or set(((crossing, 0), (crossing, 1))).issubset(set(edge[1])):
+    if {(crossing, 0), (crossing, 1)}.issubset(set(edge[0])) or {(crossing, 0), (crossing, 1)}.issubset(set(edge[1])):
         return +1
     return -1
 

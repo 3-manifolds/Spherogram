@@ -77,7 +77,7 @@ def decode_boundary(boundary):
     return (m, n)
 
 
-class Tangle():
+class Tangle:
     def __init__(self, boundary=2, crossings=None, entry_points=None, label=None):
         """
         A tangle is a fragment of a Link with some number of boundary

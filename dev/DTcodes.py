@@ -121,7 +121,7 @@ class DTvertex(tuple):
         return (0,2) if bool(first % 2) ^ even_over else (1,3)
 
 
-class DTPath():
+class DTPath:
     """
     An iterator which starts at a FatEdge and walks around the
     link component containing that edge.  A DTPath raises
@@ -215,7 +215,7 @@ class DTFatGraph(FatGraph):
         """
         for e in self.edges:
             e.marked = False
-        self.marked_valences = dict( (v,0) for v in self.vertices )
+        self.marked_valences = { v: 0 for v in self.vertices }
 
     def push(self, flips):
         """
@@ -283,7 +283,7 @@ class DTFatGraph(FatGraph):
         left_path, right_path, vertices = [], [], set()
         vertices.add(vertex)
         try:
-            left, right = [e for e in self(vertex) if e.marked]
+            left, right = (e for e in self(vertex) if e.marked)
         except ValueError:
             raise RuntimeError('Vertex must have two marked edges.')
         for edge, path in (left, left_path), (right, right_path):
@@ -533,7 +533,7 @@ class DTFatGraph(FatGraph):
 # This assumes that the diagram has no loops, and that each component
 # meets the next one (so in particular the diagram is connected.
 
-class DTcodec():
+class DTcodec:
     """
     Codec for DT codes of a link projection.
     """
@@ -871,7 +871,7 @@ class DTcodec():
         vertices = list(G.vertices)
         num_crossings = len(vertices)
         num_components = len(self.code)
-        KLP_indices = dict( (v,n) for n, v in enumerate(vertices))
+        KLP_indices = { v: n for n, v in enumerate(vertices)}
         KLP_crossings = [G.KLP_dict(v, KLP_indices) for v in vertices]
         return len(G.vertices), 0, len(self.code), KLP_crossings
 

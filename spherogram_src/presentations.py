@@ -3,7 +3,7 @@ from collections import deque
 import operator
 
 
-class Alphabet():
+class Alphabet:
     """
     An Alphabet translates between integers and strings.
     Call as a function to go from string to integer; use getitem
@@ -255,7 +255,7 @@ class Complexity(list):
         return not self < other
 
 
-class WhiteheadMove():
+class WhiteheadMove:
     """
     Holds the data describing a Whitehead move.
     """
@@ -283,7 +283,7 @@ class WhiteheadMove():
         return ', '.join(subs)
 
 
-class Presentation():
+class Presentation:
     """
     A Presentation contains a list of CyclicWords as relators and a
     list of (integer) letters as generators.  The generators are
@@ -451,7 +451,7 @@ class Presentation():
         """
         S = self.signature()
         queue = deque([(None, None, self, S)])
-        seen = set([S])
+        seen = {S}
         while queue:
             parent, move, pres, sig = queue.popleft()
             for a, A in pres.level_transformations():
@@ -495,7 +495,7 @@ class Presentation():
         return ans + '>'
 
 
-class CanonizeNode():
+class CanonizeNode:
     def __init__(self, presentation, remaining, ordering=[]):
         self.presentation = presentation
         self.generators = presentation.generators

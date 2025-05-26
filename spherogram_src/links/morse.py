@@ -151,7 +151,7 @@ class UpwardSnake(tuple):
         return ans
 
 
-class MorseLinkDiagram():
+class MorseLinkDiagram:
     """
     A planar link diagram with a height function on R^2 which
     is Morse on the link.
@@ -228,7 +228,7 @@ class MorseLinkDiagram():
         kinds = self.orientations
         a = CrossingStrand(crossing, 0)
         b = a.rotate()
-        upmin = set(['up', 'min'])
+        upmin = {'up', 'min'}
         test_a = kinds[a] in upmin
         while True:
             test_b = kinds[b] in upmin
@@ -364,19 +364,19 @@ class MorseLinkDiagram():
             cs = snake[0]
             return tuple(sorted([to_index(cs), to_index(cs.opposite())]))
 
-        bottom = set(bottom_pairing(snake) for snake in self.snakes)
+        bottom = {bottom_pairing(snake) for snake in self.snakes}
 
         def top_pairing(snake):
             cs = snake[-1]
             cn = self.adjacent_upwards(snake.final)
             return tuple(sorted([to_index(cs), to_index(cn)]))
 
-        top = set(top_pairing(snake) for snake in self.snakes)
+        top = {top_pairing(snake) for snake in self.snakes}
 
         return BridgeDiagram(bottom, [cd[1] for cd in cross_data], top)
 
 
-class BridgeDiagram():
+class BridgeDiagram:
     """
     A proper bridge diagram of a link, that is, a height function
     where all the mins are below all the maxes.

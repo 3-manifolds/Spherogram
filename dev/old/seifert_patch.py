@@ -55,7 +55,7 @@ def seifert_tree(link):
     circles.
     """
     circles = seifert_circles(link)
-    edges = [[set([n]),set([n])] for n in range(len(circles))]
+    edges = [[{n},{n}] for n in range(len(circles))]
     for c in link.crossings:
         under, over = c.entry_points()
         under_circle, over_circle = -1,-1
@@ -92,10 +92,10 @@ def remove_admissible_move(link):
     found_move = False
     for e1, e2 in combinations(tree,2):
         if e1[0] == e2[0]: #edges start at same point
-            circles = set([tree.index(e1), tree.index(e2)])
+            circles = {tree.index(e1), tree.index(e2)}
             found_move = True
         elif e1[1] == e2[1]: #edges end at same point
-            circles = set([tree.index(e1), tree.index(e2)])
+            circles = {tree.index(e1), tree.index(e2)}
             found_move = True
         if found_move:
             move_possible = False
