@@ -145,7 +145,7 @@ def possible_type_III_moves(link):
     for face in link.faces():
         if len(face) == 3:
             if sum(ce.strand_index % 2 for ce in face) in [1, 2]:
-                while(face[1][1] % 2 != 0 or face[2][1] % 2 != 1):    # renumber face_list
+                while (face[1][1] % 2 != 0 or face[2][1] % 2 != 1):    # renumber face_list
                     face = [face[1], face[2], face[0]]
                 if len(set(e.crossing for e in face)) == 3:  # No repeated crossings
                     ans.append(face)

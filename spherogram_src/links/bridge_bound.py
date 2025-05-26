@@ -123,10 +123,8 @@ def meridian_relations(link):
 
         relations.append(relation)
 
-    relations = [MeridianRelation(rel)
-                 for rel in sorted(relations, key=lambda x:(len(x), x))]
-
-    return relations
+    return [MeridianRelation(rel)
+            for rel in sorted(relations, key=lambda x: (len(x), x))]
 
 
 def crossing_relations(link):
@@ -268,7 +266,8 @@ def bridge_upper_bound(link, method='plain sphere', return_meridians=False):
                     else:
                         return len(D.seed)
                 next_round.append(D)
-        current = sorted(next_round, key=lambda x:len(x.meridians), reverse=True)
+        current = sorted(next_round, key=lambda x: len(x.meridians),
+                         reverse=True)
         next_round = []
 
 

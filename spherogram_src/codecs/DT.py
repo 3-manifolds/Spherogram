@@ -832,7 +832,7 @@ class DTcodec():
             # pop.
             G.push([w])
         G.flip(v)
-        if not (w, wslot) in v_other_side:
+        if (w, wslot) not in v_other_side:
             G.flip(w)
 
     def embed_arc(self):

@@ -17,6 +17,7 @@ __all__ = [
     "simple_cycles",
 ]
 
+
 def simple_cycles(G, length_bound=None):
     """Find simple cycles (elementary circuits) of a graph.
 
@@ -285,12 +286,10 @@ def _johnson_cycle_search(G, path):
 
     References
     ----------
-        .. [1] Finding all the elementary circuits of a directed graph.
+    .. [1] Finding all the elementary circuits of a directed graph.
        D. B. Johnson, SIAM Journal on Computing 4, no. 1, 77-84, 1975.
        https://doi.org/10.1137/0204007
-
     """
-
     G = _NeighborhoodCache(G)
     blocked = set(path)
     B = defaultdict(set)  # graph portions that yield no elementary circuit
@@ -325,8 +324,6 @@ def _johnson_cycle_search(G, path):
             else:
                 for w in G[v]:
                     B[w].add(v)
-
-
 
 
 if __name__ == '__main__':
