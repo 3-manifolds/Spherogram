@@ -434,7 +434,7 @@ def subdivide_edge(crossing_strand, n):
     WARNING: this breaks several of the link's internal data structures.
     """
     head = crossing_strand
-    backwards = not (head in head.crossing.entry_points())
+    backwards = (head not in head.crossing.entry_points())
     if backwards:
         head = head.opposite()
     tail = head.opposite()
