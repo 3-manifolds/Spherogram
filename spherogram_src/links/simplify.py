@@ -76,20 +76,20 @@ def reidemeister_I_and_II(link, A):
                 eliminated, changed = reidemeister_I(link, B)
                 if eliminated:
                     break
-                else:
-                    W, w = A.adjacent[a + 2]
-                    X, x = A.adjacent[a + 3]
-                    Y, y = B.adjacent[b + 1]
-                    Z, z = B.adjacent[b + 2]
-                    eliminated = {A, B}
-                    if W != B:
-                        W[w] = Z[z]
-                        changed.update({W, Z})
-                    if X != B:
-                        X[x] = Y[y]
-                        changed.update({X, Y})
-                    remove_crossings(link, eliminated)
-                    break
+
+                W, w = A.adjacent[a + 2]
+                X, x = A.adjacent[a + 3]
+                Y, y = B.adjacent[b + 1]
+                Z, z = B.adjacent[b + 2]
+                eliminated = {A, B}
+                if W != B:
+                    W[w] = Z[z]
+                    changed.update({W, Z})
+                if X != B:
+                    X[x] = Y[y]
+                    changed.update({X, Y})
+                remove_crossings(link, eliminated)
+                break
 
     return eliminated, changed
 
@@ -276,10 +276,9 @@ def dual_graph_as_nx(link):
             if next == face[0]:
                 faces.append(Face(face, count))
                 break
-            else:
-                to_face_index[next] = count
-                corners.remove(next)
-                face.append(next)
+            to_face_index[next] = count
+            corners.remove(next)
+            face.append(next)
 
     G = nx.Graph()
     to_face = {edge: faces[f] for edge, f in to_face_index.items()}
