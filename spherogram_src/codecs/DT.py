@@ -293,9 +293,8 @@ class DTFatGraph(FatGraph):
                     raise ValueError('Marked graph has a dead end at %s.' % V)
                 if len(edges) > 1:
                     break
-                else:
-                    vertices.add(V)
-                    edge = edges.pop()
+                vertices.add(V)
+                edge = edges.pop()
         left_path.reverse()
         return left_path + right_path
 
@@ -755,10 +754,9 @@ class DTcodec:
             if vertex in seen:
                 edges.append(edge)
                 break
-            else:
-                seen.add(vertex)
-                vertices.append(vertex)
-                edges.append(edge)
+            seen.add(vertex)
+            vertices.append(vertex)
+            edges.append(edge)
         n = vertices.index(vertex)
         edges = edges[n:]
         vertices = vertices[n:]
