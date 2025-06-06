@@ -28,7 +28,7 @@ class TwistRegionCrossing(TwistRegionCap):
             self.cs = crossing
         else:
             assert is_end_of_twist_region(crossing)
-            neighbors = CyclicList(C for (C, i) in crossing.adjacent)
+            neighbors = CyclicList(C for C, i in crossing.adjacent)
             for i in range(4):
                 if neighbors[i] == neighbors[i + 1]:
                     self.cs = CrossingStrand(crossing, i)
@@ -69,7 +69,7 @@ class TwistRegion:
 
 
 def is_end_of_twist_region(crossing) -> bool:
-    return len({C for (C, i) in crossing.adjacent}) == 3
+    return len({C for C, i in crossing.adjacent}) == 3
 
 
 def make_twist_regions_consistent(link):
