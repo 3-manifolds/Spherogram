@@ -406,7 +406,7 @@ def pickup_strand(link, dual_graph, kind, strand):
     dest = edges_crossed[-1][0]
 
     nx.set_edge_attributes(G, 1, 'weight')
-    for (f0, f1) in edges_crossed:
+    for f0, f1 in edges_crossed:
         G[f0][f1]['weight'] = 0
 
     path = nx.shortest_path(G, source, dest, weight='weight')
