@@ -1,6 +1,19 @@
-from .graphs import ReducedGraph, Digraph, Poset
-from collections import deque
+from collections import deque, Counter
 import operator
+import networkx as nx
+
+
+def all_descendants(direct_acyclic_graph, nodes):
+    ans = set(nodes)
+    for n in nodes:
+        ans.update(nx.descendants(direct_acyclic_graph, n))
+    return ans
+
+
+def nonempty_transitively_closed_subets(direct_acyclic_graph):
+    for A in nx.antichains(direct_acyclic_graph):
+        if len(A):
+            yield all_descendants(direct_acyclic_graph, A)
 
 
 class Alphabet:
@@ -320,33 +333,34 @@ class Presentation:
                 self.generators == other.generators)
 
     def whitehead_graph(self):
-        Wh = ReducedGraph()
-        vertex_dict = {}
-        for letter in self.generators:
-            vertex_dict[letter] = letter
-            vertex_dict[-letter] = -letter
-            Wh.add_vertex(vertex_dict[letter])
-            Wh.add_vertex(vertex_dict[-letter])
+        transitions = []
         for relator in self.relators:
             for n in range(-1, len(relator) - 1):
-                Wh.add_edge(vertex_dict[relator[n]],
-                            vertex_dict[-relator[n + 1]])
+                v, w = relator[n], -relator[n + 1]
+                if v > w:
+                    v, w = w, v
+                transitions.append((v, w))
+
+        Wh = nx.Graph()
+        Wh.add_nodes_from(self.generators)
+        Wh.add_nodes_from(-g for g in self.generators)
+        for (u, v), m in Counter(transitions).items():
+            Wh.add_edge(u, v, multiplicity=m)
         return Wh
 
     def find_reducers(self):
-        whitehead = self.whitehead_graph()
+        Wh = self.whitehead_graph()
         reducers = []
         levels = []
         for x in self.generators:
-            cut = whitehead.one_min_cut(x, -x)
-            valence = whitehead.multi_valence(x)
-            length_change = cut['size'] - valence
+            cut_size, partition = nx.minimum_cut(Wh, x, -x,
+                                                 capacity='multiplicity')
+            valence = Wh.degree(x, weight='multiplicity')
+            length_change = cut_size - valence
             if length_change < 0:
-                reducers.append((length_change, x, cut['set']))
-            elif length_change == 0:
-                levels.append((x, cut))
-        reducers.sort(key=lambda x: x[0])
-        return reducers, levels
+                reducers.append((length_change, x, partition[0]))
+        reducers.sort()
+        return reducers
 
     def whitehead_move(self, a, cut_set):
         """
@@ -376,13 +390,13 @@ class Presentation:
         length is reached.  Return the resulting minimal presentation.
 
         >>> P = Presentation(['AAAAABBAACCC', 'AAABBBCCCCC', 'AABDCCBD'])
-        >>> P.whitehead_graph().is_planar()
+        >>> nx.is_planar(P.whitehead_graph())
         False
         >>> S = P.shorten()
         >>> print(S)
         generators: [A, B, C, D]
         relators: [AAAAABBAACCC, AAABBBCCCCC, AADCCD]
-        >>> S.whitehead_graph().is_planar()
+        >>> nx.is_planar(S.whitehead_graph())
         True
         >>> P = Presentation(['xyyxyyxy', 'xyy'])
         >>> P.shorten()
@@ -391,9 +405,9 @@ class Presentation:
         """
         result = Presentation(self.relators, self.generators)
         while True:
-            reducers, levels = result.find_reducers()
+            reducers = result.find_reducers()
             if not reducers:
-                return result
+                break
             reduction, a, cut_set = reducers[0]
             result = result.whitehead_move(a, cut_set)
         return result
@@ -412,35 +426,43 @@ class Presentation:
         [AAABCBaaccbabC, AABaBcacAbaCbC, AABCaBaaccbbAC, AACaBacBAcabbC, ABCaaBcAAcbabC, ABCaaBacAcbbAC]
         """
 
-#        For each generator x we find one minimal (x,x^-1)-cut.  We
-#        then construct a digraph D from all of the saturated edges of
-#        the associated maximal flow, using their flow directions.
-#        (Both directions may occur, giving rise to cycles of length
-#        2.)  For each edge which is not saturated by the flow, we add
-#        a cycle of length 2.  We then form the DAG of strong
-#        components of D, and its associated poset.  The transitively
-#        closed subsets determine all cuts, which must be level
-#        transformations.  This generator yields all level
-#        transformations of the form (x,X) where neither X nor
-#        its complement has size 1.
+        # For each generator x we find a maximal (x,x^-1)-flow.  We
+        # then construct the residual graph for the flow, which is the
+        # diagraph D with a directed edge from y to z if there is
+        # remaining capacity in that direction along the edge.
+        # (Both directions may occur, giving rise to cycles of length 2.)
+        # For each edge which is not saturated by the flow, we add a
+        # cycle of length 2.
+        #
+        # We then form the condensation DAG C of strong components of
+        # D. The transitively closed subsets of D determine all cuts,
+        # which must be level transformations.  This generator yields
+        # all level transformations of the form (x, X) where neither X
+        # nor its complement has size 1.
 
-        reducers, levels = self.find_reducers()
-        if reducers:
-            raise ValueError('Presentation is not minimal.')
-        for generator, cut in levels:
-            edges = set()
-            for weight, path in cut['paths']:
-                for vertex, edge in path:
-                    edges.add((vertex, edge(vertex)))
-            for edge in cut['unsaturated']:
-                x, y = edge
-                edges.add((x, y))
-                edges.add((y, x))
-            D = Digraph(edges)
-            P = Poset(D.component_DAG())
-            for subset in P.closed_subsets():
-                if 1 < len(subset) < len(P) - 1:
-                    yield generator, frozenset.union(*subset)
+        Wh = self.whitehead_graph()
+        for x in self.generators:
+            valence = Wh.degree(x, weight='multiplicity')
+            flow_val, flow = nx.maximum_flow(Wh, x, -x, capacity='multiplicity')
+            if flow_val < valence:
+                raise ValueError('Presentation is not minimal.')
+
+            D = nx.DiGraph()
+            for u, v, m in Wh.edges(data='multiplicity'):
+                f = flow[u][v]
+                if f < m:
+                    D.add_edge(u, v)
+
+                f = flow[v][u]
+                if f < m:
+                    D.add_edge(v, u)
+
+            C = nx.condensation(D)
+            members = C.nodes('members')
+            for B in nonempty_transitively_closed_subets(C):
+                closure = set.union(*[members[b] for b in B])
+                if 1 < len(closure) < Wh.number_of_nodes() - 1:
+                    yield x, closure
 
     def level_orbit(self, verbose=False):
         """

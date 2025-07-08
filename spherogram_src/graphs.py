@@ -666,6 +666,16 @@ class ReducedGraph(Graph):
                             pairs.append(pair)
         return pairs
 
+    def to_networkx(self):
+        """
+        Return a copy of the self in the networkx format
+        """
+        G = nx.Graph()
+        G.add_nodes_from(self.vertices)
+        for edge in self.edges:
+            G.add_edge(edge[0], edge[1], multiplicity=edge.multiplicity)
+        return G
+
 
 class FatGraph(Graph):
     """
