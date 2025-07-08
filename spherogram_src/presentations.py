@@ -396,7 +396,7 @@ class Presentation:
         >>> print(S)
         generators: [A, B, C, D]
         relators: [AAAAABBAACCC, AAABBBCCCCC, AADCCD]
-        >>> nx.check_planarity(S.whitehead_graph())
+        >>> nx.check_planarity(S.whitehead_graph())[0]
         True
         >>> P = Presentation(['xyyxyyxy', 'xyy'])
         >>> P.shorten()
