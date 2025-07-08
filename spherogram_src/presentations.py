@@ -390,13 +390,13 @@ class Presentation:
         length is reached.  Return the resulting minimal presentation.
 
         >>> P = Presentation(['AAAAABBAACCC', 'AAABBBCCCCC', 'AABDCCBD'])
-        >>> nx.is_planar(P.whitehead_graph())
+        >>> nx.check_planarity(P.whitehead_graph())[0]
         False
         >>> S = P.shorten()
         >>> print(S)
         generators: [A, B, C, D]
         relators: [AAAAABBAACCC, AAABBBCCCCC, AADCCD]
-        >>> nx.is_planar(S.whitehead_graph())
+        >>> nx.check_planarity(S.whitehead_graph())
         True
         >>> P = Presentation(['xyyxyyxy', 'xyy'])
         >>> P.shorten()

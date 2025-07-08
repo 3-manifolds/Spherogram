@@ -22,7 +22,7 @@ __all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph',
-           'Link', 'MultiEdge', 'Poset', 'Presentation',
+           'Link', 'MultiEdge', 'Presentation',
            'Crossing', 'Strand', 'WhiteheadMove',
            'Word', 'random_link',
            # from spherogram.links.tangles:
