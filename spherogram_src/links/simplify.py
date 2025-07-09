@@ -24,7 +24,7 @@ class DualGraphOfFaces(graphs.Graph):
     complementary regions (faces) of D and whose edges are dual to the
     edges of D.
 
-    This is class is no longer used in the simplfy code, but is called
+    This is class is no longer used in the simplify code, but is called
     by Link.dual_graph.  It is the only place in this file that
     graph.Graph is used.
     """
