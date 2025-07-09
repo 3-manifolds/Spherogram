@@ -47,12 +47,11 @@ class DualGraphOfFaces(graphs.Graph):
 
     def two_cycles(self):
         """
-        Find all two cycles and yield them as a pair of CrossingStrands which
-        are dual to the edges in the cycle.
+        Find all two cycles and yield them as a pair of
+        CrossingStrands which are dual to the edges in the cycle.
 
-        The crossing strands are
-        oriented consistently with respect to one of the faces which a
-        vertex for the cycle.
+        The crossing strands are oriented consistently with respect to
+        one of the faces which a vertex for the cycle.
         """
         for face0 in self.vertices:
             for dual_edge0 in self.incident(face0):
@@ -298,19 +297,41 @@ def dual_graph_as_nx(link, graph_class=nx.Graph):
                        interface={face.label: edge, neighbor.label: opp_edge})
 
     G.edge_to_face = to_face_index
+    G.faces = faces
     return G
 
 
-def deconnect_sum(link):
+def disjoint_deconnect_sum_once(link):
     """
     Warning: Destroys the original link.
+
+    If the diagram is an obvious connected sum, return a decomposition
+    of the link into nontrivial summands.  A summand may itself still
+    be a connected sum.
+
+    This is just a helper function for deconnect_sum.
+
+    Here is a connect sum of 3 trefoils, but we'll only pull off 1 at this
+    step.
+
+    >>> K = Link('DT: iaibiahcgefd.001010111')
+    >>> sorted(len(P) for P in disjoint_deconnect_sum_once(K))
+    [3, 6]
     """
     G = dual_graph_as_nx(link, nx.MultiGraph)
+    faces_used = set()
     for path in simple_cycles(G, 2):
         if len(path) == 2:
             face0, face1 = path
+
+            # Ensure all cycles we use are disjoint.
+            if face0 in faces_used or face1 in faces_used:
+                continue
+            else:
+                faces_used.update(path)
+
+            # Identify where we need to change things.
             edges = G[face0][face1]
-            assert len(edges) == 2
             cs0 = edges[0]['interface'][face0]
             cs1 = edges[1]['interface'][face0]
 
@@ -323,6 +344,49 @@ def deconnect_sum(link):
             B[b] = C[c]
     link._build_components()
     return link.split_link_diagram(destroy_original=True)
+
+
+def deconnect_sum(link):
+    """
+    Warning: Destroys the original link.
+
+    >>> L = Link('K5a1')
+    >>> L = L.connected_sum(Link('K6a2'))
+    >>> L = L.connected_sum(Link('K6a3'))
+    >>> L = L.connected_sum(Link('K7a1'))
+    >>> len(L)
+    24
+    >>> sorted(len(P) for P in deconnect_sum(L))
+    [5, 6, 6, 7]
+
+    Here's 3 trefoils:
+    >>> K = Link('DT: iaibiahcgefd.001010111')
+    >>> sorted(len(P) for P in deconnect_sum(K))
+    [3, 3, 3]
+
+    """
+
+    # A diagrammatic connected sum corresponds to a path in the dual
+    # graph of length 2. The tricky case is when there are several
+    # such paths, as they may overlap or even cross.  We deal with
+    # this by doing several rounds of cutting along families of
+    # disjoint paths.
+
+    active = [link]
+    finished = []
+
+    while active:
+        work_remains = []
+        for A in active:
+            pieces = disjoint_deconnect_sum_once(A)
+            if len(pieces) == 1:
+                finished += pieces
+            else:
+                work_remains += pieces
+
+        active = work_remains
+
+    return finished
 
 
 def dual_edges(overstrand, graph):
