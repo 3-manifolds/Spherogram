@@ -985,11 +985,11 @@ class Link:
 
     def faces(self):
         """
-        The faces are the complementary regions of the link diagram. Each face
-        is given as a list of corners of crossings as one goes around
-        *clockwise*.  These corners are recorded as CrossingStrands,
-        where CrossingStrand(c, j) denotes the corner of the face
-        abutting crossing c between strand j and j + 1.
+        The faces are the complementary regions of the link diagram.
+        Each face is given as a list of corners of crossings as one
+        goes around *clockwise*.  These corners are recorded as
+        CrossingStrands, where CrossingStrand(c, j) denotes the corner
+        of the face abutting crossing c between strand j and j + 1.
 
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.

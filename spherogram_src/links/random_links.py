@@ -9,7 +9,6 @@ Details to hopefully appear in some paper or other.  I wouldn't hold
 your breath, though.
 """
 import random
-from .. import graphs
 from . import links, twist
 from spherogram.planarmap import random_map as raw_random_map
 

@@ -3,7 +3,7 @@ Switching crossings to make each twist region consistent.
 """
 
 from .links import CrossingStrand
-from ..graphs import CyclicList
+from ..presentations import CyclicList
 
 
 class TwistRegionCap:

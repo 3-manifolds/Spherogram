@@ -34,7 +34,8 @@ known to be.  The issue is that [DP] creates a very special kind of ILP
 reduced to using a generic ILP solver.
 """
 from ..sage_helper import _within_sage
-from ..graphs import CyclicList, Digraph
+from ..graphs import Digraph
+from ..presentations import CyclicList
 from .links import CrossingStrand, Crossing, Strand, Link
 from .orthogonal import basic_topological_numbering
 from .tangles import join_strands, RationalTangle

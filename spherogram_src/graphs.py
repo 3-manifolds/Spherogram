@@ -34,8 +34,13 @@ for x, y in G.edges:
 
 where x and y will be the two endpoints of the edge (ordered as
 tail, head in the case of directed edges).
+
+IMPORTANT NOTE: New code should use the standard nextworkx module
+rather that the classes here.
+
 """
 from collections import deque
+from .presentations import CyclicList
 
 try:
     import sage.all
@@ -51,20 +56,6 @@ if not _within_sage:
     except ValueError:  # Allow importing from source directory
         pass
 
-
-class CyclicList(list):
-    def __getitem__(self, n):
-        if isinstance(n, int):
-            return list.__getitem__(self, n % len(self))
-        elif isinstance(n, slice):
-            # Python3 only: in python2, __getslice__ gets called instead.
-            return list.__getitem__(self, n)
-
-    def succ(self, x):
-        return self[(self.index(x) + 1) % len(self)]
-
-    def pred(self, x):
-        return self[(self.index(x) - 1) % len(self)]
 
 
 class BaseEdge(tuple):
@@ -394,112 +385,6 @@ class Graph:
         """
         return len(self.components(deleted_vertices)) <= 1
 
-    def one_min_cut(self, source, sink, capacity=None):
-        """
-        Find one minimal cut which separates source from sink, using
-        the classical Ford-Fulkerson algorithm.
-
-        Returns a dict containing the set of vertices on the source
-        side of the cut, the set of edges that cross the cut, a
-        maximal family of weighted edge-disjoint paths from source to
-        sink, the set of edges with non-zero residual, and the
-        associated maximum flow.
-
-        The edge capacities are supplied as a dictionary, with
-        edges as keys and the capacity of the edge as value.  If
-        no capacity dict is supplied, every edge is given capacity
-        1.  Edges omitted from the capacity dict have infinite
-        capacity.
-
-        When called as a Graph method, the flow is relative to the
-        implicit orientation of an undirected edge e from e[0] to
-        e[1].  (This is determined when the edge is first constructed
-        from a pair of vertices.) A negative flow value means the flow
-        direction is from e[1] to e[0].  When called as a DiGraph
-        method, paths are directed and flows go in the direction of
-        the directed edge.
-
-        >>> caps = {('s',0):3,('s',1):2,(0,1):2,(0,'t'):4,(1,'t'):1}
-        >>> G = Graph(caps.keys())
-        >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
-        >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges, key=str)]
-        [-1, 4, 1, 3, 2]
-        >>> G = Digraph(caps.keys())
-        >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
-        >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges, key=str)]
-        [0, 3, 1, 3, 1]
-        """
-        if sink == source:
-            return None
-        if capacity is None:
-            residual = dict.fromkeys(self.edges, 1)
-        else:
-            residual = dict.copy(capacity)
-            for e in self.edges:
-                if e not in residual:
-                    residual[e] = float('inf')
-        full_edges = {e for e in self.edges if residual[e] == 0}
-        children = {}
-        for vertex in self.vertices:
-            children[vertex] = set()
-        cut_set = set()
-        path_list = []
-        while True:
-            # Try to find a new path from source to sink
-            parents, cut_set, reached_sink = {}, {source}, False
-            generator = self.breadth_first_edges(
-                source=source,
-                forbidden=full_edges,
-                for_flow=True)
-            for parent, vertex, child in generator:
-                parents[child] = (parent, vertex)
-                cut_set.add(child(vertex))
-                if child(vertex) == sink:
-                    reached_sink = True
-                    break
-            # If we did not get to the sink, we visited every vertex
-            # reachable from the source, thereby providing the cut
-            # set.
-            if not reached_sink:
-                break
-            # If we got to the sink, do the bookkeeping and continue.
-            path = deque()
-            flow = residual[child]
-            while True:
-                path.appendleft((vertex, child))
-                children[vertex].add(child)
-                if vertex == source:
-                    break
-                child = parent
-                parent, vertex = parents[child]
-                flow = min(flow, residual[child])
-            for vertex, edge in path:
-                residual[edge] -= flow
-                if residual[edge] == 0:
-                    full_edges.add(edge)
-            path_list.append((flow, path))
-        # Find the cut edges.
-        cut_edges = set()
-        for vertex in cut_set:
-            cut_edges |= {edge for edge in self.edges
-                             if vertex in edge
-                             and edge(vertex) not in cut_set}
-        # Find the unsaturated edges.
-        unsaturated = [e for e in self.edges if residual[e] > 0]
-        flow_dict = dict.fromkeys(self.edges, 0)
-        # Compute the flow.
-        for flow, edges in path_list:
-            for vertex, edge in edges:
-                if vertex == edge[0]:
-                    flow_dict[edge] += flow
-                else:
-                    flow_dict[edge] -= flow
-        return {'set': cut_set, 'edges': cut_edges, 'paths': path_list,
-                'residuals': residual, 'unsaturated': unsaturated,
-                'flow': flow_dict}
-
     def reduced(self):
         R = ReducedGraph()
         for e in self.edges:
@@ -551,9 +436,9 @@ class Graph:
 
     def to_networkx(self):
         """
-        Return a copy of the graph in the networkx format
+        Return a copy of the graph in the networkx format.
         """
-        G = nx.Graph()
+        G = nx.MultiGraph()
         G.add_nodes_from(self.vertices)
         G.add_edges_from(self.edges)
         return G
@@ -624,12 +509,6 @@ class ReducedGraph(Graph):
     def embedding(self):
         if self.is_planar():
             return self._embedding
-
-    def one_min_cut(self, source, sink):
-        capacity = {e: e.multiplicity for e in self.edges}
-        cut = Graph.one_min_cut(self, source, sink, capacity)
-        cut['size'] = sum(e.multiplicity for e in cut['edges'])
-        return cut
 
     def cut_pairs(self):
         """
@@ -940,7 +819,7 @@ class StrongConnector:
                 edges.add((dag_tail, dag_head))
         return Digraph(edges, self.components)
 
-    
+
 if _within_sage:
     def _to_sage(self, loops=True, multiedges=True):
         S = sage.graphs.graph.Graph(loops=loops, multiedges=multiedges)

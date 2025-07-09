@@ -3,6 +3,21 @@ import operator
 import networkx as nx
 
 
+class CyclicList(list):
+    def __getitem__(self, n):
+        if isinstance(n, int):
+            return list.__getitem__(self, n % len(self))
+        elif isinstance(n, slice):
+            # Python3 only: in python2, __getslice__ gets called instead.
+            return list.__getitem__(self, n)
+
+    def succ(self, x):
+        return self[(self.index(x) + 1) % len(self)]
+
+    def pred(self, x):
+        return self[(self.index(x) - 1) % len(self)]
+
+
 def all_descendants(direct_acyclic_graph, nodes):
     ans = set(nodes)
     for n in nodes:

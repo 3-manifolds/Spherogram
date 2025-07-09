@@ -17,6 +17,52 @@ import networkx as nx
 import collections
 
 
+class DualGraphOfFaces(graphs.Graph):
+    """
+    The dual graph to a link diagram D, whose vertices correspond to
+    complementary regions (faces) of D and whose edges are dual to the
+    edges of D.
+
+    This is class is no longer used in the simplfy code, but is called
+    by Link.dual_graph.  It is the only place in this file that
+    graph.Graph is used.
+    """
+    def __init__(self, link):
+        graphs.Graph.__init__(self)
+        faces = [Face(face, i) for i, face in enumerate(link.faces())]
+        self.edge_to_face = to_face = {}
+        for face in faces:
+            for edge in face:
+                to_face[edge] = face
+
+        for edge, face in to_face.items():
+            neighbor = to_face[edge.opposite()]
+            if face.label < neighbor.label:
+                dual_edge = self.add_edge(face, neighbor)
+                dual_edge.interface = (edge, edge.opposite())
+                dual_edge.label = len(self.edges) - 1
+
+        # assert self.is_planar()
+
+    def two_cycles(self):
+        """
+        Find all two cycles and yield them as a pair of CrossingStrands which
+        are dual to the edges in the cycle.
+
+        The crossing strands are
+        oriented consistently with respect to one of the faces which a
+        vertex for the cycle.
+        """
+        for face0 in self.vertices:
+            for dual_edge0 in self.incident(face0):
+                face1 = dual_edge0(face0)
+                if face0.label < face1.label:
+                    for dual_edge1 in self.incident(face1):
+                        if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
+                            yield (common_element(face0, dual_edge0.interface),
+                                   common_element(face0, dual_edge1.interface))
+
+
 def remove_crossings(link, eliminate):
     """
     Deletes the given crossings. Assumes that they have already been
@@ -219,49 +265,7 @@ class Face(tuple):
         return "<F%d>" % self.label
 
 
-class DualGraphOfFaces(graphs.Graph):
-    """
-    The dual graph to a link diagram D, whose vertices correspond to
-    complementary regions (faces) of D and whose edges are dual to the
-    edges of D.
-    """
-    def __init__(self, link):
-        graphs.Graph.__init__(self)
-        faces = [Face(face, i) for i, face in enumerate(link.faces())]
-        self.edge_to_face = to_face = {}
-        for face in faces:
-            for edge in face:
-                to_face[edge] = face
-
-        for edge, face in to_face.items():
-            neighbor = to_face[edge.opposite()]
-            if face.label < neighbor.label:
-                dual_edge = self.add_edge(face, neighbor)
-                dual_edge.interface = (edge, edge.opposite())
-                dual_edge.label = len(self.edges) - 1
-
-        # assert self.is_planar()
-
-    def two_cycles(self):
-        """
-        Find all two cycles and yield them as a pair of CrossingStrands which
-        are dual to the edges in the cycle.
-
-        The crossing strands are
-        oriented consistently with respect to one of the faces which a
-        vertex for the cycle.
-        """
-        for face0 in self.vertices:
-            for dual_edge0 in self.incident(face0):
-                face1 = dual_edge0(face0)
-                if face0.label < face1.label:
-                    for dual_edge1 in self.incident(face1):
-                        if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
-                            yield (common_element(face0, dual_edge0.interface),
-                                   common_element(face0, dual_edge1.interface))
-
-
-def dual_graph_as_nx(link):
+def dual_graph_as_nx(link, graph_class=nx.Graph):
     corners = OrderedSet([CrossingStrand(c, i)
                           for c in link.crossings for i in range(4)])
     faces = []
@@ -281,7 +285,7 @@ def dual_graph_as_nx(link):
                 corners.remove(next)
                 face.append(next)
 
-    G = nx.Graph()
+    G = graph_class()
     to_face = {edge: faces[f] for edge, f in to_face_index.items()}
 
     for edge, face in to_face.items():
@@ -289,6 +293,7 @@ def dual_graph_as_nx(link):
         neighbor = to_face[opp_edge]
         if face.label < neighbor.label:
             G.add_edge(face.label, neighbor.label,
+                       label=G.number_of_edges(),
                        interface={face.label: edge, neighbor.label: opp_edge})
 
     G.edge_to_face = to_face_index
@@ -299,13 +304,22 @@ def deconnect_sum(link):
     """
     Warning: Destroys the original link.
     """
-    for cs0, cs1 in DualGraphOfFaces(link).two_cycles():
-        A, a = cs0.opposite()
-        B, b = cs0
-        C, c = cs1.opposite()
-        D, d = cs1
-        A[a] = D[d]
-        B[b] = C[c]
+    G = dual_graph_as_nx(link, nx.MultiGraph)
+    for path in nx.simple_cycles(G, 2):
+        if len(path) == 2:
+            face0, face1 = path
+            edges = G[face0][face1]
+            assert len(edges) == 2
+            cs0 = edges[0]['interface'][face0]
+            cs1 = edges[1]['interface'][face0]
+
+            # Now cut and reglue.
+            A, a = cs0.opposite()
+            B, b = cs0
+            C, c = cs1.opposite()
+            D, d = cs1
+            A[a] = D[d]
+            B[b] = C[c]
     link._build_components()
     return link.split_link_diagram(destroy_original=True)
 
