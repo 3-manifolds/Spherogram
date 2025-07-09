@@ -14,6 +14,7 @@ from .ordered_set import OrderedSet
 from .. import graphs
 import random
 import networkx as nx
+from .nx_simple_cycles import simple_cycles
 import collections
 
 
@@ -305,7 +306,7 @@ def deconnect_sum(link):
     Warning: Destroys the original link.
     """
     G = dual_graph_as_nx(link, nx.MultiGraph)
-    for path in nx.simple_cycles(G, 2):
+    for path in simple_cycles(G, 2):
         if len(path) == 2:
             face0, face1 = path
             edges = G[face0][face1]
