@@ -756,6 +756,15 @@ class Digraph(Graph):
         """
         return StrongConnector(self).DAG()
 
+    def to_networkx(self):
+        """
+        Return a copy of the graph in the networkx format.
+        """
+        G = nx.MultiDiGraph()
+        G.add_nodes_from(self.vertices)
+        G.add_edges_from(self.edges)
+        return G
+
 
 class StrongConnector:
     """

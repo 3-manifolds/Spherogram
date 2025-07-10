@@ -33,11 +33,10 @@ known to be.  The issue is that [DP] creates a very special kind of ILP
 (a network flow) which can be solved in polynomial time, but below we're
 reduced to using a generic ILP solver.
 """
+import networkx as nx
 from ..sage_helper import _within_sage
-from ..graphs import Digraph
 from ..presentations import CyclicList
 from .links import CrossingStrand, Crossing, Strand, Link
-from .orthogonal import basic_topological_numbering
 from .tangles import join_strands, RationalTangle
 if _within_sage:
     from sage.numerical.mip import MixedIntegerLinearProgram
@@ -255,10 +254,10 @@ class MorseLinkDiagram:
         sage: L = Link('K4a1')
         sage: D = MorseLinkDiagram(L)
         sage: G = D.digraph()
-        sage: len(G.vertices)
+        sage: G.number_of_nodes()
         8
         """
-        G = Digraph()
+        G = nx.MultiDiGraph()
         kinds = self.orientations
         for cs in self.bends:
             c, d = cs.crossing, cs.opposite().crossing
@@ -279,7 +278,8 @@ class MorseLinkDiagram:
         Assigns a height to each min/max and crossing of the diagram.
         """
         D = self.digraph()
-        self.heights = basic_topological_numbering(D)
+        gens = nx.topological_generations(D)
+        self.heights = {v:i for i, g in enumerate(gens) for v in g}
 
     def upward_snakes(self):
         """
@@ -311,7 +311,7 @@ class MorseLinkDiagram:
         Give the snakes horizontal positions.
         """
         snakes, to_snake = self.snakes, self.strand_to_snake
-        S = Digraph(singles=snakes)
+        S = nx.MultiDiGraph(singles=snakes)
         for c in self.link.crossings:
             a, b = self.strands_below(c)
             S.add_edge(to_snake[a], to_snake[b])
@@ -320,7 +320,8 @@ class MorseLinkDiagram:
             a = b.opposite()
             S.add_edge(to_snake[a], to_snake[b])
 
-        snake_pos = basic_topological_numbering(S)
+        gens = nx.topological_generations(S)
+        snake_pos = {v:i for i, g in enumerate(gens) for v in g}
         self.S, self.snake_pos = S, snake_pos
         heights = self.heights
         max_height = max(heights.values())
