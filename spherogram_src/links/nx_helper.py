@@ -1,4 +1,24 @@
 """
+To support older versions of SageMath, we backport a few newer methods
+of the NexworkX package.
+
+The last feature we need appeared in NetworkX 3.1 from March 2023.
+
+The current functions are used if one's NetworkX is new enough, see
+the end of the file.
+"""
+
+from collections import defaultdict
+from itertools import combinations, product
+import networkx as nx
+from packaging.version import Version
+
+__all__ = [
+    "simple_cycles",
+    "topological_generations",
+]
+
+"""
 ========================
 Cycle finding algorithms
 ========================
@@ -9,16 +29,8 @@ of NetworkX.  It works at least down to NetworkX 2.6.
 The needed feature appeared in NetworkX 3.1 from March 2023.
 """
 
-from collections import defaultdict
-from itertools import combinations, product
-import networkx as nx
 
-__all__ = [
-    "simple_cycles",
-]
-
-
-def simple_cycles(G, length_bound=None):
+def simple_cycles_backport(G, length_bound=None):
     """Find simple cycles (elementary circuits) of a graph.
 
     A "simple cycle", or "elementary circuit", is a closed path where
@@ -64,7 +76,7 @@ def simple_cycles(G, length_bound=None):
     Examples
     --------
     >>> G = nx.DiGraph([(0, 0), (0, 1), (0, 2), (1, 2), (2, 0), (2, 1), (2, 2)])
-    >>> sorted(nx.simple_cycles(G))
+    >>> sorted(simple_cycles_backport(G))
     [[0], [0, 1, 2], [0, 2], [1, 2], [2]]
 
     To filter the cycles so that they don't include certain nodes or edges,
@@ -73,7 +85,7 @@ def simple_cycles(G, length_bound=None):
 
     >>> H = G.copy()
     >>> H.remove_edges_from(nx.selfloop_edges(G))
-    >>> sorted(nx.simple_cycles(H))
+    >>> sorted(simple_cycles_backport(H))
     [[0, 1, 2], [0, 2], [1, 2]]
 
     Notes
@@ -324,6 +336,109 @@ def _johnson_cycle_search(G, path):
             else:
                 for w in G[v]:
                     B[w].add(v)
+
+
+"""
+========================
+Topological Generations
+========================
+
+This code copied out of NetworkX 3.4.2 as a backport for older versions
+of NetworkX.
+
+The needed feature appeared in NetworkX 2.6 from July 2021.
+"""
+
+def topological_generations_backport(G):
+    """Stratifies a DAG into generations.
+
+    A topological generation is node collection in which ancestors of a node in each
+    generation are guaranteed to be in a previous generation, and any descendants of
+    a node are guaranteed to be in a following generation. Nodes are guaranteed to
+    be in the earliest possible generation that they can belong to.
+
+    Parameters
+    ----------
+    G : NetworkX digraph
+        A directed acyclic graph (DAG)
+
+    Yields
+    ------
+    sets of nodes
+        Yields sets of nodes representing each generation.
+
+    Raises
+    ------
+    NetworkXError
+        Generations are defined for directed graphs only. If the graph
+        `G` is undirected, a :exc:`NetworkXError` is raised.
+
+    NetworkXUnfeasible
+        If `G` is not a directed acyclic graph (DAG) no topological generations
+        exist and a :exc:`NetworkXUnfeasible` exception is raised.  This can also
+        be raised if `G` is changed while the returned iterator is being processed
+
+    RuntimeError
+        If `G` is changed while the returned iterator is being processed.
+
+    Examples
+    --------
+    >>> DG = nx.DiGraph([(2, 1), (3, 1)])
+    >>> [sorted(generation) for generation in topological_generations_backport(DG)]
+    [[2, 3], [1]]
+
+    Notes
+    -----
+    The generation in which a node resides can also be determined by taking the
+    max-path-distance from the node to the farthest leaf node. That value can
+    be obtained with this function using `enumerate(topological_generations(G))`.
+
+    See also
+    --------
+    topological_sort
+    """
+    if not G.is_directed():
+        raise nx.NetworkXError("Topological sort not defined on undirected graphs.")
+
+    multigraph = G.is_multigraph()
+    indegree_map = {v: d for v, d in G.in_degree() if d > 0}
+    zero_indegree = [v for v, d in G.in_degree() if d == 0]
+
+    while zero_indegree:
+        this_generation = zero_indegree
+        zero_indegree = []
+        for node in this_generation:
+            if node not in G:
+                raise RuntimeError("Graph changed during iteration")
+            for child in G.neighbors(node):
+                try:
+                    indegree_map[child] -= len(G[node][child]) if multigraph else 1
+                except KeyError as err:
+                    raise RuntimeError("Graph changed during iteration") from err
+                if indegree_map[child] == 0:
+                    zero_indegree.append(child)
+                    del indegree_map[child]
+        yield this_generation
+
+    if indegree_map:
+        raise nx.NetworkXUnfeasible(
+            "Graph contains a cycle or graph changed during iteration"
+        )
+
+
+
+# Use the current version of the code if available
+
+
+if Version(nx.__version__) >= Version('3.1'):
+    simple_cycles = nx.simple_cycles
+else:
+    simple_cycles = simple_cycles_backport
+
+if Version(nx.__version__) >= Version('2.6'):
+    topological_generations = nx.topological_generations
+else:
+    topological_generations = topological_generations_backport
 
 
 if __name__ == '__main__':

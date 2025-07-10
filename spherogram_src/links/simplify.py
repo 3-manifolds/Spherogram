@@ -14,7 +14,7 @@ from .ordered_set import OrderedSet
 from .. import graphs
 import random
 import networkx as nx
-from .nx_simple_cycles import simple_cycles
+from .nx_helper import simple_cycles
 import collections
 
 

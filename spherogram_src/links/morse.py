@@ -34,6 +34,7 @@ known to be.  The issue is that [DP] creates a very special kind of ILP
 reduced to using a generic ILP solver.
 """
 import networkx as nx
+from .nx_helper import topological_generations
 from ..sage_helper import _within_sage
 from ..presentations import CyclicList
 from .links import CrossingStrand, Crossing, Strand, Link
@@ -278,7 +279,7 @@ class MorseLinkDiagram:
         Assigns a height to each min/max and crossing of the diagram.
         """
         D = self.digraph()
-        gens = nx.topological_generations(D)
+        gens = topological_generations(D)
         self.heights = {v:i for i, g in enumerate(gens) for v in g}
 
     def upward_snakes(self):
@@ -320,7 +321,7 @@ class MorseLinkDiagram:
             a = b.opposite()
             S.add_edge(to_snake[a], to_snake[b])
 
-        gens = nx.topological_generations(S)
+        gens = topological_generations(S)
         snake_pos = {v:i for i, g in enumerate(gens) for v in g}
         self.S, self.snake_pos = S, snake_pos
         heights = self.heights

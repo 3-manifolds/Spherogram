@@ -14,19 +14,8 @@ Implements the upper bounds on bridge number from:
 
 from .simplify import dual_graph_as_nx
 from .links_base import CrossingStrand, Link
+from .nx_helper import simple_cycles
 import networkx as nx
-from packaging.version import Version
-
-
-# Finding simple_cycles in *undirected* graphs was only added in
-# NetworkX 3.1, circa March 2023.  For earlier versions of NetworkX, we
-# use the local backport.
-
-if Version(nx.__version__) >= Version('3.1'):
-    simple_cycles = nx.simple_cycles
-else:
-    from .nx_simple_cycles import simple_cycles
-
 
 def number_strands(link):
     """
