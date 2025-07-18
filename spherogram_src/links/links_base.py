@@ -591,7 +591,7 @@ class Link:
                 else:
                     gluings[x] = [(c, i)]
 
-        if {len(v) for v in gluings.values()} != {2}:
+        if any(len(v) != 2 for v in gluings.values()):
             raise ValueError("PD code isn't consistent")
 
         component_starts = self._component_starts_from_PD(
@@ -602,7 +602,7 @@ class Link:
             crossings[c][i] = crossings[d][j]
 
         component_starts = [crossings[c].crossing_strands()[i]
-                            for (c, i) in component_starts]
+                            for c, i in component_starts]
         return crossings, component_starts
 
     def _component_starts_from_PD(self, code, labels, gluings):
@@ -755,7 +755,7 @@ class Link:
                 assert C.directions == {(0, 2), (1, 3)}
             else:
                 assert False
-            for (a, b) in C.directions:
+            for a, b in C.directions:
                 D, d = C.adjacent[b]
                 assert d in {x for x, y in D.directions}
                 D, d = C.adjacent[a]
