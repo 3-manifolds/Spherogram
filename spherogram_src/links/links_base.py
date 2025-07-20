@@ -1,7 +1,3 @@
-import copy
-import re
-import snappy_manifolds
-from collections import OrderedDict, namedtuple
 """
 Links are made from Crossings.  The general model is that of
 a PD diagram as described in
@@ -11,6 +7,13 @@ a PD diagram as described in
 See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
+
+import copy
+import re
+import snappy_manifolds
+import networkx as nx
+import random
+from collections import OrderedDict, namedtuple, defaultdict
 from .. import graphs
 from .ordered_set import OrderedSet
 
@@ -368,6 +371,40 @@ def enumerate_lists(lists, n=0, filter=lambda x: True):
     for L in lists:
         ans.append([n + i for i, x in enumerate(L) if filter(n + i)])
         n += len(L)
+    return ans
+
+
+def link_hash(link):
+    """
+    >>> L = Link('K4a1')
+    >>> link_hash(L)
+    '30e28b56cad01a233ddf0894e9b7eaa8'
+    """
+    from .simplify import dual_graph_as_nx
+    dual = dual_graph_as_nx(link)
+    return nx.weisfeiler_lehman_graph_hash(dual)
+
+
+def order_diagrams(diagrams):
+    """
+    Sort diagrams by crossing number with diagrams of the same
+    crossing number shuffled randomly.
+    """
+    by_cross_num = defaultdict(list)
+    for D in diagrams:
+        by_cross_num[len(D.crossings)].append(D)
+
+    for some_diags in by_cross_num.values():
+        random.shuffle(some_diags)
+
+    cross_nums = sorted(by_cross_num.keys())
+
+    ans = []
+    while len(ans) < len(diagrams):
+        for c in cross_nums:
+            if by_cross_num[c]:
+                ans.append(by_cross_num[c].pop())
+
     return ans
 
 
@@ -1528,6 +1565,56 @@ class Link:
         """
         from . import simplify
         return simplify.over_or_under_strands(self, 'over')
+
+    def many_diagrams(self, target=10, tries=100, method='backtrack'):
+        """
+        Try to generate ``target`` distinct diagrams of the given link,
+        each of which has been simplified with ``mode='global'``.
+
+        The two methods are:
+
+        * ``backtrack``: Does 100 random Reidemeister I, II, and III
+          moves and then simplifies.
+
+        * ``exterior``: Takes the exterior of the link and then applys
+          SnapPy's ``exterior_to_link`` to that triangulation to get a
+          new diagram.
+
+        Both methods involve much randomziation, and the ``tries``
+        argument is the maximum number of link diagrams considered in
+        hopes of finding ``target`` distinct ones.
+
+        The diagrams returned are moreover required to have
+        non-isomorphic :meth:`dual graphs <Link.dual_graph>`.  A copy
+        of the initial diagram is always included in the links
+        returned.
+
+        >>> K = Link('K8n1')
+        >>> len(K.many_diagrams(target=2))
+        2
+        """
+        if method not in ['backtrack', 'exterior']:
+            raise ValueError(f"Method {method} not in {'backtrack', 'exterior'}")
+
+        L = self.copy()
+        ans = {link_hash(L):L}
+        for i in range(tries):
+            if len(ans) >= target:
+                break
+
+            if method == 'backtrack':
+                L = self.copy()
+                L.backtrack(100)
+            else:
+                E = self.exterior()
+                L = E.exterior_to_link()
+            L.simplify('global')
+            its_hash = link_hash(L)
+            if its_hash not in ans:
+                ans[its_hash] = L
+
+        return order_diagrams(ans.values())
+
 
 # ---- building the link exterior if SnapPy is present --------
 

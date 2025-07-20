@@ -31,6 +31,7 @@ modules = [spherogram.codecs.DT,
            spherogram.links.morse,
            spherogram.links.seifert]
 
+
 # Apply the monkey-patches that snappy applies when it is imported.
 if test_helper._have_snappy:
     import snappy
