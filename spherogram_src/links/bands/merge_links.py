@@ -5,10 +5,7 @@ class, modulo mirror image.
 
 """
 
-import snappy
 import collections
-from snappy import Manifold
-
 
 def pos_tets(manifold):
     return manifold.solution_type() == 'all tetrahedra positively oriented'
@@ -32,14 +29,19 @@ def are_isometric_as_links(A, B):
 
 def link_isotopy_classes(links_with_manifolds):
     """
-    >>> mflds = [Manifold('L13n5325'), Manifold('L13n5834')]
-    >>> links_w_mflds = [(M.link(), M) for M in mflds]
-    >>> len(link_isotopy_classes(links_w_mflds))  # These are actually duplicates!
+    The first are a duplicate pair that are erroneously listed as
+    separate in HTLinkExteriors.
+
+    >>> import snappy                                      #doctest: +SNAPPY
+    >>> A = snappy.Manifold('L13n5325')                    #doctest: +SNAPPY
+    >>> B = snappy.Manifold('L13n5834')                    #doctest: +SNAPPY
+    >>> links_w_mflds = [(M.link(), M) for M in [A, B]]    #doctest: +SNAPPY
+    >>> len(link_isotopy_classes(links_w_mflds))           #doctest: +SNAPPY
     1
-    >>> mflds = snappy.HTLinkExteriors[:3]
-    >>> links_w_mflds = [(M.link(), M) for M in mflds]
-    >>> links = link_isotopy_classes(links_w_mflds)
-    >>> [pos_tets(M) for L, M in links]
+    >>> mflds = snappy.HTLinkExteriors[:3]                 #doctest: +SNAPPY
+    >>> links_w_mflds = [(M.link(), M) for M in mflds]     #doctest: +SNAPPY
+    >>> links = link_isotopy_classes(links_w_mflds)        #doctest: +SNAPPY
+    >>> [pos_tets(M) for L, M in links]                    #doctest: +SNAPPY
     [True, True, False]
     """
     if len(links_with_manifolds) == 0:
@@ -65,7 +67,7 @@ def coarse_link_isotopy_classes(links_with_manifolds):
 
     def crossings(link_w_mfld):
         return len(link_w_mfld[0].crossings)
-    
+
     ans = [min(pairs, key=crossings) for pairs in data.values()]
     ans.sort(key=crossings)
     return ans
