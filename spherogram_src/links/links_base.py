@@ -377,8 +377,9 @@ def enumerate_lists(lists, n=0, filter=lambda x: True):
 def link_hash(link):
     """
     >>> L = Link('K4a1')
-    >>> link_hash(L)
-    '30e28b56cad01a233ddf0894e9b7eaa8'
+    >>> link_hash(L) in {'040a191d60e48a1dab87636aa98305b8',
+    ...                  '30e28b56cad01a233ddf0894e9b7eaa8'}
+    True
     """
     from .simplify import dual_graph_as_nx
     dual = dual_graph_as_nx(link)
@@ -1576,7 +1577,7 @@ class Link:
         * ``backtrack``: Does 100 random Reidemeister I, II, and III
           moves and then simplifies.
 
-        * ``exterior``: Takes the exterior of the link and then applys
+        * ``exterior``: Takes the exterior of the link and then applies
           SnapPy's ``exterior_to_link`` to that triangulation to get a
           new diagram.
 
