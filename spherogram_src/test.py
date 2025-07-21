@@ -9,6 +9,7 @@ import spherogram.links.exhaust
 import spherogram.links.bridge_bound
 import spherogram.links.bands
 import spherogram.links.bands.merge_links
+import spherogram.links.bands.core
 
 import spherogram.test_helper as test_helper
 import getopt
@@ -34,6 +35,7 @@ modules = [spherogram.codecs.DT,
            spherogram.links.seifert,
            spherogram.links.bands,
            spherogram.links.bands.merge_links,
+           spherogram.links.bands.core,
            ]
 
 

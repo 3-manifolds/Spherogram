@@ -1,6 +1,6 @@
 """
 
-Given a collection of hyperbolic links, select one from each isotopy
+Given a collection of links, try to select one from each isotopy
 class, modulo mirror image.
 
 """
@@ -18,6 +18,12 @@ def degen_tets(manifold):
 
 
 def are_isometric_as_links(A, B):
+    if hasattr(A, 'exterior'):
+        A = A.exterior()
+
+    if hasattr(B, 'exterior'):
+        B = B.exterior()
+
     if degen_tets(A) or degen_tets(B):
         return False
     try:
@@ -29,6 +35,11 @@ def are_isometric_as_links(A, B):
 
 def link_isotopy_classes(links_with_manifolds):
     """
+    Given a collection of links, try to select one from each isotopy
+    class, modulo mirror image.  The code works well for hyperbolic links,
+    but with non-hyperbolic ones it can (and usually does) return multiple
+    copies of the link.
+
     The first are a duplicate pair that are erroneously listed as
     separate in HTLinkExteriors.
 
