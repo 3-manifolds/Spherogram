@@ -383,6 +383,8 @@ def add_one_band(link, band):
     """
     if isinstance(band, str):
         band = Band(band)
+    elif not isinstance(band, Band):
+        band = Band(*band)
 
     cs_along_top = band.cs_along_top
     arc_is_under = band.arc_is_under
@@ -504,6 +506,8 @@ def add_one_band(link, band):
     L.crossings = L.crossings + B + C + E
     L._rebuild()
     assert L.is_planar()
+    if L.name is not None:
+        L.name += '+band'
     return L
 
 

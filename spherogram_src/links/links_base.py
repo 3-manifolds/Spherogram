@@ -1614,6 +1614,30 @@ class Link:
 
         return order_diagrams(ans.values())
 
+    def add_band(self, band):
+        """
+        Adds the specified band to the link and returns the result,
+        which is ribbon concordant to the original.  The band must
+        connect one component of the link to itself in such a way that
+        the result has an additional component.  See the source code
+        for ``spherogram.links.bands.core`` for how the band is
+        specified.  Typically, the user invokes
+        :method:`Link.ribbon_concordant_links` rather than use this
+        method directly.
+
+        >>> K = Link('K6a3')
+        >>> band = ([(0, 0), (0, 1), (3, 0)], [True], 1)
+        >>> L = K.add_band(band)
+        >>> L.simplify('global')
+        True
+        >>> L
+        <Link K6a3+band: 0 comp; 0 cross>
+        """
+        # Note: ribbon_concordant_link is defined in invariants.py
+        from .bands.core import add_one_band
+        L = add_one_band(self, band)
+        return L
+
 
 # ---- building the link exterior if SnapPy is present --------
 
