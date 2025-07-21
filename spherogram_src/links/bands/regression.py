@@ -19,7 +19,9 @@ You should see::
 """
 
 from .core import banded_links
-from ...test_helper import snappy
+from ...test_helper import _have_snappy
+if _have_snappy:
+    import snappy
 
 
 original = {'K6a3':['L7a4', 'L7a5', 'L7a6', 'L8a11', 'L8a3', 'L8a6', 'L8n2', 'L9n13'],
@@ -87,7 +89,7 @@ def test_all():
             diff = set(new_links).symmetric_difference(set(links))
             print('    Error: ', diff)
 
-            
+
 def test_one():
     """
     >>> test_one()   #doctest: +SNAPPY

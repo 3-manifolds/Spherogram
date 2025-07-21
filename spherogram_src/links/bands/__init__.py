@@ -10,7 +10,9 @@ and Sherry Gong for their paper::
 """
 
 from . import merge_links
-
+from . import core
+from . import search
+from . import regression
 
 
 
