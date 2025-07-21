@@ -1,9 +1,17 @@
+"""
+
+Code for describing bands, adding them to links, and generating
+reasonable collections of bands and the resulting banded links.
+
+"""
+
 import networkx as nx
 from itertools import product, combinations
 from ..links_base import CrossingStrand, CrossingEntryPoint, Strand, Crossing
 from ..links import Link
 from ..simplify import dual_graph_as_nx, Face
 from .merge_links import are_isometric_as_links
+
 
 def normalize_crossing_labels(link):
     for i, C in enumerate(link.crossings):
@@ -171,6 +179,7 @@ def crossing_strands_to_hex(crossing_strands):
     for c, s in reversed(crossing_strands):
         x = (x << 4*nibbles_per_cs) + (c << 2) + s
     return prefix + '{:02x}'.format(x).rjust(nibbles_per_cs*n, '0')
+
 
 def hex_to_crossing_strands(hex_string):
     if hex_string[0] == 'Z':
@@ -711,7 +720,8 @@ def banded_links(link, max_twists=2, max_band_len=None, paths='shortest'):
     result of banding has one more component than the original.
 
     Does not modify the input link. Considers only the bands produced
-    by min_len_bands.
+    by ``min_len_bands`` or ``simple_bands`` according to the
+    ``paths`` argument.
 
 
     >>> L = Link('K6a3')
