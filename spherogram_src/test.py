@@ -11,6 +11,7 @@ import spherogram.links.bands
 import spherogram.links.bands.merge_links
 import spherogram.links.bands.core
 import spherogram.links.bands.search
+import spherogram.links.bands.regression
 
 import spherogram.test_helper as test_helper
 import getopt
@@ -38,6 +39,7 @@ modules = [spherogram.codecs.DT,
            spherogram.links.bands.merge_links,
            spherogram.links.bands.core,
            spherogram.links.bands.search,
+           spherogram.links.bands.regression,
            ]
 
 
