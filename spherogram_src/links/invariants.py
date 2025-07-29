@@ -836,8 +836,9 @@ class Link(links_base.Link):
                                 certificates=False,
                                 print_progress=False):
         """
-        Given a link L_0, generate ribbon concordant links L_i with
-        L_0 >= L_i.  The arguments include:
+        Given a link L_0, generate ribbon concordant links L_i.  Here,
+        each L_i is obtained from L_0 by adding bands and deleting any
+        unknotted and unlinked components.  The arguments include:
 
         * ``max_bands``: The maximum number of bands to attach.
 
@@ -880,7 +881,6 @@ class Link(links_base.Link):
 
         See Section 2 of `[Dunfield and Gong] <https://arXiv.org/abs/FILLIN>`_
         for more details.
-
         """
         from .bands.search import ribbon_concordant_links
 
