@@ -1616,13 +1616,14 @@ class Link:
 
     def add_band(self, band):
         """
+
         Adds the specified band to the link and returns the result,
         which is ribbon concordant to the original.  The band must
         connect one component of the link to itself in such a way that
-        the result has an additional component.  See the source code
-        for ``spherogram.links.bands.core`` for how the band is
-        specified.  Typically, the user invokes
-        :method:`Link.ribbon_concordant_links` rather than use this
+        the result has an additional component.  See Figure 7 of
+        `[Dunfield and Gong] <https://arXiv.org/abs/FILLIN>`_
+        for how the band is specified.  Typically, the user invokes
+        :meth:`Link.ribbon_concordant_links` rather than use this
         method directly.
 
         >>> K = Link('K6a3')

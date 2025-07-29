@@ -137,6 +137,7 @@ def ribbon_concordant_links(link_or_manifold,
                             R1_R2_only=False,
                             certify=False,
                             print_progress=False,
+                            use_ribbon_link_cache=True,
                             filter_for_plausibly_slice=True):
     """
     For the input link L0 returns all links obtained by ribbon
@@ -149,16 +150,21 @@ def ribbon_concordant_links(link_or_manifold,
       sage: len(ans), ans['unknot'][1:]                                    #doctest: +SNAPPY
       (1, ['1201_0_1', 'unknot'])
       sage: M = Link('K12n553')
-      sage: len(ribbon_concordant_links(M, max_bands=1, max_band_len=2))   #doctest: +SNAPPY
+      sage: len(ribbon_concordant_links(M, max_bands=1, max_band_len=2, use_ribbon_link_cache=False))   #doctest: +SNAPPY
       2
-      sage: ribbon_concordant_links(M, max_bands=2, max_band_len=2)        #doctest: +SNAPPY
+      sage: ribbon_concordant_links(M, max_bands=2, max_band_len=2, use_ribbon_link_cache=False)        #doctest: +SNAPPY
       ['unknot']
+      sage: ans = ribbon_concordant_links(M, max_bands=1, max_band_len=2, certify=True)   #doctest: +SNAPPY
+      sage: ans['unknot'][-1]  #doctest: +SNAPPY
+      'ribbon_1_6_e73be35b'
 
     If certify is True, it returns a dictionary whose keys are the
     links and whose values are the history of the bands and
     intermediate links.
 
     """
+    import snappy
+
     def log_progress(message):
         if print_progress:
             print(message)
@@ -212,9 +218,19 @@ def ribbon_concordant_links(link_or_manifold,
                         pass
                     elif ((not filter_for_plausibly_slice or could_be_strongly_slice(L)) and
                           not are_isometric_as_links(E, E0)):
-                        past = certificates[L0]
-                        certificates[L] = past + [spec, L.PD_code()]
-                        new_links.append((L, E))
+                        matched = False
+                        if use_ribbon_link_cache and E.solution_type(enum=True) in {1, 2}:
+                            F = snappy.RibbonLinks.identify(E, extends_to_link=True)
+                            if F:
+                                matched = True
+                                if 'unknot' not in certificates:
+                                    past = certificates[L0]
+                                    certificates['unknot'] = past + [spec, F.name()]
+
+                        if not matched:
+                            past = certificates[L0]
+                            certificates[L] = past + [spec, L.PD_code()]
+                            new_links.append((L, E))
 
                 if stop_at_unlink and 'unknot' in certificates:
                     if certify:

@@ -853,7 +853,8 @@ class Link(links_base.Link):
         * When ``filter_for_plausibly_slice`` is ``True``, it only
           generates links where the linking numbers and signature
           vanish and the Alexander polynomial satisfies Fox-Milnor. It
-          also stops as soon as it arrives at the unlink.
+          also stops as soon as it arrives at the unlink and uses
+          :py:class:`snappy.RibbonLinks` to short cut to the unknot.
 
         * When ``certificates`` is ``True``, it returns a
           dictionary whose keys are the new links.  The value for each
@@ -862,14 +863,24 @@ class Link(links_base.Link):
           certificates can be checked by using
           ``spherogram.links.bands.verify_ribbon_to_unknot``.
 
-        Note: For ease of identification, the unknot is returned as a string:
+        Note: For ease of identification, the unknot is returned as a string::
 
           sage: L = Link('K6a3')
           sage: L.ribbon_concordant_links(max_twists=1)   #doctest: +SNAPPY
           ['unknot']
 
-        See `[Dunfield and Gong] <https://arXiv.org/abs/FILLIN>`_ for
-        more details.
+        An example of acceleration using :py:class:`snappy.RibbonLinks`.
+        This knot has fusion number 2, but we detect that it is ribbon
+        with by adding a single band and getting a known ribbon link::
+
+          sage: L = Link('DT[papbdGaHImCEopnfklj]')  # This is 16n61264
+          sage: cert = L.ribbon_concordant_links(1, 0, 2, certificates=True)  #doctest: +SNAPPY
+          sage: cert['unknot'][-1]                                            #doctest: +SNAPPY
+          'ribbon_2_10_7ecd0dc0'
+
+        See Section 2 of `[Dunfield and Gong] <https://arXiv.org/abs/FILLIN>`_
+        for more details.
+
         """
         from .bands.search import ribbon_concordant_links
 
@@ -881,7 +892,8 @@ class Link(links_base.Link):
                                        filter_for_plausibly_slice=filter_for_plausibly_slice,
                                        certify=certificates,
                                        print_progress=print_progress,
-                                       stop_at_unlink=filter_for_plausibly_slice)
+                                       stop_at_unlink=filter_for_plausibly_slice,
+                                       use_ribbon_link_cache=filter_for_plausibly_slice)
 
 
 class ClosedBraid(Link):
