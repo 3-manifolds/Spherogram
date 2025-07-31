@@ -96,8 +96,7 @@ def strand_matrix_merge(A, a, b):
     A[:, i] = phi + alpha * psi / mu
     A[i, i] = gamma + alpha * delta / mu
     A = A.delete_rows([j])
-    A = A.delete_columns([j])
-    return A
+    return A.delete_columns([j])
 
 
 def test_meta_associativity():

@@ -58,15 +58,14 @@ def normalize_alex_poly(p, t):
         p = p * (ti**(-min_exp))
 
     R = p.parent()
-    p = R.polynomial_ring()(p)
-    return p
+    return R.polynomial_ring()(p)
 
 
 def sage_braid_as_int_word(braid):
     """
     Convert a Sage Braid to a word.
     """
-    # Could simplify using braid.Tietze().
+    # TODO : Could simplify using braid.Tietze().
 
     G = braid.parent()
     gen_idx = {g: i + 1 for i, g in enumerate(G.gens())}
@@ -144,10 +143,10 @@ class Link(links_base.Link):
 
         Returns a finitely presented group::
 
-           sage: K = Link('3_1')
-           sage: G = K.knot_group()
-           sage: type(G)
-           <class 'sage.groups.finitely_presented.FinitelyPresentedGroup_with_category'>
+            sage: K = Link('3_1')
+            sage: G = K.knot_group()
+            sage: type(G)
+            <class 'sage.groups.finitely_presented.FinitelyPresentedGroup_with_category'>
         """
         n = len(self.crossings)
         F = FreeGroup(n)
