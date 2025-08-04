@@ -444,7 +444,7 @@ def add_one_band(link, band):
         E[i].label = crossing_label+i
 
 
-    # now we add the horizonal arcs between the E[i] crossings
+    # now we add the horizontal arcs between the E[i] crossings
 
     if positive_twist:
         for i in range(num_twist - 1):
@@ -563,7 +563,7 @@ def min_len_bands(link, max_twists=2, max_band_len=None):
     # Compute the shortest path between each pair of vertices in the dual.
     dist, nxt = floyd_warshall(vertices, edges)
 
-    # Now interate over each pair of arcs in the diagram that we can
+    # Now iterate over each pair of arcs in the diagram that we can
     # band together.
 
     ans = []
