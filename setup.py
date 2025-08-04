@@ -206,7 +206,7 @@ long_description = long_description.split('\nDeveloped')[0]
 install_requires = ['decorator',
                     'networkx',
                     'packaging',
-                    'snappy_manifolds>=1.1.2',
+                    'snappy_manifolds>=1.3',
                     'knot_floer_homology>=1.2.2']
 
 setup( name = 'spherogram',
@@ -214,7 +214,7 @@ setup( name = 'spherogram',
        install_requires = install_requires,
        python_requires = '>=3',
        dependency_links = [],
-       packages = ['spherogram', 'spherogram.links',
+       packages = ['spherogram', 'spherogram.links', 'spherogram.links.bands',
                    'spherogram.links.test', 'spherogram.codecs',
                    'spherogram.dev', 'spherogram.dev.dev_jennet'],
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},

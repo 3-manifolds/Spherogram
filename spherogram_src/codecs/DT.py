@@ -949,6 +949,9 @@ class DTcodec:
         link._build_components(component_starts)
         if not link.is_planar():
             raise ValueError('DT code does not seem to define a *planar* diagram')
+        # Give the crossings standard names
+        for i, C in enumerate(link.crossings):
+            C.label = i
         return link
 
     def KLPProjection(self):
