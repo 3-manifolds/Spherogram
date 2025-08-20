@@ -32,7 +32,7 @@ def cut(G, T, e):
     return answer
 
 
-def is_internally_active(G, T, e):
+def is_internally_active(G, T, e) -> bool:
     """
     Input:
     --A graph G.
@@ -88,7 +88,7 @@ def cyc(G, T, e):
     return answer
 
 
-def is_externally_active(G, T, e):
+def is_externally_active(G, T, e) -> bool:
     """
     Input:
     --A graph G.

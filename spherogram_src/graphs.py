@@ -84,7 +84,7 @@ class BaseEdge(tuple):
     def incident_to(self):
         return list(self)
 
-    def is_loop(self):
+    def is_loop(self) -> bool:
         return self[0] is self[1]
 
 
@@ -374,7 +374,7 @@ class Graph:
             result.append(frozenset(component))
         return result
 
-    def is_connected(self, deleted_vertices=[]):
+    def is_connected(self, deleted_vertices=[]) -> bool:
         """
         Determine whether the graph obtained by removing the
         deleted_vertices and incident edges is connected.
@@ -391,7 +391,7 @@ class Graph:
             R.add_edge(*e)
         return R
 
-    def is_planar(self):
+    def is_planar(self) -> bool:
         return self.reduced().is_planar()
 
     def merge(self, V1, V2):
@@ -478,7 +478,7 @@ class ReducedGraph(Graph):
         """
         return sum(e.multiplicity for e in self.incidence_dict[vertex])
 
-    def is_planar(self):
+    def is_planar(self) -> bool:
         """
         Return the planarity.
         """
@@ -697,14 +697,14 @@ class Digraph(Graph):
         raise ValueError('Not meaningful for Digraphs.\n'
                          'Use weak_components() or strong_components()')
 
-    def is_weakly_connected(self):
+    def is_weakly_connected(self) -> bool:
         """
         A digraph is weakly connected if the associated undirected graph
         is connected.
         """
         return len(self.weak_components()) <= 1
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         A digraph is connected if, for every pair of vertices v, w,
         there is either a directed path from v to w or a directed path
@@ -732,7 +732,7 @@ class Digraph(Graph):
         """
         return StrongConnector(self).components
 
-    def is_strongly_connected(self):
+    def is_strongly_connected(self) -> bool:
         """
         A digraph is strongly connected if, for every pair of vertices
         v, w, there is a directed path from v to w and a directed path

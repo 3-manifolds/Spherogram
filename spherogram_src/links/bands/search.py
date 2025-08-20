@@ -3,7 +3,7 @@ from .merge_links import link_isotopy_classes, are_isometric_as_links
 from .core import Band, add_one_band, banded_links, normalize_crossing_labels
 
 
-def linking_nums_all_zero(link):
+def linking_nums_all_zero(link) -> bool:
     """
     >>> linking_nums_all_zero(Link('L2a1'))  # Hopf
     False
@@ -13,7 +13,7 @@ def linking_nums_all_zero(link):
     return all(x == 0 for row in link.linking_matrix() for x in row)
 
 
-def is_unlink_exterior(manifold):
+def is_unlink_exterior(manifold) -> bool:
     """
     If there is clearly a hyperbolic structure present, we don't even
     look at the fundamental group as it takes some time to compute and
@@ -24,7 +24,7 @@ def is_unlink_exterior(manifold):
     return manifold.fundamental_group().num_relators() == 0
 
 
-def could_be_strongly_slice(link):
+def could_be_strongly_slice(link) -> bool:
     """
     Checks several obstructions for a link L to be strongly slice,
     that is that all components of L simultaneously bound embedded
