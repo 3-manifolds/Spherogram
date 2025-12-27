@@ -1,5 +1,7 @@
 from ..links import Link
-from .merge_links import link_isotopy_classes, are_isometric_as_links
+from .merge_links import (link_isotopy_classes,
+                          are_isometric_as_links,
+                          are_same_triangulations_and_links)
 from .core import Band, add_one_band, banded_links, normalize_crossing_labels
 
 
@@ -81,6 +83,33 @@ def remove_reidemeister_I(link):
         link._build_components(component_starts)
     return success
 
+def are_same_link(L0, L1, tries=10):
+    """
+    Try to determine whether the given links are isotopic *or* one is
+    isotopic to the mirror of the other.
+
+    If it returns True, then the links are definitely equivalent.  If
+    it returns False, then they may still be the same.
+
+    When both links are hyperbolic, this is function is robust.
+    Otherwise, whether it succeeds is pretty stochastic.
+    """
+    L0, L1 = L0.copy(), L1.copy()
+    for i in range(tries):
+        if (L0.PD_code() == L1.PD_code() or
+            are_isometric_as_links(L0, L1) or
+            are_same_triangulations_and_links(L0, L1)):
+            return True
+
+        L0.backtrack(30)
+        L0.simplify()
+        L0.simplify('global')
+        L1.backtrack(30)
+        L1.simplify()
+        L1.simplify('global')
+
+    return False
+
 
 def verify_ribbon_to_unknot(link, certificate):
     """
@@ -92,22 +121,29 @@ def verify_ribbon_to_unknot(link, certificate):
     >>> verify_ribbon_to_unknot(L, cert)  #doctest: +SNAPPY
     True
 
-    TODO: Doesn't work when some intermediate link is non-hyperbolic,
-    in this case a connected sum of two trefoils.  The below should
-    return True
+    TODO: Sometimes doesn't work when some intermediate link is
+    non-hyperbolic.  in this case a connected sum of two trefoils.
+    The below should return True but might fail occasionally.
 
     >>> L = Link([(0,28,1,27),(10,1,11,2),(2,11,3,12),(36,3,37,4),(19,5,20,4),(5,23,6,22),(15,6,16,7),(34,8,35,7),(8,25,9,26),(26,9,27,10),(12,36,13,35),(13,20,14,21),(21,14,22,15),(23,17,24,16),(17,31,18,30),(31,19,32,18),(24,33,25,34),(28,0,29,37),(29,33,30,32)])
     >>> cert = [[(0,28,1,27),(10,1,11,2),(2,11,3,12),(36,3,37,4),(19,5,20,4),(5,23,6,22),(15,6,16,7),(34,8,35,7),(8,25,9,26),(26,9,27,10),(12,36,13,35),(13,20,14,21),(21,14,22,15),(23,17,24,16),(17,31,18,30),(31,19,32,18),(24,33,25,34),(28,0,29,37),(29,33,30,32)],'483d_0_0',[(5,2,6,3),(3,6,4,7),(1,4,2,5),(7,11,8,10),(11,9,0,8),(9,1,10,0)],'1603_0_1','unknot']
     >>> verify_ribbon_to_unknot(L, cert)  #doctest: +SNAPPY
-    False
+    True
     """
-    assert certificate[-1] == 'unknot'
+    import snappy
+    if certificate[-1] != 'unknot':
+        try:
+            snappy.RibbonLinks[certificate[-1]]
+        except KeyError:
+            raise ValueError('ribbon_cert does not end with known ribbon link')
+
     L = link.copy()
     E = L.exterior()
     for i in range(0, len(certificate) - 1, 2):
         L_cert = Link(certificate[i])
         E_cert = L_cert.exterior()
-        if not (L.PD_code() == L_cert.PD_code() or are_isometric_as_links(E, E_cert)):
+
+        if not are_same_link(L, L_cert):
             return False
 
         band = Band(certificate[i + 1])
@@ -122,6 +158,10 @@ def verify_ribbon_to_unknot(link, certificate):
             L.simplify('global')
         L.unlinked_unknot_components = 0
         E = L.exterior()
+
+    if certificate[-1] != 'unknot':
+        E_cert = snappy.RibbonLinks[certificate[-1]]
+        return are_isometric_as_links(E, E_cert)
 
     return len(L.link_components) == 0 or is_unlink_exterior(E)
 

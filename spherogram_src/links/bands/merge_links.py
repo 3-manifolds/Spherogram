@@ -33,6 +33,17 @@ def are_isometric_as_links(A, B):
         return False
 
 
+def are_same_triangulations_and_links(A, B):
+    if hasattr(A, 'exterior'):
+        A = A.exterior(with_hyperbolic_structure=False)
+
+    if hasattr(B, 'exterior'):
+        B = B.exterior(with_hyperbolic_structure=False)
+
+    isos = A.isomorphisms_to(B)
+    return any(iso.extends_to_link() for iso in isos)
+
+
 def link_isotopy_classes(links_with_manifolds):
     """
     Given a collection of links, try to select one from each isotopy
