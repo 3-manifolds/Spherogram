@@ -92,7 +92,7 @@ def are_same_link(L0, L1, tries=10):
     it returns False, then they may still be the same.
 
     When both links are hyperbolic, this is function is robust.
-    Otherwise, whether it succeeds is pretty stocastic.
+    Otherwise, whether it succeeds is pretty stochastic.
     """
     L0, L1 = L0.copy(), L1.copy()
     for i in range(tries):
