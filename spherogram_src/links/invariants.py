@@ -879,7 +879,7 @@ class Link(links_base.Link):
           sage: cert['unknot'][-1]                                            #doctest: +SNAPPY
           'ribbon_2_10_7ecd0dc0'
 
-        See Section 2 of `[Dunfield and Gong] <https://arXiv.org/abs/FILLIN>`_
+        See Section 2 of `[Dunfield and Gong] <https://arXiv.org/abs/2512.21825>`_
         for more details.
         """
         from .bands.search import ribbon_concordant_links
