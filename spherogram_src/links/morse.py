@@ -339,7 +339,7 @@ class MorseLinkDiagram:
 
         self.snakes_at_height = snakes_at_height
 
-    def is_bridge(self):
+    def is_bridge(self) -> bool:
         """
         Returns whether the link is in bridge position with respect to this
         height function.
@@ -431,5 +431,5 @@ class BridgeDiagram:
         import bohua_HF
         return bohua_HF.compute_HF(self.bohua_code())
 
-    def is_proper(self):
+    def is_proper(self) -> bool:
         return all(abs(a - b) < 2 for a, b in self.crossings)
