@@ -1,11 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# How the source was downloaded.  
+# How the source was downloaded.
 
-svn checkout http://planarity.googlecode.com/svn/trunk/ planarity-read-only
-cd planarity-read-only
-patch -p0 < ../planarity.patch
-cd ../
-mv planarity-read-only/c .
-rm -r  planarity-read-only
-rm -r  c/.cproject c/.project c/.settings/ c/*.orig c/samples
+set -euo pipefail
+cd "$(dirname "$0")" || exit 1
+
+VERSION=Version_4.0.1.0
+
+curl -sL https://github.com/graph-algorithms/edge-addition-planarity-suite/archive/refs/tags/$VERSION.zip -o planarity-$VERSION.zip
+unzip planarity-$VERSION.zip
+
+[[ -d c ]] && rm -r c
+mv edge-addition-planarity-suite-$VERSION/c/graphLib c
+
+rm -r edge-addition-planarity-suite-$VERSION
+rm planarity-$VERSION.zip
