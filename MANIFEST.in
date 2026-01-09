@@ -1,4 +1,4 @@
-include planarity_src/c/**/*.h
+recursive-include planarity_src/c *.h
 include planarity_src/planarity.pyx
-include planarmap_src/src/*.h
+recursive-include planarmap_src/src *.h
 include planarmap_src/planarmap.pyx

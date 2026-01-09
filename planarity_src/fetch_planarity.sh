@@ -11,7 +11,9 @@ curl -sL https://github.com/graph-algorithms/edge-addition-planarity-suite/archi
 unzip planarity-$VERSION.zip
 
 [[ -d c ]] && rm -r c
-mv edge-addition-planarity-suite-$VERSION/c/graphLib c
+mv edge-addition-planarity-suite-$VERSION/{c,LICENSE.TXT} .
+
+rm -r c/{planarityApp,samples,.gdbinit}
 
 rm -r edge-addition-planarity-suite-$VERSION
 rm planarity-$VERSION.zip

@@ -32,7 +32,7 @@ try:
     import sage.libs
     ext_modules = []
 except ImportError:
-    planarity_dir = 'planarity_src/c/'
+    planarity_dir = 'planarity_src'
     planarity_sources = glob('planarity_src/c/**/*.c', recursive=True)
 
     if sys.platform.startswith('win'):
