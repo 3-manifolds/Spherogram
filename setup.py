@@ -32,10 +32,8 @@ try:
     import sage.libs
     ext_modules = []
 except ImportError:
-    planarity_dir = 'planarity_src/c/'
-    planarity_ui_sources = glob(planarity_dir + 'planarity*.c')
-    planarity_sources = [file for file in glob('planarity_src/c/*.c')
-                         if file not in planarity_ui_sources]
+    planarity_dir = 'planarity_src'
+    planarity_sources = glob('planarity_src/c/**/*.c', recursive=True)
 
     if sys.platform.startswith('win'):
         extra_compile_args = [
