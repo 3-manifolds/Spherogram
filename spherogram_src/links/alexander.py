@@ -255,15 +255,15 @@ def alexander(K):
     This function assumes no Type I moves is available.
 
     Make sure the method that calls this gracefully handle inputs
-    where such moves are present.
+    where such moves are present::
 
-    >>> from .invariants import Link
-    >>> Link([(1, 4, 2, 1), (2, 4, 3, 3)]).alexander_polynomial()
-    1
-    >>> L = Link('K3a1')
-    >>> L.unlinked_unknot_components = 1
-    >>> L.alexander_polynomial()
-    0
+      sage: from .invariants import Link
+      sage: Link([(1, 4, 2, 1), (2, 4, 3, 3)]).alexander_polynomial()
+      1
+      sage: L = Link('K3a1')
+      sage: L.unlinked_unknot_components = 1
+      sage: L.alexander_polynomial()
+      0
     """
     c = len(K.crossings)
     if c == 0:
