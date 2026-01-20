@@ -267,9 +267,35 @@ class Link(links_base.Link):
                 raise RuntimeError('the method "snappy" for '
                                    'alexander_polynomial requires SnapPy')
 
+        # We do any available Type I and II Reidemeister moves as the
+        # functions we call assume that none are available.
+
+        from . import simplify
+        if simplify.has_reidemeister_I_or_II(self):
+            L = self.copy()
+            L.simplify('basic')
+            return L.alexander_polynomial(multivar=multivar, v=v, method=method,
+                                          norm=norm, factored=factored)
+
+        # We have to deal with the special case of unknotted and
+        # unlinked components.
+
         comp = len(self.link_components)
-        if comp < 2:
+        nugatory = self.unlinked_unknot_components
+        if comp + nugatory < 2:
             multivar = False
+
+        if multivar:
+            L = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp + nugatory)])
+            t = list(L.gens())
+        else:
+            L = LaurentPolynomialRing(QQ, 't')
+            t = [L.gen()]
+        R = L.polynomial_ring() if norm else L
+
+        if nugatory > 0:
+            p = 1 if comp + nugatory == 1 else 0
+            return R(p)
 
         # If single variable, use the super-fast method of Bar-Natan.
         if comp == 1 and method == 'default' and norm:
@@ -277,13 +303,6 @@ class Link(links_base.Link):
         else:  # Use a simple method based on the Wirtinger presentation.
             if method not in ['default', 'wirtinger']:
                 raise ValueError("Available methods are 'default' and 'wirtinger'")
-
-            if multivar:
-                L = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp)])
-                t = list(L.gens())
-            else:
-                L = LaurentPolynomialRing(QQ, 't')
-                t = [L.gen()]
 
             M = self.alexander_matrix(mv=multivar)
             C = M[0]
@@ -297,7 +316,7 @@ class Link(links_base.Link):
             subMatrix = C[0: k, 0: k]
             p = subMatrix.determinant()
             if p == 0:
-                return 0
+                return R(0)
             if multivar:
                 t_i = M[1][-1]
                 p = (p.factor()) / (t_i - 1)

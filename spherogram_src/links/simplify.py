@@ -140,6 +140,22 @@ def reidemeister_I_and_II(link, A):
     return eliminated, changed
 
 
+def has_reidemeister_I_or_II(link):
+    """
+    Checks if a Reidemeister I or II move is available.
+    """
+    for A in link.crossings:
+        # Type I
+        if A in [B for B, i in A.adjacent]:
+            return True
+        # Type II
+        for a in range(4):
+            (B, b), (C, c) = A.adjacent[a], A.adjacent[a + 1]
+            if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
+                return True
+    return False
+        
+
 def basic_simplify(link, build_components=True, to_visit=None,
                    force_build_components=False):
     """

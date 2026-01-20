@@ -6,12 +6,14 @@ import spherogram.links.simplify
 import spherogram.links.morse
 import spherogram.links.seifert
 import spherogram.links.exhaust
+import spherogram.links.alexander
 import spherogram.links.bridge_bound
 import spherogram.links.bands
 import spherogram.links.bands.merge_links
 import spherogram.links.bands.core
 import spherogram.links.bands.search
 import spherogram.links.bands.regression
+
 
 import spherogram.test_helper as test_helper
 import getopt
@@ -31,6 +33,7 @@ modules = [spherogram.codecs.DT,
            spherogram.links.random_links,
            spherogram.links.orthogonal,
            spherogram.links.simplify,
+           spherogram.links.alexander,
            spherogram.links.bridge_bound,
            spherogram.links.invariants,
            spherogram.links.morse,

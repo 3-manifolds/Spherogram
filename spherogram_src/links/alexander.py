@@ -249,9 +249,28 @@ def good_exhaustion(link, max_failed_tries=20):
     return E_best
 
 
+
 def alexander(K):
+    """
+    This function assumes no Type I moves is available.
+
+    Make sure the method that calls this gracefully handle inputs
+    where such moves are present.
+
+    >>> from .invariants import Link
+    >>> Link([(1, 4, 2, 1), (2, 4, 3, 3)]).alexander_polynomial()
+    1
+    >>> L = Link('K3a1')
+    >>> L.unlinked_unknot_components = 1
+    >>> L.alexander_polynomial()
+    0
+    """
     c = len(K.crossings)
-    if c < 100:
+    if c == 0:
+        assert K.unlinked_unknot_components == 1
+        R = PolynomialRing(ZZ, 't')
+        return R(1)
+    elif c < 100:
         E = Exhaustion(K)
     else:
         E = good_exhaustion(K, max(20, 0.15 * c))
