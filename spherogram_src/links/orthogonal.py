@@ -156,7 +156,7 @@ class OrthogonalFace(CyclicList):
         if not self.exterior:
             return kitty_corner(self.turns)
 
-    def is_turn_regular(self):
+    def is_turn_regular(self) -> bool:
         return self.kitty_corner() is None
 
     def switches(self, swap_hor_edges):
@@ -416,11 +416,10 @@ class Face(CyclicList):
             dir = (dir + t) % 4
         return ans
 
-    def is_turn_regular(self):
+    def is_turn_regular(self) -> bool:
         if self.exterior:
             return True
-        else:
-            return kitty_corner(self.turns) is None
+        return kitty_corner(self.turns) is None
 
     def __repr__(self):
         ext = '*' if self.exterior else ''

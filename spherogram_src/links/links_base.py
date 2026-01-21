@@ -33,7 +33,7 @@ is_alpha_DT_exterior = re.compile(r'DT[:\[] *([a-zA-Z]+(?:\.[01]+)?)[\]]?$')
 # Helper function.
 
 
-def is_iterable(obj):
+def is_iterable(obj) -> bool:
     try:
         iter(obj)
         return True
@@ -149,13 +149,12 @@ class Crossing:
             self.rotate_by_180()
         self.sign = 1 if (3, 1) in self.directions else -1
 
-    def is_incoming(self, i):
+    def is_incoming(self, i) -> bool:
         if self.sign == 1:
             return i in (0, 3)
-        elif self.sign == -1:
+        if self.sign == -1:
             return i in (0, 1)
-        else:
-            raise ValueError('Crossing not oriented')
+        raise ValueError('Crossing not oriented')
 
     def __getitem__(self, i):
         return (self, i % 4)
@@ -281,10 +280,10 @@ class CrossingEntryPoint(CrossingStrand):
         other = nonzero_entry_point if self.strand_index == 0 else 0
         return CrossingEntryPoint(self.crossing, other)
 
-    def is_under_crossing(self):
+    def is_under_crossing(self) -> bool:
         return self.strand_index == 0
 
-    def is_over_crossing(self):
+    def is_over_crossing(self) -> bool:
         return self.strand_index != 0
 
     def component(self):
@@ -362,7 +361,7 @@ class Strand:
         print("<%s : %s>" %
               (self.label, [format_adjacent(a) for a in self.adjacent]))
 
-    def is_loop(self):
+    def is_loop(self) -> bool:
         return self == self.adjacent[0][0]
 
 
@@ -947,7 +946,7 @@ class Link:
                 G.add_edge(cs0.crossing, cs1.crossing)
         return G
 
-    def is_planar(self):
+    def is_planar(self) -> bool:
         """
         Whether the 4-valent graph underlying the link projection is planar.
 
@@ -989,7 +988,7 @@ class Link:
         euler = -v + len(self.faces())
         return euler == 2 or v == 0
 
-    def is_alternating(self):
+    def is_alternating(self) -> bool:
         """
         Returns whether or not this link diagram is alternating.
 
@@ -1225,10 +1224,8 @@ class Link:
         >>> [len(c) for c in L_copy.link_components]
         [4, 4, 4, 6, 8]
         """
-        PD = []
-
-        for c in self.crossings:
-            PD.append([s + min_strand_index for s in c.strand_labels])
+        PD = [[s + min_strand_index for s in c.strand_labels]
+              for c in self.crossings]
         if KnotTheory:
             PD = "PD" + repr(PD).replace('[', 'X[')[1:]
         else:

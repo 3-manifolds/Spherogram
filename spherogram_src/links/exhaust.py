@@ -256,12 +256,14 @@ class BiDict:
         return sorted(self.int_to_set) == list(range(self.n))
 
 
-def is_range(L):
+def is_range(L) -> bool:
     """
     >>> is_range([2, 3, 4]), is_range([2, 3, 5])
     (True, False)
     """
-    return L == list(range(min(L), max(L) + 1))
+    if not L:
+        return False
+    return all(i == Li for i, Li in enumerate(L, start=L[0]))
 
 
 class Frontier(BiDict):

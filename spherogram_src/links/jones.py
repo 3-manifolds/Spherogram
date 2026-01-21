@@ -160,8 +160,8 @@ class VElement:
     def add_negative_crossing(self, i):
         return self.cap_then_cup(i) + (-q) * self
 
-    def is_multiple_of_empty_pairing(self):
-        return len(self.dict) == 1 and (PerfectMatching([]) in self.dict)
+    def is_multiple_of_empty_pairing(self) -> bool:
+        return len(self.dict) == 1 and PerfectMatching([]) in self.dict
 
 
 def kauffman_bracket(link):

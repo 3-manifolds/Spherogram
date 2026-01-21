@@ -149,7 +149,7 @@ def isotope_to_braid(link):
         pass
 
 
-def is_chain(tree):
+def is_chain(tree) -> bool:
     tails = [e[0] for e in tree]
     heads = [e[1] for e in tree]
     return len(set(tails)) == len(tails) and len(set(heads)) == len(heads)
