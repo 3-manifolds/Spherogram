@@ -132,15 +132,14 @@ class OrthogonalFace(CyclicList):
             vertex = edge(vertex)
             if self[0] == (edge, vertex):
                 break
-            else:
-                self.append((edge, vertex))
+            self.append((edge, vertex))
 
         self._add_turns()
 
     def _add_turns(self):
         self.turns = turns = []
         for i, (e0, v0) in enumerate(self):
-            (e1, v1) = self[i + 1]
+            e1, v1 = self[i + 1]
             if e0.kind == e1.kind:
                 turns.append(0)
             else:
