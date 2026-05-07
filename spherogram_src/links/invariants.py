@@ -559,6 +559,9 @@ class Link(links_base.Link):
           sage: L.signature(new_convention=False)
           2
         """
+        if not self.digraph().is_weakly_connected():
+            return sum([L.signature() for L in self.split_link_diagram()])
+
         m, G = self.goeritz_matrix(return_graph=True)
         correction = sum(e['sign'] for _, _, e in G.edges(sort=False)
                          if e['sign'] == e['crossing'].sign)
