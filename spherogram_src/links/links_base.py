@@ -124,6 +124,16 @@ class Crossing:
             raise ValueError("Can only orient a strand once.")
         self.directions.add(b)
 
+    def make_head(self, a):
+        """
+        Orients the strand joining input "a" to input" a+2" to start at "a" and end at
+        "a+2".
+        """
+        b = ((a + 2) % 4, a)
+        if (b[1], b[0]) in self.directions:
+            raise ValueError("Can only orient a strand once.")
+        self.directions.add(b)
+
     def rotate(self, s):
         """
         Rotate the incoming connections by 90*s degrees anticlockwise.
@@ -515,7 +525,7 @@ class Link:
             if not all(isinstance(c, Crossing) for c, _ in s.adjacent):
                 raise ValueError("Strands with a component index must be in the same"
                                  " component as a crossing")
-        # Go through the component strands to construct component_starts
+        # Go through the component strands to construct component_spec
         if component_strands:
             component_spec = []
             for s in component_strands:
@@ -884,8 +894,7 @@ class Link:
             # and turn them into CrossingEntryPoints
             component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
-        remaining, components = OrderedSet(
-            self.crossing_entries()), LinkComponents()
+        remaining, components = OrderedSet(self.crossing_entries()), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:

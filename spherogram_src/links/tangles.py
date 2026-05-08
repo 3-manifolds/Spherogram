@@ -21,7 +21,9 @@ See doc.pdf for conventions.
 """
 import pickle
 
-from .links import Crossing, Strand, Link
+from collections import OrderedDict
+from .ordered_set import OrderedSet
+from .links import Crossing, Strand, Link, Labels
 from . import planar_isotopy
 
 
@@ -76,9 +78,12 @@ def decode_boundary(boundary):
         raise ValueError("Number of top boundary strands cannot be negative")
     return (m, n)
 
+class TangleComponents:
+    #TODO
+    pass
 
 class Tangle:
-    def __init__(self, boundary=2, crossings=None, entry_points=None, label=None):
+    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None):
         """
         A tangle is a fragment of a Link with some number of boundary
         strands. Tangles can be composed in various ways along their boundary strands,
@@ -106,12 +111,21 @@ class Tangle:
         """
 
         m, n = decode_boundary(boundary)
+        component_starts = None
+        start_orientations = None
 
         if crossings is None:
             crossings = []
-        for c in crossings:
-            if not isinstance(c, (Crossing, Strand)):
-                raise ValueError("Every element of crossings must be a Crossing or a Strand")
+        else:
+            if isinstance(crossings, str):
+                raise NotImplementedError("Not Implemented. If you are trying to create a tangle from a PD code, input the PD code as a list instead.")
+            
+            if len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)):
+                crossings, component_starts, entry_points = self._crossings_from_PD_code(crossings, entry_points)
+                start_orientations = component_starts[:]
+
+        if not all(isinstance(c, (Crossing, Strand)) for c in crossings):
+            raise ValueError("Every element of crossings must be a Crossing or a Strand")
         self.crossings = crossings
 
         # the pair for the number of lower strands and the number of upper strands
@@ -126,10 +140,200 @@ class Tangle:
         if len(entry_points) != m + n:
             raise ValueError("The number of boundary strands is not equal to the length"
                              " of entry_points")
+        
+        if build:
+            if start_orientations is None:
+                # By default, orient the components so that the Tangle is upward pointing
+                start_orientations = [(c, (i + 2) % 4) for (c,i) in entry_points[:m]]
+
+            self._build(start_orientations, component_starts)
+
         for i, e in enumerate(entry_points):
+            # TODO: make it so that the entry points are attached to Strands
             join_strands((self, i), e)
 
         self.label = label
+
+    def _build(self, start_orientations=None, component_starts=None):
+        self._orient_crossings(start_orientations=start_orientations)
+        self._build_components(component_starts=component_starts)
+
+    def _orient_crossings(self, start_orientations=None):
+        if self.all_crossings_oriented():
+            return
+        if start_orientations is None:
+            start_orientations = list()
+        else: # copy as algorithm modifies this list
+            start_orientations = list(start_orientations)
+
+        remaining = OrderedSet(
+            [(c, i) for c in self.crossings for i in range(4) if c.sign == 0])
+            
+        while len(remaining):
+            if len(start_orientations) > 0:
+                c, i = start = start_orientations.pop()
+            else:
+                c, i = start = remaining.pop()
+            
+            reversed = False
+            finished = False
+            while not finished:
+                if reversed:
+                    c.make_tail(i)
+                else:
+                    c.make_head(i)
+                
+                if c.adjacent[i] is not None:
+                    d, j = c.adjacent[i]
+                    remaining.discard((c, i)), remaining.discard((d, j))
+                    c, i = d, (j + 2) % 4
+                    finished = (c, i) == start
+                else:
+                    if reversed:
+                        # Hit the boundary of the tangle from both sides, 
+                        # done with this component
+                        finished = True
+                    else:
+                        # Hit the boundary of the tangle, 
+                        # now go back and orient reversely
+                        reversed = True
+                        c, i = start
+                        c, i = c, (i + 2) % 4
+
+        for c in self.crossings:
+            c.orient()
+
+    def _build_components(self, component_starts=None):
+        #TODO
+        pass
+
+    def crossing_entries(self):
+        ans = []
+        for C in self.crossings:
+            if isinstance(C, Crossing):
+                ans += C.entry_points()
+        return ans
+
+    def _crossings_from_PD_code(self, code, entry_points):
+        """
+        entry_points as INPUT: a list of labels of arcs left open in the tangle
+                     as OUTPUT: a list of CrossingStrands
+        """
+        labels = set()
+        for X in code:
+            for i in X:
+                labels.add(i)
+
+        gluings = OrderedDict()
+
+        for c, X in enumerate(code):
+            for i, x in enumerate(X):
+                if x in gluings:
+                    gluings[x].append((c, i))
+                else:
+                    gluings[x] = [(c, i)]
+
+        if any(len(v) > 2 for v in gluings.values()):
+            raise ValueError("PD code isn't consistent")
+
+        component_starts = self._component_starts_from_PD(
+            code, labels, gluings)
+
+        crossings = [Crossing(i) for i, d in enumerate(code)]
+        
+        for item in gluings.values():
+            if len(item) > 1:
+                (c, i), (d, j) = item
+                crossings[c][i] = crossings[d][j]
+
+        entry_points = [crossings[gluings[x][0]].crossing_strands()[gluings[x][1]] 
+                        for x in entry_points]
+
+        component_starts = [crossings[c].crossing_strands()[i]
+                            for (c, i) in component_starts]
+        
+        return crossings, component_starts, entry_points
+
+    def _component_starts_from_PD(self, code, labels, gluings):
+        """
+        A PD code determines an order and orientation on the tangle
+        components as follows, where we view the code as labels on the
+        strands at the point where two crossings are stuck together.
+
+        1.  The minimum label on each component is used to order the
+            components.
+
+        2.  Each component is oriented by finding its minimal label,
+            looking at the labels of its two neighbors, and then
+            orienting the component towards the smaller of those two.
+
+        This is designed so that a PLink-generated PD_code results in a
+        link with the same component order and orientation.
+        """
+        starts = []
+        while labels:
+            m = min(labels)
+            labels.remove(m)
+
+            if len(gluings[m]) == 1:
+                # entrance strand of the tangle
+                [(c, index)] = gluings[m]
+
+                j = (index + 2) % 4
+                next_label = code[c][j]
+                direction = (c, j)
+
+                starts.append(direction)
+            else:
+                (c1, index1), (c2, index2) = gluings[m]
+                if c1 == c2:
+                    # loop at strand, take next strand to be next smallest label
+                    # on crossing
+                    next_label = min(set(code[c1]) - {m})
+                    direction = (c1, code[c1].index(next_label))
+                    starts.append(direction)
+                else:
+                    # strand connects two different crossings, take next strand to
+                    # be next smallest label on two 'opposite' strands
+                    j1, j2 = (index1 + 2) % 4, (index2 + 2) % 4
+                    l1, l2 = code[c1][j1], code[c2][j2]
+                    if l1 < l2:
+                        next_label = l1
+                        direction = (c1, j1)
+                    elif l2 < l1:
+                        next_label = l2
+                        direction = (c2, j2)
+                    else:
+                        # We have a component of length 2, so now rely on
+                        # the convention that the first position at a PD
+                        # crossing is a directed entry point. (If both
+                        # crossings are over or both under, the
+                        # orientation is arbitrary anyway.)
+                        next_label = l1
+
+                        # The strand labeled m is oriented c2 --> c1 if
+                        # and only if either l1 = l2 is the incoming
+                        # understrand of c2 or m is incoming understrand
+                        # at c1.
+                        if code[c2][0] == l1 or code[c1][0] == m:
+                            direction = (c1, j1)
+                        else:
+                            direction = (c2, j2)
+
+                    starts.append(direction)
+
+            # Component start recorded. Erase the rest of the component 
+            # by traversing along it and remove the labels
+            while next_label != m:
+                labels.remove(next_label)
+                g = gluings[next_label]
+                if len(g) == 1:
+                    break
+                other_direction = g[1 - g.index(direction)]
+                direction = (other_direction[0], (other_direction[1] + 2) % 4)
+                next_label = code[direction[0]][direction[1]]
+
+        return starts
 
     def __add__(self, other):
         """Put self to left of other and fuse the top-right strand of self to the top-left
