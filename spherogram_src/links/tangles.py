@@ -23,9 +23,15 @@ import pickle
 
 from collections import OrderedDict
 from .ordered_set import OrderedSet
-from .links import Crossing, Strand, Link, Labels
+from .links_base import Crossing, Strand, Link
 from . import planar_isotopy
 
+class CyclicList(list):
+    def __init__(self, iterable):
+        super().__init__(iterable)
+
+    def __getitem__(self, i):
+        return super().__getitem__(i % len(self))
 
 def join_strands(x, y):
     """
@@ -78,9 +84,25 @@ def decode_boundary(boundary):
         raise ValueError("Number of top boundary strands cannot be negative")
     return (m, n)
 
-class TangleComponents:
-    #TODO
-    pass
+class ArcLabels(OrderedDict):
+    def __init__(self, iterable = []):
+        super().__init__(iterable)
+
+        self.counter = 0
+
+    def add(self, c, advance):
+        if c not in self:
+            self[c] = self.counter
+            if advance:
+                self.counter += 1
+        else:
+            raise ValueError("Each CEP should only be labeled once")
+
+class TangleComponents(list):
+    def add(self, c):
+        component = c.component()
+        self.append(component)
+        return component
 
 class Tangle:
     def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None):
@@ -113,6 +135,8 @@ class Tangle:
         m, n = decode_boundary(boundary)
         component_starts = None
         start_orientations = None
+        self.strand_labels = CyclicList(m * [None] + n * [None])
+        self.strand_components = CyclicList(m * [None] + n * [None])
 
         if crossings is None:
             crossings = []
@@ -126,10 +150,13 @@ class Tangle:
 
         if not all(isinstance(c, (Crossing, Strand)) for c in crossings):
             raise ValueError("Every element of crossings must be a Crossing or a Strand")
+        # Note that crossings in Tangle can contain Strands
         self.crossings = crossings
 
         # the pair for the number of lower strands and the number of upper strands
         self.boundary = (m, n)
+        # -1 if entering Tangle, 1 if exiting Tangle, 0 if not yet oriented. 
+        self.boundary_signs = CyclicList(m * [0] + n * [0])
 
         # a list of (c, i) pairs for the boundary strands. Each c will reciprocally
         # contain (self, j) where j is the strand number. The fact this is called
@@ -140,34 +167,66 @@ class Tangle:
         if len(entry_points) != m + n:
             raise ValueError("The number of boundary strands is not equal to the length"
                              " of entry_points")
-        
-        if build:
-            if start_orientations is None:
-                # By default, orient the components so that the Tangle is upward pointing
-                start_orientations = [(c, (i + 2) % 4) for (c,i) in entry_points[:m]]
-
-            self._build(start_orientations, component_starts)
 
         for i, e in enumerate(entry_points):
-            # TODO: make it so that the entry points are attached to Strands
+            # TODO: make it so that the entry points are attached to Strands?
             join_strands((self, i), e)
+
+        if build:
+            self._build(start_orientations, component_starts, entry_points=entry_points)
+            assert self.is_oriented()
 
         self.label = label
 
-    def _build(self, start_orientations=None, component_starts=None):
-        self._orient_crossings(start_orientations=start_orientations)
+    def is_upward(self):
+        return self.boundary_signs == CyclicList([-1] * self.boundary[0] + [1] * self.boundary[1])
+    
+    def is_downward(self):
+        return self.boundary_signs == CyclicList([1] * self.boundary[0] + [-1] * self.boundary[1])
+
+    def is_oriented(self):
+        return all(s != 0 for s in self.boundary_signs)
+
+    def _build(self, start_orientations=None, component_starts=None, entry_points = None):
+        self._orient_crossings(start_orientations=start_orientations, entry_points=entry_points)
         self._build_components(component_starts=component_starts)
 
-    def _orient_crossings(self, start_orientations=None):
+    def _rebuild(self, same_components_and_orientations = False):
+        if same_components_and_orientations:
+            # Hopefully we have enough of the original components left
+            # to figure out what this is.  Otherwise, new choices will
+            # be made as in the default algorithm.
+            start_css = []
+            for comp in self.components:
+                for cs in comp:
+                    if cs.crossing in self.crossings:
+                        start_css.append(cs)
+                        break
+        self.components = None
+        for c in self.crossings:
+            c._clear()
+        if same_components_and_orientations:
+            self._build(start_orientations=start_css,
+                        component_starts=start_css)
+        else:
+            self._build()
+
+
+    def all_crossings_oriented(self):
+        return all(c.sign != 0 for c in self.crossings)
+
+    def _orient_crossings(self, start_orientations=None, entry_points = None):
         if self.all_crossings_oriented():
             return
         if start_orientations is None:
             start_orientations = list()
+            remaining = OrderedSet(
+                sorted([(c, i) for c in self.crossings for i in range(c._adjacent_len) if c.sign == 0], 
+                       key = lambda x : any(x == (d, j) for d, j in entry_points[:self.boundary[0]])))
         else: # copy as algorithm modifies this list
             start_orientations = list(start_orientations)
-
-        remaining = OrderedSet(
-            [(c, i) for c in self.crossings for i in range(4) if c.sign == 0])
+            remaining = OrderedSet(
+                [(c, i) for c in self.crossings for i in range(c._adjacent_len) if c.sign == 0])
             
         while len(remaining):
             if len(start_orientations) > 0:
@@ -182,11 +241,15 @@ class Tangle:
                     c.make_tail(i)
                 else:
                     c.make_head(i)
+
+                remaining.discard((c, i))
                 
-                if c.adjacent[i] is not None:
+                if not c.adjacent[i][0] == self:
                     d, j = c.adjacent[i]
-                    remaining.discard((c, i)), remaining.discard((d, j))
-                    c, i = d, (j + 2) % 4
+                    remaining.discard((d, j))
+                    s = d._adjacent_len // 2
+                    c, i = d, (j + s) % (2 * s)
+
                     finished = (c, i) == start
                 else:
                     if reversed:
@@ -198,20 +261,85 @@ class Tangle:
                         # now go back and orient reversely
                         reversed = True
                         c, i = start
-                        c, i = c, (i + 2) % 4
+
+                        s = c._adjacent_len // 2
+                        c, i = c, (i + s) % (2 * s)
 
         for c in self.crossings:
             c.orient()
 
     def _build_components(self, component_starts=None):
-        #TODO
-        pass
+        if component_starts is not None:
+            # Take all CrossingStrand and CrossingEntryPoint objects
+            # and turn them into CrossingEntryPoints
+            component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
+                                for cs in component_starts]
+        remaining, components = OrderedSet(self.crossing_entries()), TangleComponents()
+        other_crossing_entries = []
+        self.labels = labels = ArcLabels()
+        for c in self.crossings:
+            c._clear_strand_info()
+
+        while len(remaining):
+            if component_starts:
+                d = component_starts[len(components)]
+            elif len(components) == 0:
+                d = remaining.pop()
+            else: # prioritize labeling crossing strands that are adjacent to already labeled ones
+                found, comp_index = False, 0
+                while not found and comp_index < len(components):
+                    others = other_crossing_entries[comp_index]
+                    if others:
+                        for j, d in enumerate(others):
+                            if d.component_label() is None:
+                                if labels[d.other()] % 2 == 0:
+                                    d = d.next()
+                                found = True
+                                break
+                        other_crossing_entries[comp_index] = others[j:]
+                    comp_index += 1
+
+                if not found:
+                    d = remaining.pop()
+
+            component = components.add(d)
+
+            # Label arcs along the component
+            for i, c in enumerate(component):
+                if isinstance(c.crossing, Tangle):
+                    assert len(component) > 2
+                    assert self.boundary_signs[c.strand_index] == 0
+
+                    if i == 0:
+                        self.boundary_signs[c.strand_index] = -1
+                    else:
+                        assert i == len(component) - 1
+                        self.boundary_signs[c.strand_index] = 1
+
+                # if is a Crossing or at the end of the component, advance the label
+                # otherwise, don't advance the label since we will still be on the same arc
+                if isinstance(c.crossing, Crossing) or i == len(component) - 1:
+                    advance = True
+                else:
+                    advance = False
+
+                labels.add(c, advance)
+
+            others = []
+            for c in component:
+                c.label_crossing(len(components) - 1, labels)
+                o = c.other()
+                if o is not None and o.component_label() is None:
+                    others.append(o)
+            other_crossing_entries.append(others)
+            remaining.difference_update(component)
+
+        self.components = components
 
     def crossing_entries(self):
         ans = []
         for C in self.crossings:
-            if isinstance(C, Crossing):
-                ans += C.entry_points()
+            ans += C.entry_points()
         return ans
 
     def _crossings_from_PD_code(self, code, entry_points):
@@ -246,14 +374,30 @@ class Tangle:
                 (c, i), (d, j) = item
                 crossings[c][i] = crossings[d][j]
 
-        entry_points = [crossings[gluings[x][0]].crossing_strands()[gluings[x][1]] 
+        entry_points = [crossings[gluings[x][0][0]].crossing_strands()[gluings[x][0][1]] 
                         for x in entry_points]
 
         component_starts = [crossings[c].crossing_strands()[i]
                             for (c, i) in component_starts]
         
         return crossings, component_starts, entry_points
+    
+    def PD_code(self, KnotTheory=False, min_strand_index = 0):
+        PD = []
+        entry_info = [s + min_strand_index for s in self.strand_labels]
 
+        for c in self.crossings:
+            if isinstance(c, Crossing):
+                PD.append([s + min_strand_index for s in c.strand_labels])
+
+        if KnotTheory:
+            PD = "PD" + repr(PD).replace('[', 'X[')[1:]
+            entry_info = "EP" + repr(entry_info)
+        else:
+            PD = [tuple(x) for x in PD]
+
+        return PD, entry_info
+    
     def _component_starts_from_PD(self, code, labels, gluings):
         """
         A PD code determines an order and orientation on the tangle
