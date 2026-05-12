@@ -430,7 +430,7 @@ class Strand:
         "a+1".
         """
         b = (a, (a + 1) % 2)
-        if self.direction:
+        if self.direction is not None and self.direction != b:
             raise ValueError("Can only orient a strand once.")
         self.direction = b
 
@@ -440,7 +440,7 @@ class Strand:
         "a+1".
         """
         b = ((a + 1) % 2, a)
-        if self.direction:
+        if self.direction is not None and self.direction != b:
             raise ValueError("Can only orient a strand once.")
         self.direction = b
 
