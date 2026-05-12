@@ -261,7 +261,10 @@ class CrossingStrand(BasicCrossingStrand):
         return self.opposite().rotate(-1)
 
     def strand_label(self):
-        return self.crossing.strand_labels[self.strand_index]
+        if isinstance(self.crossing, Strand):
+            return self.crossing.strand_label
+        else:
+            return self.crossing.strand_labels[self.strand_index]
 
     def oriented(self):
         """
@@ -282,9 +285,13 @@ class CrossingEntryPoint(CrossingStrand):
     """
 
     def next(self):
-        c, e = self.crossing, self.strand_index
-        s = c._adjacent_len // 2
-        return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
+        if isinstance(self.crossing, (Crossing, Strand)):
+            c, e = self.crossing, self.strand_index
+            s = c._adjacent_len // 2
+            return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
+        else:
+            raise RuntimeError('This should not be reached')
+            return CrossingEntryPoint(*self.crossing.adjacent[self.strand_index])
 
     def previous(self):
         d, j = self.opposite()
@@ -292,7 +299,7 @@ class CrossingEntryPoint(CrossingStrand):
         if isinstance(d, (Crossing, Strand)):
             s = d._adjacent_len // 2
             return CrossingEntryPoint(*self.opposite().rotate(s))
-        else:
+        else: 
             return CrossingEntryPoint(d, j)
 
     def other(self):
@@ -312,9 +319,9 @@ class CrossingEntryPoint(CrossingStrand):
     def component(self):
         ans = [self]
         
-        reversed = False
+        is_reversed = False
         while True:
-            if reversed:
+            if is_reversed:
                 d = ans[0].previous()
             else:
                 d = ans[-1].next()
@@ -322,16 +329,16 @@ class CrossingEntryPoint(CrossingStrand):
             if d == self:
                 break
             else:
-                if reversed:
+                if is_reversed:
                     ans.insert(0, d)
                 else:
                     ans.append(d)
                 
             if not isinstance(d.crossing, (Crossing, Strand)):
-                if reversed:
+                if is_reversed:
                     break
                 else:
-                    reversed = True
+                    is_reversed = True
 
         return ans
 
@@ -443,7 +450,7 @@ class Strand:
         """
         def rotate(v):
             return (v + s) % 2
-        new_adjacent = [self.adjacent[rotate(i)] for i in range(4)]
+        new_adjacent = [self.adjacent[rotate(i)] for i in range(2)]
         for i, (o, j) in enumerate(new_adjacent):
             if o != self:
                 o.adjacent[j] = (self, i)
@@ -461,6 +468,7 @@ class Strand:
         self.sign = 1
 
     def entry_points(self):
+        assert self.sign == 1
         return [CrossingEntryPoint(self, 0)]
 
 def enumerate_lists(lists, n=0, filter=lambda x: True):

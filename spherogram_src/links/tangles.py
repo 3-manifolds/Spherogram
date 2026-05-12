@@ -23,7 +23,7 @@ import pickle
 
 from collections import OrderedDict
 from .ordered_set import OrderedSet
-from .links_base import Crossing, Strand, Link
+from .links_base import Crossing, Strand, Link, CrossingEntryPoint
 from . import planar_isotopy
 
 class CyclicList(list):
@@ -96,7 +96,7 @@ class ArcLabels(OrderedDict):
             if advance:
                 self.counter += 1
         else:
-            raise ValueError("Each CEP should only be labeled once")
+            raise ValueError(f"Each CEP should only be labeled once, but {c} is already labeled with {self[c]}")
 
 class TangleComponents(list):
     def add(self, c):
@@ -131,8 +131,9 @@ class Tangle:
         Usually tangles should not be created directly using this constructor since the
         tangle operations and various primitive tangles are sufficient to create any tangle.
         """
+        self.label = label
 
-        m, n = decode_boundary(boundary)
+        m, n = decode_boundary(boundary)        
         component_starts = None
         start_orientations = None
         self.strand_labels = CyclicList(m * [None] + n * [None])
@@ -150,11 +151,28 @@ class Tangle:
 
         if not all(isinstance(c, (Crossing, Strand)) for c in crossings):
             raise ValueError("Every element of crossings must be a Crossing or a Strand")
-        # Note that crossings in Tangle can contain Strands
-        self.crossings = crossings
+
+        self.unlinked_unknot_components = 0
+        component_strands = []
+        fused_strands = []
+        for s in crossings:
+            if isinstance(s, Strand):
+                if s.component_idx is not None:
+                    # defer fusing
+                    # TODO: deal with this
+                    component_strands.append(s)
+                elif s.is_loop():
+                    self.unlinked_unknot_components += 1
+                else:
+                    fused_strands.append(s)
+                    s.fuse()
+        
+        for s in fused_strands:
+            crossings.remove(s)
 
         # the pair for the number of lower strands and the number of upper strands
         self.boundary = (m, n)
+        self.boundary_strands = CyclicList([])
         # -1 if entering Tangle, 1 if exiting Tangle, 0 if not yet oriented. 
         self.boundary_signs = CyclicList(m * [0] + n * [0])
 
@@ -162,21 +180,36 @@ class Tangle:
         # contain (self, j) where j is the strand number. The fact this is called
         # 'adjacent' means that the Tangle can take part in the joining protocol
         # implemented in join_strands.
-        self.adjacent = (m + n) * [None]
+        self.adjacent = CyclicList((m + n) * [None])
         entry_points = entry_points or []
         if len(entry_points) != m + n:
             raise ValueError("The number of boundary strands is not equal to the length"
                              " of entry_points")
 
         for i, e in enumerate(entry_points):
-            # TODO: make it so that the entry points are attached to Strands?
-            join_strands((self, i), e)
+            if isinstance(e.crossing, Strand):
+                self.boundary_strands.append(e.crossing)
+                join_strands(e, (self, i))
+            else:
+                boundary_strand = Strand(label = f'TS({self}, {i})')
+                self.boundary_strands.append(boundary_strand)
+                join_strands(e, (boundary_strand, 0))
+                join_strands((self, i), (boundary_strand, 1))
+
+        # Note that crossings in Tangle can contain Strands
+        self.crossings = crossings
 
         if build:
             self._build(start_orientations, component_starts, entry_points=entry_points)
             assert self.is_oriented()
 
-        self.label = label
+    def __getitem__(self, i):
+        return (self, i % (self.boundary[0] + self.boundary[1]))
+
+    def __setitem__(self, i, other):
+        o, j = other
+        self.adjacent[i % (self.boundary[0] + self.boundary[1])] = other
+        o.adjacent[j] = (self, i)
 
     def is_upward(self):
         return self.boundary_signs == CyclicList([-1] * self.boundary[0] + [1] * self.boundary[1])
@@ -187,9 +220,25 @@ class Tangle:
     def is_oriented(self):
         return all(s != 0 for s in self.boundary_signs)
 
+    def entry_points(self):
+        assert self.is_oriented()
+        return [CrossingEntryPoint(self, i) for i in range(self.boundary[0] + self.boundary[1]) 
+                if self.boundary_signs[i] == -1]
+
     def _build(self, start_orientations=None, component_starts=None, entry_points = None):
         self._orient_crossings(start_orientations=start_orientations, entry_points=entry_points)
         self._build_components(component_starts=component_starts)
+
+    def _clear(self):
+        self.components = None
+        for c in self.crossings:
+            c._clear()
+        for s in self.boundary_strands:
+            s._clear()
+        
+        self.boundary_signs = CyclicList(self.boundary[0] * [0] + self.boundary[1] * [0])
+        self.strand_labels = CyclicList(self.boundary[0] * [None] + self.boundary[1] * [None])
+        self.strand_components = CyclicList(self.boundary[0] * [None] + self.boundary[1] * [None])
 
     def _rebuild(self, same_components_and_orientations = False):
         if same_components_and_orientations:
@@ -202,15 +251,12 @@ class Tangle:
                     if cs.crossing in self.crossings:
                         start_css.append(cs)
                         break
-        self.components = None
-        for c in self.crossings:
-            c._clear()
+        self._clear()
         if same_components_and_orientations:
             self._build(start_orientations=start_css,
                         component_starts=start_css)
         else:
             self._build()
-
 
     def all_crossings_oriented(self):
         return all(c.sign != 0 for c in self.crossings)
@@ -220,13 +266,12 @@ class Tangle:
             return
         if start_orientations is None:
             start_orientations = list()
-            remaining = OrderedSet(
-                sorted([(c, i) for c in self.crossings for i in range(c._adjacent_len) if c.sign == 0], 
-                       key = lambda x : any(x == (d, j) for d, j in entry_points[:self.boundary[0]])))
         else: # copy as algorithm modifies this list
             start_orientations = list(start_orientations)
-            remaining = OrderedSet(
-                [(c, i) for c in self.crossings for i in range(c._adjacent_len) if c.sign == 0])
+
+        remaining = OrderedSet(
+            [(c, i) for c in self.crossings + list(reversed(self.boundary_strands)) 
+             for i in range(c._adjacent_len) if c.sign == 0])
             
         while len(remaining):
             if len(start_orientations) > 0:
@@ -234,10 +279,10 @@ class Tangle:
             else:
                 c, i = start = remaining.pop()
             
-            reversed = False
+            is_reversed = False
             finished = False
             while not finished:
-                if reversed:
+                if is_reversed:
                     c.make_tail(i)
                 else:
                     c.make_head(i)
@@ -252,27 +297,35 @@ class Tangle:
 
                     finished = (c, i) == start
                 else:
-                    if reversed:
+                    boundary_index = c.adjacent[i][1]
+                    assert self.boundary_signs[boundary_index] == 0
+                    
+                    if is_reversed:
                         # Hit the boundary of the tangle from both sides, 
                         # done with this component
+                        self.boundary_signs[boundary_index] = -1
                         finished = True
                     else:
                         # Hit the boundary of the tangle, 
                         # now go back and orient reversely
-                        reversed = True
-                        c, i = start
+                        self.boundary_signs[boundary_index] = 1
+                        is_reversed = True
 
+                        c, i = start
                         s = c._adjacent_len // 2
                         c, i = c, (i + s) % (2 * s)
 
         for c in self.crossings:
             c.orient()
 
+        for s in self.boundary_strands:
+            s.orient()
+
     def _build_components(self, component_starts=None):
         if component_starts is not None:
             # Take all CrossingStrand and CrossingEntryPoint objects
             # and turn them into CrossingEntryPoints
-            component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
+            component_starts = [cs.crossing.entry_points()[cs.strand_index % 2 if isinstance(cs.crossing, Crossing) else 0]
                                 for cs in component_starts]
         remaining, components = OrderedSet(self.crossing_entries()), TangleComponents()
         other_crossing_entries = []
@@ -306,16 +359,6 @@ class Tangle:
 
             # Label arcs along the component
             for i, c in enumerate(component):
-                if isinstance(c.crossing, Tangle):
-                    assert len(component) > 2
-                    assert self.boundary_signs[c.strand_index] == 0
-
-                    if i == 0:
-                        self.boundary_signs[c.strand_index] = -1
-                    else:
-                        assert i == len(component) - 1
-                        self.boundary_signs[c.strand_index] = 1
-
                 # if is a Crossing or at the end of the component, advance the label
                 # otherwise, don't advance the label since we will still be on the same arc
                 if isinstance(c.crossing, Crossing) or i == len(component) - 1:
@@ -340,6 +383,10 @@ class Tangle:
         ans = []
         for C in self.crossings:
             ans += C.entry_points()
+
+        for s in self.boundary_strands:
+            ans += s.entry_points()
+
         return ans
 
     def _crossings_from_PD_code(self, code, entry_points):
@@ -479,6 +526,8 @@ class Tangle:
 
         return starts
 
+
+    # TODO: make the following operations interact with orientations...
     def __add__(self, other):
         """Put self to left of other and fuse the top-right strand of self to the top-left
         strand of other and the bottom-right strand of self to the bottom-left strand of other.
@@ -673,6 +722,26 @@ class Tangle:
         copy = self.copy()
         copy._fuse_strands()
         return planar_isotopy.min_isosig(copy, root, over_or_under)
+
+    def reverse_orientation(self, component_index):
+        # TODO
+        pass
+
+    def is_planar(self):
+        # TODO
+        pass
+
+    def simplify(self, mode = 'basic', type_III_limit = 100):
+        # TODO: double check if this works
+        from . import simplify
+        if mode == 'basic':
+            return simplify.basic_simplify(self)
+        elif mode == 'level':
+            return simplify.simplify_via_level_type_III(self, type_III_limit)
+        elif mode == 'pickup':
+            return simplify.pickup_simplify(self)
+        elif mode == 'global':
+            return simplify.pickup_simplify(self, type_III_limit)
 
     def is_planar_isotopic(self, other, root=None, over_or_under=False) -> bool:
         return self.isosig() == other.isosig()
