@@ -275,8 +275,6 @@ class Tangle:
         """
         m, n = self.boundary
         Tm, Tn = decode_boundary(boundary)
-        if (m, n) == (Tm, Tn):
-            return self
         if m + n != Tm + Tn:
             raise ValueError("Reshaping requires the tangle have the same number of boundary"
                              " strands as in the new boundary.")
