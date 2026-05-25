@@ -414,7 +414,7 @@ class Strand:
               (self.label, [format_adjacent(a) for a in self.adjacent]))
 
     def is_loop(self):
-        return self == self.adjacent[0][0]
+        return self.adjacent[0] is not None and self == self.adjacent[0][0]
 
     def _clear(self):
         self.sign, self.direction = 0, None
@@ -464,6 +464,7 @@ class Strand:
     def orient(self):
         if self.direction == (1, 0):
             self.rotate(1)
+            self.direction = (0,1)
         
         self.sign = 1
 
@@ -877,7 +878,8 @@ class Link:
             for comp in self.link_components:
                 for cs in comp:
                     if cs.crossing in self.crossings:
-                        start_css.append(cs)
+                        s = cs.crossing._adjacent_len // 2
+                        start_css.append(cs.rotate(s))
                         break
         self.link_components = None
         for c in self.crossings:
@@ -1038,6 +1040,17 @@ class Link:
             assert self._DT_convention_holds()
 
         self.link_components = components
+
+    @property
+    def components(self):
+        """
+        Synonym for link_components
+        """
+        return self.link_components
+    
+    @components.setter
+    def components(self, value):
+        self.link_components = value
 
     def digraph(self):
         """

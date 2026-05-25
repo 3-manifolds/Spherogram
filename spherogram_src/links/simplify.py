@@ -74,7 +74,7 @@ def remove_crossings(link, eliminate):
         for C in eliminate:
             link.crossings.remove(C)
         new_components = []
-        for component in link.link_components if isinstance(link, Link) else link.components:
+        for component in link.components:
             for C in eliminate:
                 for cep in C.entry_points():
                     try:
@@ -83,12 +83,10 @@ def remove_crossings(link, eliminate):
                         pass
             if len(component):
                 new_components.append(component)
-        components_removed = len(link.link_components if isinstance(link, Link) else link.components) - len(new_components)
+        components_removed = len(link.components) - len(new_components)
         link.unlinked_unknot_components += components_removed
-        if isinstance(link, Link):
-            link.link_components = new_components
-        else:
-            link.components = new_components
+
+        link.components = new_components
 
 
 def reidemeister_I(link, C):
@@ -186,18 +184,16 @@ def basic_simplify(link, build_components=True, to_visit=None,
     # Redo the strand labels (used for DT codes)
     if (success and build_components) or force_build_components:
         component_starts = []
-        is_link = isinstance(link, Link)
 
-        for component in link.link_components if is_link else link.components:
+        for component in link.components:
             assert len(component) > 0
             if len(component) > 1:
-                if is_link or isinstance(component[0].crossing, (Strand, Crossing)):
+                if isinstance(component[0].crossing, (Strand, Crossing)):
                     a, b = component[:2]
                 else:
                     assert len(component) > 3
                     a, b = component[1:3]
             else:
-                assert is_link
                 a = component[0]
                 b = a.next()
             if a.strand_label() % 2 == 0:
@@ -836,10 +832,8 @@ def clear_orientations(link):
     """
     Resets the orientations on the crossings of a link to default values
     """
-    if isinstance(link, Link):
-        link.link_components = None
-    else:
-        link.components = None
+    link.components = None
+
     for i in link.crossings:
         i.sign = 0
         i.directions.clear()

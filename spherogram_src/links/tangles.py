@@ -31,6 +31,8 @@ class CyclicList(list):
         super().__init__(iterable)
 
     def __getitem__(self, i):
+        if isinstance(i, slice):
+            return super().__getitem__(i)
         return super().__getitem__(i % len(self))
 
 def join_strands(x, y):
@@ -131,7 +133,10 @@ class Tangle:
         Usually tangles should not be created directly using this constructor since the
         tangle operations and various primitive tangles are sufficient to create any tangle.
         """
-        self.label = label
+        if label is None:
+            self.label = id(self)
+        else:
+            self.label = label
 
         m, n = decode_boundary(boundary)        
         component_starts = None
@@ -146,26 +151,9 @@ class Tangle:
                 raise NotImplementedError("Not Implemented. If you are trying to create a tangle from a PD code, input the PD code as a list instead.")
             
             if (len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)))\
-                  or (entry_points is not None and len(entry_points) > 0 and not isinstance(entry_points[0], CrossingEntryPoint)):
+                  or (entry_points is not None and len(entry_points) > 0 and not isinstance(entry_points[0], (CrossingStrand, list, tuple))):
                 crossings, component_starts, entry_points = self._crossings_from_PD_code(crossings, entry_points)
                 start_orientations = component_starts[:]
-
-        if not all(isinstance(c, (Crossing, Strand)) for c in crossings):
-            raise ValueError("Every element of crossings must be a Crossing or a Strand")
-
-        self.unlinked_unknot_components = 0
-        component_strands = []
-        for s in reversed(crossings):
-            if isinstance(s, Strand):
-                if s.component_idx is not None:
-                    # defer fusing
-                    # TODO: deal with this
-                    component_strands.append(s)
-                elif s.is_loop():
-                    self.unlinked_unknot_components += 1
-                else:
-                    s.fuse()
-                    crossings.remove(s)
 
         # the pair for the number of lower strands and the number of upper strands
         self.boundary = (m, n)
@@ -184,21 +172,54 @@ class Tangle:
                              " of entry_points")
 
         for i, e in enumerate(entry_points):
-            if isinstance(e[0], Strand):
-                self.boundary_strands.append(e[0])
-                join_strands(e, (self, i))
-            else:
-                this_strand = Strand(label = f'TS({self}, {i})')
-                self.boundary_strands.append(this_strand)
-                join_strands(e, (this_strand, 0))
-                join_strands((self, i), (this_strand, 1))
+            this_strand = Strand(label = f'TSE({self}, {i})')
+            self.boundary_strands.append(this_strand)
+            join_strands(e, (this_strand, 1))
+            join_strands((self, i), (this_strand, 0))
+            
+        if not all(isinstance(c, (Crossing, Strand)) for c in crossings):
+            raise ValueError("Every element of crossings must be a Crossing or a Strand")
 
-        # Note that crossings in Tangle can contain Strands
+        self.unlinked_unknot_components = 0
+        component_strands = []
+        for s in reversed(crossings):
+            if isinstance(s, Strand):
+                if s.component_idx is not None:
+                    # defer fusing
+                    component_strands.append(s)
+                elif s.is_loop():
+                    self.unlinked_unknot_components += 1
+                else:
+                    s.fuse()
+                    crossings.remove(s)
+
+        # Note that crossings in Tangle can contain Strands with comp_idx for now
         self.crossings = crossings
 
         if build:
-            self._build(start_orientations, component_starts, entry_points=entry_points)
-            assert self.is_oriented()
+            self._build(start_orientations, component_starts)
+            assert self.is_oriented(), 'Tangle is not oriented after build'
+
+            for s in component_strands:
+                comp_id =  s.component_idx
+                comp = self.components[s.strand_component]
+
+                if isinstance(comp[0].crossing, Tangle):
+                    for cep in reversed(comp):
+                        if cep.crossing == s:
+                            comp.remove(cep)
+                            break
+                    else:
+                        raise RuntimeError(f"Component strand {s} not found in component {comp}")
+                    
+                    # Note that the components are always built following the orientation
+                    # hence below always insists that the comp_id is labeled on the entrance strand
+                    if comp[1].component_idx is not None:
+                        assert comp[1].component_idx == comp_id
+                    else:
+                        comp[1].component_idx = comp_id
+
+                    self.crossings.remove(s)
 
     def __getitem__(self, i):
         return (self, i % (self.boundary[0] + self.boundary[1]))
@@ -216,14 +237,32 @@ class Tangle:
 
     def is_oriented(self):
         return all(s != 0 for s in self.boundary_signs)
+    
+    def make_upward(self):
+        if self.is_upward():
+            return
+        
+        assert self.is_oriented(), 'Tangle should be oriented to tell if it is upward'
+        
+        to_reverse = set()
+        for i in range(self.boundary[0]):
+            if self.boundary_signs[i] == 1:
+                to_reverse.add(self.boundary_strands[i].strand_component)
+        
+        self.reverse_orientation(to_reverse)
 
     def entry_points(self):
-        assert self.is_oriented()
+        assert self.is_oriented(), 'Tangle should be oriented to tell the entry points'
         return [CrossingEntryPoint(self, i) for i in range(self.boundary[0] + self.boundary[1]) 
                 if self.boundary_signs[i] == -1]
+    
+    def update_label(self, label):
+        self.label = label
+        for i, s in enumerate(self.boundary_strands):
+            s.label = f'TSE({self}, {i})'
 
-    def _build(self, start_orientations=None, component_starts=None, entry_points = None):
-        self._orient_crossings(start_orientations=start_orientations, entry_points=entry_points)
+    def _build(self, start_orientations=None, component_starts=None):
+        self._orient_crossings(start_orientations=start_orientations)
         self._build_components(component_starts=component_starts)
 
     def _clear(self):
@@ -246,7 +285,8 @@ class Tangle:
             for comp in self.components:
                 for cs in comp:
                     if cs.crossing in self.crossings + self.boundary_strands:
-                        start_css.append(cs)
+                        s = cs.crossing._adjacent_len // 2
+                        start_css.append(cs.rotate(s))
                         break
         self._clear()
         if same_components_and_orientations:
@@ -258,7 +298,7 @@ class Tangle:
     def all_crossings_oriented(self):
         return all(c.sign != 0 for c in self.crossings + self.boundary_strands)
 
-    def _orient_crossings(self, start_orientations=None, entry_points = None):
+    def _orient_crossings(self, start_orientations=None):
         if self.all_crossings_oriented():
             return
         if start_orientations is None:
@@ -275,7 +315,7 @@ class Tangle:
                 c, i = start = start_orientations.pop()
             else:
                 c, i = start = remaining.pop()
-            
+
             is_reversed = False
             finished = False
             while not finished:
@@ -283,7 +323,6 @@ class Tangle:
                     c.make_tail(i)
                 else:
                     c.make_head(i)
-
                 remaining.discard((c, i))
                 
                 if not c.adjacent[i][0] == self:
@@ -295,7 +334,7 @@ class Tangle:
                     finished = (c, i) == start
                 else:
                     boundary_index = c.adjacent[i][1]
-                    assert self.boundary_signs[boundary_index] == 0
+                    assert self.boundary_signs[boundary_index] == 0, f'Boundary {boundary_index} is unexpectedly signed, something is wrong with the gluings'
                     
                     if is_reversed:
                         # Hit the boundary of the tangle from both sides, 
@@ -358,6 +397,14 @@ class Tangle:
 
             # Label arcs along the component
             for i, c in enumerate(component):
+                if isinstance(c.crossing, Tangle) and self.boundary_signs[c.strand_index] == 0:
+                    assert len(component) > 2
+
+                    if i == 0:
+                        self.boundary_signs[c.strand_index] = -1
+                    else:
+                        assert i == len(component) - 1
+                        self.boundary_signs[c.strand_index] = 1
                 # if is a Crossing or at the end of the component, advance the label
                 # otherwise, don't advance the label since we will still be on the same arc
                 if isinstance(c.crossing, Crossing) or i == len(component) - 1:
@@ -430,7 +477,7 @@ class Tangle:
             if x in gluings:
                 entry_strands.append(crossings[gluings[x][0][0]].crossing_strands()[gluings[x][0][1]])
             else:
-                this_strand = Strand(label = f'TS({self}, {i})')
+                this_strand = Strand(label = f'PDSE({self}, {i})')
                 if x not in entry_dict:
                     entry_strands.append((this_strand, 0))
                     entry_dict[x] = (this_strand, 1)
@@ -463,6 +510,10 @@ class Tangle:
 
         return PD, entry_info
     
+    def rot_num(self):
+        #TODO
+        pass
+
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """
         A PD code determines an order and orientation on the tangle
@@ -548,7 +599,8 @@ class Tangle:
         return starts
 
 
-    # TODO: make the following operations interact with orientations...
+    # The following operators always clear the current orientations on both tangles 
+    # and recreate an orientation with default behaviour.
     def __add__(self, other):
         """Put self to left of other and fuse the top-right strand of self to the top-left
         strand of other and the bottom-right strand of self to the bottom-left strand of other.
@@ -564,7 +616,15 @@ class Tangle:
         join_strands(a[mA - 1], b[0])
         join_strands(a[mA + nA - 1], b[mB])
         entry_points = a[:mA - 1] + b[1:mB] + a[mA:mA + nA - 1] + b[mB + 1:]
-        return Tangle((mA + mB - 2, nA + nB - 2), A.crossings + B.crossings, entry_points)
+
+        crossings = A.crossings + A.boundary_strands + B.crossings + B.boundary_strands
+
+        for c in crossings:
+            c._clear()
+
+        return Tangle((mA + mB - 2, nA + nB - 2), 
+                      crossings, 
+                      entry_points)
 
     def __mul__(self, other):
         """Join with self *above* other, as with braid multiplication.
@@ -583,7 +643,15 @@ class Tangle:
         a, b = A.adjacent, B.adjacent
         for i in range(mA):
             join_strands(a[i], b[mB + i])
-        return Tangle((mB, nA), A.crossings + B.crossings, b[:mB] + a[mA:])
+
+        crossings = A.crossings + A.boundary_strands + B.crossings + B.boundary_strands
+
+        for c in crossings:
+            c._clear()
+
+        return Tangle((mB, nA), 
+                      crossings,
+                      b[:mB] + a[mA:])
 
     def __neg__(self):
         """Mirror image of self.
@@ -594,6 +662,7 @@ class Tangle:
         for c in T.crossings:
             if not isinstance(c, Strand):
                 c.rotate_by_90()
+                c.orient()
         return T
 
     def __or__(self, other):
@@ -606,7 +675,11 @@ class Tangle:
         (mA, nA), (mB, nB) = A.boundary, B.boundary
         a, b = A.adjacent, B.adjacent
         entry_points = a[:mA] + b[:mB] + a[mA:] + b[mB:]
-        return Tangle((mA + mB, nA + nB), A.crossings + B.crossings, entry_points)
+        crossings = A.crossings + A.boundary_strands + B.crossings + B.boundary_strands
+
+        return Tangle((mA + mB, nA + nB), 
+                      crossings, 
+                      entry_points)
 
     def copy(self):
         return pickle.loads(pickle.dumps(self))
@@ -620,9 +693,14 @@ class Tangle:
         anticlockwise = [0, 1, 3, 2]
         rotate = dict(zip(anticlockwise, rotate_list(anticlockwise, s)))
         T = self.copy()
+        
         T.adjacent = [T.adjacent[rotate[i]] for i in range(4)]
         for i, (o, j) in enumerate(T.adjacent):
             o.adjacent[j] = (T, i)
+
+        T.boundary_strands = [T.boundary_strands[rotate[i]] for i in range(4)]
+        T._rebuild(True)
+
         return T
 
     def invert(self):
@@ -651,7 +729,12 @@ class Tangle:
             join_strands(T.adjacent[i], T.adjacent[i + 1])
         for i in range(0, n, 2):
             join_strands(T.adjacent[m + i], T.adjacent[m + i + 1])
-        return Link(T.crossings, check_planarity=False)
+
+        crossings = T.crossings + T.boundary_strands
+        for c in crossings:
+            c._clear()
+
+        return Link(crossings, check_planarity=False)
 
     def denominator_closure(self):
         """The braid closure, where corresponding strands between the top and bottom
@@ -673,14 +756,26 @@ class Tangle:
         T = self.copy()
         for i in range(n):
             join_strands(T.adjacent[i], T.adjacent[m + i])
-        return Link(T.crossings, check_planarity=False)
+
+        crossings = T.crossings + T.boundary_strands
+        for c in crossings:
+            c._clear()
+            
+        return Link(crossings, check_planarity=False)
 
     def link(self):
         """If its boundary is (0, 0), return this Tangle as a Link."""
         if self.boundary != (0, 0):
             raise ValueError("The boundary must be (0, 0)")
-        return Link(self.copy().crossings, check_planarity=False)
+        
+        crossings = self.copy().crossings
+        for c in crossings:
+            c._clear()
 
+        return Link(crossings, check_planarity=False)
+
+
+    # TODO: test reshape
     def reshape(self, boundary, displace=0):
         """Renumber the boundary strands so that the tangle has the new boundary
         shape. This is performed by either repeatedly moving the last strands from the
@@ -693,18 +788,31 @@ class Tangle:
         """
         m, n = self.boundary
         Tm, Tn = decode_boundary(boundary)
-        if (m, n) == (Tm, Tn):
+        if (m, n) == (Tm, Tn) and displace == 0:
             return self
         if m + n != Tm + Tn:
             raise ValueError("Reshaping requires the tangle have the same number of boundary"
                              " strands as in the new boundary.")
+        anticlockwise = [i for i in range(m)] + list(reversed([m + i for i in range(n)]))
+        rotate = dict(zip(anticlockwise, rotate_list(anticlockwise, displace)))
+        
         T = self.copy()
-        # The 'adjacent' array but in total counterclockwise order
-        adj_ccw = T.adjacent[:m] + list(reversed(T.adjacent[m:]))
-        adj_ccw = rotate_list(adj_ccw, displace)
 
-        return Tangle((Tm, Tn), T.crossings,
-                      adj_ccw[:Tm] + list(reversed(adj_ccw[Tm:])))
+        displaced_adj = [T.adjacent[rotate[i]] for i in range(m + n)]
+        # The 'adjacent' array but in total counterclockwise order
+        adj_ccw = displaced_adj[:m] + list(reversed(displaced_adj[m:]))
+        T.adjacent = adj_ccw[:Tm] + list(reversed(adj_ccw[Tm:]))
+        T.boundary = (Tm, Tn)
+        for i, (o, j) in enumerate(T.adjacent):
+            o.adjacent[j] = (T, i)
+
+        displaced_bd_strands = [T.boundary_strands[rotate[i]] for i in range(m + n)]
+        bd_strands_ccw = displaced_bd_strands[:m] + list(reversed(displaced_bd_strands[m:]))
+        T.boundary_strands = bd_strands_ccw[:Tm] + list(reversed(bd_strands_ccw[Tm:]))
+
+        T._rebuild(True)
+
+        return T
 
     def circular_rotate(self, n):
         """
@@ -726,6 +834,7 @@ class Tangle:
             raise ValueError("Tangles must have compatible boundary shapes")
         return (self * (other.circular_rotate(n))).denominator_closure()
 
+    # TODO: check if isosig still works
     def isosig(self, root=None, over_or_under=False):
         """
         Return a bunch of data which encodes the planar isotopy class of the
@@ -745,8 +854,68 @@ class Tangle:
         return planar_isotopy.min_isosig(copy, root, over_or_under)
 
     def reverse_orientation(self, component_index):
-        # TODO
-        pass
+        """
+        component_index: either a single index of component or a list of indices of components
+        """
+        if not isinstance(component_index, (set, list)):
+            component_index = [component_index]
+
+        org_entries = []
+        for comp in self.components:
+            for cs in comp:
+                if cs.crossing in self.crossings + self.boundary_strands:
+                    org_entries.append(cs)
+                    break
+
+        new_starts = []
+        for i, cs in enumerate(org_entries):
+            if i not in component_index:
+                c, e = cs.crossing, cs.strand_index
+                s = c._adjacent_len // 2
+                reversed_cs = CrossingStrand(c, (e + s) % (2 * s))
+                new_starts.append(reversed_cs)
+            else:
+                new_starts.append(cs)
+
+        self._clear()
+        self._build(start_orientations = new_starts,
+                    component_starts = new_starts)
+
+    def faces(self):
+        """
+        
+        """
+        corners = OrderedSet([CrossingStrand(c, i)
+                              for c in self.crossings for i in range(4)])
+        faces = []
+        while len(corners):
+            cs0 = corners.pop()
+            face = [cs0]
+            next = cs0
+            while True:
+                # Next two lines equiv to: next = next.next_corner()
+                c, e = next.crossing, next.strand_index
+                if isinstance(c, Tangle):
+                    if e == 0:
+                        next = CrossingStrand(*c.adjacent[c.boundary[0]])
+                    elif e < c.boundary[0]:
+                        next = CrossingStrand(*c.adjacent[e-1])
+                    elif e < c.boundary[0] + c.boundary[1] - 1:
+                        next = CrossingStrand(*c.adjacent[e+1])
+                    else:
+                        assert e == c.boundary[0] + c.boundary[1] - 1 
+                        next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
+                else:
+                    next = next.next_corner()
+
+                if next == cs0:
+                    faces.append(face)
+                    break
+                else:
+                    corners.discard(next)
+                    face.append(next)
+
+        return faces
 
     def is_planar(self):
         # TODO
@@ -759,10 +928,8 @@ class Tangle:
             return simplify.basic_simplify(self)
         elif mode == 'level':
             return simplify.simplify_via_level_type_III(self, type_III_limit)
-        elif mode == 'pickup':
-            return simplify.pickup_simplify(self)
-        elif mode == 'global':
-            return simplify.pickup_simplify(self, type_III_limit)
+        else:
+            raise NotImplementedError()
 
     def is_planar_isotopic(self, other, root=None, over_or_under=False) -> bool:
         return self.isosig() == other.isosig()
@@ -786,6 +953,7 @@ class Tangle:
     def __repr__(self):
         return "<Tangle: %s>" % self.label
 
+    # TODO: fix describe, or remove it?
     def describe(self, fuse_strands=True):
         """Give a PD-like description of the tangle in the form
         Tangle[{lower arcs}, {upper arcs}, P and X codes].
@@ -928,11 +1096,11 @@ def IntegerTangle(n):
         T = OneTangle()
         for i in range(n - 1):
             T += OneTangle()
-        T.label = f"IntegerTangle({n})"
+        T.update_label(f"IntegerTangle({n})")
         return T
     elif n < 0:
         T = -IntegerTangle(-n)
-        T.label = f"IntegerTangle({n})"
+        T.update_label(f"IntegerTangle({n})")
         return T
     else:
         raise ValueError("Expecting int")
@@ -982,8 +1150,11 @@ class RationalTangle(Tangle):
             T = IntegerTangle(p) + T.invert()
         if a < 0:
             T = -T
-        Tangle.__init__(self, 2, T.crossings, T.adjacent,
-                        f"RationalTangle({a}, {b})")
+
+        Tangle.__init__(self, 2, 
+                        T.crossings + T.boundary_strands,
+                        T.adjacent,
+                        label = f"RationalTangle({a}, {b})")
 
 # ---------------------------------------------------
 #
@@ -1009,10 +1180,9 @@ def IdentityBraid(n):
     """
     if n < 0:
         raise ValueError("Expecting non-negative int")
-    strands = [Strand() for i in range(n)]
-    entry_points = [(s, 0) for s in strands] + [(s, 1) for s in strands]
-    return Tangle(n, strands, entry_points,
-                  f"IdentityBraid({n})")
+    entry_points = 2* [i for i in range(n)] 
+    return Tangle(n, [], entry_points,
+                  label = f"IdentityBraid({n})")
 
 
 def BraidTangle(gens, n=None):
@@ -1056,4 +1226,7 @@ def BraidTangle(gens, n=None):
         if abs(i) >= n:
             raise ValueError("Generators must have magnitude less than n")
         b = b * gen(i)
+
+    b.make_upward()
+
     return b
