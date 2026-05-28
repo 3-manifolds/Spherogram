@@ -129,8 +129,12 @@ class Tangle:
         * label is an arbitrary label for the tangle for informational purposes, which
           appears in the ``repr`` form of the tangle.
 
-        Usually tangles should not be created directly using this constructor since the
-        tangle operations and various primitive tangles are sufficient to create any tangle.
+        Tangles now support creation from PD_code, for example:
+        
+        >>> Tangle(3, [[0,4,1,5],[1,8,2,9],[2,7,3,6],[5,9,6,10]], [0,4,8,10,3,7], label = 'RIII')
+        <Tangle: RIII: 3 comp; 4 cross; (3, 3) boundary>
+
+        see doc of ``PD_code`` for more details.
         """
         if label is None:
             self.label = id(self)
@@ -171,7 +175,7 @@ class Tangle:
                              " of entry_points")
 
         for i, e in enumerate(entry_points):
-            this_strand = Strand(label = f'TSE({self}, {i})')
+            this_strand = Strand(label = f'TSE({str(self)}, {i})')
             self.boundary_strands.append(this_strand)
             join_strands(e, (this_strand, 1))
             join_strands((self, i), (this_strand, 0))
@@ -353,6 +357,23 @@ class Tangle:
             s.orient()
 
     def _build_components(self, component_starts=None):
+        """
+        Each component is stored as a list of *entry points* to crossings. 
+        If the component starts and ends at the boundary of tangles, 
+        the corresponding CrossingEntryPoint(self, boundary_index) 
+        will be put at the tail and the head of the list. 
+
+        If provided, the component_starts must consist of one
+        CrossingEntryPoint per component.
+
+        >>> len(RationalTangle(-2, 3).components)
+        2
+        >>> len(Tangle(3, [[0,4,1,5],[1,8,2,9],[2,7,3,6],[5,9,6,10]], 
+        ... [0,4,8,10,3,7], label = 'RIII').components)
+        3
+        >>> len(((RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(-1))).components)
+        2
+        """
         if component_starts is not None:
             # Take all CrossingStrand and CrossingEntryPoint objects
             # and turn them into CrossingEntryPoints
@@ -456,8 +477,6 @@ class Tangle:
         if any(len(v) > 2 for v in gluings.values()):
             raise ValueError("PD code isn't consistent")
 
-        
-
         crossings = [Crossing(i) for i, d in enumerate(code)]
         
         for item in gluings.values():
@@ -472,7 +491,7 @@ class Tangle:
             if x in gluings:
                 entry_strands.append(crossings[gluings[x][0][0]].crossing_strands()[gluings[x][0][1]])
             else:
-                this_strand = Strand(label = f'PDSE({self}, {i})')
+                this_strand = Strand(label = f'PDSE({str(self)}, {i})')
                 crossings.append(this_strand)
                 if x not in entry_dict:
                     entry_strands.append((this_strand, 0))
@@ -491,6 +510,22 @@ class Tangle:
         return crossings, component_starts, entry_strands
     
     def PD_code(self, KnotTheory=False, min_strand_index = 0):
+        """
+        The planar diagram code for the tangle. Unlike for links, it returns two extra fields,
+        boundary and entry_info in addition to the PD code of crossings, in order to specify
+        how the boundary and entries of the tangle is arranged. The fields are ordered as follows:
+
+        boundary, PD, entry_info
+
+        so that they can be unpacked immediately for creating Tangles.
+
+        >>> RationalTangle(-1,2).PD_code()
+        ((2, 2), [(1, 5, 2, 4), (3, 1, 4, 0)], [0, 3, 2, 5])
+        >>> BraidTangle([1,2,1]).PD_code()
+        ((3, 3), [(7, 5, 8, 4), (6, 2, 7, 1), (3, 1, 4, 0)], [0, 3, 6, 8, 5, 2])
+        >>> Tangle(*RationalTangle(-1,2).PD_code()).PD_code()
+        ((2, 2), [(1, 5, 2, 4), (3, 1, 4, 0)], [0, 3, 2, 5])
+        """
         PD = []
         entry_info = [s + min_strand_index for s in self.strand_labels]
 
@@ -504,7 +539,7 @@ class Tangle:
         else:
             PD = [tuple(x) for x in PD]
 
-        return PD, entry_info
+        return self.boundary, PD, entry_info
     
     def rot_num(self):
         #TODO
@@ -779,6 +814,14 @@ class Tangle:
         becomes the new lower-left strand).
 
         This is a generalization of ``Tangle.rotate()``.
+
+        >>> T = BraidTangle([1,2,1])
+        >>> T.PD_code() 
+        ((3, 3), [(7, 5, 8, 4), (6, 2, 7, 1), (3, 1, 4, 0)], [0, 3, 6, 8, 5, 2])
+        >>> T.reshape((4,2)).PD_code()
+        ((4, 2), [(7, 5, 8, 4), (6, 2, 7, 1), (3, 1, 4, 0)], [0, 3, 6, 2, 8, 5])
+        >>> T.reshape((4,2), displace = 1).PD_code()
+        ((4, 2), [(7, 5, 8, 4), (6, 2, 7, 1), (3, 1, 4, 0)], [3, 6, 2, 5, 0, 8])
         """
         m, n = self.boundary
         Tm, Tn = decode_boundary(boundary)
@@ -828,7 +871,7 @@ class Tangle:
             raise ValueError("Tangles must have compatible boundary shapes")
         return (self * (other.circular_rotate(n))).denominator_closure()
 
-    def to_old_tangle(self):
+    def _to_old_tangle(self):
         from . import old_tangles
         copy = self.copy()
         
@@ -850,16 +893,41 @@ class Tangle:
         True
         >>> BraidTangle([1]).isosig() == BraidTangle([-1]).isosig()
         True
+        >>> BraidTangle([1,1]).isosig() == BraidTangle([-1,-1]).isosig()
+        True
+        >>> BraidTangle([1,1]).isosig(over_or_under=True) == BraidTangle([-1,-1]).isosig(over_or_under=True)
+        False
         """
 
-        return self.to_old_tangle().isosig(root = root,
+        return self._to_old_tangle().isosig(root = root,
                                            over_or_under=over_or_under)
 
     def reverse_orientation(self, component_index):
         """
+        Reverse the orientation of components specified by component_index,
+        changing the current tangle and the signs of crossings. 
+
         component_index: either a single index of component or a list of indices of components
+
+        >>> T = BraidTangle([1,2,1])
+        >>> T
+        <Tangle: BraidTangle([1, 2, 1], 3): 3 comp; 3 cross; (3, 3) boundary>
+        >>> T.PD_code()
+        ((3, 3), [(7, 5, 8, 4), (6, 2, 7, 1), (3, 1, 4, 0)], [0, 3, 6, 8, 5, 2])
+        >>> T.reverse_orientation(1)
+        >>> T.PD_code()
+        ((3, 3), [(7, 3, 8, 4), (6, 2, 7, 1), (4, 0, 5, 1)], [0, 5, 6, 8, 3, 2])
+        >>> T.reverse_orientation([1,2])
+        >>> T.PD_code()
+        ((3, 3), [(6, 4, 7, 5), (7, 1, 8, 2), (3, 1, 4, 0)], [0, 3, 8, 6, 5, 2])
+        >>> T.reverse_orientation([0,2])
+        >>> T.PD_code()
+        ((3, 3), [(7, 5, 8, 4), (6, 0, 7, 1), (3, 1, 4, 2)], [2, 3, 6, 8, 5, 0])
+        >>> T.reverse_orientation([0])
+        >>> T.PD_code()
+        ((3, 3), [(7, 5, 8, 4), (6, 2, 7, 1), (3, 1, 4, 0)], [0, 3, 6, 8, 5, 2])
         """
-        if not isinstance(component_index, (set, list)):
+        if not isinstance(component_index, (set, list, tuple)):
             component_index = [component_index]
 
         org_entries = []
@@ -885,10 +953,26 @@ class Tangle:
 
     def faces(self):
         """
-        
+        The faces are the complementary regions of the tangle diagram in the disk,
+        where the boundary of the disk is thought of as the cusp.
+
+        Each face is given as a list of corners of crossings as one
+        goes around *clockwise*.  These corners are recorded as
+        CrossingStrands, where CrossingStrand(c, j) denotes the corner
+        of the face abutting crossing c between strand j and j + 1;
+        similarly, if c is the tangle itself, it denots the corner 
+        as one stands at the j-th boundary entry and look *counterclockwisely*.
+
+        Alternatively, the sequence of CrossingStrands can be regarded
+        as the *heads* of the oriented edges of the face.    
+
+        >>> len(IdentityBraid(2).faces())
+        3
+        >>> len(BraidTangle([1,2,1]).faces())
+        7
         """
         corners = OrderedSet([CrossingStrand(c, i)
-                              for c in self.crossings for i in range(4)])
+                              for c in self.crossings + self.boundary_strands for i in range(c._adjacent_len)])
         faces = []
         while len(corners):
             cs0 = corners.pop()
@@ -924,6 +1008,49 @@ class Tangle:
         pass
 
     def simplify(self, mode = 'basic', type_III_limit = 100):
+        """
+        Tries to simplify the tangle diagram. Returns whether it succeeded 
+        in reducing the number of crossings. Modifies the tangle in place,
+        and unknot components which are also unlinked may be silently discarded. 
+        The ordering of ``components`` is not always preserved.
+
+        The following strategies can be employed.
+
+        1. In the default ``basic`` mode, it does Reidemeister I and II moves
+           until none are possible.
+
+        2. In ``level`` mode, it does random Reidemeister III moves, reducing
+           the number of crossings via type I and II moves whenever possible.
+           The process stops when it has done ``type_III_limit`` *consecutive*
+           type III moves without any simplification.
+
+        The ``pickup`` and ``global`` modes are currently not available for tangles.
+
+        Some examples:
+
+        >>> T = Tangle(2, [[0,3,1,4],[1,5,2,4]], [0,3,2,5], label = 'RII')
+        >>> T
+        <Tangle: RII: 2 comp; 2 cross; (2, 2) boundary>
+        >>> T.simplify('basic')
+        True
+        >>> T
+        <Tangle: RII: 2 comp; 0 cross; (2, 2) boundary>
+        >>> T.simplify('basic') # Already done all it can
+        False
+        
+        >>> T = Tangle(3, [[0,4,1,5],[1,8,2,9],[2,7,3,6],[5,9,6,10]], 
+        ... [0,4,8,10,3,7], label = 'RIII')
+        >>> T
+        <Tangle: RIII: 3 comp; 4 cross; (3, 3) boundary>
+        >>> T.simplify('basic')
+        False
+        >>> T # No change happens
+        <Tangle: RIII: 3 comp; 4 cross; (3, 3) boundary>
+        >>> T.simplify('level')
+        True
+        >>> T
+        <Tangle: RIII: 3 comp; 2 cross; (3, 3) boundary>
+        """
         from . import simplify
         if mode == 'basic':
             return simplify.basic_simplify(self)
@@ -936,6 +1063,9 @@ class Tangle:
         return self.isosig(root = root, over_or_under=over_or_under) == other.isosig(root = root, over_or_under = over_or_under)
 
     def __repr__(self):
+        return "<Tangle: %s: %d comp; %d cross; (%d, %d) boundary>" % (self.label, len(self.components), len(self.crossings), self.boundary[0], self.boundary[1])
+    
+    def __str__(self):
         return "<Tangle: %s>" % self.label
 
     def describe(self, fuse_strands=True):
@@ -948,10 +1078,11 @@ class Tangle:
         'Tangle[{1,2}, {3,4}, X[2,4,3,1]]'
         """
 
-        return self.to_old_tangle().describe(fuse_strands=fuse_strands)
+        return self._to_old_tangle().describe(fuse_strands=fuse_strands)
 
 
 Tangle.bridge_closure = Tangle.numerator_closure
+
 Tangle.braid_closure = Tangle.denominator_closure
 
 
@@ -961,6 +1092,9 @@ def ComponentTangle(component_idx):
     Python list indexing rules, so -1 means the component containing
     this tangle should be the last component when it is turned into
     a Link.
+
+    >>> ComponentTangle(2)
+    <Tangle: ComponentTangle(2): 1 comp; 0 cross; (1, 1) boundary>
 
     >>> T=(RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(-1))
     >>> T.describe()
@@ -985,10 +1119,9 @@ def ComponentTangle(component_idx):
     Traceback (most recent call last):
         ...
     ValueError: Two Strand objects in different components have the same component_idx values
-
     """
     s = Strand(component_idx=component_idx)
-    return Tangle((1, 1), [s], [(s, 0), (s, 1)])
+    return Tangle((1, 1), [s], [(s, 0), (s, 1)], label = f'ComponentTangle({component_idx})')
 
 
 def CapTangle():
@@ -1084,6 +1217,9 @@ class RationalTangle(Tangle):
     attributes: ``fraction`` gives (a, b) and ``partial_quotients`` gives the continued
     fraction expansion of ``abs(a)/b``.
 
+    >>> RationalTangle(-2,3)
+    <Tangle: RationalTangle(-2, 3): 2 comp; 3 cross; (2, 2) boundary>
+
     >>> RationalTangle(2,5).braid_closure().exterior().identify() # doctest: +SNAPPY
     [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
     """
@@ -1127,6 +1263,8 @@ def IdentityBraid(n):
     'Tangle[{1}, {2}, P[1,2]]'
     >>> IdentityBraid(2).describe()
     'Tangle[{1,2}, {3,4}, P[1,3], P[2,4]]'
+    >>> IdentityBraid(5)
+    <Tangle: IdentityBraid(5): 5 comp; 0 cross; (5, 5) boundary>
     >>> IdentityBraid(-1)
     Traceback (most recent call last):
         ...
@@ -1151,7 +1289,7 @@ def BraidTangle(gens, n=None):
       number of strands that works for the given list of generators
 
     >>> BraidTangle([], 1)
-    <Tangle: IdentityBraid(1)>
+    <Tangle: BraidTangle([], 1): 1 comp; 0 cross; (1, 1) boundary>
     >>> BraidTangle([1]).describe()
     'Tangle[{1,2}, {3,4}, X[2,4,3,1]]'
     >>> BraidTangle([-1]).describe()
@@ -1164,6 +1302,8 @@ def BraidTangle(gens, n=None):
     'Tangle[{1,2,3}, {4,5,6}, X[7,5,4,1], X[3,6,7,2]]'
     >>> BraidTangle([1,2,1]).describe()
     'Tangle[{1,2,3}, {4,5,6}, X[7,5,4,8], X[3,6,7,9], X[2,9,8,1]]'
+    >>> BraidTangle([1,2,1])
+    <Tangle: BraidTangle([1, 2, 1], 3): 3 comp; 3 cross; (3, 3) boundary>
     """
     if n is None:
         n = max(-min(gens), max(gens)) + 1
@@ -1182,5 +1322,6 @@ def BraidTangle(gens, n=None):
         b = b * gen(i)
 
     b.make_upward()
+    b.update_label(f'BraidTangle({gens}, {n})')
 
     return b

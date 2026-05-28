@@ -890,6 +890,39 @@ class Link:
         else:
             self._build()
 
+    def reverse_orientation(self, component_index):
+        """
+        Reverse the orientation of components specified by component_index.
+
+        component_index: either a single index of component or a list of indices of components
+
+        """
+        if not isinstance(component_index, (set, list, tuple)):
+            component_index = [component_index]
+
+        org_entries = []
+        for comp in self.components:
+            for cs in comp:
+                if cs.crossing in self.crossings:
+                    org_entries.append(cs)
+                    break
+
+        new_starts = []
+        for i, cs in enumerate(org_entries):
+            if i not in component_index:
+                c, e = cs.crossing, cs.strand_index
+                s = c._adjacent_len // 2
+                reversed_cs = CrossingStrand(c, (e + s) % (2 * s))
+                new_starts.append(reversed_cs)
+            else:
+                new_starts.append(cs)
+                
+        self.link_components = None
+        for c in self.crossings:
+            c._clear()
+        self._build(start_orientations = new_starts,
+                    component_starts = new_starts)
+
     def _check_crossing_orientations(self):
         for C in self.crossings:
             if C.sign == 1:
