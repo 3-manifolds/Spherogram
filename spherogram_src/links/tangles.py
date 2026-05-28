@@ -540,10 +540,6 @@ class Tangle:
             PD = [tuple(x) for x in PD]
 
         return self.boundary, PD, entry_info
-    
-    def rot_num(self):
-        #TODO
-        pass
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """
@@ -1002,10 +998,6 @@ class Tangle:
                     face.append(next)
 
         return faces
-
-    def is_planar(self):
-        # TODO
-        pass
 
     def simplify(self, mode = 'basic', type_III_limit = 100):
         """
