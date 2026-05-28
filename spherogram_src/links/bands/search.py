@@ -237,7 +237,12 @@ def ribbon_concordant_links(link_or_manifold,
                 elif R1_R2_only:
                     L.simplify('basic')
                 else:
-                    L.simplify('global')
+                    # 'global' is not used here because doing a lot of
+                    # Type III moves is really slow.  When looking at
+                    # all paths of length 6 in a 20-crossing knot,
+                    # using 'global' here slows this function down by a
+                    # factor of 4.
+                    L.simplify('pickup')
                 normalize_crossing_labels(L)
 
                 # cap off any trivial components
