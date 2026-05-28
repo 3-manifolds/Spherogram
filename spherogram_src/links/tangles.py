@@ -238,6 +238,26 @@ class Tangle:
         return all(s != 0 for s in self.boundary_signs)
     
     def make_upward(self):
+        """
+        Change the orientation of the tangle, trying to make it upwardly oriented. 
+        The order of components is preserved. 
+        
+        >>> T = BraidTangle([1,2,1])
+        >>> T.reverse_orientation([1,2])
+        >>> T.is_upward()
+        False
+        >>> T.make_upward()
+        >>> T.is_upward()
+        True
+
+        Like alternating() for Links, this may fail silently if there is no orientation
+        which makes the tangle upwardly oriented.
+
+        >>> T = RationalTangle(-2,3)
+        >>> T.make_upward()
+        >>> T.is_upward()
+        False
+        """
         if self.is_upward():
             return
         
