@@ -291,7 +291,6 @@ class CrossingEntryPoint(CrossingStrand):
             return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
         else:
             raise RuntimeError('This should not be reached')
-            return CrossingEntryPoint(*self.crossing.adjacent[self.strand_index])
 
     def previous(self):
         d, j = self.opposite()
