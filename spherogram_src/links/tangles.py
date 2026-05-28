@@ -106,7 +106,7 @@ class TangleComponents(list):
         return component
 
 class Tangle:
-    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None):
+    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None, start_orientations = None, component_starts = None):
         """
         A tangle is a fragment of a Link with some number of boundary
         strands. Tangles can be composed in various ways along their boundary strands,
@@ -142,8 +142,8 @@ class Tangle:
             self.label = label
 
         m, n = decode_boundary(boundary)        
-        component_starts = None
-        start_orientations = None
+        component_starts = component_starts
+        start_orientations = start_orientations
         self.strand_labels = CyclicList(m * [None] + n * [None])
         self.strand_components = CyclicList(m * [None] + n * [None])
 
@@ -155,6 +155,8 @@ class Tangle:
             
             if (len(crossings) > 0 and not isinstance(crossings[0], (Strand, Crossing)))\
                   or (entry_points is not None and len(entry_points) > 0 and not isinstance(entry_points[0], (CrossingStrand, list, tuple))):
+                assert component_starts is None and start_orientations is None, "Specifying components_starts and start_orientations is not compatible with creating from PD codes"
+
                 crossings, component_starts, entry_points = self._crossings_from_PD_code(crossings, entry_points)
                 start_orientations = component_starts[:]
 
@@ -300,13 +302,8 @@ class Tangle:
             # Hopefully we have enough of the original components left
             # to figure out what this is.  Otherwise, new choices will
             # be made as in the default algorithm.
-            start_css = []
-            for comp in self.components:
-                for cs in comp:
-                    if cs.crossing in self.crossings + self.boundary_strands:
-                        s = cs.crossing._adjacent_len // 2
-                        start_css.append(cs.rotate(s))
-                        break
+            start_css = self._start_orientations()
+            
         self._clear()
         if same_components_and_orientations:
             self._build(start_orientations=start_css,
@@ -712,11 +709,40 @@ class Tangle:
                 c.orient()
         return T
 
+    def _start_orientations(self):
+        """
+        Obtain the start orientations according to the current orientation 
+        and components (the latter may be outdated)
+        """
+        start_css = []
+        for comp in self.components:
+            for cs in comp:
+                if cs.crossing in self.crossings + self.boundary_strands:
+                    s = cs.crossing._adjacent_len // 2
+                    start_css.append(cs.rotate(s))
+                    break
+
+        return start_css
+
     def __or__(self, other):
-        """Put self to left of other. This is like tangle addition but without the fusing of strands.
+        """
+        Put self to left of other. This is like tangle addition but without the fusing of strands.
+        Preserves the orientations of both tangles, since no gluing happens.
 
         >>> (IdentityBraid(1) | CupTangle()).describe()
         'Tangle[{1}, {2,3,4}, P[1,2], P[3,4]]'
+
+        >>> T = BraidTangle([1,2,1])
+        >>> T.reverse_orientation([1,2])
+        >>> T.is_upward()
+        False
+        >>> T.boundary_signs
+        [-1, 1, 1, -1, -1, 1]
+        >>> TT = T | snappy.RationalTangle(1,2)
+        >>> TT.is_upward()
+        False
+        >>> TT.boundary_signs
+        [-1, 1, 1, -1, -1, -1, -1, 1, 1, 1]
         """
         A, B = self.copy(), other.copy()
         (mA, nA), (mB, nB) = A.boundary, B.boundary
@@ -724,9 +750,13 @@ class Tangle:
         entry_points = a[:mA] + b[:mB] + a[mA:] + b[mB:]
         crossings = A.crossings + A.boundary_strands + B.crossings + B.boundary_strands
 
+        start_css = A._start_orientations() + B._start_orientations()
+
         return Tangle((mA + mB, nA + nB), 
                       crossings, 
-                      entry_points)
+                      entry_points,
+                      start_orientations=start_css,
+                      component_starts=start_css)
 
     def copy(self):
         return pickle.loads(pickle.dumps(self))
