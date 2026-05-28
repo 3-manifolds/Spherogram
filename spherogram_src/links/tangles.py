@@ -738,7 +738,7 @@ class Tangle:
         False
         >>> T.boundary_signs
         [-1, 1, 1, -1, -1, 1]
-        >>> TT = T | snappy.RationalTangle(1,2)
+        >>> TT = T | RationalTangle(1,2)
         >>> TT.is_upward()
         False
         >>> TT.boundary_signs
