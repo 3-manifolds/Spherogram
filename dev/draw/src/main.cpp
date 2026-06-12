@@ -45,7 +45,7 @@ domain and fully acknowledge all rights they may have in that code and it's meth
 	
 	In addition to the above, wherever the Knotscape original modules call auxiliary functions
 	I have written corresponding functions in support of my versions.  These are also 
-	acknowledged effctively to have been taken directly from Knotscape.
+	acknowledged effectively to have been taken directly from Knotscape.
 
                   Coding started 21st April 2010
  
@@ -492,7 +492,7 @@ if (draw_control::DEBUG >= draw_control::SUMMARY)
 }
 catch (bad_alloc)
 {
-	cerr << "ERROR! Out of memory, bad_alloc thown" << endl;
+	cerr << "ERROR! Out of memory, bad_alloc thrown" << endl;
 }
 catch (...)
 {
