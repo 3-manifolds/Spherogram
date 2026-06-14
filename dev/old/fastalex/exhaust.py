@@ -200,7 +200,7 @@ class Exhaustion:
     Starting at the given crossing, it uses a greedy algorithm to try
     to minimize the sizes of the frontiers of the intermediate tangles.
 
-    If no initial crossing is specified, one is choosen at random.
+    If no initial crossing is specified, one is chosen at random.
     """
     def __init__(self, link, crossing=None):
         if crossing is None:
