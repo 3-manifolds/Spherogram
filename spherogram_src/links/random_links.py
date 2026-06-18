@@ -189,8 +189,7 @@ def random_link(crossings,
     # Adjust the currently random crossings to match the request
 
     if alternating:
-        link = link.alternating()
-        return link
+        return link.alternating()
 
     if consistent_twist_regions:
         twist.make_twist_regions_consistent(link)

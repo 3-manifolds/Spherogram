@@ -134,8 +134,8 @@ def remove_admissible_move(link):
                 reverse_type_II(link, cs1, cs2, label1, label2)
                 link._rebuild(same_components_and_orientations=True)
                 break
-            else:
-                found_move = False
+
+            found_move = False
     return found_move
 
 
@@ -149,7 +149,7 @@ def isotope_to_braid(link):
         pass
 
 
-def is_chain(tree):
+def is_chain(tree) -> bool:
     tails = [e[0] for e in tree]
     heads = [e[1] for e in tree]
     return len(set(tails)) == len(tails) and len(set(heads)) == len(heads)
