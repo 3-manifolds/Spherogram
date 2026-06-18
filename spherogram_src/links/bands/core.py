@@ -313,7 +313,7 @@ class Band:
     def __repr__(self):
         return f'Band{self._spec}'
 
-    def is_nonminimal(self, link=None):
+    def is_nonminimal(self, link=None) -> bool:
         """
         Do various tests to see if self is obviously equivalent to a
         band other with other < self.
