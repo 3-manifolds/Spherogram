@@ -1356,6 +1356,33 @@ class Link:
                         A[a] = B[b]
 
         return type(self)(final_crossings, check_planarity=False)
+    
+    def long_diagram(self, cut_at = None):
+        """
+        Returns the long diagram of self obtained by cutting open the strand specified by cut_at.
+
+        cut_at should be a pair of integers (i, j) representing the j-th strand of the i-th crossing.
+        If not specified, the first strand of the first crossing will be chosen by default.
+
+        >>> T = Link('4_1').long_diagram()
+        >>> T.PD_code()
+        ((1, 1), [(0, 5, 1, 6), (4, 1, 5, 2), (2, 8, 3, 7), (6, 4, 7, 3)], [0, 8])
+        """
+        from .tangles import Tangle
+        L = self.copy()
+
+        if cut_at is None:
+            strand = L.crossings[0].crossing_strands()[0]
+        else:
+            i, j = cut_at
+            strand = L.crossings[i].crossing_strands()[j]
+            
+        open_strands = [strand, strand.opposite()]
+        
+        for c in L.crossings:
+            c._clear()
+        
+        return Tangle((1,1), L.crossings, open_strands)            
 
     def __len__(self):
         return len(self.crossings)

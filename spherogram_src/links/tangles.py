@@ -271,9 +271,14 @@ class Tangle:
         self.reverse_orientation(to_reverse)
 
     def entry_points(self):
-        assert self.is_oriented(), 'Tangle should be oriented to tell the entry points'
+        assert self.is_oriented(), 'Tangle should be oriented for the entry points to make sense'
         return [CrossingEntryPoint(self, i) for i in range(self.boundary[0] + self.boundary[1]) 
                 if self.boundary_signs[i] == -1]
+    
+    def exit_points(self):
+        assert self.is_oriented(), 'Tangle should be oriented for the exit points to make sense'
+        return [CrossingStrand(self, i) for i in range(self.boundary[0] + self.boundary[1]) 
+                if self.boundary_signs[i] == 1]
     
     def update_label(self, label):
         self.label = label
@@ -562,8 +567,90 @@ class Tangle:
         return self.boundary, PD, entry_info
     
     def rot_num(self):
-        #TODO
-        pass
+        """
+        Requires self to be upward oriented so that the entry strands 
+        of crossings make sense for computing rotation numbers.
+
+        Rotation numbers should always be all zeros for BraidTangles:
+
+        >>> BraidTangle([1,2,1]).rot_num()
+        [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        The following gives the rotation number of a long diagram of the 4_1 knot:
+
+        >>> T1 = Tangle((1,1), [(5,1,6,0), (1,5,2,4),(7,2,8,3),(3,6,4,7)], [0,8])
+        >>> T1.rot_num()
+        [0, 0, 0, 0, 1, -1, -1, 1, 0]
+
+        A (2,2)-tangle obtained by cutting 4_1 twice:
+
+        >>> T2 = Tangle((2,2), [(6,1,7,0), (1,5,2,4),(8,2,9,3),(3,7,4,8)], [0,6,9,5])
+        >>> T2.rot_num()
+        [0, 0, 0, 0, 1, 0, 0, -1, 1, 0]
+
+        Works also for tangles with disconnected shadow graphs:
+
+        >>> (T1|T2).rot_num()
+        [0, 0, 0, 0, 1, -1, -1, 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 1, 0]
+        """
+        assert self.is_upward(), 'Tangle should be upward oriented in order to compute rotation numbers'
+        assert self.boundary[0] == self.boundary[1]
+
+        n = len(self.crossings)
+        ans = [0 for i in range(2 * n + self.boundary[0])]
+
+        front = [0]
+
+        entry_strands = set([cep.strand_label() for cep in self.entry_points()])
+        exit_strands = set([cs.strand_label() for cs in self.exit_points()])
+
+        to_do = set([s for s in self.strand_labels] + [s for c in self.crossings for s in c.strand_labels]) - exit_strands
+
+        def next_arc():
+            inter = set(front) & to_do
+            if inter:
+                return min(inter)
+            else:
+                arc = min(to_do)
+                front.append(arc)
+                return arc
+        
+        def entry_crossing(k):
+            for c in self.crossings:
+                if k in [cep.strand_label() for cep in c.entry_points()]:
+                    return c
+                
+            raise ValueError(f'No crossing contains strand labeled {k}')
+
+        while to_do:
+            k = next_arc()
+
+            if ~k not in front:
+                c = entry_crossing(k)
+                entry_arcs = c.entry_points() if c.sign == -1 else list(reversed(c.entry_points()))
+                left_label = entry_arcs[0].strand_label()
+                i = front.index(k)
+
+                if left_label == k:
+                    front[i:i+1] =  entry_arcs[1].rotate(2).strand_label(), \
+                                    entry_arcs[0].rotate(2).strand_label(), \
+                                    ~entry_arcs[1].strand_label()
+                else:
+                    if left_label not in entry_strands:
+                        ans[left_label] += 1
+                    front[i:i+1] =  ~left_label, \
+                                    entry_arcs[1].rotate(2).strand_label(), \
+                                    entry_arcs[0].rotate(2).strand_label()
+                
+            elif [s for s in front if s in [k, ~k]] == [k, ~k]:
+                ans[k] += -1
+
+            to_do.remove(k)
+
+        for s in self.strand_labels:
+            assert ans[s] == 0
+
+        return ans
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """
