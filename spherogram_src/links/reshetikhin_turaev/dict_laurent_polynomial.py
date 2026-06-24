@@ -437,6 +437,9 @@ class DictLaurentPolynomial:
                 r = lcm(r, x)
             return r
 
+        if len(vars) != len(set(vars)):
+            raise ValueError(f'from_str: duplicate variable names in {vars!r}')
+
         s = s.replace(' ', '')
         s = cls._preprocess_division(s, vars)
 
@@ -454,6 +457,9 @@ class DictLaurentPolynomial:
                 start = i
         term_strs.append(s[start:])
         term_strs = [t for t in term_strs if t]
+
+        if depth != 0:
+            raise ValueError(f'from_str: unmatched parentheses in {s!r}')
 
         # Pattern for each variable: sym optionally followed by ^(num/den) or ^num.
         sym_pats = {
@@ -474,8 +480,31 @@ class DictLaurentPolynomial:
             rest = ts[m.end():]
             coef = 1 if prefix in ('', '+') else (-1 if prefix == '-' else int(prefix))
 
+            # Strip outer parens from rest when the entire rest is wrapped and
+            # the content contains no unparenthesized + or - (i.e. a pure product).
+            # This handles terms like -(1*q^(-1)*t^(-1)) from _preprocess_division.
+            if rest.startswith('(') and rest.endswith(')'):
+                inner = rest[1:-1]
+                d, pure = 0, True
+                for ch in inner:
+                    if ch == '(':   d += 1
+                    elif ch == ')': d -= 1
+                    elif ch in '+-' and d == 0: pure = False; break
+                if d == 0 and pure:
+                    rest = inner
+
+            # Absorb a leading integer multiplier into coef (e.g. '2*q^(-1)' → coef*=2).
+            m2 = re.match(r'^(\d+)\*', rest)
+            if m2:
+                coef *= int(m2.group(1))
+                rest = rest[m2.end():]
+
             var_exps = {}
             for sym in vars:
+                if sum(1 for _ in sym_pats[sym].finditer(rest)) > 1:
+                    raise ValueError(
+                        f'from_str: variable {sym!r} appears more than once '
+                        f'in term {ts!r}')
                 pm = sym_pats[sym].search(rest)
                 if pm:
                     if pm.group(1) is not None:
@@ -485,8 +514,26 @@ class DictLaurentPolynomial:
                         num, den = int(pm.group(3)), 1
                     else:
                         num, den = 1, 1
+                    if den == 0:
+                        raise ValueError(
+                            f'from_str: zero denominator in exponent in term {ts!r}')
                     var_exps[sym] = (num, den)
                     all_denoms[sym].add(den)
+
+            # After stripping all known variable patterns, only '*' separators
+            # should remain — any leftover letters, digits, or '.' indicate a
+            # mis-parsed coefficient (e.g. '1.5*q') or unknown content.
+            remainder = rest
+            for sym2 in vars:
+                remainder = sym_pats[sym2].sub('', remainder)
+            if re.search(r'[a-zA-Z]', remainder):
+                raise ValueError(
+                    f'from_str: unrecognized content in term {ts!r} '
+                    f'(vars={vars!r}); leftover: {remainder!r}')
+            if re.search(r'[\d.]', remainder):
+                raise ValueError(
+                    f'from_str: unexpected numeric content in term {ts!r}; '
+                    f'leftover after variables: {remainder!r}')
 
             parsed.append((coef, var_exps))
 
