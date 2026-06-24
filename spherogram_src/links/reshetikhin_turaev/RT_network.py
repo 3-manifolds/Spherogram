@@ -244,15 +244,24 @@ class RTNetwork:
     def _resolve_self_loops(self):
         return any(self._resolve_self_loop_at(i) for i in range(len(self.network)))
 
-    def contract_sequence(self, seq):
+    def contract_sequence(self, seq, timed = False):
+        if timed:
+            import time
+            start_time = time.time()
+
         for indices in seq:
             self.contract_nodes(indices)
+        
+        if timed:
+            time_cost = time.time() - start_time
 
-    def contract_all(self):
+            return time_cost
+
+    def contract_all(self, timed = False):
         self._resolve_self_loops()
-        self.contract_sequence(self.optimal_contraction_sequence())
+        return self.contract_sequence(self.optimal_contraction_sequence(), timed = timed)
 
-    def evaluate(self):
+    def evaluate(self, timed = False):
         """
         Fixate all idle labels at value 0, obtaining a new RTNework with (0,0) boundary,
         contract all and return the product of all values of the resulting tensors.
@@ -283,9 +292,9 @@ class RTNetwork:
             boundary=(0, 0),
             boundary_labels=[]
         )
-        reduced.contract_all()
+        time = reduced.contract_all(timed = timed)
 
         result = prefactor
         for tensor, _ in reduced.network:
             result *= tensor[()]
-        return result
+        return (result, time)

@@ -1,12 +1,27 @@
 from ...sage_helper import _within_sage, sage_method
 
 if _within_sage:
-    from sage.all import LaurentPolynomialRing, ZZ
+    from sage.all import PuiseuxSeriesRing, LaurentPolynomialRing, ZZ
 
 @sage_method
 def laurent_poly_from_dict(dict, vars, F = ZZ):
     L = LaurentPolynomialRing(F, vars)
     return L(dict)
+
+@sage_method
+def puiseux_series_from_dict(poly_dict, var, F=ZZ):
+    """
+    Build a Sage Puiseux series from a poly_dict and a single LaurentVariable.
+    Key k represents var^(k / var.denominator).
+    """
+    P = PuiseuxSeriesRing(F, var.name)
+    t = P.gen()
+    result = P.zero()
+    den = ZZ(var.denominator)
+    for key, coef in poly_dict.items():
+        (k,) = key
+        result += coef * t ** (ZZ(k) / den)
+    return result
 
 import re
 
@@ -81,8 +96,10 @@ class DictLaurentPolynomial:
     def to_sage(self):
         if all(var.denominator == 1 for var in self.vars):
             return laurent_poly_from_dict(self.poly_dict, [var.name for var in self.vars])
+        elif len(self.vars) == 1:
+            return puiseux_series_from_dict(self.poly_dict, self.vars[0])
         else:
-            raise NotImplementedError('Can only convert DictLaurentPolynomial with integer exponentials to LaurentPolynomial in Sage.')
+            raise NotImplementedError('Multi-variable Puiseux conversion to Sage is not supported.')
 
     @classmethod
     def _make(cls, vars, poly_dict, _interned=False):
@@ -112,9 +129,12 @@ class DictLaurentPolynomial:
 
     def __eq__(self, other):
         if isinstance(other, DictLaurentPolynomial):
-            return self.poly_dict == other.poly_dict
+            return self.poly_dict == other.poly_dict and self.vars == other.vars
         if other == 0:
             return not self.poly_dict
+        if other == 1:
+            return len(self.poly_dict) == 1 and \
+                    self.poly_dict.get((0,) * len(self.vars), 0) == 1
         return NotImplemented
 
     __hash__ = None
@@ -125,8 +145,13 @@ class DictLaurentPolynomial:
 
     def __add__(self, other):
         if isinstance(other, DictLaurentPolynomial):
-            result = dict(self.poly_dict)
-            for k, v in other.poly_dict.items():
+            sp, op = self.poly_dict, other.poly_dict
+            # Copy the larger dict; iterate over the smaller to minimise lookups.
+            if len(sp) >= len(op):
+                result, iterate = dict(sp), op
+            else:
+                result, iterate = dict(op), sp
+            for k, v in iterate.items():
                 if k in result:
                     s = result[k] + v
                     if s:
@@ -136,8 +161,10 @@ class DictLaurentPolynomial:
                 else:
                     result[k] = v
             return DictLaurentPolynomial._make(self.vars, result, _interned=True)
+    
         if other == 0:
             return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
+
         zero_key = (0,) * len(self.vars)
         result = dict(self.poly_dict)
         s = result.get(zero_key, 0) + other
@@ -239,15 +266,45 @@ class DictLaurentPolynomial:
                             else:
                                 result[k] = prod
             return DictLaurentPolynomial._make(self.vars, result, _interned=True)
-        if other == 0:
+        
+        if self == 0 or other == 0:
             return DictLaurentPolynomial._make(self.vars, {}, _interned=True)
+
         if other == 1:
             return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
+
         return DictLaurentPolynomial._make(
             self.vars, {k: v * other for k, v in self.poly_dict.items()}, _interned=True)
 
     def __rmul__(self, other):
         return self.__mul__(other)
+
+    def simplify_denominator(self):
+        """
+        Return a simplified copy where each variable's denominator is divided
+        by the GCD it shares with all exponents for that variable.
+
+        Example: LaurentVariable('q', 4) with all exponents divisible by 2
+        becomes LaurentVariable('q', 2) with exponents halved.
+        """
+        reductions = []
+        for i, var in enumerate(self.vars):
+            g = 0
+            for key in self.poly_dict:
+                g = _gcd(abs(key[i]), g)
+                if g == 1:
+                    break
+            reductions.append(_gcd(g, var.denominator))
+
+        new_vars = tuple(
+            LaurentVariable(var.name, var.denominator // r)
+            for var, r in zip(self.vars, reductions)
+        )
+        new_poly_dict = {
+            tuple(k // r for k, r in zip(key, reductions)): coef
+            for key, coef in self.poly_dict.items()
+        }
+        return DictLaurentPolynomial._make(new_vars, new_poly_dict)
 
     def change_vars(self, rules):
         """

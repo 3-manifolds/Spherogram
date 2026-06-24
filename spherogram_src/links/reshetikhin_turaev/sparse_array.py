@@ -278,8 +278,6 @@ class SparseTensor(SparseArray):
                     h_weight = 1
                     for _, hval in combo:
                         h_weight *= hval
-                    if h_weight == self._default:
-                        continue
                     hval_b = h_weight * val_b
                     for f_key_a, val_a in group:
                         result._accumulate(f_key_a + f_key_b, val_a * hval_b)
