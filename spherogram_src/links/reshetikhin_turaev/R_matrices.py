@@ -2,7 +2,7 @@ from .dict_laurent_polynomial import DictLaurentPolynomial, LaurentVariable
 
 from .sparse_array import SparseTensor
 
-import csv, ast, pathlib, os
+import csv, ast, pathlib, os, math
 
 dir_path = pathlib.Path(__file__).resolve().parent
 
@@ -20,11 +20,21 @@ def laurent_sparse_tensor_from_file(file, vars = ['t', 'q'], sage_polynomials = 
         key, value = line
         key = tuple(ast.literal_eval(key))
         assert key not in data.keys(), f'{key} appeared multiple times in {file.name}'
-        value = DictLaurentPolynomial.from_str(value, vars = vars)
-        if not sage_polynomials:
-            data[key] = value
-        else:
-            data[key] = value.to_sage()
+        data[key] = DictLaurentPolynomial.from_str(value, vars = vars)
+
+    # Unify variable denominators: compute LCM across all loaded polynomials so
+    # every value shares the same vars tuple (enabling interning and consistent arithmetic).
+    if data:
+        common_denoms = [1] * len(vars)
+        for poly in data.values():
+            for i, var in enumerate(poly.vars):
+                d = common_denoms[i]
+                common_denoms[i] = d * var.denominator // math.gcd(d, var.denominator)
+        common_vars = tuple(LaurentVariable(v, d) for v, d in zip(vars, common_denoms))
+        data = {key: poly.refactor_variables(common_vars) for key, poly in data.items()}
+
+    if sage_polynomials:
+        data = {key: poly.to_sage() for key, poly in data.items()}
 
     return SparseTensor(shape = shape, data = data)
 
