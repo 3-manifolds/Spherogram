@@ -105,12 +105,57 @@ class DictLaurentPolynomial:
 
     @sage_method
     def to_sage(self):
-        if all(var.denominator == 1 for var in self.vars):
-            return laurent_poly_from_dict(self.poly_dict, [var.name for var in self.vars])
-        elif len(self.vars) == 1:
+        if len(self.vars) == 1:
             return puiseux_series_from_dict(self.poly_dict, self.vars[0])
+        elif all(var.denominator == 1 for var in self.vars):
+            return laurent_poly_from_dict(self.poly_dict, [var.name for var in self.vars])
         else:
             raise NotImplementedError('Multi-variable Puiseux conversion to Sage is not supported.')
+
+    @classmethod
+    @sage_method
+    def from_sage(cls, p, var_names=None):
+        """
+        Convert a Sage PuiseuxSeries or LaurentPolynomial to a DictLaurentPolynomial.
+
+        var_names: optional list of variable name strings; defaults to the
+        variable names from p's parent ring.
+
+        For PuiseuxSeries the conversion relies on the internal _l (Laurent
+        series) and _e (ramification index) attributes of Sage's implementation.
+
+        >>> p = DictLaurentPolynomial.from_str('q^2 + 3 - q^-1', ['q'])
+        >>> DictLaurentPolynomial.from_sage(p.to_sage()) == p
+        True
+        >>> r = DictLaurentPolynomial.from_str('q^2*t - 1', ['q', 't'])
+        >>> DictLaurentPolynomial.from_sage(r.to_sage()) == r
+        True
+        >>> s = DictLaurentPolynomial.from_str('q^(1/2) + q^(-1/4)', ['q'])
+        >>> DictLaurentPolynomial.from_sage(s.to_sage()) == s
+        True
+        """
+        from sage.rings.puiseux_series_ring_element import PuiseuxSeries
+        
+        if isinstance(p, PuiseuxSeries):
+            e = int(p.ramification_index())
+            name = var_names[0] if var_names else str(p.variable())
+            var = LaurentVariable(name, e)
+            l = p.laurent_part()
+            poly_dict = {(int(k),): int(v) for k, v in zip(l.exponents(), l.coefficients()) if v != 0}
+            return cls._make((var,), poly_dict)
+
+        # LaurentPolynomial (univariate or multivariate, all denominators 1).
+        parent = p.parent()
+        names = var_names or [str(v) for v in parent.gens()]
+        vars_tuple = tuple(LaurentVariable(name) for name in names)
+        nvars = len(names)
+        poly_dict = {}
+        for exp, v in p.dict().items():
+            if v == 0:
+                continue
+            key = (int(exp),) if nvars == 1 else tuple(int(k) for k in exp)
+            poly_dict[key] = int(v)
+        return cls._make(vars_tuple, poly_dict)
 
     @classmethod
     def _make(cls, vars, poly_dict, _interned=False):
@@ -465,13 +510,23 @@ class DictLaurentPolynomial:
         }
         return DictLaurentPolynomial._make(new_vars, new_poly_dict)
 
-    def change_vars(self, rules):
+    def change_vars(self, rules, new_var_names = None):
         """
         Return a new DictLaurentPolynomial with variables substituted by rules.
 
-        rules: dict mapping LaurentVariable -> DictLaurentPolynomial, or a list
-        of DictLaurentPolynomials (one per variable, in order).  Variables absent
+        rules: dict mapping LaurentVariable (or variable name string) ->
+        DictLaurentPolynomial (or expression string), or a list of
+        DictLaurentPolynomials (one per variable, in order).  Variables absent
         from a dict-style rules are kept as themselves (identity substitution).
+
+        String values are parsed using the source variable names as the ring,
+        or new_var_names if provided.  A string value describes the image of
+        the full variable (e.g. q^1); for source variables with denominator
+        d > 1 the image must be a monomial.
+
+        new_var_names: optional list of variable name strings for the target
+        ring.  Source variables absent from rules are auto-mapped to themselves
+        (by name); if their name is not already in new_var_names it is appended.
 
         >>> q_var = LaurentVariable('q')
         >>> t_var = LaurentVariable('t')
@@ -481,9 +536,73 @@ class DictLaurentPolynomial:
         t^2 + t
         >>> p.change_vars([DictLaurentPolynomial.from_str('t^-1', ['t'])])
         t^-1 + t^-2
+        >>> p.change_vars({'q': 'q^-1'})
+        q^-1 + q^-2
+        >>> r = DictLaurentPolynomial.from_str('q + t', ['q', 't'])
+        >>> r.change_vars({'q': 'q*t^2', 't': 't^-1'})
+        q*t^2 + t^-1
+        >>> s = DictLaurentPolynomial.from_str('q^(1/2)*t^(1/3)', ['q', 't'])
+        >>> s.change_vars({'q': 'q*t^2', 't': 't^-1'})
+        q^(1/2)*t^(2/3)
+        >>> p.change_vars({'q': 'a^2'}, new_var_names=['a'])
+        a^4 + a^2
+        >>> r.change_vars({'q': 'a^2'}, new_var_names=['a'])
+        a^2 + t
+        >>> r.change_vars({'q': 'a^2', 't': 'b^-1'}, new_var_names=['a', 'b'])
+        a^2 + b^-1
+        >>> half_q = DictLaurentPolynomial.from_str('q^(1/2)', ['q'])
+        >>> half_q.change_vars({'q': 'a^4'}, new_var_names=['a'])
+        a^2
         """
         if isinstance(rules, list):
             rules = dict(zip(self.vars, rules))
+
+        # Normalize string keys to LaurentVariable via name lookup.
+        if any(isinstance(k, str) for k in rules):
+            name_to_var = {v.name: v for v in self.vars}
+            rules = {
+                (name_to_var[k] if isinstance(k, str) else k): v
+                for k, v in rules.items()
+            }
+
+        # When new_var_names is provided, auto-fill unspecified source vars
+        # with string identity rules, extending new_var_names as needed.
+        if new_var_names is not None:
+            rules = dict(rules)
+            new_var_names = list(new_var_names)
+            for var in self.vars:
+                if var not in rules:
+                    if var.name not in new_var_names:
+                        new_var_names.append(var.name)
+                    rules[var] = var.name
+
+        # Parse string values.
+        var_names = new_var_names if new_var_names is not None else [v.name for v in self.vars]
+        has_str_values = any(isinstance(v, str) for v in rules.values())
+        if has_str_values:
+            parsed_rules = {}
+            for src_var, img in rules.items():
+                if isinstance(img, str):
+                    parsed = DictLaurentPolynomial.from_str(img, var_names)
+                    d = src_var.denominator
+                    if d > 1:
+                        # String describes image of the full variable (src_var^1).
+                        # We need the image of the unit generator (src_var^(1/d)).
+                        # Only valid when image is a monomial (can be raised to 1/d power).
+                        if len(parsed.poly_dict) > 1:
+                            raise ValueError(
+                                f'change_vars: image of {src_var!r} has denominator '
+                                f'{d} > 1 but the image is not a monomial')
+                        # Scale image variable denominators by d; keys unchanged.
+                        new_img_vars = tuple(
+                            LaurentVariable(v.name, v.denominator * d)
+                            for v in parsed.vars
+                        )
+                        parsed = DictLaurentPolynomial._make(new_img_vars, parsed.poly_dict)
+                    parsed_rules[src_var] = parsed
+                else:
+                    parsed_rules[src_var] = img
+            rules = parsed_rules
 
         # Build identity images for variables not in rules.
         full_rules = {}
@@ -492,6 +611,23 @@ class DictLaurentPolynomial:
                 full_rules[var] = rules[var]
             else:
                 full_rules[var] = DictLaurentPolynomial.generator(self.vars, index=i)
+
+        # Unify all image DLPs to a common vars tuple when string values were used.
+        if has_str_values and full_rules:
+            all_imgs = list(full_rules.values())
+            ref_vars = all_imgs[0].vars
+            def _lcm2(a, b): return a * b // _gcd(a, b)
+            common_denoms = [v.denominator for v in ref_vars]
+            for img in all_imgs[1:]:
+                for i, v in enumerate(img.vars):
+                    common_denoms[i] = _lcm2(common_denoms[i], v.denominator)
+            common_vars = tuple(
+                LaurentVariable(v.name, d) for v, d in zip(ref_vars, common_denoms)
+            )
+            full_rules = {
+                src_var: img.refactor_variables(common_vars)
+                for src_var, img in full_rules.items()
+            }
 
         result = None
         for key, coef in self.poly_dict.items():
@@ -533,6 +669,14 @@ class DictLaurentPolynomial:
         1 - q^-1*t^-1
         >>> DictLaurentPolynomial.from_str('(q^2 - 1) / q', ['q'])
         q - q^-1
+        >>> DictLaurentPolynomial.from_str('t1^2 + t2^-1', ['t1', 't2'])
+        t1^2 + t2^-1
+        >>> DictLaurentPolynomial.from_str('t^2 + t1', ['t', 't1'])
+        t^2 + t1
+        >>> DictLaurentPolynomial.from_str('t1^2*t10 + t1 - t10^-1', ['t1', 't10'])
+        t1^2*t10 + t1 - t10^-1
+        >>> DictLaurentPolynomial.from_str('(t1^2 - 1) / t1', ['t1', 't2'])
+        t1 - t1^-1
         """
         if len(vars) != len(set(vars)):
             raise ValueError(f'from_str: duplicate variable names in {vars!r}')
@@ -762,7 +906,9 @@ class DictLaurentPolynomial:
         >>> p ** 0
         1
         """
-        if not isinstance(n, int):
+        try:
+            n = n.__index__()
+        except (AttributeError, TypeError):
             raise ValueError(f'exponent must be an integer, got {n!r}')
         if n == 0:
             zero_key = (0,) * len(self.vars)
@@ -771,8 +917,11 @@ class DictLaurentPolynomial:
             if len(self.poly_dict) != 1:
                 raise ValueError('negative powers only supported for monomials')
             (key, coef), = self.poly_dict.items()
+            if coef != 1 and coef != -1:
+                raise ValueError(
+                    f'negative powers require a ±1 leading coefficient, got {coef!r}')
             inv_key = tuple(k * n for k in key)
-            inv_coef = coef ** n  # works when coef is ±1 or a symbolic type
+            inv_coef = coef ** (-n)  # -n > 0, so int**int stays int; (±1)^k = (±1)^{-k}
             return DictLaurentPolynomial._make(self.vars, {inv_key: inv_coef}, _interned=True)
         result = self
         base = self

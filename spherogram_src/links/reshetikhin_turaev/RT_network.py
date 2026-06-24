@@ -34,6 +34,8 @@ class RTNetwork:
         given RMatrix tensors to the tangle T.
     
         The network is represented as a list of pairs (tensor, legs)
+
+        Requires numpy and opt_einsum modules for finding out the optimal contraction sequences
         """
         self.tensors = tensors
 
@@ -156,15 +158,19 @@ class RTNetwork:
     def seq_contraction_width(self, seq):
         abstract_network = [key for _, key in self.network]
 
-        width = 0
-
+        w = 0
+        m = 0
+        
         for indices in seq:
             local_width, abstract_network = RTNetwork.local_contraction_width(abstract_network, indices)
 
-            if local_width > width:
-                width = local_width
+            if local_width > w:
+                w = local_width
+                m = 1
+            elif local_width == w:
+                m += 1
 
-        return width, abstract_network
+        return (w, m), abstract_network
     
     def contraction_width(self, omit_idle_arcs = True):
         abstract_network = []
@@ -181,9 +187,8 @@ class RTNetwork:
                                     boundary = (0,0) if omit_idle_arcs else self.boundary,
                                     boundary_labels = [] if omit_idle_arcs else self.boundary_labels)
 
-        width = 0
-        if abstract_copy._resolve_self_loops():
-            width = 3
+        m = abstract_copy._resolve_self_loops()
+        width = (3 if m else 0, m)
 
         seq_width, ans = abstract_copy.seq_contraction_width(abstract_copy.optimal_contraction_sequence())
 
@@ -242,7 +247,7 @@ class RTNetwork:
         return True
     
     def _resolve_self_loops(self):
-        return any(self._resolve_self_loop_at(i) for i in range(len(self.network)))
+        return sum(int(self._resolve_self_loop_at(i)) for i in range(len(self.network)))
 
     def contract_sequence(self, seq, timed = False):
         if timed:

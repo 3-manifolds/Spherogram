@@ -92,6 +92,8 @@ def colored_links_gould_R_matrices(n, sage_polynomials = False):
             return _cache[key]
         else:
             _cache[key] = RMatrix.laurent_R_from_directory(dir_path = os.path.join(dir_path, f'R_matrices/V{n}/'),
+                                                           vars = ['t', 'q'], 
+                                                           compressed = False,
                                                            sage_polynomials = sage_polynomials)
             return _cache[key]
     else:
@@ -115,15 +117,20 @@ def _q_pochhammer(a, q, n):
         result = result * (1 - a * q**k)
     return result
 
-def _q_pow(e4):
-    """DictLaurentPolynomial representing q^(e4/4). e4 must be an integer."""
-    return DictLaurentPolynomial._make((LaurentVariable('q', 4),), {(e4,): 1})
+def _q_pow(e):
+    """
+    DictLaurentPolynomial representing q^(e/2). e must be an integer.
+    """
+    return DictLaurentPolynomial._make((LaurentVariable('q', 4),), {(e,): 1})
 
 def colored_jones_R_matrices(n, sage_polynomials=False):
     """
     The R matrices for the n-colored Jones polynomial.
-    In particular, n = 1 gives the Jones polynomial
+    In particular, n = 1 gives the Jones polynomial.
     """
+    if n < 0:
+        raise NotImplementedError
+
     n = n + 1
 
     q_actual = _q_pow(4)   # q^1
