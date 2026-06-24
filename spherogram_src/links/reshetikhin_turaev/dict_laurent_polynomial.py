@@ -47,8 +47,7 @@ class LaurentVariable:
         num, den = num // g, den // g
         if den == 1:
             if num == 1:  return ''
-            if num > 1:   return f'^{num}'
-            return f'^({num})'
+            return f'^{num}'
         return f'^({num}/{den})'
 
 def _gcd(a, b):
@@ -279,6 +278,26 @@ class DictLaurentPolynomial:
                 result.append(fm.group(1) + negate_exp(fm.group(2)))
             return '*' + '*'.join(result)
 
+        # Strip outer parens from pure-product numerators: (a*b)/c → a*b/c.
+        # A "pure product" means no + or - at the top level inside the parens.
+        expanded = []
+        i, n = 0, len(s)
+        while i < n:
+            if s[i] != '(':
+                expanded.append(s[i]); i += 1; continue
+            depth, j, pure = 1, i + 1, True
+            while j < n and depth > 0:
+                if s[j] == '(':   depth += 1
+                elif s[j] == ')': depth -= 1
+                elif s[j] in '+-' and depth == 1: pure = False
+                j += 1
+            if pure and j < n and s[j] == '/':
+                expanded.append(s[i+1:j-1])  # content without outer parens
+            else:
+                expanded.append(s[i:j])
+            i = j
+        s = ''.join(expanded)
+
         return denom_re.sub(replace_denom, s)
 
     @classmethod
@@ -317,7 +336,7 @@ class DictLaurentPolynomial:
                 depth += 1
             elif c == ')':
                 depth -= 1
-            elif c in '+-' and depth == 0 and i > start:
+            elif c in '+-' and depth == 0 and i > start and s[i-1] != '^':
                 term_strs.append(s[start:i])
                 start = i
         term_strs.append(s[start:])
