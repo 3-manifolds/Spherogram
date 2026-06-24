@@ -331,10 +331,10 @@ class Link(links_base.Link):
             return p.factor()
         return p
     
-    def colored_links_gould_polynomial(self, n):
+    def colored_links_gould_polynomial(self, n, sage_polynomials = False):
         from .reshetikhin_turaev import colored_links_gould_R_matrices
 
-        return self.long_diagram().apply_reshetikhin_turaev_functor(colored_links_gould_R_matrices(n)).evaluate()
+        return self.min_long_diagram().apply_reshetikhin_turaev_functor(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate()
 
     def knot_floer_homology(self, prime=2, complex=False):
         """

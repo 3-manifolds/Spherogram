@@ -85,10 +85,11 @@ class DictLaurentPolynomial:
             raise NotImplementedError('Can only convert DictLaurentPolynomial with integer exponentials to LaurentPolynomial in Sage.')
 
     @classmethod
-    def _make(cls, vars, poly_dict):
-        """Construct without cleaning — caller guarantees no zero values."""
+    def _make(cls, vars, poly_dict, _interned=False):
+        """Construct without cleaning — caller guarantees no zero values.
+        Pass _interned=True when vars is already a canonical interned tuple."""
         obj = object.__new__(cls)
-        obj.vars = _intern_vars(vars if isinstance(vars, tuple) else tuple(vars))
+        obj.vars = vars if _interned else _intern_vars(vars if isinstance(vars, tuple) else tuple(vars))
         obj.poly_dict = poly_dict
         return obj
 
@@ -120,7 +121,7 @@ class DictLaurentPolynomial:
 
     def __neg__(self):
         return DictLaurentPolynomial._make(
-            self.vars, {k: -v for k, v in self.poly_dict.items()})
+            self.vars, {k: -v for k, v in self.poly_dict.items()}, _interned=True)
 
     def __add__(self, other):
         if isinstance(other, DictLaurentPolynomial):
@@ -134,9 +135,9 @@ class DictLaurentPolynomial:
                         del result[k]
                 else:
                     result[k] = v
-            return DictLaurentPolynomial._make(self.vars, result)
+            return DictLaurentPolynomial._make(self.vars, result, _interned=True)
         if other == 0:
-            return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict))
+            return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
         zero_key = (0,) * len(self.vars)
         result = dict(self.poly_dict)
         s = result.get(zero_key, 0) + other
@@ -144,7 +145,7 @@ class DictLaurentPolynomial:
             result[zero_key] = s
         else:
             result.pop(zero_key, None)
-        return DictLaurentPolynomial._make(self.vars, result)
+        return DictLaurentPolynomial._make(self.vars, result, _interned=True)
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -161,7 +162,7 @@ class DictLaurentPolynomial:
                         del result[k]
                 else:
                     result[k] = -v
-            return DictLaurentPolynomial._make(self.vars, result)
+            return DictLaurentPolynomial._make(self.vars, result, _interned=True)
         return self.__add__(-other)
 
     def __rsub__(self, other):
@@ -170,25 +171,80 @@ class DictLaurentPolynomial:
     def __mul__(self, other):
         if isinstance(other, DictLaurentPolynomial):
             result = {}
-            for k1, v1 in self.poly_dict.items():
-                for k2, v2 in other.poly_dict.items():
-                    k = tuple(a + b for a, b in zip(k1, k2))
-                    prod = v1 * v2
-                    if k in result:
-                        s = result[k] + prod
-                        if s:
-                            result[k] = s
-                        else:
-                            del result[k]
-                    else:
-                        result[k] = prod
-            return DictLaurentPolynomial._make(self.vars, result)
+            if len(self.poly_dict) == 1:
+                # monomial * polynomial: no cancellation possible, assign directly
+                (k1, v1), = self.poly_dict.items()
+                n = len(k1)
+                if n == 1:
+                    for k2, v2 in other.poly_dict.items():
+                        result[(k1[0] + k2[0],)] = v1 * v2
+                elif n == 2:
+                    for k2, v2 in other.poly_dict.items():
+                        result[(k1[0] + k2[0], k1[1] + k2[1])] = v1 * v2
+                else:
+                    for k2, v2 in other.poly_dict.items():
+                        result[tuple(a + b for a, b in zip(k1, k2))] = v1 * v2
+            elif len(other.poly_dict) == 1:
+                # polynomial * monomial: no cancellation possible, assign directly
+                (k2, v2), = other.poly_dict.items()
+                n = len(k2)
+                if n == 1:
+                    for k1, v1 in self.poly_dict.items():
+                        result[(k1[0] + k2[0],)] = v1 * v2
+                elif n == 2:
+                    for k1, v1 in self.poly_dict.items():
+                        result[(k1[0] + k2[0], k1[1] + k2[1])] = v1 * v2
+                else:
+                    for k1, v1 in self.poly_dict.items():
+                        result[tuple(a + b for a, b in zip(k1, k2))] = v1 * v2
+            else:
+                n = len(self.vars)
+                if n == 1:
+                    for k1, v1 in self.poly_dict.items():
+                        for k2, v2 in other.poly_dict.items():
+                            k = (k1[0] + k2[0],)
+                            prod = v1 * v2
+                            if k in result:
+                                s = result[k] + prod
+                                if s:
+                                    result[k] = s
+                                else:
+                                    del result[k]
+                            else:
+                                result[k] = prod
+                elif n == 2:
+                    for k1, v1 in self.poly_dict.items():
+                        for k2, v2 in other.poly_dict.items():
+                            k = (k1[0] + k2[0], k1[1] + k2[1])
+                            prod = v1 * v2
+                            if k in result:
+                                s = result[k] + prod
+                                if s:
+                                    result[k] = s
+                                else:
+                                    del result[k]
+                            else:
+                                result[k] = prod
+                else:
+                    for k1, v1 in self.poly_dict.items():
+                        for k2, v2 in other.poly_dict.items():
+                            k = tuple(a + b for a, b in zip(k1, k2))
+                            prod = v1 * v2
+                            if k in result:
+                                s = result[k] + prod
+                                if s:
+                                    result[k] = s
+                                else:
+                                    del result[k]
+                            else:
+                                result[k] = prod
+            return DictLaurentPolynomial._make(self.vars, result, _interned=True)
         if other == 0:
-            return DictLaurentPolynomial._make(self.vars, {})
+            return DictLaurentPolynomial._make(self.vars, {}, _interned=True)
         if other == 1:
-            return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict))
+            return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
         return DictLaurentPolynomial._make(
-            self.vars, {k: v * other for k, v in self.poly_dict.items()})
+            self.vars, {k: v * other for k, v in self.poly_dict.items()}, _interned=True)
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -403,14 +459,14 @@ class DictLaurentPolynomial:
             raise ValueError(f'exponent must be an integer, got {n!r}')
         if n == 0:
             zero_key = (0,) * len(self.vars)
-            return DictLaurentPolynomial._make(self.vars, {zero_key: 1})
+            return DictLaurentPolynomial._make(self.vars, {zero_key: 1}, _interned=True)
         if n < 0:
             if len(self.poly_dict) != 1:
                 raise ValueError('negative powers only supported for monomials')
             (key, coef), = self.poly_dict.items()
             inv_key = tuple(k * n for k in key)
             inv_coef = coef ** n  # works when coef is ±1 or a symbolic type
-            return DictLaurentPolynomial._make(self.vars, {inv_key: inv_coef})
+            return DictLaurentPolynomial._make(self.vars, {inv_key: inv_coef}, _interned=True)
         result = self
         base = self
         n -= 1

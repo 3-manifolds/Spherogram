@@ -655,6 +655,9 @@ class Tangle:
     
     def apply_reshetikhin_turaev_functor(self, tensors):
         return RTNetwork(tensors, T = self)
+    
+    def contraction_width(self):
+        return RTNetwork(None, T = self).contraction_width()
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """

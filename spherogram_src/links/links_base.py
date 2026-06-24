@@ -1370,7 +1370,7 @@ class Link:
         """
         from .tangles import Tangle
         L = self.copy()
-
+        
         if cut_at is None:
             strand = L.crossings[0].crossing_strands()[0]
         else:
@@ -1382,7 +1382,28 @@ class Link:
         for c in L.crossings:
             c._clear()
         
-        return Tangle((1,1), L.crossings, open_strands)            
+        return Tangle((1,1), L.crossings, open_strands)
+
+    def min_long_diagram(self):
+        """
+        Return the long diagram of self with the minimal contraction width
+        """
+
+        if not self.crossings:
+            return self.long_diagram()
+        
+        min_width = None
+
+        for i in range(len(self.crossings)):
+            entry_indices = [3, 0] if self.crossings[i].sign == 1 else [0, 1]
+            for j in entry_indices:
+                diagram = self.long_diagram(cut_at=(i,j))
+                width = diagram.contraction_width()
+                if min_width is None or width < min_width:
+                    ans = diagram
+                    min_width = width
+
+        return ans  
 
     def __len__(self):
         return len(self.crossings)

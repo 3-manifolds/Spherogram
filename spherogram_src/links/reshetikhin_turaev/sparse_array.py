@@ -89,6 +89,10 @@ class SparseArray:
     @property
     def shape(self):
         return self._shape
+    
+    @property
+    def default(self):
+        return self._default
 
     def nonzero_indices(self):
         """Return list of all indices with non-default values."""
@@ -276,8 +280,9 @@ class SparseTensor(SparseArray):
                         h_weight *= hval
                     if h_weight == self._default:
                         continue
+                    hval_b = h_weight * val_b
                     for f_key_a, val_a in group:
-                        result._accumulate(f_key_a + f_key_b, val_a * h_weight * val_b)
+                        result._accumulate(f_key_a + f_key_b, val_a * hval_b)
 
         return result
 
