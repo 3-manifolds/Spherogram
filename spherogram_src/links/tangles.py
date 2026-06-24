@@ -24,6 +24,7 @@ import pickle
 from collections import OrderedDict, Counter
 from .ordered_set import OrderedSet
 from .links import Crossing, Strand, Link, CrossingStrand, CrossingEntryPoint
+from .reshetikhin_turaev import RTNetwork
 
 class CyclicList(list):
     def __init__(self, iterable):
@@ -651,6 +652,9 @@ class Tangle:
             assert ans[s] == 0
 
         return ans
+    
+    def apply_reshetikhin_turaev_functor(self, tensors):
+        return RTNetwork(tensors, T = self)
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """

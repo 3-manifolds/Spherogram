@@ -88,7 +88,6 @@ extra_docstring = """
     see the documentation for the "sage_link" method for details.
 """
 
-
 class Link(links_base.Link):
     __doc__ = links_base.Link.__doc__ + extra_docstring
 
@@ -331,6 +330,11 @@ class Link(links_base.Link):
         if multivar and factored:  # it's easier to view this way
             return p.factor()
         return p
+    
+    def colored_links_gould_polynomial(self, n):
+        from .reshetikhin_turaev import colored_links_gould_R_matrices
+
+        return self.long_diagram().apply_reshetikhin_turaev_functor(colored_links_gould_R_matrices(n)).evaluate()
 
     def knot_floer_homology(self, prime=2, complex=False):
         """
