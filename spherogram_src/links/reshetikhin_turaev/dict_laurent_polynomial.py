@@ -73,7 +73,7 @@ _vars_cache = {}
 def _intern_vars(vars_tuple):
     return _vars_cache.setdefault(vars_tuple, vars_tuple)
 
-class DictLaurentPolynomial:
+class FastDictLaurentPolynomial:
     """
     A sparse Laurent polynomial in arbitrarily many variables.
 
@@ -102,6 +102,21 @@ class DictLaurentPolynomial:
             for v in vars
         ))
         self.poly_dict = {k: v for k, v in poly_dict.items() if v != 0}
+
+    def to_checked(self):
+        """
+        Return a DictLaurentPolynomial with the same variables and coefficients.
+
+        >>> p = FastDictLaurentPolynomial.from_str('q^2 - 1', ['q'])
+        >>> type(p).__name__
+        'FastDictLaurentPolynomial'
+        >>> c = p.to_checked()
+        >>> type(c).__name__
+        'DictLaurentPolynomial'
+        >>> c == p
+        True
+        """
+        return DictLaurentPolynomial._make(self.vars, self.poly_dict, _interned=True)
 
     @sage_method
     def to_sage(self):
@@ -207,7 +222,7 @@ class DictLaurentPolynomial:
         >>> p4 == DictLaurentPolynomial.from_str('q', ['q'])      # same value, different denom
         True
         """
-        if isinstance(other, DictLaurentPolynomial):
+        if isinstance(other, FastDictLaurentPolynomial):
             if self.vars is other.vars:
                 return self.poly_dict == other.poly_dict
             if len(self.vars) != len(other.vars):
@@ -236,7 +251,7 @@ class DictLaurentPolynomial:
         >>> -p
         -2 - q
         """
-        return DictLaurentPolynomial._make(
+        return FastDictLaurentPolynomial._make(
             self.vars, {k: -v for k, v in self.poly_dict.items()}, _interned=True)
 
     def __add__(self, other):
@@ -248,7 +263,7 @@ class DictLaurentPolynomial:
         >>> p + 3
         4 + q
         """
-        if isinstance(other, DictLaurentPolynomial):
+        if isinstance(other, FastDictLaurentPolynomial):
             sp, op = self.poly_dict, other.poly_dict
             # Copy the larger dict; iterate over the smaller to minimise lookups.
             if len(sp) >= len(op):
@@ -264,10 +279,10 @@ class DictLaurentPolynomial:
                         del result[k]
                 else:
                     result[k] = v
-            return DictLaurentPolynomial._make(self.vars, result, _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, result, _interned=True)
     
         if other == 0:
-            return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
 
         zero_key = (0,) * len(self.vars)
         result = dict(self.poly_dict)
@@ -276,7 +291,7 @@ class DictLaurentPolynomial:
             result[zero_key] = s
         else:
             result.pop(zero_key, None)
-        return DictLaurentPolynomial._make(self.vars, result, _interned=True)
+        return FastDictLaurentPolynomial._make(self.vars, result, _interned=True)
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -290,7 +305,7 @@ class DictLaurentPolynomial:
         >>> p - 1
         -1 + q + q^2
         """
-        if isinstance(other, DictLaurentPolynomial):
+        if isinstance(other, FastDictLaurentPolynomial):
             result = dict(self.poly_dict)
             for k, v in other.poly_dict.items():
                 if k in result:
@@ -301,7 +316,7 @@ class DictLaurentPolynomial:
                         del result[k]
                 else:
                     result[k] = -v
-            return DictLaurentPolynomial._make(self.vars, result, _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, result, _interned=True)
         return self.__add__(-other)
 
     def __rsub__(self, other):
@@ -316,7 +331,7 @@ class DictLaurentPolynomial:
         >>> p * 3
         3 + 3*q
         """
-        if isinstance(other, DictLaurentPolynomial):
+        if isinstance(other, FastDictLaurentPolynomial):
             result = {}
             if len(self.poly_dict) == 1:
                 # monomial * polynomial: no cancellation possible, assign directly
@@ -385,15 +400,15 @@ class DictLaurentPolynomial:
                                     del result[k]
                             else:
                                 result[k] = prod
-            return DictLaurentPolynomial._make(self.vars, result, _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, result, _interned=True)
         
         if self == 0 or other == 0:
-            return DictLaurentPolynomial._make(self.vars, {}, _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, {}, _interned=True)
 
         if other == 1:
-            return DictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, dict(self.poly_dict), _interned=True)
 
-        return DictLaurentPolynomial._make(
+        return FastDictLaurentPolynomial._make(
             self.vars, {k: v * other for k, v in self.poly_dict.items()}, _interned=True)
 
     def __rmul__(self, other):
@@ -420,7 +435,7 @@ class DictLaurentPolynomial:
             ...
         ValueError: DictLaurentPolynomial division: divisor must be a monomial
         """
-        if isinstance(other, DictLaurentPolynomial):
+        if isinstance(other, FastDictLaurentPolynomial):
             if len(other.poly_dict) != 1:
                 raise ValueError('DictLaurentPolynomial division: divisor must be a monomial')
             return self * other ** -1
@@ -430,7 +445,7 @@ class DictLaurentPolynomial:
             raise ValueError(
                 f'DictLaurentPolynomial division: scalar {other!r} does not '
                 f'divide all coefficients')
-        return DictLaurentPolynomial._make(
+        return FastDictLaurentPolynomial._make(
             self.vars, {k: c // other for k, c in self.poly_dict.items()},
             _interned=True)
 
@@ -466,7 +481,7 @@ class DictLaurentPolynomial:
             tuple(k // r for k, r in zip(key, reductions)): coef
             for key, coef in self.poly_dict.items()
         }
-        return DictLaurentPolynomial._make(new_vars, new_poly_dict)
+        return FastDictLaurentPolynomial._make(new_vars, new_poly_dict)
 
     def refactor_variables(self, new_vars):
         """
@@ -508,7 +523,7 @@ class DictLaurentPolynomial:
             tuple(k * s for k, s in zip(key, scales)): coef
             for key, coef in self.poly_dict.items()
         }
-        return DictLaurentPolynomial._make(new_vars, new_poly_dict)
+        return FastDictLaurentPolynomial._make(new_vars, new_poly_dict)
 
     def change_vars(self, rules, new_var_names = None):
         """
@@ -583,7 +598,7 @@ class DictLaurentPolynomial:
             parsed_rules = {}
             for src_var, img in rules.items():
                 if isinstance(img, str):
-                    parsed = DictLaurentPolynomial.from_str(img, var_names)
+                    parsed = FastDictLaurentPolynomial.from_str(img, var_names)
                     d = src_var.denominator
                     if d > 1:
                         # String describes image of the full variable (src_var^1).
@@ -598,7 +613,7 @@ class DictLaurentPolynomial:
                             LaurentVariable(v.name, v.denominator * d)
                             for v in parsed.vars
                         )
-                        parsed = DictLaurentPolynomial._make(new_img_vars, parsed.poly_dict)
+                        parsed = FastDictLaurentPolynomial._make(new_img_vars, parsed.poly_dict)
                     parsed_rules[src_var] = parsed
                 else:
                     parsed_rules[src_var] = img
@@ -610,7 +625,7 @@ class DictLaurentPolynomial:
             if var in rules:
                 full_rules[var] = rules[var]
             else:
-                full_rules[var] = DictLaurentPolynomial.generator(self.vars, index=i)
+                full_rules[var] = FastDictLaurentPolynomial.generator(self.vars, index=i)
 
         # Unify all image DLPs to a common vars tuple when string values were used.
         if has_str_values and full_rules:
@@ -640,7 +655,7 @@ class DictLaurentPolynomial:
 
             if term is None:
                 zero_key = (0,) * len(next(iter(full_rules.values())).vars)
-                term = DictLaurentPolynomial._make(
+                term = FastDictLaurentPolynomial._make(
                     next(iter(full_rules.values())).vars, {zero_key: coef})
             else:
                 term = term * coef
@@ -649,7 +664,7 @@ class DictLaurentPolynomial:
 
         if result is None:
             img = next(iter(full_rules.values()))
-            return DictLaurentPolynomial._make(img.vars, {})
+            return FastDictLaurentPolynomial._make(img.vars, {})
         return result
 
     @classmethod
@@ -729,87 +744,26 @@ class DictLaurentPolynomial:
                 return num, den
             return parse_signed_int(), 1
 
-        # --- polynomial representation ---
-        # Each poly is a list of (coef: int, exps: dict[var_name → (num, den)]).
-        # Exponents use exact rational arithmetic; variable names are strings.
+        # --- grammar (builds AST as nested tuples) ---
+        # Nodes: ('v', name, num, den)  variable^(num/den)
+        #        ('c', n)               integer constant
+        #        ('u-', expr)           unary negation
+        #        (op, left, right)      op in '+', '-', '*', '/'
 
         sorted_vars = sorted(vars, key=len, reverse=True)
-
-        def _rat_add(n1, d1, n2, d2):
-            n = n1 * d2 + n2 * d1
-            d = d1 * d2
-            if n == 0:
-                return 0, 1
-            g = _gcd(abs(n), d)
-            return n // g, d // g
-
-        def _mono_key(exps):
-            return tuple(sorted(exps.items()))
-
-        def _combine(terms):
-            acc = {}
-            for c, e in terms:
-                k = _mono_key(e)
-                if k in acc:
-                    acc[k] = (acc[k][0] + c, acc[k][1])
-                else:
-                    acc[k] = (c, e)
-            return [(c, e) for c, e in acc.values() if c != 0]
-
-        def poly_neg(p):
-            return [(-c, e) for c, e in p]
-
-        def poly_add(p1, p2):
-            return _combine(p1 + p2)
-
-        def poly_mul(p1, p2):
-            result = []
-            for c1, e1 in p1:
-                for c2, e2 in p2:
-                    c = c1 * c2
-                    e = dict(e1)
-                    for v, (n2, d2) in e2.items():
-                        if v in e:
-                            n1, d1 = e[v]
-                            rn, rd = _rat_add(n1, d1, n2, d2)
-                            if rn == 0:
-                                del e[v]
-                            else:
-                                e[v] = (rn, rd)
-                        else:
-                            e[v] = (n2, d2)
-                    result.append((c, e))
-            return _combine(result)
-
-        def poly_inv(p):
-            if len(p) != 1:
-                raise ValueError(
-                    f'from_str: can only divide by a monomial in {s!r}')
-            c, e = p[0]
-            if c == 0:
-                raise ValueError(f'from_str: division by zero in {s!r}')
-            if abs(c) != 1:
-                raise ValueError(
-                    f'from_str: division by non-unit coefficient {c} '
-                    f'in {s!r}; write the coefficient in the numerator')
-            return [(c, {v: (-n, d) for v, (n, d) in e.items()})]
-
-        # --- grammar ---
 
         def parse_expr():
             result = parse_term()
             while pos[0] < len(s) and s[pos[0]] in '+-':
                 op = s[pos[0]]; pos[0] += 1
-                right = parse_term()
-                result = poly_add(result, poly_neg(right) if op == '-' else right)
+                result = (op, result, parse_term())
             return result
 
         def parse_term():
             result = parse_factor()
             while pos[0] < len(s) and s[pos[0]] in '*/':
                 op = s[pos[0]]; pos[0] += 1
-                right = parse_factor()
-                result = poly_mul(result, poly_inv(right) if op == '/' else right)
+                result = (op, result, parse_factor())
             return result
 
         def parse_factor():
@@ -819,7 +773,7 @@ class DictLaurentPolynomial:
                     sign = -sign
                 pos[0] += 1
             result = parse_atom()
-            return poly_neg(result) if sign == -1 else result
+            return ('u-', result) if sign == -1 else result
 
         def parse_atom():
             if pos[0] >= len(s):
@@ -845,7 +799,7 @@ class DictLaurentPolynomial:
                     if pos[0] < len(s) and s[pos[0]] == '^':
                         pos[0] += 1
                         num, den = parse_exponent()
-                    return [(1, {var: (num, den)} if num != 0 else {})]
+                    return ('v', var, num, den)
 
             # Must be an integer coefficient.
             if c.isdigit():
@@ -854,47 +808,89 @@ class DictLaurentPolynomial:
                     raise ValueError(
                         f'from_str: decimal numbers not supported '
                         f'at position {pos[0]} in {s!r}')
-                return [(n, {})]
+                return ('c', n)
 
             raise ValueError(
                 f'from_str: unexpected character {c!r} '
                 f'at position {pos[0]} in {s!r}; known variables: {vars!r}')
 
-        # --- parse and convert ---
+        # --- parse ---
 
-        poly = parse_expr()
+        ast = parse_expr()
 
         if pos[0] != len(s):
             raise ValueError(
                 f'from_str: unexpected content {s[pos[0]:]!r} '
                 f'at position {pos[0]} in {s!r}')
 
+        # --- scan AST for per-variable denominator LCMs ---
+
         def lcm(a, b):
             return a * b // _gcd(a, b)
 
         var_lcms = {v: 1 for v in vars}
-        for _, exps in poly:
-            for v, (n, d) in exps.items():
-                var_lcms[v] = lcm(var_lcms[v], d)
 
-        vars_list = [LaurentVariable(v, var_lcms[v]) for v in vars]
+        def collect_denoms(node):
+            tag = node[0]
+            if tag == 'v':
+                _, name, num, den = node
+                if num != 0:
+                    var_lcms[name] = lcm(var_lcms[name], den)
+            elif tag == 'u-':
+                collect_denoms(node[1])
+            elif tag != 'c':
+                collect_denoms(node[1])
+                collect_denoms(node[2])
 
-        poly_dict = {}
-        for coef, exps in poly:
-            key = tuple(
-                exps[v][0] * (var_lcms[v] // exps[v][1]) if v in exps else 0
-                for v in vars
-            )
-            if key in poly_dict:
-                new_v = poly_dict[key] + coef
-                if new_v:
-                    poly_dict[key] = new_v
-                else:
-                    del poly_dict[key]
-            else:
-                poly_dict[key] = coef
+        collect_denoms(ast)
 
-        return cls._make(vars_list, poly_dict)
+        # --- build generators in the joint variable space ---
+
+        vars_list = tuple(LaurentVariable(v, var_lcms[v]) for v in vars)
+        n = len(vars)
+        generators = {
+            v: cls._make(vars_list, {tuple(1 if j == i else 0 for j in range(n)): 1})
+            for i, v in enumerate(vars)
+        }
+
+        # --- evaluate AST using DictLaurentPolynomial arithmetic ---
+
+        def evaluate(node):
+            tag = node[0]
+            if tag == 'c':
+                return node[1]
+            if tag == 'v':
+                _, name, num, den = node
+                if num == 0:
+                    return 1
+                return generators[name] ** (num * var_lcms[name] // den)
+            if tag == 'u-':
+                return -evaluate(node[1])
+            if tag == '+':
+                return evaluate(node[1]) + evaluate(node[2])
+            if tag == '-':
+                return evaluate(node[1]) - evaluate(node[2])
+            if tag == '*':
+                return evaluate(node[1]) * evaluate(node[2])
+            # tag == '/'
+            right_val = evaluate(node[2])
+            if isinstance(right_val, int):
+                if abs(right_val) != 1:
+                    raise ValueError(
+                        f'from_str: division by non-unit coefficient {right_val} '
+                        f'in {s!r}; write the coefficient in the numerator')
+                return evaluate(node[1]) * right_val
+            if len(right_val.poly_dict) != 1:
+                raise ValueError(
+                    f'from_str: can only divide by a monomial in {s!r}')
+            return evaluate(node[1]) * (right_val ** -1)
+
+        result = evaluate(ast)
+
+        if isinstance(result, int):
+            zero_key = (0,) * n
+            return cls._make(vars_list, {zero_key: result} if result != 0 else {})
+        return result
 
     def __pow__(self, n):
         """
@@ -912,7 +908,7 @@ class DictLaurentPolynomial:
             raise ValueError(f'exponent must be an integer, got {n!r}')
         if n == 0:
             zero_key = (0,) * len(self.vars)
-            return DictLaurentPolynomial._make(self.vars, {zero_key: 1}, _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, {zero_key: 1}, _interned=True)
         if n < 0:
             if len(self.poly_dict) != 1:
                 raise ValueError('negative powers only supported for monomials')
@@ -922,7 +918,7 @@ class DictLaurentPolynomial:
                     f'negative powers require a ±1 leading coefficient, got {coef!r}')
             inv_key = tuple(k * n for k in key)
             inv_coef = coef ** (-n)  # -n > 0, so int**int stays int; (±1)^k = (±1)^{-k}
-            return DictLaurentPolynomial._make(self.vars, {inv_key: inv_coef}, _interned=True)
+            return FastDictLaurentPolynomial._make(self.vars, {inv_key: inv_coef}, _interned=True)
         result = self
         base = self
         n -= 1
@@ -965,3 +961,58 @@ class DictLaurentPolynomial:
                 terms.append(f'{coef}*{monomial}')
         return ' + '.join(terms).replace('+ -', '- ')
 
+class DictLaurentPolynomial(FastDictLaurentPolynomial):
+    """
+    A checked variant of FastDictLaurentPolynomial that verifies variable name
+    compatibility and normalises denominators to their LCM before each binary
+    arithmetic operation.
+
+    >>> a = DictLaurentPolynomial.from_str('q^2', ['q'])
+    >>> b = DictLaurentPolynomial.from_str('q^(1/2)', ['q'])
+    >>> a + b
+    q^(1/2) + q^2
+    >>> t = DictLaurentPolynomial.from_str('t', ['t'])
+    >>> a + t
+    Traceback (most recent call last):
+        ...
+    ValueError: incompatible variables: ['q'] vs ['t']
+    """
+
+    def _match(self, other):
+        """Return (self, other) refactored to share a common vars tuple.
+
+        Raises ValueError if variable names or counts differ.
+        """
+        if self.vars is other.vars:
+            return self, other
+        if len(self.vars) != len(other.vars):
+            raise ValueError(
+                f'incompatible variables: '
+                f'{[v.name for v in self.vars]!r} vs '
+                f'{[v.name for v in other.vars]!r}')
+        if any(v1.name != v2.name for v1, v2 in zip(self.vars, other.vars)):
+            raise ValueError(
+                f'incompatible variables: '
+                f'{[v.name for v in self.vars]!r} vs '
+                f'{[v.name for v in other.vars]!r}')
+        def lcm(a, b): return a * b // _gcd(a, b)
+        common_vars = tuple(
+            LaurentVariable(v1.name, lcm(v1.denominator, v2.denominator))
+            for v1, v2 in zip(self.vars, other.vars)
+        )
+        return self.refactor_variables(common_vars), other.refactor_variables(common_vars)
+
+    def __add__(self, other):
+        lhs, rhs = self._match(other) if isinstance(other, FastDictLaurentPolynomial) else (self, other)
+        result = FastDictLaurentPolynomial.__add__(lhs, rhs)
+        return DictLaurentPolynomial._make(result.vars, result.poly_dict, _interned=True)
+
+    def __sub__(self, other):
+        lhs, rhs = self._match(other) if isinstance(other, FastDictLaurentPolynomial) else (self, other)
+        result = FastDictLaurentPolynomial.__sub__(lhs, rhs)
+        return DictLaurentPolynomial._make(result.vars, result.poly_dict, _interned=True)
+
+    def __mul__(self, other):
+        lhs, rhs = self._match(other) if isinstance(other, FastDictLaurentPolynomial) else (self, other)
+        result = FastDictLaurentPolynomial.__mul__(lhs, rhs)
+        return DictLaurentPolynomial._make(result.vars, result.poly_dict, _interned=True)

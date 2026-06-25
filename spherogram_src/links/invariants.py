@@ -348,6 +348,8 @@ class Link(links_base.Link):
         else:
             if sage_polynomials:
                 ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+            else:
+                ans = (ans[0].to_checked(), ans[1])
 
         if timed:
             return ans
@@ -370,6 +372,8 @@ class Link(links_base.Link):
         else:
             if sage_polynomials:
                 ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+            else:
+                ans = (ans[0].to_checked(), ans[1])
 
         if timed:
             return ans

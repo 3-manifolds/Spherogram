@@ -99,11 +99,15 @@ class RTNetwork:
 
     def optimal_contraction_sequence(self):
         try:
-            import numpy as np
             import opt_einsum as oe
         except ImportError:
-            raise ModuleNotFoundError('Modules numpy and opt_einsum is required for computing the optimal contraction sequences')
-        
+            raise ModuleNotFoundError('Module opt_einsum is required for computing the optimal contraction sequences')
+
+        class _ShapeOnly:
+            __slots__ = ['shape']
+            def __init__(self, shape):
+                self.shape = shape
+
         oe_network = []
         idle = set(self.idle_labels)
         for tensor, key in self.network:
@@ -113,10 +117,8 @@ class RTNetwork:
                 except:
                     raise ValueError(f'key {key[0].index} not found in {idle}')
             else:
-                if tensor is not None:
-                    oe_network.append(np.empty(tensor.shape))
-                else:
-                    oe_network.append(np.empty([4 for _ in key]))
+                shape = tensor.shape if tensor is not None else tuple(4 for _ in key)
+                oe_network.append(_ShapeOnly(shape))
                 oe_network.append([edge.index for edge in key])
 
         return oe.contract_path(*oe_network, idle)[0]

@@ -1,4 +1,4 @@
-from .dict_laurent_polynomial import DictLaurentPolynomial, LaurentVariable
+from .dict_laurent_polynomial import FastDictLaurentPolynomial, LaurentVariable
 
 from .sparse_array import SparseTensor
 
@@ -20,7 +20,7 @@ def laurent_sparse_tensor_from_file(file, vars = ['t', 'q'], sage_polynomials = 
         key, value = line
         key = tuple(ast.literal_eval(key))
         assert key not in data.keys(), f'{key} appeared multiple times in {file.name}'
-        data[key] = DictLaurentPolynomial.from_str(value, vars = vars)
+        data[key] = FastDictLaurentPolynomial.from_str(value, vars = vars)
 
     # Unify variable denominators: compute LCM across all loaded polynomials so
     # every value shares the same vars tuple (enabling interning and consistent arithmetic).
@@ -121,7 +121,7 @@ def _q_pow(e):
     """
     DictLaurentPolynomial representing q^(e/2). e must be an integer.
     """
-    return DictLaurentPolynomial._make((LaurentVariable('q', 4),), {(e,): 1})
+    return FastDictLaurentPolynomial._make((LaurentVariable('q', 4),), {(e,): 1})
 
 def colored_jones_R_matrices(n, sage_polynomials=False):
     """
