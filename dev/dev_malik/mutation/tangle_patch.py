@@ -580,7 +580,7 @@ def underlying_graph(link):
     return G
 
 
-def trace_boundary_component(start_cs,full_boundary):
+def trace_boundary_component(start_cs, full_boundary):
     boundary_comp = [start_cs]
     cs = start_cs.next_corner()
     i = 0
@@ -593,7 +593,7 @@ def trace_boundary_component(start_cs,full_boundary):
                 raise Exception()
         cs = cs.rotate(1)
         boundary_comp.append(cs)
-    boundary_comp.pop(-1)  # code aboves adds the start_cs twice
+    boundary_comp.pop(-1)  # code above adds the start_cs twice
     return boundary_comp
 
 

@@ -359,7 +359,7 @@ printf("node %2d is an interior node with non-positive radius and target angle s
 				pR_ptr[i].rad=.01;
 			}
 			
-			/* index [k] = k+1 for all k, since the interior vertices appear first in the trinagulation data 
+			/* index [k] = k+1 for all k, since the interior vertices appear first in the triangulation data 
 			   the pack data is indexed from 1 not zero because the vertex numbers in the triangulation data
 			   are numbered from 1.
 			*/
