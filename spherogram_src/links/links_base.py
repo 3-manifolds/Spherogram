@@ -1537,7 +1537,7 @@ class Link:
             for i, m in enumerate(tally):
                 if m == 1:
                     n += (self.crossings)[i].sign
-        n = n / 4
+        n = n // 4
         return n
 
     def _pieces(self):
