@@ -895,6 +895,20 @@ class Link:
 
         component_index: either a single index of component or a list of indices of components
 
+        >>> L = snappy.Link([(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)])
+        >>> L
+        <Link: 2 comp; 4 cross>
+        >>> L.linking_number()
+        2.0
+        >>> L.reverse_orientation(0)
+        >>> L.linking_number()
+        -2.0
+        >>> L.reverse_orientation(1)
+        >>> L.linking_number()
+        2.0
+        >>> L.reverse_orientation([0,1])
+        >>> L.PD_code()
+        [(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)]
         """
         if not isinstance(component_index, (set, list, tuple)):
             component_index = [component_index]

@@ -143,7 +143,7 @@ def reidemeister_I_and_II(link, A):
                         break
 
     
-    changed &= {x for x in changed if isinstance(x, Crossing)}
+    changed = {x for x in changed if isinstance(x, Crossing)}
     return eliminated, changed
 
 
