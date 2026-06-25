@@ -899,13 +899,13 @@ class Link:
         >>> L
         <Link: 2 comp; 4 cross>
         >>> L.linking_number()
-        2.0
+        2
         >>> L.reverse_orientation(0)
         >>> L.linking_number()
-        -2.0
+        -2
         >>> L.reverse_orientation(1)
         >>> L.linking_number()
-        2.0
+        2
         >>> L.reverse_orientation([0,1])
         >>> L.PD_code()
         [(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)]
