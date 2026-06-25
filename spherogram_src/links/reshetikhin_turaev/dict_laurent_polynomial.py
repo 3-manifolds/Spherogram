@@ -89,7 +89,7 @@ class DictLaurentPolynomial:
 
     >>> p = DictLaurentPolynomial.from_str('q^2 - q^-1 + 3', ['q'])
     >>> p
-    q^2 + 3 - q^-1
+    -q^-1 + 3 + q^2
     >>> r = DictLaurentPolynomial.from_str('q^2*t - 1', ['q', 't'])
     >>> r
     q^2*t - 1
@@ -234,7 +234,7 @@ class DictLaurentPolynomial:
         """
         >>> p = DictLaurentPolynomial.from_str('q + 2', ['q'])
         >>> -p
-        -q - 2
+        -2 - q
         """
         return DictLaurentPolynomial._make(
             self.vars, {k: -v for k, v in self.poly_dict.items()}, _interned=True)
@@ -244,9 +244,9 @@ class DictLaurentPolynomial:
         >>> p = DictLaurentPolynomial.from_str('q + 1', ['q'])
         >>> r = DictLaurentPolynomial.from_str('q^-1 - 1', ['q'])
         >>> p + r
-        q + q^-1
+        q^-1 + q
         >>> p + 3
-        q + 4
+        4 + q
         """
         if isinstance(other, DictLaurentPolynomial):
             sp, op = self.poly_dict, other.poly_dict
@@ -288,7 +288,7 @@ class DictLaurentPolynomial:
         >>> p - r
         q^2
         >>> p - 1
-        q^2 + q - 1
+        -1 + q + q^2
         """
         if isinstance(other, DictLaurentPolynomial):
             result = dict(self.poly_dict)
@@ -312,9 +312,9 @@ class DictLaurentPolynomial:
         >>> p = DictLaurentPolynomial.from_str('q + 1', ['q'])
         >>> r = DictLaurentPolynomial.from_str('q - 1', ['q'])
         >>> p * r
-        q^2 - 1
+        -1 + q^2
         >>> p * 3
-        3*q + 3
+        3 + 3*q
         """
         if isinstance(other, DictLaurentPolynomial):
             result = {}
@@ -407,10 +407,10 @@ class DictLaurentPolynomial:
         >>> p = DictLaurentPolynomial.from_str('q^2 - 1', ['q'])
         >>> q = DictLaurentPolynomial.from_str('q', ['q'])
         >>> p / q
-        q - q^-1
+        -q^-1 + q
         >>> r = DictLaurentPolynomial.from_str('2*q^2 + 4*q', ['q'])
         >>> r / 2
-        q^2 + 2*q
+        2*q + q^2
         >>> r / 3
         Traceback (most recent call last):
             ...
@@ -480,13 +480,13 @@ class DictLaurentPolynomial:
         >>> v1 = LaurentVariable('q', 1)
         >>> p = DictLaurentPolynomial._make((v1,), {(1,): 1, (-1,): -1})
         >>> p
-        q - q^-1
+        -q^-1 + q
         >>> v4 = LaurentVariable('q', 4)
         >>> p4 = p.refactor_variables([v4])
         >>> p4.vars[0].denominator
         4
         >>> p4
-        q - q^-1
+        -q^-1 + q
         """
         new_vars = tuple(
             v if isinstance(v, LaurentVariable) else LaurentVariable(v)
@@ -533,11 +533,11 @@ class DictLaurentPolynomial:
         >>> p = DictLaurentPolynomial.from_str('q^2 + q', ['q'])
         >>> t = DictLaurentPolynomial.generator([t_var])
         >>> p.change_vars({q_var: t})
-        t^2 + t
+        t + t^2
         >>> p.change_vars([DictLaurentPolynomial.from_str('t^-1', ['t'])])
-        t^-1 + t^-2
+        t^-2 + t^-1
         >>> p.change_vars({'q': 'q^-1'})
-        q^-1 + q^-2
+        q^-2 + q^-1
         >>> r = DictLaurentPolynomial.from_str('q + t', ['q', 't'])
         >>> r.change_vars({'q': 'q*t^2', 't': 't^-1'})
         q*t^2 + t^-1
@@ -545,7 +545,7 @@ class DictLaurentPolynomial:
         >>> s.change_vars({'q': 'q*t^2', 't': 't^-1'})
         q^(1/2)*t^(2/3)
         >>> p.change_vars({'q': 'a^2'}, new_var_names=['a'])
-        a^4 + a^2
+        a^2 + a^4
         >>> r.change_vars({'q': 'a^2'}, new_var_names=['a'])
         a^2 + t
         >>> r.change_vars({'q': 'a^2', 't': 'b^-1'}, new_var_names=['a', 'b'])
@@ -662,13 +662,13 @@ class DictLaurentPolynomial:
         denominators appearing in its exponents in the string.
 
         >>> DictLaurentPolynomial.from_str('q^2 - q^-1 + 3', ['q'])
-        q^2 + 3 - q^-1
+        -q^-1 + 3 + q^2
         >>> DictLaurentPolynomial.from_str('q^(1/2) + q^(-1/2)', ['q'])
-        q^(1/2) + q^(-1/2)
+        q^(-1/2) + q^(1/2)
         >>> DictLaurentPolynomial.from_str('1 - 1/(q*t)', ['q', 't'])
         1 - q^-1*t^-1
         >>> DictLaurentPolynomial.from_str('(q^2 - 1) / q', ['q'])
-        q - q^-1
+        -q^-1 + q
         >>> DictLaurentPolynomial.from_str('t1^2 + t2^-1', ['t1', 't2'])
         t1^2 + t2^-1
         >>> DictLaurentPolynomial.from_str('t^2 + t1', ['t', 't1'])
@@ -944,7 +944,9 @@ class DictLaurentPolynomial:
         def _sort_key(item):
             exp = item[0]
             total = sum(k * s for k, s in zip(exp, scales))
-            return (-total, tuple(-k for k in exp))
+            if len(self.vars) == 1:
+                return total  # ascending for univariate (matches PuiseuxSeries)
+            return (-total, tuple(-k for k in exp))  # descending for multivariate
         terms = []
         for exp, coef in sorted(self.poly_dict.items(), key=_sort_key):
             parts = []
