@@ -445,7 +445,7 @@ class FastDictLaurentPolynomial:
             raise ValueError(
                 f'DictLaurentPolynomial division: scalar {other!r} does not '
                 f'divide all coefficients')
-        return FastDictLaurentPolynomial._make(
+        return type(self)._make(
             self.vars, {k: c // other for k, c in self.poly_dict.items()},
             _interned=True)
 
@@ -692,6 +692,8 @@ class FastDictLaurentPolynomial:
         t1^2*t10 + t1 - t10^-1
         >>> DictLaurentPolynomial.from_str('(t1^2 - 1) / t1', ['t1', 't2'])
         t1 - t1^-1
+        >>> DictLaurentPolynomial.from_str('3', [])
+        3
         """
         if len(vars) != len(set(vars)):
             raise ValueError(f'from_str: duplicate variable names in {vars!r}')
@@ -963,8 +965,8 @@ class FastDictLaurentPolynomial:
 
 class DictLaurentPolynomial(FastDictLaurentPolynomial):
     """
-    A checked variant of FastDictLaurentPolynomial that verifies variable name
-    compatibility and normalises denominators to their LCM before each binary
+    A checked variant of FastDictLaurentPolynomial that normalises denominators
+    to their LCM and expands to the union of variable sets before each binary
     arithmetic operation.
 
     >>> a = DictLaurentPolynomial.from_str('q^2', ['q'])
@@ -973,34 +975,52 @@ class DictLaurentPolynomial(FastDictLaurentPolynomial):
     q^(1/2) + q^2
     >>> t = DictLaurentPolynomial.from_str('t', ['t'])
     >>> a + t
-    Traceback (most recent call last):
-        ...
-    ValueError: incompatible variables: ['q'] vs ['t']
+    q^2 + t
     """
 
     def _match(self, other):
         """Return (self, other) refactored to share a common vars tuple.
 
-        Raises ValueError if variable names or counts differ.
+        If the variable sets differ, both are expanded to their union (self's
+        variable order first, then other's exclusive variables appended).
+        Denominators for shared variables are normalised to their LCM.
         """
         if self.vars is other.vars:
             return self, other
-        if len(self.vars) != len(other.vars):
-            raise ValueError(
-                f'incompatible variables: '
-                f'{[v.name for v in self.vars]!r} vs '
-                f'{[v.name for v in other.vars]!r}')
-        if any(v1.name != v2.name for v1, v2 in zip(self.vars, other.vars)):
-            raise ValueError(
-                f'incompatible variables: '
-                f'{[v.name for v in self.vars]!r} vs '
-                f'{[v.name for v in other.vars]!r}')
+
         def lcm(a, b): return a * b // _gcd(a, b)
-        common_vars = tuple(
-            LaurentVariable(v1.name, lcm(v1.denominator, v2.denominator))
-            for v1, v2 in zip(self.vars, other.vars)
-        )
-        return self.refactor_variables(common_vars), other.refactor_variables(common_vars)
+
+        self_by_name = {v.name: v for v in self.vars}
+        other_by_name = {v.name: v for v in other.vars}
+
+        union_list = []
+        for v in self.vars:
+            d = lcm(v.denominator, other_by_name[v.name].denominator) if v.name in other_by_name else v.denominator
+            union_list.append(LaurentVariable(v.name, d))
+        for v in other.vars:
+            if v.name not in self_by_name:
+                union_list.append(LaurentVariable(v.name, v.denominator))
+        union_vars = _intern_vars(tuple(union_list))
+
+        def expand(poly_obj):
+            old_vars = poly_obj.vars
+            name_to_old = {v.name: i for i, v in enumerate(old_vars)}
+            slots = []
+            for uv in union_vars:
+                oi = name_to_old.get(uv.name)
+                if oi is not None:
+                    slots.append((oi, uv.denominator // old_vars[oi].denominator))
+                else:
+                    slots.append(None)
+            new_dict = {}
+            for old_key, coeff in poly_obj.poly_dict.items():
+                new_key = []
+                for slot in slots:
+                    new_key.append(old_key[slot[0]] * slot[1] if slot is not None else 0)
+                new_dict[tuple(new_key)] = coeff
+            return FastDictLaurentPolynomial._make(union_vars, new_dict, _interned=True)
+
+        return expand(self), expand(other)
 
     def __add__(self, other):
         lhs, rhs = self._match(other) if isinstance(other, FastDictLaurentPolynomial) else (self, other)
@@ -1016,3 +1036,29 @@ class DictLaurentPolynomial(FastDictLaurentPolynomial):
         lhs, rhs = self._match(other) if isinstance(other, FastDictLaurentPolynomial) else (self, other)
         result = FastDictLaurentPolynomial.__mul__(lhs, rhs)
         return DictLaurentPolynomial._make(result.vars, result.poly_dict, _interned=True)
+
+    def simplify_variables(self):
+        """
+        Return a copy with any variable whose exponent is 0 in every term removed.
+
+        >>> p = DictLaurentPolynomial.from_str('q^2 + 1', ['q', 't'])
+        >>> p.simplify_variables()
+        1 + q^2
+        >>> p.simplify_variables().vars
+        (q,)
+        >>> DictLaurentPolynomial.from_str('3', ['q', 't']).simplify_variables()
+        3
+        >>> DictLaurentPolynomial.from_str('q*t + q', ['q', 't']).simplify_variables()
+        q*t + q
+        """
+        if not self.poly_dict or not self.vars:
+            return self
+        keep = [any(key[i] != 0 for key in self.poly_dict) for i in range(len(self.vars))]
+        if all(keep):
+            return self
+        new_vars = _intern_vars(tuple(v for v, k in zip(self.vars, keep) if k))
+        new_dict = {
+            tuple(exp for exp, k in zip(key, keep) if k): coeff
+            for key, coeff in self.poly_dict.items()
+        }
+        return DictLaurentPolynomial._make(new_vars, new_dict, _interned=True)
