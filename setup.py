@@ -205,7 +205,8 @@ install_requires = ['decorator',
                     'networkx',
                     'packaging',
                     'snappy_manifolds>=1.4',
-                    'knot_floer_homology>=1.2.2']
+                    'knot_floer_homology>=1.2.2',
+                    'opt_einsum>=3.4.0']
 
 setup( name = 'spherogram',
        version = version,

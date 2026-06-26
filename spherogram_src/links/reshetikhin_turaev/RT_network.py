@@ -117,7 +117,7 @@ class RTNetwork:
                 except:
                     raise ValueError(f'key {key[0].index} not found in {idle}')
             else:
-                shape = tensor.shape if tensor is not None else tuple(4 for _ in key)
+                shape = tensor.shape if tensor is not None else tuple(8 for _ in key)
                 oe_network.append(_ShapeOnly(shape))
                 oe_network.append([edge.index for edge in key])
 
