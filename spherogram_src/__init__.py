@@ -23,4 +23,4 @@ __all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            # from spherogram.links.tangles:
            'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
            'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
-           'IdentityBraid', 'ComponentTangle', 'join_strands']
+           'IdentityBraid', 'BraidTangle', 'ComponentTangle', 'join_strands']

@@ -124,6 +124,16 @@ class Crossing:
             raise ValueError("Can only orient a strand once.")
         self.directions.add(b)
 
+    def make_head(self, a):
+        """
+        Orients the strand joining input "a" to input" a+2" to start at "a" and end at
+        "a+2".
+        """
+        b = ((a + 2) % 4, a)
+        if (b[1], b[0]) in self.directions:
+            raise ValueError("Can only orient a strand once.")
+        self.directions.add(b)
+
     def rotate(self, s):
         """
         Rotate the incoming connections by 90*s degrees anticlockwise.
@@ -251,7 +261,10 @@ class CrossingStrand(BasicCrossingStrand):
         return self.opposite().rotate(-1)
 
     def strand_label(self):
-        return self.crossing.strand_labels[self.strand_index]
+        if isinstance(self.crossing, Strand):
+            return self.crossing.strand_label
+        else:
+            return self.crossing.strand_labels[self.strand_index]
 
     def oriented(self):
         """
@@ -266,25 +279,35 @@ class CrossingStrand(BasicCrossingStrand):
     def __repr__(self):
         return "<CS %s, %s>" % (self.crossing, self.strand_index)
 
-
 class CrossingEntryPoint(CrossingStrand):
     """
     One of the two entry points of an oriented crossing
     """
 
     def next(self):
-        c, e = self.crossing, self.strand_index
-        s = c._adjacent_len // 2
-        return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
+        if isinstance(self.crossing, (Crossing, Strand)):
+            c, e = self.crossing, self.strand_index
+            s = c._adjacent_len // 2
+            return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
+        else:
+            raise RuntimeError('This should not be reached')
 
     def previous(self):
-        s = self.crossing._adjacent_len // 2
-        return CrossingEntryPoint(*self.opposite().rotate(s))
+        d, j = self.opposite()
+
+        if isinstance(d, (Crossing, Strand)):
+            s = d._adjacent_len // 2
+            return CrossingEntryPoint(*self.opposite().rotate(s))
+        else: 
+            return CrossingEntryPoint(d, j)
 
     def other(self):
-        nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
-        other = nonzero_entry_point if self.strand_index == 0 else 0
-        return CrossingEntryPoint(self.crossing, other)
+        if isinstance(self.crossing, Crossing):
+            nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
+            other = nonzero_entry_point if self.strand_index == 0 else 0
+            return CrossingEntryPoint(self.crossing, other)
+        else:
+            return None
 
     def is_under_crossing(self):
         return self.strand_index == 0
@@ -294,12 +317,27 @@ class CrossingEntryPoint(CrossingStrand):
 
     def component(self):
         ans = [self]
+        
+        is_reversed = False
         while True:
-            next = ans[-1].next()
-            if next == self:
+            if is_reversed:
+                d = ans[0].previous()
+            else:
+                d = ans[-1].next()
+
+            if d == self:
                 break
             else:
-                ans.append(next)
+                if is_reversed:
+                    ans.insert(0, d)
+                else:
+                    ans.append(d)
+                
+            if not isinstance(d.crossing, (Crossing, Strand)):
+                if is_reversed:
+                    break
+                else:
+                    is_reversed = True
 
         return ans
 
@@ -308,9 +346,15 @@ class CrossingEntryPoint(CrossingStrand):
 
     def label_crossing(self, comp, labels):
         c, e = self.crossing, self.strand_index
-        f = (e + 2) % 4
-        c.strand_labels[e], c.strand_components[e] = labels[self], comp
-        c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
+    
+        if isinstance(c, Crossing):
+            f = (e + 2) % 4
+            c.strand_labels[e], c.strand_components[e] = labels[self], comp
+            c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
+        elif isinstance(c, Strand):
+            c.strand_label, c.strand_component = labels[self], comp
+        else:
+            c.strand_labels[e], c.strand_components[e] = labels[self], comp
 
     def __repr__(self):
         return "<CEP %s, %s>" % (self.crossing, self.strand_index)
@@ -338,6 +382,7 @@ class Strand:
     def __init__(self, label=None, component_idx=None):
         self.label = label
         self.adjacent = [None, None]
+        self._clear()
         self._adjacent_len = 2
         self.component_idx = component_idx
 
@@ -368,8 +413,63 @@ class Strand:
               (self.label, [format_adjacent(a) for a in self.adjacent]))
 
     def is_loop(self):
-        return self == self.adjacent[0][0]
+        return self.adjacent[0] is not None and self == self.adjacent[0][0]
 
+    def _clear(self):
+        self.sign, self.direction = 0, None
+        self._clear_strand_info()
+
+    def _clear_strand_info(self):
+        self.strand_label = None
+        self.strand_component = None
+
+    def make_tail(self, a):
+        """
+        Orients the strand joining input "a" to input" a+1" to start at "a" and end at
+        "a+1".
+        """
+        b = (a, (a + 1) % 2)
+        if self.direction is not None and self.direction != b:
+            raise ValueError("Can only orient a strand once.")
+        self.direction = b
+
+    def make_head(self, a):
+        """
+        Orients the strand joining input "a" to input" a+1" to start at "a" and end at
+        "a+1".
+        """
+        b = ((a + 1) % 2, a)
+        if self.direction is not None and self.direction != b:
+            raise ValueError("Can only orient a strand once.")
+        self.direction = b
+
+    def rotate(self, s):
+        """
+        Rotate the incoming connections by 180*s degrees anticlockwise.
+        """
+        def rotate(v):
+            return (v + s) % 2
+        new_adjacent = [self.adjacent[rotate(i)] for i in range(2)]
+        for i, (o, j) in enumerate(new_adjacent):
+            if o != self:
+                o.adjacent[j] = (self, i)
+                self.adjacent[i] = (o, j)
+            else:
+                self.adjacent[i] = (self, (j - s) % 2)
+
+        a,b = self.direction
+        self.direction = (rotate(a), rotate(b))
+
+    def orient(self):
+        if self.direction == (1, 0):
+            self.rotate(1)
+            self.direction = (0,1)
+        
+        self.sign = 1
+
+    def entry_points(self):
+        assert self.sign == 1
+        return [CrossingEntryPoint(self, 0)]
 
 def enumerate_lists(lists, n=0, filter=lambda x: True):
     ans = []
@@ -515,7 +615,7 @@ class Link:
             if not all(isinstance(c, Crossing) for c, _ in s.adjacent):
                 raise ValueError("Strands with a component index must be in the same"
                                  " component as a crossing")
-        # Go through the component strands to construct component_starts
+        # Go through the component strands to construct component_spec
         if component_strands:
             component_spec = []
             for s in component_strands:
@@ -777,7 +877,8 @@ class Link:
             for comp in self.link_components:
                 for cs in comp:
                     if cs.crossing in self.crossings:
-                        start_css.append(cs)
+                        s = cs.crossing._adjacent_len // 2
+                        start_css.append(cs.rotate(s))
                         break
         self.link_components = None
         for c in self.crossings:
@@ -787,6 +888,53 @@ class Link:
                         component_starts=start_css)
         else:
             self._build()
+
+    def reverse_orientation(self, component_index):
+        """
+        Reverse the orientation of components specified by component_index.
+
+        component_index: either a single index of component or a list of indices of components
+
+        >>> L = Link([(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)])
+        >>> L
+        <Link: 2 comp; 4 cross>
+        >>> L.linking_number()
+        2
+        >>> L.reverse_orientation(0)
+        >>> L.linking_number()
+        -2
+        >>> L.reverse_orientation(1)
+        >>> L.linking_number()
+        2
+        >>> L.reverse_orientation([0,1])
+        >>> L.PD_code()
+        [(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)]
+        """
+        if not isinstance(component_index, (set, list, tuple)):
+            component_index = [component_index]
+
+        org_entries = []
+        for comp in self.components:
+            for cs in comp:
+                if cs.crossing in self.crossings:
+                    org_entries.append(cs)
+                    break
+
+        new_starts = []
+        for i, cs in enumerate(org_entries):
+            if i not in component_index:
+                c, e = cs.crossing, cs.strand_index
+                s = c._adjacent_len // 2
+                reversed_cs = CrossingStrand(c, (e + s) % (2 * s))
+                new_starts.append(reversed_cs)
+            else:
+                new_starts.append(cs)
+                
+        self.link_components = None
+        for c in self.crossings:
+            c._clear()
+        self._build(start_orientations = new_starts,
+                    component_starts = new_starts)
 
     def _check_crossing_orientations(self):
         for C in self.crossings:
@@ -884,8 +1032,7 @@ class Link:
             # and turn them into CrossingEntryPoints
             component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
-        remaining, components = OrderedSet(
-            self.crossing_entries()), LinkComponents()
+        remaining, components = OrderedSet(self.crossing_entries()), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
@@ -939,6 +1086,17 @@ class Link:
             assert self._DT_convention_holds()
 
         self.link_components = components
+
+    @property
+    def components(self):
+        """
+        Synonym for link_components
+        """
+        return self.link_components
+    
+    @components.setter
+    def components(self, value):
+        self.link_components = value
 
     def digraph(self):
         """
@@ -1379,7 +1537,7 @@ class Link:
             for i, m in enumerate(tally):
                 if m == 1:
                     n += (self.crossings)[i].sign
-        n = n / 4
+        n = n // 4
         return n
 
     def _pieces(self):

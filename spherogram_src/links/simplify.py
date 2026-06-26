@@ -74,7 +74,7 @@ def remove_crossings(link, eliminate):
         for C in eliminate:
             link.crossings.remove(C)
         new_components = []
-        for component in link.link_components:
+        for component in link.components:
             for C in eliminate:
                 for cep in C.entry_points():
                     try:
@@ -83,9 +83,10 @@ def remove_crossings(link, eliminate):
                         pass
             if len(component):
                 new_components.append(component)
-        components_removed = len(link.link_components) - len(new_components)
+        components_removed = len(link.components) - len(new_components)
         link.unlinked_unknot_components += components_removed
-        link.link_components = new_components
+
+        link.components = new_components
 
 
 def reidemeister_I(link, C):
@@ -95,15 +96,18 @@ def reidemeister_I(link, C):
     Returns the pair: {crossings eliminated}, {crossings changed}
     """
     elim, changed = set(), set()
-    for i in range(4):
-        if C.adjacent[i] == (C, (i + 1) % 4):
-            (A, a), (B, b) = C.adjacent[i + 2], C.adjacent[i + 3]
-            elim = {C}
-            if C != A:
-                A[a] = B[b]
-                changed = {A, B}
 
-    remove_crossings(link, elim)
+    if isinstance(C, Crossing):
+        for i in range(4):
+            if C.adjacent[i] == (C, (i + 1) % 4):
+                (A, a), (B, b) = C.adjacent[i + 2], C.adjacent[i + 3]
+                elim = {C}
+                if C != A:
+                    A[a] = B[b]
+                    changed = {A, B}
+
+        remove_crossings(link, elim)
+
     return elim, changed
 
 
@@ -118,25 +122,28 @@ def reidemeister_I_and_II(link, A):
     if not eliminated:
         for a in range(4):
             (B, b), (C, c) = A.adjacent[a], A.adjacent[a + 1]
-            if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
-                eliminated, changed = reidemeister_I(link, B)
-                if eliminated:
-                    break
-                else:
-                    W, w = A.adjacent[a + 2]
-                    X, x = A.adjacent[a + 3]
-                    Y, y = B.adjacent[b + 1]
-                    Z, z = B.adjacent[b + 2]
-                    eliminated = {A, B}
-                    if W != B:
-                        W[w] = Z[z]
-                        changed.update({W, Z})
-                    if X != B:
-                        X[x] = Y[y]
-                        changed.update({X, Y})
-                    remove_crossings(link, eliminated)
-                    break
+            if all(isinstance(x, Crossing) for x in (B,C)):
+                if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
+                    eliminated, changed = reidemeister_I(link, B)
+                    if eliminated:
+                        break
+                    else:
+                        W, w = A.adjacent[a + 2]
+                        X, x = A.adjacent[a + 3]
+                        Y, y = B.adjacent[b + 1]
+                        Z, z = B.adjacent[b + 2]
+                        eliminated = {A, B}
+                        if W != B:
+                            W[w] = Z[z]
+                            changed.update({W, Z})
+                        if X != B:
+                            X[x] = Y[y]
+                            changed.update({X, Y})
+                        remove_crossings(link, eliminated)
+                        break
 
+    
+    changed = {x for x in changed if isinstance(x, Crossing)}
     return eliminated, changed
 
 
@@ -177,10 +184,15 @@ def basic_simplify(link, build_components=True, to_visit=None,
     # Redo the strand labels (used for DT codes)
     if (success and build_components) or force_build_components:
         component_starts = []
-        for component in link.link_components:
+
+        for component in link.components:
             assert len(component) > 0
             if len(component) > 1:
-                a, b = component[:2]
+                if isinstance(component[0].crossing, (Strand, Crossing)):
+                    a, b = component[:2]
+                else:
+                    assert len(component) > 3
+                    a, b = component[1:3]
             else:
                 a = component[0]
                 b = a.next()
@@ -820,7 +832,8 @@ def clear_orientations(link):
     """
     Resets the orientations on the crossings of a link to default values
     """
-    link.link_components = None
+    link.components = None
+
     for i in link.crossings:
         i.sign = 0
         i.directions.clear()
