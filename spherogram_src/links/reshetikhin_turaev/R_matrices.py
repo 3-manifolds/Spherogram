@@ -13,7 +13,8 @@ def laurent_sparse_tensor_from_file(file, vars = ['t', 'q'], sage_polynomials = 
     header = next(reader)
     shape = ast.literal_eval(header[0])
 
-    assert header[1] == 'LaurentPolynomial', f'Expected type LaurentPolynomial, got {header[1]}'
+    if header[1] != 'ZZ':
+        raise NotImplementedError
 
     data = dict()
     for line in reader:

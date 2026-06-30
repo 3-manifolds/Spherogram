@@ -189,13 +189,87 @@ class RTNetwork:
                                     boundary = (0,0) if omit_idle_arcs else self.boundary,
                                     boundary_labels = [] if omit_idle_arcs else self.boundary_labels)
 
-        m = abstract_copy._resolve_self_loops()
-        width = (3 if m else 0, m)
+        loops = abstract_copy._resolve_self_loops()
+        if loops:
+            if all(len(loop) > 1 for loop in loops):
+                width = (2, len(loops))
+            else:
+                width = (3, len([loop for loop in loops if len(loop) == 1]))
+        else:
+            width = (0, 0)
+
 
         seq_width, ans = abstract_copy.seq_contraction_width(abstract_copy.optimal_contraction_sequence())
 
         return max(width, seq_width), ans
     
+    @staticmethod
+    def local_contraction_seq(abstract_network, indices):
+        idx1, idx2 = indices
+        ans = list(abstract_network)
+        key1 = abstract_network[idx1]
+        key2 = abstract_network[idx2]
+
+        contracted_indices = set()
+
+        pairs = []
+        for pos_i, ei in enumerate(key1):
+            for pos_j, ej in enumerate(key2):
+                if ei.index == ej.index and ei.sign * ej.sign == -1:
+                    pairs.append((pos_i, pos_j))
+                    contracted_indices.add(ei.index)
+
+        contracted1 = {pos_i for pos_i, _ in pairs}
+        contracted2 = {pos_j for _, pos_j in pairs}
+
+        if idx1 == idx2:
+            contracted_all = contracted1 | contracted2
+            new_key = tuple(e for pos, e in enumerate(key1) if pos not in contracted_all)
+            ans.pop(idx1)
+        else:
+            new_key = (tuple(e for pos, e in enumerate(key1) if pos not in contracted1) +
+                       tuple(e for pos, e in enumerate(key2) if pos not in contracted2))
+            hi, lo = max(idx1, idx2), min(idx1, idx2)
+            ans.pop(hi)
+            ans.pop(lo)
+
+        ans.append(new_key)
+
+        return contracted_indices, ans
+
+    def seq_contraction_seq(self, seq):
+        abstract_network = [key for _, key in self.network]
+
+        ans = []
+        
+        for indices in seq:
+            contracted_indices, abstract_network = RTNetwork.local_contraction_seq(abstract_network, indices)
+
+            ans.append(contracted_indices)
+
+        return ans, abstract_network
+
+    def contraction_sequence(self, omit_idle_arcs = True):
+        abstract_network = []
+        for _, key in self.network:
+            if omit_idle_arcs:
+                non_idle_key = tuple(e for e in key if e.index not in self.idle_labels)
+                abstract_network.append((None, non_idle_key))
+            else:
+                abstract_network.append((None, key))
+
+        abstract_copy = RTNetwork(None, 
+                                    network = abstract_network,
+                                    rot_num = self.rot_num,
+                                    boundary = (0,0) if omit_idle_arcs else self.boundary,
+                                    boundary_labels = [] if omit_idle_arcs else self.boundary_labels)
+
+        loops = abstract_copy._resolve_self_loops()
+
+        contraction_seq, ans = abstract_copy.seq_contraction_seq(abstract_copy.optimal_contraction_sequence())
+
+        return loops + contraction_seq, ans
+
     def contract_nodes(self, indices):
         idx1, idx2 = indices
         tensor1, key1 = self.network[idx1]
@@ -233,23 +307,27 @@ class RTNetwork:
 
     def _resolve_self_loop_at(self, idx):
         _, key = self.network[idx]
-        pairs = []
+        edge_indices = []
         seen = {}
         for pos, e in enumerate(key):
             if e.index in seen:
-                other_pos, other_e = seen[e.index]
+                _, other_e = seen[e.index]
                 if e.sign * other_e.sign == -1:
-                    pairs.append((other_pos, pos))
+                    edge_indices.append(e.index)
                     break
             else:
                 seen[e.index] = (pos, e)
-        if not pairs:
-            return False
-        self.contract_nodes((idx, idx))
-        return True
+        if edge_indices:
+            self.contract_nodes((idx, idx))
+        return edge_indices
     
     def _resolve_self_loops(self):
-        return sum(int(self._resolve_self_loop_at(i)) for i in range(len(self.network)))
+        ans = []
+        for i in range(len(self.network)):
+            loop = self._resolve_self_loop_at(i)
+            if loop:
+                ans.append(loop)
+        return ans
 
     def contract_sequence(self, seq, timed = False):
         if timed:
