@@ -88,7 +88,6 @@ extra_docstring = """
     see the documentation for the "sage_link" method for details.
 """
 
-
 class Link(links_base.Link):
     __doc__ = links_base.Link.__doc__ + extra_docstring
 
@@ -331,6 +330,55 @@ class Link(links_base.Link):
         if multivar and factored:  # it's easier to view this way
             return p.factor()
         return p
+    
+    def colored_links_gould_polynomial(self, n, sage_output = _within_sage, sage_polynomials = False, timed = False):
+        """
+        Colored Links--Gould polynomials are bivariate, hence we default to
+        using DictLaurentPolynomial to reduce RAM consumption. 
+        
+        The output, by default, follows whether in sage or not. 
+        """
+        from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
+
+        ans = self.min_long_diagram().apply_reshetikhin_turaev_functor(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+
+        if sage_output:
+            if not sage_polynomials:
+                ans = (ans[0].to_sage(), ans[1])
+        else:
+            if sage_polynomials:
+                ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+            else:
+                ans = (ans[0].to_checked(), ans[1])
+
+        if timed:
+            return ans
+        else:
+            return ans[0]
+
+    def colored_jones_polynomial(self, n, sage_output = _within_sage, sage_polynomials = _within_sage, timed = False):
+        """
+        Colored Jones polynomials are univariate, for whom sage's PuiseuxSeries
+        has highly optimized multiplications, hence we default to use sage whenever possible.
+        """
+        from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
+
+        ans = self.min_long_diagram().apply_reshetikhin_turaev_functor(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+        ans = (ans[0] * prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials), ans[1])
+
+        if sage_output:
+            if not sage_polynomials:
+                ans = (ans[0].to_sage(), ans[1])
+        else:
+            if sage_polynomials:
+                ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+            else:
+                ans = (ans[0].to_checked(), ans[1])
+
+        if timed:
+            return ans
+        else:
+            return ans[0]
 
     def knot_floer_homology(self, prime=2, complex=False):
         """
