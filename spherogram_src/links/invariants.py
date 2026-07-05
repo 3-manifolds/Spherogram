@@ -340,7 +340,7 @@ class Link(links_base.Link):
         """
         from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
 
-        ans = self.min_long_diagram().apply_reshetikhin_turaev_functor(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
 
         if sage_output:
             if not sage_polynomials:
@@ -363,7 +363,7 @@ class Link(links_base.Link):
         """
         from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
 
-        ans = self.min_long_diagram().apply_reshetikhin_turaev_functor(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
         ans = (ans[0] * prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials), ans[1])
 
         if sage_output:

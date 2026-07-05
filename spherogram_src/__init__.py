@@ -1,7 +1,7 @@
 from .presentations import *
 from .links import *
 from .codecs import *
-from .links.reshetikhin_turaev import DictLaurentPolynomial
+from .links.reshetikhin_turaev import DictLaurentPolynomial, RMatrix, colored_links_gould_R_matrices, colored_jones_R_matrices, prefactor_colored_jones
 
 # Make the module version number easily accessible.
 from . import version as _version
@@ -25,4 +25,4 @@ __all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
            'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
            'IdentityBraid', 'BraidTangle', 'ComponentTangle', 'join_strands',
-           'DictLaurentPolynomial']
+           'DictLaurentPolynomial', 'RMatrix', 'colored_links_gould_R_matrices', 'colored_jones_R_matrices', 'prefactor_colored_jones']

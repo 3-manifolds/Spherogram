@@ -25,6 +25,7 @@ from collections import OrderedDict, Counter
 from .ordered_set import OrderedSet
 from .links import Crossing, Strand, Link, CrossingStrand, CrossingEntryPoint
 from .reshetikhin_turaev import RTNetwork
+from .. import graphs
 
 class CyclicList(list):
     def __init__(self, iterable):
@@ -107,7 +108,7 @@ class TangleComponents(list):
         return component
 
 class Tangle:
-    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None, start_orientations = None, component_starts = None):
+    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None, start_orientations = None, component_starts = None, check_planarity = True):
         """
         A tangle is a fragment of a Link with some number of boundary
         strands. Tangles can be composed in various ways along their boundary strands,
@@ -222,6 +223,9 @@ class Tangle:
                     else:
                         s.fuse()
                     self.crossings.remove(s)
+            
+            if check_planarity and not self.is_planar():
+                raise ValueError("Tangle isn't planar")
 
     def __getitem__(self, i):
         return (self, i % (self.boundary[0] + self.boundary[1]))
@@ -650,7 +654,7 @@ class Tangle:
 
         return ans
     
-    def apply_reshetikhin_turaev_functor(self, tensors):
+    def reshetikhin_turaev_network(self, tensors):
         return RTNetwork(tensors, T = self)
     
     def contraction_width(self, omit_idle_arcs = True):
@@ -1149,10 +1153,105 @@ class Tangle:
                     face.append(next)
 
         return faces
+    
+    def digraph(self):
+        """
+        The underlying directed graph for the tangle diagram.
+        """
+        G = graphs.Digraph()
+        for component in self.components:
+            if isinstance(component[0].crossing, Tangle):
+                # Strip off the first element which is not an *entry* strand.
+                comp = component[1:]
+            else:
+                comp = component
+            for c in comp:
+                cs0 = CrossingStrand(c.crossing, c.strand_index)
+                cs1 = cs0.opposite()
+
+                node0 = cs0.crossing if not isinstance(cs0.crossing, Tangle) else cs0
+                node1 = cs1.crossing if not isinstance(cs1.crossing, Tangle) else cs1
+
+                G.add_edge(node0, node1)
+
+        assert len(G.edges) == 2 * len(self.crossings) + (3 * len(self.boundary_strands) // 2)
+        
+        return G
+    
+    def split_tangle_diagram(self, destroy_original = False, check_planarity = False):
+        """
+        Split the tangle diagram into its connected components. Returns a list of Tangles.
+        
+        If check_planarity is True, return in addition if the boundary strands of the components 
+        are laid out in a planar manner with respect to each other.
+        """
+        T = self.copy() if not destroy_original else self
+        components = T.digraph().weak_components()
+
+        ans = []
+        boundary_index = dict()
+        counterclock_bd_id = [i for i in range(T.boundary[0])] + list(reversed([T.boundary[0] + i for i in range(T.boundary[1])]))
+        
+        for i, component in enumerate(components):
+            boundaries = []
+            crossings = [] # Strands included
+            for c in component:
+                if isinstance(c, CrossingStrand):
+                    boundaries.append(c)
+                else:
+                    assert isinstance(c, (Crossing, Strand))
+                    crossings.append(c)
+            
+            boundaries.sort(key = lambda cs: cs.strand_index)
+
+            boundary = (len([cs for cs in boundaries if cs.strand_index < T.boundary[0]]),
+                        len([cs for cs in boundaries if cs.strand_index >= T.boundary[0]]))
+            entry_points = [cs.opposite() for cs in boundaries]
+            start_orientations = [(cs.crossing, 1) for cs in entry_points]
+
+            for cs in boundaries:
+                boundary_index.setdefault(i, []).append(cs.strand_index)
+            
+            ans.append(Tangle(boundary, crossings, entry_points, 
+                              label = f'{self.label}_component_{i}', 
+                              start_orientations = start_orientations, 
+                              check_planarity = False))
+
+        if not check_planarity:
+            return ans
+        else:
+            # Here we only check whether the boundary strands of components
+            # are laied out in a planar manner with respect to each other.
+            for i in range(len(ans)):
+                for j in range(len(ans)):
+                    if i != j:
+                        counterclock_i = [counterclock_bd_id[k] for k in boundary_index[i]]
+                        i_min = min(counterclock_i)
+                        i_max = max(counterclock_i)
+
+                        in_between = [i_min < counterclock_bd_id[k] < i_max for k in boundary_index[j]]
+
+                        if any(in_between):
+                            if not all(in_between):
+                                return (False, ans)
+
+            return (True, ans)
 
     def is_planar(self):
-        # TODO
-        pass
+        G = self.digraph()
+        if not G.is_weakly_connected():
+            boundary_planarity, components = self.split_tangle_diagram(destroy_original = False, check_planarity = True)
+            if not boundary_planarity:
+                return False
+            else:
+                return all([c.is_planar() for c in components])
+        
+        v = len(self.crossings) + len(self.boundary_strands) + 1 
+        # view the boundary as a vertex at infinity
+
+        euler = v - len(G.edges) + len(self.faces())
+
+        return euler == 2 or v == 1
 
     def simplify(self, mode = 'basic', type_III_limit = 100):
         """

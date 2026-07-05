@@ -74,7 +74,7 @@ class RMatrix:
             return self._id
     
     @staticmethod
-    def laurent_R_from_directory(dir_path, vars = ['t', 'q'], compressed = False, sage_polynomials = False):
+    def from_directory(dir_path, vars = ['t', 'q'], compressed = False, sage_polynomials = False):
         names = [name + '.csv' + ('.bz2' if compressed else '') 
                  for name in ['Rp', 'Rn', 'hp', 'hn']]
         
@@ -92,7 +92,7 @@ def colored_links_gould_R_matrices(n, sage_polynomials = False):
         if key in _cache.keys():
             return _cache[key]
         else:
-            _cache[key] = RMatrix.laurent_R_from_directory(dir_path = os.path.join(dir_path, f'R_matrices/V{n}/'),
+            _cache[key] = RMatrix.from_directory(dir_path = os.path.join(dir_path, f'R_matrices/V{n}/'),
                                                            vars = ['t', 'q'], 
                                                            compressed = False,
                                                            sage_polynomials = sage_polynomials)
