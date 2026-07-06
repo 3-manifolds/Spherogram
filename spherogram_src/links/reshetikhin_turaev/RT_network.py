@@ -97,6 +97,12 @@ class RTNetwork:
                     if e.index not in edge.keys():
                         edge[e.index] = e if e.sign == 1 else ~e
 
+    def __eq__(self, other):
+        if len(self.network) != 1 or len(other.network) != 1:
+            raise NotImplementedError('Equality is only implemented for contracted networks')
+        else:
+            return self.network[0][0] == other.network[0][0]
+
     def optimal_contraction_sequence(self):
         try:
             import opt_einsum as oe
@@ -344,7 +350,26 @@ class RTNetwork:
 
     def contract_all(self, timed = False):
         self._resolve_self_loops()
-        return self.contract_sequence(self.optimal_contraction_sequence(), timed = timed)
+        time = self.contract_sequence(self.optimal_contraction_sequence(), timed = timed)
+
+        assert len(self.network) == 1
+
+        if self.boundary_labels:
+            desired_order = []
+            for i in range(self.boundary[0]):
+                desired_order.append(~self.edge[self.boundary_labels[i]])
+            for i in range(self.boundary[1]):
+                desired_order.append(self.edge[self.boundary_labels[self.boundary[0] + i]])
+
+            _, key = self.network[0]
+            reshape_indices = []
+            for e in key:
+                reshape_indices.append(desired_order.index(e))
+            
+            reshape_tensor = self.network[0][0].permute(reshape_indices)
+            self.network[0] = (reshape_tensor, tuple(desired_order))
+
+        return time
 
     def evaluate(self, timed = False):
         """

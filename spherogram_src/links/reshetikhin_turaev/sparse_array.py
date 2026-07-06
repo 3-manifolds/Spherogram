@@ -21,6 +21,13 @@ class SparseArray:
             for k, v in data:
                 self[k] = v
 
+    def __eq__(self, other):
+        if not isinstance(other, SparseArray):
+            return False
+        return (self._shape == other._shape and
+                self._default == other._default and
+                self._data == other._data)
+
     def _key(self, index):
         if isinstance(index, tuple):
             return index
