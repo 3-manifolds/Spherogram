@@ -22,6 +22,7 @@ See doc.pdf for conventions.
 import pickle
 
 from collections import OrderedDict, Counter
+from threading import local
 from .ordered_set import OrderedSet
 from .links import Crossing, Strand, Link, CrossingStrand, CrossingEntryPoint
 from .reshetikhin_turaev import RTNetwork
@@ -504,7 +505,7 @@ class Tangle:
         if any(len(v) > 2 for v in gluings.values()):
             raise ValueError("PD code isn't consistent")
 
-        crossings = [Crossing(i) for i, d in enumerate(code)]
+        crossings = [Crossing(i) for i, _ in enumerate(code)]
         
         for item in gluings.values():
             if len(item) > 1:
@@ -601,20 +602,25 @@ class Tangle:
         n = len(self.crossings)
         ans = [0 for i in range(2 * n + self.boundary[0])]
 
-        front = [0]
+        front = [self.strand_labels[0]]
+        next_entry_id = 1
 
-        entry_strands = set([cep.strand_label() for cep in self.entry_points()])
+        #entry_strands = set([cep.strand_label() for cep in self.entry_points()])
         exit_strands = set([cs.strand_label() for cs in self.exit_points()])
 
         to_do = set([s for s in self.strand_labels] + [s for c in self.crossings for s in c.strand_labels]) - exit_strands
 
         def next_arc():
+            nonlocal next_entry_id
+
             inter = set(front) & to_do
             if inter:
                 return min(inter)
             else:
-                arc = min(to_do)
+                assert next_entry_id < self.boundary[0]
+                arc = self.strand_labels[next_entry_id]
                 front.append(arc)
+                next_entry_id += 1
                 return arc
         
         def entry_crossing(k):
@@ -638,8 +644,8 @@ class Tangle:
                                     entry_arcs[0].rotate(2).strand_label(), \
                                     ~entry_arcs[1].strand_label()
                 else:
-                    if left_label not in entry_strands:
-                        ans[left_label] += 1
+                    #if left_label not in entry_strands:
+                    ans[left_label] += 1
                     front[i:i+1] =  ~left_label, \
                                     entry_arcs[1].rotate(2).strand_label(), \
                                     entry_arcs[0].rotate(2).strand_label()
@@ -649,11 +655,53 @@ class Tangle:
 
             to_do.remove(k)
 
-        for s in self.strand_labels:
+        for s in exit_strands:
             assert ans[s] == 0
 
         return ans
     
+    def flip(self):
+        """
+        Given a Tangle, flip it over in 3D along the vertical axis.
+
+        >>> RT = RationalTangle
+        >>> T = (RT(3, 4) + RT(1, 2)) * RT(-3, 2)
+        >>> E = (T + T).numerator_closure().exterior()
+        >>> F = (T + flip_tangle(T)).numerator_closure().exterior()
+        >>> E.isometry_signature(verified=True) == F.isometry_signature(verified=True)
+        False
+
+        #TODO: update doctests
+        """
+        cross_perm = (1, 0, 3, 2)
+
+        boundary_perm = [self.boundary[0] - 1 - i for i in range(self.boundary[0])] + \
+                        [self.boundary[0] + self.boundary[1] - 1 - i for i in range(self.boundary[1])]
+        
+        crossings = [Crossing(i) for i, _ in enumerate(self.crossings)]
+
+        old_to_index = {C: i for i, C in enumerate(self.crossings)}
+
+        entry_points_dict = {}
+
+        def old_to_new(crossing, strand):
+            C = crossings[old_to_index[crossing]]
+            return (C, cross_perm[strand])
+
+        # This glues everything twice, but...
+        for i, C_new in enumerate(crossings):
+            C_old = self.crossings[i]
+            for i in range(4):
+                D_old, j = C_old.adjacent[i]
+
+                if isinstance(D_old, Strand):
+                    _, k = D_old.adjacent[(j + 1) % 2]
+                    entry_points_dict[boundary_perm[k]] = (C_new, cross_perm[i])
+                else:
+                    C_new[cross_perm[i]] = old_to_new(D_old, j)
+
+        return Tangle(self.boundary, crossings, [entry_points_dict[i] for i in range(len(entry_points_dict))])
+
     def reshetikhin_turaev_network(self, tensors):
         return RTNetwork(tensors, T = self)
     

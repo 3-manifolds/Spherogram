@@ -398,9 +398,12 @@ class SparseTensor(SparseArray):
     
     def permute(self, indices):
         """
-        Permute self into the desired order.
+        Reorder axes using pull-style indices: indices[i] is the axis of self
+        that becomes axis i of the result.
 
-        A[i,j,k,l].permute([2,1,0,3]) -> A[k,j,i,l]
+        result[i0, i1, ...] = self[i_{indices[0]}, i_{indices[1]}, ...]
+
+        Example: A.permute([2, 0, 1]) produces B where B[a,b,c] = A[b,c,a].
         """
         result_shape = [self._shape[i] for i in indices]
         result = SparseTensor(result_shape, default=self._default)

@@ -47,6 +47,8 @@ class RTNetwork:
             self.boundary = T.boundary
             self.boundary_labels = T.strand_labels
 
+            self.idle_labels = set(self.boundary_labels)
+
             self.edge = edge = dict()
 
             self.network = network = []
@@ -69,11 +71,17 @@ class RTNetwork:
                             edge[labels[2]])
 
                 if tensors is not None:
-                    network.append((tensors.R(c.sign), key))
+                    tensor = tensors.R(c.sign)
+                    for i, e in enumerate(list(key[:2])):
+                        if e.index in self.idle_labels and self.rot_num[e.index] != 0:
+                            perm = list(range(i)) + [3] + list(range(i, 3))
+                            tensor = tensor.decorated_contract(tensors.h(0), {(i, 1): (1, tensors.h(self.rot_num[e.index]))})
+                            tensor = tensor.permute(perm)
+
+                    network.append((tensor, key))
                 else:
                     network.append((None, key))
 
-            self.idle_labels = set(self.boundary_labels)
 
             for arc in self.idle_labels:
                 if arc not in edge.keys():
@@ -362,10 +370,9 @@ class RTNetwork:
                 desired_order.append(self.edge[self.boundary_labels[self.boundary[0] + i]])
 
             _, key = self.network[0]
-            reshape_indices = []
-            for e in key:
-                reshape_indices.append(desired_order.index(e))
-            
+            key_pos = {e: i for i, e in enumerate(key)}
+            reshape_indices = [key_pos[e] for e in desired_order]
+
             reshape_tensor = self.network[0][0].permute(reshape_indices)
             self.network[0] = (reshape_tensor, tuple(desired_order))
 
