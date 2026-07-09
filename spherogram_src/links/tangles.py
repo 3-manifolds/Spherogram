@@ -197,28 +197,29 @@ class Tangle:
             self._build(start_orientations, component_starts)
             assert self.is_oriented(), 'Tangle is not oriented after build'
 
-            # Remove all Strands from crossings and components. 
+            # Remove all Strands in crossings; erase them also from the components.
             # Note that this will not affect strands in boundary_strands
             for s in reversed(crossings):
                 if isinstance(s, Strand):
                     comp = self.components[s.strand_component]
-
-                    if isinstance(comp[0].crossing, Tangle):
-                        for cep in reversed(comp):
-                            if cep.crossing == s:
-                                comp.remove(cep)
-                                break
-                        else:
-                            raise RuntimeError(f"Component strand {s} not found in component {comp}")
+                    for cep in reversed(comp):
+                        if cep.crossing == s:
+                            comp.remove(cep)
+                            break
+                    else:
+                        raise RuntimeError(f"Component strand {s} not found in component {comp}")
                         
                         # Note that the components are always built following the orientation
                         # hence below always insists that the comp_id is labeled on the entrance strand
-                        if s.component_idx is not None:
-                            comp_id =  s.component_idx
-                            if comp[1].crossing.component_idx is not None:
-                                assert comp[1].crossing.component_idx == comp_id
-                            else:
-                                comp[1].crossing.component_idx = comp_id
+                    if s.component_idx is not None:
+                        assert isinstance(comp[0].crossing, Tangle), f'strands with component_idx should be in an unclosed component'
+
+                        comp_id =  s.component_idx
+                        if comp[1].crossing.component_idx is not None:
+                            assert comp[1].crossing.component_idx == comp_id
+                        else:
+                            comp[1].crossing.component_idx = comp_id
+
                     if s.is_loop():
                         self.unlinked_unknot_components += 1
                     else:
@@ -667,11 +668,9 @@ class Tangle:
         >>> RT = RationalTangle
         >>> T = (RT(3, 4) + RT(1, 2)) * RT(-3, 2)
         >>> E = (T + T).numerator_closure().exterior()
-        >>> F = (T + flip_tangle(T)).numerator_closure().exterior()
+        >>> F = (T + T.flip()).numerator_closure().exterior()
         >>> E.isometry_signature(verified=True) == F.isometry_signature(verified=True)
         False
-
-        #TODO: update doctests
         """
         cross_perm = (1, 0, 3, 2)
 
@@ -1162,6 +1161,9 @@ class Tangle:
         similarly, if c is the tangle itself, it denots the corner 
         as one stands at the j-th boundary entry and look *counterclockwisely*.
 
+        Boundary points of the tangle are seen as points with induced orientations
+        from the oriented strands of the tangle. 
+
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.    
 
@@ -1182,14 +1184,20 @@ class Tangle:
                 c, e = next.crossing, next.strand_index
                 if isinstance(c, Tangle):
                     if e == 0:
-                        next = CrossingStrand(*c.adjacent[c.boundary[0]])
+                        if c.boundary[1] and c.boundary[0]:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]])
+                        else:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
                     elif e < c.boundary[0]:
                         next = CrossingStrand(*c.adjacent[e-1])
                     elif e < c.boundary[0] + c.boundary[1] - 1:
                         next = CrossingStrand(*c.adjacent[e+1])
                     else:
                         assert e == c.boundary[0] + c.boundary[1] - 1 
-                        next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
+                        if c.boundary[0]:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
+                        else:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]])
                 else:
                     next = next.next_corner()
 
