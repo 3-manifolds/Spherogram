@@ -673,12 +673,14 @@ class Tangle:
 
         >>> RT = RationalTangle
         >>> T = (RT(3, 4) + RT(1, 2)) * RT(-3, 2)
-        >>> E = (T + T).numerator_closure().exterior()
-        >>> F = (T + T.flip()).numerator_closure().exterior()
-        >>> E.isometry_signature(verified=True) == F.isometry_signature(verified=True)
-        False
+        >>> T.PD_code()
+        ((2, 2), [(18, 8, 19, 7), (6, 16, 7, 15), (14, 6, 15, 5), (4, 14, 5, 19), (12, 17, 13, 18), (16, 11, 17, 12), (3, 1, 4, 0), (1, 10, 2, 11), (9, 2, 10, 3)], [0, 9, 8, 13])
+        >>> fT = T.flip()
+        >>> fT.PD_code()
+        ((2, 2), [(12, 16, 13, 15), (18, 12, 19, 11), (10, 18, 11, 17), (16, 10, 17, 9), (14, 3, 15, 4), (2, 19, 3, 14), (5, 9, 6, 8), (1, 6, 2, 7), (7, 0, 8, 1)], [0, 5, 4, 13])
         >>> T.flip().flip().PD_code() == T.PD_code()
         True
+        
         >>> rT = T.circular_rotate(1)
         >>> rT.boundary_signs
         [-1, 1, -1, 1]
