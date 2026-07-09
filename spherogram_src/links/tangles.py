@@ -22,7 +22,6 @@ See doc.pdf for conventions.
 import pickle
 
 from collections import OrderedDict, Counter
-from threading import local
 from .ordered_set import OrderedSet
 from .links import Crossing, Strand, Link, CrossingStrand, CrossingEntryPoint
 from .reshetikhin_turaev import RTNetwork
