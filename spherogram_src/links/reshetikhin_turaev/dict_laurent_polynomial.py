@@ -4,12 +4,12 @@ if _within_sage:
     from sage.all import PuiseuxSeriesRing, LaurentPolynomialRing, ZZ
 
 @sage_method
-def laurent_poly_from_dict(dict, vars, F = ZZ):
+def laurent_poly_from_dict(dict, vars, F):
     L = LaurentPolynomialRing(F, vars)
     return L(dict)
 
 @sage_method
-def puiseux_series_from_dict(poly_dict, var, F=ZZ):
+def puiseux_series_from_dict(poly_dict, var, F):
     """
     Build a Sage Puiseux series from a poly_dict and a single LaurentVariable.
     Key k represents var^(k / var.denominator).
@@ -121,9 +121,9 @@ class FastDictLaurentPolynomial:
     @sage_method
     def to_sage(self):
         if len(self.vars) == 1:
-            return puiseux_series_from_dict(self.poly_dict, self.vars[0])
+            return puiseux_series_from_dict(self.poly_dict, self.vars[0], F = ZZ)
         elif all(var.denominator == 1 for var in self.vars):
-            return laurent_poly_from_dict(self.poly_dict, [var.name for var in self.vars])
+            return laurent_poly_from_dict(self.poly_dict, [var.name for var in self.vars], F = ZZ)
         else:
             raise NotImplementedError('Multi-variable Puiseux conversion to Sage is not supported.')
 
