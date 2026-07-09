@@ -1220,6 +1220,8 @@ class Tangle:
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.    
 
+        >>> len(snappy.Tangle((2,0),[],[0,0]).faces())
+        2
         >>> len(IdentityBraid(2).faces())
         3
         >>> len(BraidTangle([1,2,1]).faces())
