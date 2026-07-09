@@ -132,6 +132,10 @@ def colored_jones_R_matrices(n, sage_polynomials=False):
     if n < 0:
         raise NotImplementedError
 
+    key = (f'J{n}', sage_polynomials)
+    if key in _cache.keys():
+        return _cache[key]
+    
     n = n + 1
 
     q_actual = _q_pow(4)   # q^1
@@ -192,7 +196,8 @@ def colored_jones_R_matrices(n, sage_polynomials=False):
         hp = SparseTensor((n, n), data={(i, i): _q_pow(4*i - 2*(n-1)).to_sage() for i in range(n)})
         hn = SparseTensor((n, n), data={(i, i): _q_pow(2*(n-1) - 4*i).to_sage() for i in range(n)})
 
-    return RMatrix(Rp, Rn, hp, hn)
+    _cache[key] = RMatrix(Rp, Rn, hp, hn)
+    return _cache[key]
 
 def prefactor_colored_jones(n, writhe, sage_polynomial = False):
     n = n + 1
