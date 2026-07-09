@@ -24,6 +24,8 @@ import pickle
 from collections import OrderedDict, Counter
 from .ordered_set import OrderedSet
 from .links import Crossing, Strand, Link, CrossingStrand, CrossingEntryPoint
+from .reshetikhin_turaev import RTNetwork
+from .. import graphs
 
 class CyclicList(list):
     def __init__(self, iterable):
@@ -106,7 +108,7 @@ class TangleComponents(list):
         return component
 
 class Tangle:
-    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None, start_orientations = None, component_starts = None):
+    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None, start_orientations = None, component_starts = None, check_planarity = True):
         """
         A tangle is a fragment of a Link with some number of boundary
         strands. Tangles can be composed in various ways along their boundary strands,
@@ -194,33 +196,37 @@ class Tangle:
             self._build(start_orientations, component_starts)
             assert self.is_oriented(), 'Tangle is not oriented after build'
 
-            # Remove all Strands from crossings and components. 
+            # Remove all Strands in crossings; erase them also from the components.
             # Note that this will not affect strands in boundary_strands
             for s in reversed(crossings):
                 if isinstance(s, Strand):
                     comp = self.components[s.strand_component]
-
-                    if isinstance(comp[0].crossing, Tangle):
-                        for cep in reversed(comp):
-                            if cep.crossing == s:
-                                comp.remove(cep)
-                                break
-                        else:
-                            raise RuntimeError(f"Component strand {s} not found in component {comp}")
+                    for cep in reversed(comp):
+                        if cep.crossing == s:
+                            comp.remove(cep)
+                            break
+                    else:
+                        raise RuntimeError(f"Component strand {s} not found in component {comp}")
                         
                         # Note that the components are always built following the orientation
                         # hence below always insists that the comp_id is labeled on the entrance strand
-                        if s.component_idx is not None:
-                            comp_id =  s.component_idx
-                            if comp[1].crossing.component_idx is not None:
-                                assert comp[1].crossing.component_idx == comp_id
-                            else:
-                                comp[1].crossing.component_idx = comp_id
+                    if s.component_idx is not None:
+                        assert isinstance(comp[0].crossing, Tangle), f'strands with component_idx should be in an unclosed component'
+
+                        comp_id =  s.component_idx
+                        if comp[1].crossing.component_idx is not None:
+                            assert comp[1].crossing.component_idx == comp_id
+                        else:
+                            comp[1].crossing.component_idx = comp_id
+
                     if s.is_loop():
                         self.unlinked_unknot_components += 1
                     else:
                         s.fuse()
                     self.crossings.remove(s)
+            
+            if check_planarity and not self.is_planar():
+                raise ValueError("Tangle isn't planar")
 
     def __getitem__(self, i):
         return (self, i % (self.boundary[0] + self.boundary[1]))
@@ -273,9 +279,14 @@ class Tangle:
         self.reverse_orientation(to_reverse)
 
     def entry_points(self):
-        assert self.is_oriented(), 'Tangle should be oriented to tell the entry points'
+        assert self.is_oriented(), 'Tangle should be oriented for the entry points to make sense'
         return [CrossingEntryPoint(self, i) for i in range(self.boundary[0] + self.boundary[1]) 
                 if self.boundary_signs[i] == -1]
+    
+    def exit_points(self):
+        assert self.is_oriented(), 'Tangle should be oriented for the exit points to make sense'
+        return [CrossingStrand(self, i) for i in range(self.boundary[0] + self.boundary[1]) 
+                if self.boundary_signs[i] == 1]
     
     def update_label(self, label):
         self.label = label
@@ -494,7 +505,7 @@ class Tangle:
         if any(len(v) > 2 for v in gluings.values()):
             raise ValueError("PD code isn't consistent")
 
-        crossings = [Crossing(i) for i, d in enumerate(code)]
+        crossings = [Crossing(i) for i, _ in enumerate(code)]
         
         for item in gluings.values():
             if len(item) > 1:
@@ -557,6 +568,192 @@ class Tangle:
             PD = [tuple(x) for x in PD]
 
         return self.boundary, PD, entry_info
+    
+    def rot_num(self):
+        """
+        Requires self to be upward oriented so that the entry strands 
+        of crossings make sense for computing rotation numbers.
+
+        Rotation numbers should always be all zeros for BraidTangles:
+
+        >>> BraidTangle([1,2,1]).rot_num()
+        [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        The following gives the rotation number of a long diagram of the 4_1 knot:
+
+        >>> T1 = Tangle((1,1), [(5,1,6,0), (1,5,2,4),(7,2,8,3),(3,6,4,7)], [0,8])
+        >>> T1.rot_num()
+        [0, 0, 0, 0, 1, -1, -1, 1, 0]
+
+        A (2,2)-tangle obtained by cutting 4_1 twice:
+
+        >>> T2 = Tangle((2,2), [(6,1,7,0), (1,5,2,4),(8,2,9,3),(3,7,4,8)], [0,6,9,5])
+        >>> T2.rot_num()
+        [0, 0, 0, 0, 1, 0, 0, -1, 1, 0]
+
+        Works also for tangles with disconnected shadow graphs:
+
+        >>> (T1|T2).rot_num()
+        [0, 0, 0, 0, 1, -1, -1, 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 1, 0]
+
+        Entry strands may have nonzero rotation numbers:
+
+        >>> T = Tangle((2, 2),[(9, 2, 10, 3), (1, 10, 2, 11), (6, 12, 7, 11), (12, 6, 13, 5), (3, 1, 4, 0), (4, 7, 5, 8)], [0, 9, 8, 13])
+        >>> T.rot_num()
+        [0, 0, 0, -1, 0, 0, 0, -1, 0, 1, -1, 1, -1, 0]
+        """
+        assert self.is_upward(), 'Tangle should be upward oriented in order to compute rotation numbers'
+        assert self.boundary[0] == self.boundary[1]
+
+        n = len(self.crossings)
+        ans = [0 for i in range(2 * n + self.boundary[0])]
+
+        front = [self.strand_labels[0]]
+        next_entry_id = 1
+
+        #entry_strands = set([cep.strand_label() for cep in self.entry_points()])
+        exit_strands = set([cs.strand_label() for cs in self.exit_points()])
+
+        to_do = set([s for s in self.strand_labels] + [s for c in self.crossings for s in c.strand_labels]) - exit_strands
+
+        def next_arc():
+            nonlocal next_entry_id
+
+            inter = set(front) & to_do
+            if inter:
+                return min(inter)
+            else:
+                assert next_entry_id < self.boundary[0]
+                arc = self.strand_labels[next_entry_id]
+                front.append(arc)
+                next_entry_id += 1
+                return arc
+        
+        def entry_crossing(k):
+            for c in self.crossings:
+                if k in [cep.strand_label() for cep in c.entry_points()]:
+                    return c
+                
+            raise ValueError(f'No crossing contains strand labeled {k}')
+
+        while to_do:
+            k = next_arc()
+
+            if ~k not in front:
+                c = entry_crossing(k)
+                entry_arcs = c.entry_points() if c.sign == -1 else list(reversed(c.entry_points()))
+                left_label = entry_arcs[0].strand_label()
+                i = front.index(k)
+
+                if left_label == k:
+                    front[i:i+1] =  entry_arcs[1].rotate(2).strand_label(), \
+                                    entry_arcs[0].rotate(2).strand_label(), \
+                                    ~entry_arcs[1].strand_label()
+                else:
+                    #if left_label not in entry_strands:
+                    ans[left_label] += 1
+                    front[i:i+1] =  ~left_label, \
+                                    entry_arcs[1].rotate(2).strand_label(), \
+                                    entry_arcs[0].rotate(2).strand_label()
+                
+            elif [s for s in front if s in [k, ~k]] == [k, ~k]:
+                ans[k] += -1
+
+            to_do.remove(k)
+
+        for s in exit_strands:
+            assert ans[s] == 0
+
+        return ans
+    
+    def flip(self):
+        """
+        Given a Tangle, flip it over in 3D along the vertical axis.
+        Preserves the orientation of the original tangle. 
+
+        >>> RT = RationalTangle
+        >>> T = (RT(3, 4) + RT(1, 2)) * RT(-3, 2)
+        >>> E = (T + T).numerator_closure().exterior()
+        >>> F = (T + T.flip()).numerator_closure().exterior()
+        >>> E.isometry_signature(verified=True) == F.isometry_signature(verified=True)
+        False
+        >>> T.flip().flip().PD_code() == T.PD_code()
+        True
+        >>> rT = T.circulate_rotate(1)
+        >>> rT.boundary_signs
+        [-1, 1, -1, 1]
+        >>> rT.flip().boundary_signs
+        [1, -1, 1, -1]
+
+        Some tests for corner cases:
+
+        >>> T = Tangle((2,0), [], [0,0])
+        >>> T.boundary_signs
+        [-1, 1]
+        >>> T.flip().boundary_signs
+        [1, -1]        
+        >>> T = Tangle((0,2), [], [0,0])
+        >>> T.boundary_signs
+        [-1, 1]
+        >>> T.flip().boundary_signs
+        [1, -1]
+        """
+        cross_perm = (1, 0, 3, 2)
+
+        boundary_perm = [self.boundary[0] - 1 - i for i in range(self.boundary[0])] + \
+                        [self.boundary[0] + self.boundary[1] - 1 - i for i in range(self.boundary[1])]
+
+        crossings = [Crossing(i) for i, _ in enumerate(self.crossings)] + \
+                    [Strand(len(self.crossings) + i) for i, _ in enumerate(self.boundary_strands)]
+
+        old_crossings = self.crossings + self.boundary_strands
+        old_to_index = {C: i for i, C in enumerate(old_crossings)}
+
+        start_css = self._start_orientations()
+
+        entry_points_dict = {}
+
+        def old_to_new(crossing, strand):
+            C = crossings[old_to_index[crossing]]
+            if isinstance(crossing, Strand):
+                return (C, strand)
+            else:
+                return (C, cross_perm[strand])
+
+        # This glues everything twice, but...
+        for i, C_new in enumerate(crossings):
+            C_old = old_crossings[i]
+            for i in range(C_new._adjacent_len):
+                D_old, j = C_old.adjacent[i]
+
+                if isinstance(D_old, Tangle):
+                    assert isinstance(C_new, Strand)
+                    entry_points_dict[boundary_perm[j]] = (C_new, i)
+                else:
+                    if isinstance(C_new, Strand):
+                        C_new[i] = old_to_new(D_old, j)
+                    else:
+                        C_new[cross_perm[i]] = old_to_new(D_old, j)
+                    
+
+        new_start_css = []
+        for css in start_css:
+            c, s = css
+            new_start_css.append(old_to_new(c, s))
+
+        return Tangle(self.boundary, crossings, [entry_points_dict[i] for i in range(len(entry_points_dict))], start_orientations=new_start_css)
+
+    def reshetikhin_turaev_network(self, tensors):
+        """
+        tensors should either be None or an instance of reshetikhin_turaev.RMatrix
+        """
+        return RTNetwork(tensors, T = self)
+    
+    def contraction_width(self, omit_idle_arcs = True):
+        return RTNetwork(None, T = self).contraction_width(omit_idle_arcs = omit_idle_arcs)
+
+    def contraction_sequence(self, omit_idle_arcs = True):
+        return RTNetwork(None, T = self).contraction_sequence(omit_idle_arcs = omit_idle_arcs)
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """
@@ -763,6 +960,7 @@ class Tangle:
 
     def rotate(self, s):
         """Rotate anticlockwise by s*90 degrees. This is only for (2,2) tangles.
+        Preserves orientation of the tangle.
 
         See ``Tangle.reshape()`` for a generalization to all tangle shapes."""
         if self.boundary != (2, 2):
@@ -792,6 +990,11 @@ class Tangle:
         strands at both the top and the bottom must be even. Returns a Link.
 
         A synonym for this is ``Tangle.bridge_closure()``.
+
+        >>> BraidTangle([2,-1,2],4).numerator_closure().colored_jones_polynomial(1)
+        -q^-4 + q^-3 + q^-1
+        >>> BraidTangle([1,1,1]).rotate(1).numerator_closure().colored_jones_polynomial(1)
+        q + q^3 - q^4
 
         sage: BraidTangle([2,-1,2],4).numerator_closure().alexander_polynomial()
         t^2 - t + 1
@@ -860,6 +1063,7 @@ class Tangle:
         becomes the new lower-left strand).
 
         This is a generalization of ``Tangle.rotate()``.
+        Preserves the orientation of the tangle. 
 
         >>> T = BraidTangle([1,2,1])
         >>> T.PD_code() 
@@ -900,6 +1104,7 @@ class Tangle:
     def circular_rotate(self, n):
         """
         Rotate a tangle in a circular fashion clockwise, keeping the same boundary.
+        Preserves orientation of the tangle. 
 
         This generalizes ``Tangle.rotate()``, and it is a mild specialization of ``Tangle.reshape()``.
         """
@@ -1009,6 +1214,9 @@ class Tangle:
         similarly, if c is the tangle itself, it denots the corner 
         as one stands at the j-th boundary entry and look *counterclockwisely*.
 
+        Boundary points of the tangle are seen as points with induced orientations
+        from the oriented strands of the tangle. 
+
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.    
 
@@ -1029,14 +1237,20 @@ class Tangle:
                 c, e = next.crossing, next.strand_index
                 if isinstance(c, Tangle):
                     if e == 0:
-                        next = CrossingStrand(*c.adjacent[c.boundary[0]])
+                        if c.boundary[1] and c.boundary[0]:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]])
+                        else:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
                     elif e < c.boundary[0]:
                         next = CrossingStrand(*c.adjacent[e-1])
                     elif e < c.boundary[0] + c.boundary[1] - 1:
                         next = CrossingStrand(*c.adjacent[e+1])
                     else:
                         assert e == c.boundary[0] + c.boundary[1] - 1 
-                        next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
+                        if c.boundary[0]:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]-1])
+                        else:
+                            next = CrossingStrand(*c.adjacent[c.boundary[0]])
                 else:
                     next = next.next_corner()
 
@@ -1048,6 +1262,121 @@ class Tangle:
                     face.append(next)
 
         return faces
+    
+    def digraph(self):
+        """
+        The underlying directed graph for the tangle diagram.
+        """
+        G = graphs.Digraph()
+        for component in self.components:
+            if isinstance(component[0].crossing, Tangle):
+                # Strip off the first element which is not an *entry* strand.
+                comp = component[1:]
+            else:
+                comp = component
+            for c in comp:
+                cs0 = CrossingStrand(c.crossing, c.strand_index)
+                cs1 = cs0.opposite()
+
+                node0 = cs0.crossing if not isinstance(cs0.crossing, Tangle) else cs0
+                node1 = cs1.crossing if not isinstance(cs1.crossing, Tangle) else cs1
+
+                G.add_edge(node0, node1)
+
+        assert len(G.edges) == 2 * len(self.crossings) + (3 * len(self.boundary_strands) // 2)
+        
+        return G
+    
+    def split_tangle_diagram(self, destroy_original = False, check_planarity = False):
+        """
+        Split the tangle diagram into its connected components. Returns a list of Tangles.
+        
+        If check_planarity is True, return in addition if the boundary strands of the components 
+        are laid out in a planar manner with respect to each other.
+
+        >>> RationalTangle(0,1).split_tangle_diagram()
+        [<Tangle: RationalTangle(0, 1)_component_0: 1 comp; 0 cross; (2, 0) boundary>,
+        <Tangle: RationalTangle(0, 1)_component_1: 1 comp; 0 cross; (0, 2) boundary>]
+
+        >>> Tangle(4, [(0, 2, 1, 3)], [0,2,4,5,3,1,4,5], label = 'C||').split_tangle_diagram()
+        [<Tangle: C||_component_0: 2 comp; 1 cross; (2, 2) boundary>,
+        <Tangle: C||_component_1: 1 comp; 0 cross; (1, 1) boundary>,
+        <Tangle: C||_component_2: 1 comp; 0 cross; (1, 1) boundary>]
+
+        >>> Tangle(4, [(0, 2, 1, 3)], [0,4,2,5,3,1,4,5], check_planarity = False).split_tangle_diagram(check_planarity = True)[0]
+        False
+        """
+        T = self.copy() if not destroy_original else self
+        components = T.digraph().weak_components()
+
+        ans = []
+        boundary_index = dict()
+        counterclock_bd_id = [i for i in range(T.boundary[0])] + list(reversed([T.boundary[0] + i for i in range(T.boundary[1])]))
+        
+        for i, component in enumerate(components):
+            boundaries = []
+            crossings = [] # Strands will be included here
+            for c in component:
+                if isinstance(c, CrossingStrand):
+                    boundaries.append(c)
+                else:
+                    assert isinstance(c, (Crossing, Strand))
+                    crossings.append(c)
+            
+            boundaries.sort(key = lambda cs: cs.strand_index)
+
+            boundary = (len([cs for cs in boundaries if cs.strand_index < T.boundary[0]]),
+                        len([cs for cs in boundaries if cs.strand_index >= T.boundary[0]]))
+            entry_points = [cs.opposite() for cs in boundaries]
+            start_orientations = [(cs.crossing, 1) for cs in entry_points]
+
+            for cs in boundaries:
+                boundary_index.setdefault(i, []).append(cs.strand_index)
+            
+            ans.append(Tangle(boundary, crossings, entry_points, 
+                              label = f'{self.label}_component_{i}', 
+                              start_orientations = start_orientations, 
+                              check_planarity = False))
+
+        if not check_planarity:
+            return ans
+        else:
+            # Here we only check whether the boundary strands of components
+            # are laied out in a planar manner with respect to each other.
+            for i in range(len(ans)):
+                for j in range(len(ans)):
+                    if i != j:
+                        counterclock_i = [counterclock_bd_id[k] for k in boundary_index[i]]
+                        i_min = min(counterclock_i)
+                        i_max = max(counterclock_i)
+
+                        in_between = [i_min < counterclock_bd_id[k] < i_max for k in boundary_index[j]]
+
+                        if any(in_between):
+                            if not all(in_between):
+                                return (False, ans)
+
+            return (True, ans)
+
+    def is_planar(self):
+        """
+        >>> Tangle(4, [(0, 2, 1, 3)], [2,0,4,5,3,1,4,5], check_planarity = False).is_planar()
+        False
+        """
+        G = self.digraph()
+        if not G.is_weakly_connected():
+            boundary_planarity, components = self.split_tangle_diagram(destroy_original = False, check_planarity = True)
+            if not boundary_planarity:
+                return False
+            else:
+                return all([c.is_planar() for c in components])
+        
+        v = len(self.crossings) + len(self.boundary_strands) + 1 
+        # view the boundary as a vertex at infinity
+
+        euler = v - len(G.edges) + len(self.faces())
+
+        return euler == 2 or v == 1
 
     def simplify(self, mode = 'basic', type_III_limit = 100):
         """
