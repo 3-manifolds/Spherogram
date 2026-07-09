@@ -407,6 +407,8 @@ class Link(links_base.Link):
         -q^-4 + q^-3 + q^-1
         >>> Link('4_1').colored_jones_polynomial(1)
         q^-2 - q^-1 + 1 - q + q^2
+        >>> Link('L2a1').colored_jones_polynomial(1)
+        q^(-5/2) + q^(-1/2)
 
         Some values of higher colored Jones polynomials for the trefoil:
 
