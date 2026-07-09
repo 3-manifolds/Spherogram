@@ -285,6 +285,9 @@ class RTNetwork:
         return loops + contraction_seq, ans
 
     def contract_nodes(self, indices):
+        """
+        This modifies self to avoid holding duplicate data in memory. 
+        """
         idx1, idx2 = indices
         tensor1, key1 = self.network[idx1]
         tensor2, key2 = self.network[idx2]
@@ -357,6 +360,11 @@ class RTNetwork:
             return time_cost
 
     def contract_all(self, timed = False):
+        """
+        Perform all possible contractions on self.
+
+        Return modified self and time (None if not timed).
+        """
         self._resolve_self_loops()
         time = self.contract_sequence(self.optimal_contraction_sequence(), timed = timed)
 
@@ -376,12 +384,12 @@ class RTNetwork:
             reshape_tensor = self.network[0][0].permute(reshape_indices)
             self.network[0] = (reshape_tensor, tuple(desired_order))
 
-        return time
+        return (self, time)
 
     def evaluate(self, timed = False):
         """
-        Fixate all idle labels at value 0, obtaining a new RTNework with (0,0) boundary,
-        contract all and return the product of all values of the resulting tensors.
+        Fixate all idle labels at value 0, obtaining a new RTNework with (0,0) boundary (without modifying self),
+        contract_all on the new RTNetwork and return the product of all values of the resulting tensors.
         """
         assert self.boundary == (1,1)
 
@@ -409,7 +417,7 @@ class RTNetwork:
             boundary=(0, 0),
             boundary_labels=[]
         )
-        time = reduced.contract_all(timed = timed)
+        time = reduced.contract_all(timed = timed)[1]
 
         result = prefactor
         for tensor, _ in reduced.network:
