@@ -211,7 +211,7 @@ class Tangle:
                         # Note that the components are always built following the orientation
                         # hence below always insists that the comp_id is labeled on the entrance strand
                     if s.component_idx is not None:
-                        assert isinstance(comp[0].crossing, Tangle), f'strands with component_idx should be in an unclosed component'
+                        assert isinstance(comp[0].crossing, Tangle), f'Strands with component_idx should be in an unclosed component'
 
                         comp_id =  s.component_idx
                         if comp[1].crossing.component_idx is not None:
