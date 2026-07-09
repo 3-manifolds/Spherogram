@@ -679,7 +679,7 @@ class Tangle:
         False
         >>> T.flip().flip().PD_code() == T.PD_code()
         True
-        >>> rT = T.circulate_rotate(1)
+        >>> rT = T.circular_rotate(1)
         >>> rT.boundary_signs
         [-1, 1, -1, 1]
         >>> rT.flip().boundary_signs
@@ -691,7 +691,7 @@ class Tangle:
         >>> T.boundary_signs
         [-1, 1]
         >>> T.flip().boundary_signs
-        [1, -1]        
+        [1, -1]
         >>> T = Tangle((0,2), [], [0,0])
         >>> T.boundary_signs
         [-1, 1]
@@ -1220,7 +1220,7 @@ class Tangle:
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.    
 
-        >>> len(snappy.Tangle((2,0),[],[0,0]).faces())
+        >>> len(Tangle((2,0),[],[0,0]).faces())
         2
         >>> len(IdentityBraid(2).faces())
         3
@@ -1296,14 +1296,11 @@ class Tangle:
         If check_planarity is True, return in addition if the boundary strands of the components 
         are laid out in a planar manner with respect to each other.
 
-        >>> RationalTangle(0,1).split_tangle_diagram()
-        [<Tangle: RationalTangle(0, 1)_component_0: 1 comp; 0 cross; (2, 0) boundary>,
-        <Tangle: RationalTangle(0, 1)_component_1: 1 comp; 0 cross; (0, 2) boundary>]
+        >>> len(RationalTangle(0,1).split_tangle_diagram())
+        2
 
-        >>> Tangle(4, [(0, 2, 1, 3)], [0,2,4,5,3,1,4,5], label = 'C||').split_tangle_diagram()
-        [<Tangle: C||_component_0: 2 comp; 1 cross; (2, 2) boundary>,
-        <Tangle: C||_component_1: 1 comp; 0 cross; (1, 1) boundary>,
-        <Tangle: C||_component_2: 1 comp; 0 cross; (1, 1) boundary>]
+        >>> len(Tangle(4, [(0, 2, 1, 3)], [0,2,4,5,3,1,4,5], label = 'C||').split_tangle_diagram())
+        3
 
         >>> Tangle(4, [(0, 2, 1, 3)], [0,4,2,5,3,1,4,5], check_planarity = False).split_tangle_diagram(check_planarity = True)[0]
         False

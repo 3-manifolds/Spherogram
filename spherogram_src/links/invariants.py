@@ -352,7 +352,7 @@ class Link(links_base.Link):
 
         >>> Link('3_1').colored_links_gould_polynomial(1, sage_output = False).change_vars({'q': '1'})
         t^2 - 2*t + 3 - 2*t^-1 + t^-2
-        >>> Link('4_1).colored_links_gould_polynomial(1, sage_output = False).change_vars({'q': '1'})
+        >>> Link('4_1').colored_links_gould_polynomial(1, sage_output = False).change_vars({'q': '1'})
         t^2 - 6*t + 11 - 6*t^-1 + t^-2
 
         1-colored Links--Gould polynomial is invariant under mutation:
