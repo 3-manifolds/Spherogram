@@ -139,14 +139,14 @@ class FastDictLaurentPolynomial:
         For PuiseuxSeries the conversion relies on the internal _l (Laurent
         series) and _e (ramification index) attributes of Sage's implementation.
 
-        >>> p = DictLaurentPolynomial.from_str('q^2 + 3 - q^-1', ['q'])
-        >>> DictLaurentPolynomial.from_sage(p.to_sage()) == p
+        sage: p = DictLaurentPolynomial.from_str('q^2 + 3 - q^-1', ['q'])
+        sage: DictLaurentPolynomial.from_sage(p.to_sage()) == p
         True
-        >>> r = DictLaurentPolynomial.from_str('q^2*t - 1', ['q', 't'])
-        >>> DictLaurentPolynomial.from_sage(r.to_sage()) == r
+        sage: r = DictLaurentPolynomial.from_str('q^2*t - 1', ['q', 't'])
+        sage: DictLaurentPolynomial.from_sage(r.to_sage()) == r
         True
-        >>> s = DictLaurentPolynomial.from_str('q^(1/2) + q^(-1/4)', ['q'])
-        >>> DictLaurentPolynomial.from_sage(s.to_sage()) == s
+        sage: s = DictLaurentPolynomial.from_str('q^(1/2) + q^(-1/4)', ['q'])
+        sage: DictLaurentPolynomial.from_sage(s.to_sage()) == s
         True
         """
         from sage.rings.puiseux_series_ring_element import PuiseuxSeries
