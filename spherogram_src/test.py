@@ -43,6 +43,7 @@ modules = [spherogram.codecs.DT,
            spherogram.links.bands.core,
            spherogram.links.bands.search,
            spherogram.links.bands.regression,
+           spherogram.links.reshetikhin_turaev.dict_laurent_polynomial
            ]
 
 
