@@ -18,6 +18,7 @@ if _within_sage:
     from sage.rings.rational_field import QQ
     from sage.rings.polynomial.laurent_polynomial_ring import LaurentPolynomialRing
     from sage.quadratic_forms.quadratic_form import QuadraticForm
+
     try:
         from sage.knots.knot import Knot as SageKnot
         from sage.knots.link import Link as SageLink
@@ -35,7 +36,7 @@ def normalize_alex_poly(p, t):
     polynomial.
     """
     if len(t) == 1:
-        p = p * (t[0]**(-min(p.exponents())))
+        p = p * (t[0] ** (-min(p.exponents())))
         if p.coefficients()[-1] < 0:
             p = -p
         p, e = p.polynomial_construction()
@@ -45,9 +46,9 @@ def normalize_alex_poly(p, t):
     max_degree = max(sum(x) for x in p.exponents())
     highest_monomial_exps = [x for x in p.exponents() if sum(x) == max_degree]
     leading_exponents = max(highest_monomial_exps)
-    leading_monomial = functools.reduce(lambda x, y: x * y,
-                                        [t[i]**(leading_exponents[i])
-                                         for i in range(len(t))])
+    leading_monomial = functools.reduce(
+        lambda x, y: x * y, [t[i] ** (leading_exponents[i]) for i in range(len(t))]
+    )
     l = p.monomial_coefficient(leading_monomial)
 
     if l < 0:
@@ -55,7 +56,7 @@ def normalize_alex_poly(p, t):
 
     for i, ti in enumerate(t):
         min_exp = min(x[i] for x in p.exponents())
-        p = p * (ti**(-min_exp))
+        p = p * (ti ** (-min_exp))
 
     R = p.parent()
     p = R.polynomial_ring()(p)
@@ -88,10 +89,13 @@ extra_docstring = """
     see the documentation for the "sage_link" method for details.
 """
 
+
 class Link(links_base.Link):
     __doc__ = links_base.Link.__doc__ + extra_docstring
 
-    def __init__(self, crossings=None, braid_closure=None, check_planarity=True, build=True):
+    def __init__(
+        self, crossings=None, braid_closure=None, check_planarity=True, build=True
+    ):
         if _within_sage:
             if isinstance(crossings, Braid):
                 assert braid_closure is None
@@ -115,12 +119,13 @@ class Link(links_base.Link):
         Returns a linking matrix, in which the (i,j)th component is the
         linking number of the ith and jth link components.
         """
-        mat = [[0 for i in range(len(self.link_components))]
-               for j in range(len(self.link_components))]
+        mat = [
+            [0 for i in range(len(self.link_components))]
+            for j in range(len(self.link_components))
+        ]
         for n1, comp1 in enumerate(self.link_components):
             for n2, comp2 in enumerate(self.link_components):
-                tally = [[0 for m in range(len(self.crossings))]
-                         for n in range(2)]
+                tally = [[0 for m in range(len(self.crossings))] for n in range(2)]
                 if comp1 != comp2:
                     for i, c in enumerate(self.crossings):
                         for x1 in comp1:
@@ -130,7 +135,7 @@ class Link(links_base.Link):
                             if x2[0] == c:
                                 tally[1][i] += 1
                 for k, c in enumerate(self.crossings):
-                    if (tally[0][k] == 1 and tally[1][k] == 1):
+                    if tally[0][k] == 1 and tally[1][k] == 1:
                         mat[n1][n2] += 0.5 * (c.sign)
                 mat[n1][n2] = int(mat[n1][n2])
         return mat
@@ -198,11 +203,11 @@ class Link(links_base.Link):
         G = self.knot_group()
         num_gens = len(G.gens())
 
-        L_g = LaurentPolynomialRing(QQ, [f'g{i+1}' for i in range(num_gens)])
+        L_g = LaurentPolynomialRing(QQ, [f"g{i+1}" for i in range(num_gens)])
         g = list(L_g.gens())
 
         if mv:
-            L_t = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp)])
+            L_t = LaurentPolynomialRing(QQ, [f"t{i+1}" for i in range(comp)])
             t = list(L_t.gens())
 
             # determine the component to which each variable corresponds
@@ -211,7 +216,7 @@ class Link(links_base.Link):
                 g[i] = t[gci]
 
         else:
-            L_t = LaurentPolynomialRing(QQ, 't')
+            L_t = LaurentPolynomialRing(QQ, "t")
             t = L_t.gen()
             g = [t] * len(g)
 
@@ -224,14 +229,17 @@ class Link(links_base.Link):
         """
         Please use the "alexander_polynomial" method instead.
         """
-        if 'alexander_poly' not in deprecation_warnings_issued:
-            deprecation_warnings_issued.add('alexander_poly')
-            print('Deprecation Warning: use "alexander_polynomial" instead of "alexander_poly".')
+        if "alexander_poly" not in deprecation_warnings_issued:
+            deprecation_warnings_issued.add("alexander_poly")
+            print(
+                'Deprecation Warning: use "alexander_polynomial" instead of "alexander_poly".'
+            )
         return self.alexander_polynomial(*args, **kwargs)
 
     @sage_method
-    def alexander_polynomial(self, multivar=True, v='no', method='default',
-                             norm=True, factored=False):
+    def alexander_polynomial(
+        self, multivar=True, v="no", method="default", norm=True, factored=False
+    ):
         """
         Calculates the Alexander polynomial of the link.
 
@@ -259,22 +267,25 @@ class Link(links_base.Link):
         # sign normalization still missing, but when "norm=True" the
         # leading coefficient with respect to the first variable is made
         # positive.
-        if method == 'snappy':
+        if method == "snappy":
             try:
                 return self.exterior().alexander_polynomial()
             except ImportError:
-                raise RuntimeError('the method "snappy" for '
-                                   'alexander_polynomial requires SnapPy')
+                raise RuntimeError(
+                    'the method "snappy" for ' "alexander_polynomial requires SnapPy"
+                )
 
         # We do any available Type I and II Reidemeister moves as the
         # functions we call assume that none are available.
 
         from . import simplify
+
         if simplify.has_reidemeister_I_or_II(self):
             L = self.copy()
-            L.simplify('basic')
-            return L.alexander_polynomial(multivar=multivar, v=v, method=method,
-                                          norm=norm, factored=factored)
+            L.simplify("basic")
+            return L.alexander_polynomial(
+                multivar=multivar, v=v, method=method, norm=norm, factored=factored
+            )
 
         # We have to deal with the special case of unknotted and
         # unlinked components.
@@ -285,10 +296,10 @@ class Link(links_base.Link):
             multivar = False
 
         if multivar:
-            L = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp + nugatory)])
+            L = LaurentPolynomialRing(QQ, [f"t{i+1}" for i in range(comp + nugatory)])
             t = list(L.gens())
         else:
-            L = LaurentPolynomialRing(QQ, 't')
+            L = LaurentPolynomialRing(QQ, "t")
             t = [L.gen()]
         R = L.polynomial_ring() if norm else L
 
@@ -297,10 +308,10 @@ class Link(links_base.Link):
             return R(p)
 
         # If single variable, use the super-fast method of Bar-Natan.
-        if comp == 1 and method == 'default' and norm:
+        if comp == 1 and method == "default" and norm:
             p = alexander.alexander(self)
         else:  # Use a simple method based on the Wirtinger presentation.
-            if method not in ['default', 'wirtinger']:
+            if method not in ["default", "wirtinger"]:
                 raise ValueError("Available methods are 'default' and 'wirtinger'")
 
             M = self.alexander_matrix(mv=multivar)
@@ -312,7 +323,7 @@ class Link(links_base.Link):
             else:
                 k = n - 1
 
-            subMatrix = C[0: k, 0: k]
+            subMatrix = C[0:k, 0:k]
             p = subMatrix.determinant()
             if p == 0:
                 return R(0)
@@ -324,19 +335,21 @@ class Link(links_base.Link):
             if norm:
                 p = normalize_alex_poly(p, t)
 
-        if v != 'no':
+        if v != "no":
             return p(*v)
 
         if multivar and factored:  # it's easier to view this way
             return p.factor()
         return p
-    
-    def colored_links_gould_polynomial(self, n, sage_output = _within_sage, sage_polynomials = False, timed = False):
+
+    def colored_links_gould_polynomial(
+        self, n, sage_output=_within_sage, sage_polynomials=False, timed=False
+    ):
         """
         Colored Links--Gould polynomials are bivariate, hence we default to
-        using DictLaurentPolynomial to reduce RAM consumption. 
-        
-        The output, by default, follows whether in sage or not. 
+        using DictLaurentPolynomial to reduce RAM consumption.
+
+        The output, by default, follows whether in sage or not.
 
         >>> Link('3_1').colored_links_gould_polynomial(1)
         t^2*q^2 - t*q^3 - t*q + 2*q^2 - t^-1*q^3 + 1 - t^-1*q + t^-2*q^2
@@ -361,7 +374,7 @@ class Link(links_base.Link):
         True
 
         A mutation pair with the same 2-colored Links--Gould polynomial:
-        
+
         >>> K1 = Link('12n364')
         >>> K2 = Link('12n365').mirror()
         >>> K1.colored_links_gould_polynomial(2) == K2.colored_links_gould_polynomial(2)
@@ -376,9 +389,18 @@ class Link(links_base.Link):
         >>> Link('3_1').colored_links_gould_polynomial(4)
         t*q^24 - t^2*q^22 - t*q^23 + t^2*q^21 - t*q^22 + t^-1*q^24 + t^2*q^20 - 2*q^22 - t^-1*q^23 + 2*t*q^20 + 2*q^21 - t^-1*q^22 - t^2*q^18 - t*q^19 + 2*q^20 - t^-2*q^22 - 2*t*q^18 + 2*t^-1*q^20 + t^-2*q^21 + t^2*q^16 + t*q^17 - 2*q^18 - t^-1*q^19 + t^-2*q^20 - t^2*q^15 + 2*t*q^16 - 2*t^-1*q^18 - t^2*q^14 + 2*q^16 + t^-1*q^17 - t^-2*q^18 - 2*t*q^14 - 2*q^15 + 2*t^-1*q^16 + t^2*q^12 + 2*t*q^13 - 2*q^14 + t^-2*q^16 - t^2*q^11 + t*q^12 - 2*t^-1*q^14 - t^-2*q^15 + 2*q^12 + 2*t^-1*q^13 - t^-2*q^14 - 2*t*q^10 - 2*q^11 + t^-1*q^12 + t^2*q^8 + t*q^9 + t^-2*q^12 - 2*t^-1*q^10 - t^-2*q^11 + 2*q^8 + t^-1*q^9 - 2*t*q^6 + t^2*q^4 + t^-2*q^8 - 2*t^-1*q^6 + 2*q^4 - t*q^2 + t^-2*q^4 - t^-1*q^2 + 1
         """
-        from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
+        from .reshetikhin_turaev import (
+            colored_links_gould_R_matrices,
+            DictLaurentPolynomial,
+        )
 
-        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+        ans = (
+            self.min_long_diagram()
+            .reshetikhin_turaev_network(
+                colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)
+            )
+            .evaluate(timed=timed)
+        )
 
         if sage_output:
             if not sage_polynomials:
@@ -394,7 +416,9 @@ class Link(links_base.Link):
         else:
             return ans[0]
 
-    def colored_jones_polynomial(self, n, sage_output = _within_sage, sage_polynomials = _within_sage, timed = False):
+    def colored_jones_polynomial(
+        self, n, sage_output=_within_sage, sage_polynomials=_within_sage, timed=False
+    ):
         """
         Colored Jones polynomials are univariate, for whom sage's PuiseuxSeries
         has highly optimized multiplications, hence we default to use sage whenever possible.
@@ -419,10 +443,26 @@ class Link(links_base.Link):
         >>> Link('3_1').colored_jones_polynomial(4)
         q^-34 - q^-33 - q^-32 + 2*q^-29 - q^-28 + 2*q^-24 - q^-23 - q^-22 + q^-19 - q^-18 - q^-17 + q^-14 - q^-13 + q^-9 + q^-4
         """
-        from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
+        from .reshetikhin_turaev import (
+            colored_jones_R_matrices,
+            prefactor_colored_jones,
+            DictLaurentPolynomial,
+        )
 
-        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
-        ans = (ans[0] * prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials), ans[1])
+        ans = (
+            self.min_long_diagram()
+            .reshetikhin_turaev_network(
+                colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)
+            )
+            .evaluate(timed=timed)
+        )
+        ans = (
+            ans[0]
+            * prefactor_colored_jones(
+                n, self.writhe(), sage_polynomial=sage_polynomials
+            ),
+            ans[1],
+        )
 
         if sage_output:
             if not sage_polynomials:
@@ -508,8 +548,9 @@ class Link(links_base.Link):
           1
         """
         import knot_floer_homology
+
         if len(self.link_components) + self.unlinked_unknot_components > 1:
-            raise ValueError('Only works for knots, this has more components')
+            raise ValueError("Only works for knots, this has more components")
         if len(self.link_components) == 0 and self.unlinked_unknot_components == 1:
             return Link(braid_closure=[1, 1, -1]).knot_floer_homology()
         return knot_floer_homology.pd_to_hfk(self, prime=prime, complex=complex)
@@ -550,8 +591,9 @@ class Link(links_base.Link):
                 for x in range(len(self.crossings)):
                     total = {self.crossings[x][i] for i in range(4)}
                     if total.issubset(s):
-                        coords.append((tuple(faces[i]), tuple(faces[j]),
-                                       self.crossings[x]))  # label by the crossing.
+                        coords.append(
+                            (tuple(faces[i]), tuple(faces[j]), self.crossings[x])
+                        )  # label by the crossing.
 
         G = graph.Graph(coords, multiedges=True)
         component = G.connected_components(sort=False)[1]
@@ -595,24 +637,31 @@ class Link(links_base.Link):
         expected way.
         """
         # Map corners (i.e. CrossingStrands) to faces.
-        face_of = {corner: n for n, face in enumerate(self.faces())
-                   for corner in face}
+        face_of = {corner: n for n, face in enumerate(self.faces()) for corner in face}
 
         # Create the edges, labeled with crossing and sign.
         edges = []
         for c in self.crossings:
-            edges.append((face_of[CrossingStrand(c, 0)],
-                          face_of[CrossingStrand(c, 2)],
-                          {'crossing': c, 'sign': 1}))
-            edges.append((face_of[CrossingStrand(c, 1)],
-                          face_of[CrossingStrand(c, 3)],
-                          {'crossing': c, 'sign': -1}))
+            edges.append(
+                (
+                    face_of[CrossingStrand(c, 0)],
+                    face_of[CrossingStrand(c, 2)],
+                    {"crossing": c, "sign": 1},
+                )
+            )
+            edges.append(
+                (
+                    face_of[CrossingStrand(c, 1)],
+                    face_of[CrossingStrand(c, 3)],
+                    {"crossing": c, "sign": -1},
+                )
+            )
 
         # Build the graph.
         G = graph.Graph(edges, multiedges=True)
         components = G.connected_components(sort=True)
         if len(components) > 2:
-            raise ValueError('The link diagram is split.')
+            raise ValueError("The link diagram is split.")
         return G.subgraph(components[1])
 
     @sage_method
@@ -632,7 +681,7 @@ class Link(links_base.Link):
         vertex = {v: n for n, v in enumerate(V)}
         for e in G.edges(sort=False):
             i, j = vertex[e[0]], vertex[e[1]]
-            m[(i, j)] = m[(j, i)] = m[(i, j)] + e[2]['sign']
+            m[(i, j)] = m[(j, i)] = m[(i, j)] + e[2]["sign"]
         for i in range(N):
             m[(i, i)] = -sum(m.column(i))
         m = m.delete_rows([0]).delete_columns([0])
@@ -669,8 +718,11 @@ class Link(links_base.Link):
             return sum([L.signature() for L in self.split_link_diagram()])
 
         m, G = self.goeritz_matrix(return_graph=True)
-        correction = sum(e['sign'] for _, _, e in G.edges(sort=False)
-                         if e['sign'] == e['crossing'].sign)
+        correction = sum(
+            e["sign"]
+            for _, _, e in G.edges(sort=False)
+            if e["sign"] == e["crossing"].sign
+        )
         ans = QuadraticForm(QQ, m).signature() + correction
         if new_convention:
             ans = -ans
@@ -694,7 +746,7 @@ class Link(links_base.Link):
         return m
 
     @sage_method
-    def determinant(self, method='goeritz'):
+    def determinant(self, method="goeritz"):
         """
         Returns the determinant of the link, a non-negative integer.
 
@@ -706,7 +758,7 @@ class Link(links_base.Link):
             sage: K.determinant()
             5
         """
-        if method == 'color':
+        if method == "color":
             M = self._colorability_matrix()
             size = len(self.crossings) - 1
             N = matrix(size, size)
@@ -714,12 +766,12 @@ class Link(links_base.Link):
                 for j in range(size):
                     N[(i, j)] = M[(i + 1, j + 1)]
             return abs(N.determinant())
-        if method == 'goeritz':
+        if method == "goeritz":
             return abs(self.goeritz_matrix().determinant())
         return abs(self.alexander_polynomial(multivar=False, v=[-1], norm=False))
 
     @sage_method
-    def morse_number(self, solver='GLPK'):
+    def morse_number(self, solver="GLPK"):
         """
         The *Morse number* of a planar link diagram D is
 
@@ -738,6 +790,7 @@ class Link(links_base.Link):
             3
         """
         from . import morse
+
         return morse.morse_via_LP(self, solver)[0]
 
     @sage_method
@@ -757,6 +810,7 @@ class Link(links_base.Link):
             64
         """
         from . import morse
+
         return morse.MorseLinkDiagram(self)
 
     @sage_method
@@ -805,7 +859,7 @@ class Link(links_base.Link):
                 J = jones.jones_polynomial(self, normalized=True)
                 R = J.parent()
                 q = R.gen()
-                terms = [J[e] * q**(e // 2) for e in J.exponents()]
+                terms = [J[e] * q ** (e // 2) for e in J.exponents()]
                 J = sum(terms, R(0))
 
         if variable is not None:
@@ -832,12 +886,13 @@ class Link(links_base.Link):
         after first making the link isotopic to a braid closure.
         """
         from . import seifert
+
         ans = seifert.seifert_matrix(self)
         if _within_sage:
             ans = matrix(ans)
         return ans
 
-    def bridge_upper_bound(self, method='plain sphere', return_meridians=False):
+    def bridge_upper_bound(self, method="plain sphere", return_meridians=False):
         """
         Computes an upper bound on the bridge number of the given link.
         By default, it computes the plain sphere number rho(D) of the
@@ -866,6 +921,7 @@ class Link(links_base.Link):
                       https://dx.doi.org/10.4310/CAG.2020.v28.n2.a2
         """
         from . import bridge_bound
+
         return bridge_bound.bridge_upper_bound(self, method, return_meridians)
 
     def braid_word(self, as_sage_braid=False):
@@ -892,10 +948,11 @@ class Link(links_base.Link):
         braids, a new algorithm".
         """
         from . import seifert
+
         word = seifert.braid_word(self)
         if as_sage_braid:
             if not _within_sage:
-                raise ValueError('Requested Sage braid outside of Sage.')
+                raise ValueError("Requested Sage braid outside of Sage.")
             n = max(abs(a) for a in word) + 1
             word = BraidGroup(n)(word)
         return word
@@ -934,7 +991,7 @@ class Link(links_base.Link):
             <Link: 1 comp; 3 cross>
         """
         if SageKnot is None:
-            raise ValueError('Your SageMath does not seem to have a native link type')
+            raise ValueError("Your SageMath does not seem to have a native link type")
         sage_type = SageKnot if len(self.link_components) == 1 else SageLink
         # Sage's PD_code lists strands *clockwise* not our
         # *anticlockwise* prior to Sage 10.1.
@@ -955,14 +1012,16 @@ class Link(links_base.Link):
         return self.sage_link()
 
     @sage_method
-    def ribbon_concordant_links(self,
-                                max_bands=1,
-                                max_twists=2,
-                                max_band_len=None,
-                                paths='shortest',
-                                filter_for_plausibly_slice=True,
-                                certificates=False,
-                                print_progress=False):
+    def ribbon_concordant_links(
+        self,
+        max_bands=1,
+        max_twists=2,
+        max_band_len=None,
+        paths="shortest",
+        filter_for_plausibly_slice=True,
+        certificates=False,
+        print_progress=False,
+    ):
         """
         Given a link L_0, generate ribbon concordant links L_i.  Here,
         each L_i is obtained from L_0 by adding bands and deleting any
@@ -1012,16 +1071,18 @@ class Link(links_base.Link):
         """
         from .bands.search import ribbon_concordant_links
 
-        return ribbon_concordant_links(self,
-                                       max_bands=max_bands,
-                                       max_twists=max_twists,
-                                       max_band_len=max_band_len,
-                                       paths=paths,
-                                       filter_for_plausibly_slice=filter_for_plausibly_slice,
-                                       certify=certificates,
-                                       print_progress=print_progress,
-                                       stop_at_unlink=filter_for_plausibly_slice,
-                                       use_ribbon_link_cache=filter_for_plausibly_slice)
+        return ribbon_concordant_links(
+            self,
+            max_bands=max_bands,
+            max_twists=max_twists,
+            max_band_len=max_band_len,
+            paths=paths,
+            filter_for_plausibly_slice=filter_for_plausibly_slice,
+            certify=certificates,
+            print_progress=print_progress,
+            stop_at_unlink=filter_for_plausibly_slice,
+            use_ribbon_link_cache=filter_for_plausibly_slice,
+        )
 
 
 class ClosedBraid(Link):
@@ -1040,15 +1101,16 @@ class ClosedBraid(Link):
     >>> B
     ClosedBraid(1, -2, 3, 1, -2, 3, 1, -2, 3)
     """
+
     def __init__(self, *args, **kwargs):
-        if args and 'braid_closure' not in kwargs:
+        if args and "braid_closure" not in kwargs:
             if len(args) == 1:
-                self.braid_word = kwargs['braid_closure'] = tuple(args[0])
+                self.braid_word = kwargs["braid_closure"] = tuple(args[0])
                 args = ()
             elif isinstance(args[0], int):
-                self.braid_word = kwargs['braid_closure'] = args
+                self.braid_word = kwargs["braid_closure"] = args
                 args = ()
         Link.__init__(self, *args, **kwargs)
 
     def __repr__(self):
-        return 'ClosedBraid%s' % str(self.braid_word)
+        return "ClosedBraid%s" % str(self.braid_word)
