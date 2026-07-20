@@ -133,7 +133,8 @@ class Tangle:
 
         Tangles now support creation from PD_code, for example:
         
-        >>> Tangle(3, [[0,4,1,5],[1,8,2,9],[2,7,3,6],[5,9,6,10]], [0,4,8,10,3,7], label = 'RIII')
+        >>> Tangle(3, [[0,4,1,5],[1,8,2,9],[2,7,3,6],[5,9,6,10]],\
+                      [0,4,8,10,3,7], label = 'RIII')
         <Tangle: RIII: 3 comp; 4 cross; (3, 3) boundary>
 
         see doc of ``PD_code`` for more details.
@@ -399,7 +400,10 @@ class Tangle:
         >>> len(Tangle(3, [[0,4,1,5],[1,8,2,9],[2,7,3,6],[5,9,6,10]], 
         ... [0,4,8,10,3,7], label = 'RIII').components)
         3
-        >>> len(((RationalTangle(2,3)+IdentityBraid(1))|(RationalTangle(2,5)+ComponentTangle(-1))).components)
+
+        >>> T1 = RationalTangle(2,3)+IdentityBraid(1)
+        >>> T2 = RationalTangle(2,5)+ComponentTangle(-1)
+        >>> len((T1|T2).components)
         2
         """
         if component_starts is not None:
@@ -539,11 +543,13 @@ class Tangle:
     
     def PD_code(self, KnotTheory=False, min_strand_index=0):
         """
-        The planar diagram code for the tangle. Unlike for links, it returns two extra fields,
-        boundary and entry_info in addition to the PD code of crossings, in order to specify
-        how the boundary and entries of the tangle is arranged. The fields are ordered as follows:
+        The planar diagram code for the tangle. 
+        
+        Unlike for links, it returns two extra fields, boundary and entry_info 
+        in addition to the PD code of crossings, in order to specify how the boundary 
+        and entries of the tangle is arranged. The fields are ordered as:
 
-        boundary, PD, entry_info
+            boundary, PD, entry_info
 
         so that they can be unpacked immediately for creating Tangles.
 
@@ -598,7 +604,10 @@ class Tangle:
 
         Entry strands may have nonzero rotation numbers:
 
-        >>> T = Tangle((2, 2),[(9, 2, 10, 3), (1, 10, 2, 11), (6, 12, 7, 11), (12, 6, 13, 5), (3, 1, 4, 0), (4, 7, 5, 8)], [0, 9, 8, 13])
+        >>> T = Tangle((2, 2),\
+                        [(9, 2, 10, 3), (1, 10, 2, 11), (6, 12, 7, 11), \
+                         (12, 6, 13, 5), (3, 1, 4, 0), (4, 7, 5, 8)], \
+                        [0, 9, 8, 13])
         >>> T.rot_num()
         [0, 0, 0, -1, 0, 0, 0, -1, 0, 1, -1, 1, -1, 0]
         """
@@ -673,11 +682,16 @@ class Tangle:
 
         >>> RT = RationalTangle
         >>> T = (RT(3, 4) + RT(1, 2)) * RT(-3, 2)
-        >>> T.PD_code()
-        ((2, 2), [(18, 8, 19, 7), (6, 16, 7, 15), (14, 6, 15, 5), (4, 14, 5, 19), (12, 17, 13, 18), (16, 11, 17, 12), (3, 1, 4, 0), (1, 10, 2, 11), (9, 2, 10, 3)], [0, 9, 8, 13])
+        >>> T.PD_code() # doctest: +NORMALIZE_WHITESPACE
+        ((2, 2), [(18, 8, 19, 7), (6, 16, 7, 15), (14, 6, 15, 5), 
+        (4, 14, 5, 19), (12, 17, 13, 18), (16, 11, 17, 12), (3, 1, 4, 0), 
+        (1, 10, 2, 11), (9, 2, 10, 3)], [0, 9, 8, 13])
+
         >>> fT = T.flip()
-        >>> fT.PD_code()
-        ((2, 2), [(12, 16, 13, 15), (18, 12, 19, 11), (10, 18, 11, 17), (16, 10, 17, 9), (14, 3, 15, 4), (2, 19, 3, 14), (5, 9, 6, 8), (1, 6, 2, 7), (7, 0, 8, 1)], [0, 5, 4, 13])
+        >>> fT.PD_code() # doctest: +NORMALIZE_WHITESPACE
+        ((2, 2), [(12, 16, 13, 15), (18, 12, 19, 11), (10, 18, 11, 17), 
+        (16, 10, 17, 9), (14, 3, 15, 4), (2, 19, 3, 14), (5, 9, 6, 8), 
+        (1, 6, 2, 7), (7, 0, 8, 1)], [0, 5, 4, 13])
         >>> T.flip().flip().PD_code() == T.PD_code()
         True
         
@@ -845,8 +859,10 @@ class Tangle:
     # The following operators always clear the current orientations on both tangles 
     # and recreate an orientation with default behaviour.
     def __add__(self, other):
-        """Put self to left of other and fuse the top-right strand of self to the top-left
-        strand of other and the bottom-right strand of self to the bottom-left strand of other.
+        """
+        Put self to left of other and fuse the top-right strand of self to 
+        the top-left strand of other and the bottom-right strand of self to 
+        the bottom-left strand of other.
 
         >>> (IdentityBraid(2) + BraidTangle([1])).describe()
         'Tangle[{1,2}, {3,4}, X[2,4,5,5], P[1,3]]'
@@ -925,7 +941,9 @@ class Tangle:
 
     def __or__(self, other):
         """
-        Put self to left of other. This is like tangle addition but without the fusing of strands.
+        Put self to left of other. 
+        This is like tangle addition but without the fusing of strands.
+
         Preserves the orientations of both tangles, since no gluing happens.
 
         >>> (IdentityBraid(1) | CupTangle()).describe()
@@ -961,7 +979,9 @@ class Tangle:
         return pickle.loads(pickle.dumps(self))
 
     def rotate(self, s):
-        """Rotate anticlockwise by s*90 degrees. This is only for (2,2) tangles.
+        """
+        Rotate anticlockwise by s*90 degrees. This is only for (2,2) tangles.
+
         Preserves orientation of the tangle.
 
         See ``Tangle.reshape()`` for a generalization to all tangle shapes."""
@@ -995,7 +1015,8 @@ class Tangle:
 
         >>> BraidTangle([2,-1,2],4).numerator_closure().colored_jones_polynomial(1)
         -q^-4 + q^-3 + q^-1
-        >>> BraidTangle([1,1,1]).rotate(1).numerator_closure().colored_jones_polynomial(1)
+        >>> K = BraidTangle([1,1,1]).rotate(1).numerator_closure()
+        >>> K.colored_jones_polynomial(1)
         q + q^3 - q^4
 
         sage: BraidTangle([2,-1,2],4).numerator_closure().alexander_polynomial()
@@ -1029,7 +1050,9 @@ class Tangle:
         t^2 - t + 1
         sage: BraidTangle([1,-2,1,-2]).braid_closure().alexander_polynomial()
         t^2 - 3*t + 1
-        >>> BraidTangle([1,-2,1,-2]).braid_closure().exterior().identify() # doctest: +SNAPPY
+
+        >>> K = BraidTangle([1,-2,1,-2]).braid_closure()
+        >>> K.exterior().identify() # doctest: +SNAPPY
         [m004(0,0), 4_1(0,0), K2_1(0,0), K4a1(0,0), otet02_00001(0,0)]
         """
         m, n = self.boundary
@@ -1148,7 +1171,9 @@ class Tangle:
         True
         >>> BraidTangle([1,1]).isosig() == BraidTangle([-1,-1]).isosig()
         True
-        >>> BraidTangle([1,1]).isosig(over_or_under=True) == BraidTangle([-1,-1]).isosig(over_or_under=True)
+        >>> iso1 = BraidTangle([1,1]).isosig(over_or_under=True)
+        >>> iso2 = BraidTangle([-1,-1]).isosig(over_or_under=True)
+        >>> iso1 == iso2
         False
         """
 
@@ -1293,18 +1318,20 @@ class Tangle:
     
     def split_tangle_diagram(self, destroy_original=False, check_planarity=False):
         """
-        Split the tangle diagram into its connected components. Returns a list of Tangles.
+        Split the tangle diagram into its connected components. 
+        Returns a list of Tangles.
         
-        If check_planarity is True, return in addition if the boundary strands of the components 
-        are laid out in a planar manner with respect to each other.
+        If check_planarity is True, return in addition if the boundary strands 
+        of the components are laid out in a planar manner with respect to each other.
 
         >>> len(RationalTangle(0,1).split_tangle_diagram())
         2
 
-        >>> len(Tangle(4, [(0, 2, 1, 3)], [0,2,4,5,3,1,4,5], label = 'C||').split_tangle_diagram())
+        >>> len(Tangle(4, [(0, 2, 1, 3)], [0,2,4,5,3,1,4,5]).split_tangle_diagram())
         3
 
-        >>> Tangle(4, [(0, 2, 1, 3)], [0,4,2,5,3,1,4,5], check_planarity = False).split_tangle_diagram(check_planarity = True)[0]
+        >>> np_T = Tangle(4, [(0, 2, 1, 3)], [0,4,2,5,3,1,4,5], check_planarity=False)
+        >>> np_T.split_tangle_diagram(check_planarity=True)[0]
         False
         """
         T = self.copy() if not destroy_original else self
@@ -1361,7 +1388,10 @@ class Tangle:
 
     def is_planar(self):
         """
-        >>> Tangle(4, [(0, 2, 1, 3)], [2,0,4,5,3,1,4,5], check_planarity = False).is_planar()
+        Checks whether the tangle diagram can be planarly embedded into the disk.
+
+        >>> np_T = Tangle(4, [(0, 2, 1, 3)], [2,0,4,5,3,1,4,5], check_planarity = False)
+        >>> np_T.is_planar()
         False
         """
         G = self.digraph()

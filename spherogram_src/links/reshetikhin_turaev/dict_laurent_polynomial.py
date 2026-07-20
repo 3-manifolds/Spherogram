@@ -246,8 +246,8 @@ class FastDictLaurentPolynomial:
         >>> DictLaurentPolynomial.from_str('1', ['q']) == 1
         True
         >>> v4 = LaurentVariable('q', 4)
-        >>> p4 = DictLaurentPolynomial._make((v4,), {(4,): 1})   # q stored with denom 4
-        >>> p4 == DictLaurentPolynomial.from_str('q', ['q'])      # same value, different denom
+        >>> p4 = DictLaurentPolynomial._make((v4,), {(4,): 1})
+        >>> p4 == DictLaurentPolynomial.from_str('q', ['q'])
         True
         """
         if isinstance(other, FastDictLaurentPolynomial):

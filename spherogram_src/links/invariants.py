@@ -336,10 +336,12 @@ class Link(links_base.Link):
                                        sage_output=_within_sage,
                                        sage_polynomials=False, timed=False):
         """
-        Colored Links--Gould polynomials are bivariate, hence we default to
-        using DictLaurentPolynomial to reduce RAM consumption. 
-        
-        The output, by default, follows whether in sage or not. 
+        Computes the colored Links--Gould polynomial of a link. 
+        The output is an instance of Sage's LaurentPolynomial if in sage,
+        otherwise a DictLaurentPolynomial.
+
+        Colored Links--Gould polynomials are bivariate, for which we default to
+        using DictLaurentPolynomial during the procedure to reduce RAM consumption. 
 
         >>> Link('3_1').colored_links_gould_polynomial(1)
         t^2*q^2 - t*q^3 - t*q + 2*q^2 - t^-1*q^3 + 1 - t^-1*q + t^-2*q^2
@@ -348,19 +350,26 @@ class Link(links_base.Link):
 
         Mirror image is equal to substituting q with q^-1:
 
-        >>> Link('3_1').mirror().colored_links_gould_polynomial(1, sage_output = False).change_vars({'q': 'q^-1'}) == Link('3_1').colored_links_gould_polynomial(1, sage_output = False)
-        True
+        >>> mtref = Link('3_1').mirror()
+        >>> mtref_LG = mtref.colored_links_gould_polynomial(1, sage_output=False)
+        >>> mtref_LG.change_vars({'q': 'q^-1'})
+        t^2*q^2 - t*q^3 - t*q + 2*q^2 - t^-1*q^3 + 1 - t^-1*q + t^-2*q^2
 
-        The colored Links--Gould polynomial specializes to the square of the Alexander polynomial:
+        The colored Links--Gould polynomial specializes to the square of 
+        the Alexander polynomial:
 
-        >>> Link('3_1').colored_links_gould_polynomial(1, sage_output = False).change_vars({'q': '1'})
+        >>> tref_LG = Link('3_1').colored_links_gould_polynomial(1, sage_output=False)
+        >>> tref_LG.change_vars({'q': '1'})
         t^2 - 2*t + 3 - 2*t^-1 + t^-2
-        >>> Link('4_1').colored_links_gould_polynomial(1, sage_output = False).change_vars({'q': '1'})
+        >>> fig8_LG = Link('4_1').colored_links_gould_polynomial(1, sage_output=False)
+        >>> fig8_LG.change_vars({'q': '1'})
         t^2 - 6*t + 11 - 6*t^-1 + t^-2
 
         1-colored Links--Gould polynomial is invariant under mutation:
 
-        >>> Link('11n34').colored_links_gould_polynomial(1) == Link('11n42').colored_links_gould_polynomial(1)
+        >>> conway_LG = Link('11n34').colored_links_gould_polynomial(1)
+        >>> KT_LG = Link('11n42').colored_links_gould_polynomial(1)
+        >>> conway_LG == KT_LG
         True
 
         A mutation pair with the same 2-colored Links--Gould polynomial:
@@ -372,12 +381,32 @@ class Link(links_base.Link):
 
         Some higher colored values for the trefoil:
 
-        >>> Link('3_1').colored_links_gould_polynomial(2)
-        -t^2*q^5 + t*q^6 + t^2*q^4 - t*q^5 + t*q^4 - 2*q^5 + t^-1*q^6 + t^2*q^2 - 2*t*q^3 + 2*q^4 - t^-1*q^5 + t^-1*q^4 - t^-2*q^5 - t*q + 2*q^2 - 2*t^-1*q^3 + t^-2*q^4 + 1 - t^-1*q + t^-2*q^2
-        >>> Link('3_1').colored_links_gould_polynomial(3)
-        -t*q^27 + t^2*q^24 + t*q^25 - t^-1*q^27 - t^2*q^22 + t*q^23 + 2*q^24 + t^-1*q^25 - t^2*q^20 - 2*t*q^21 - 2*q^22 + t^-1*q^23 + t^-2*q^24 + t^2*q^18 + 2*t*q^19 - 2*q^20 - 2*t^-1*q^21 - t^-2*q^22 - t^2*q^16 + t*q^17 + 2*q^18 + 2*t^-1*q^19 - t^-2*q^20 - 2*t*q^15 - 2*q^16 + t^-1*q^17 + t^-2*q^18 + t^2*q^12 + t*q^13 - 2*t^-1*q^15 - t^-2*q^16 + 2*q^12 + t^-1*q^13 - 2*t*q^9 + t^-2*q^12 + t^2*q^6 - 2*t^-1*q^9 + 2*q^6 - t*q^3 + t^-2*q^6 - t^-1*q^3 + 1
-        >>> Link('3_1').colored_links_gould_polynomial(4)
-        t*q^24 - t^2*q^22 - t*q^23 + t^2*q^21 - t*q^22 + t^-1*q^24 + t^2*q^20 - 2*q^22 - t^-1*q^23 + 2*t*q^20 + 2*q^21 - t^-1*q^22 - t^2*q^18 - t*q^19 + 2*q^20 - t^-2*q^22 - 2*t*q^18 + 2*t^-1*q^20 + t^-2*q^21 + t^2*q^16 + t*q^17 - 2*q^18 - t^-1*q^19 + t^-2*q^20 - t^2*q^15 + 2*t*q^16 - 2*t^-1*q^18 - t^2*q^14 + 2*q^16 + t^-1*q^17 - t^-2*q^18 - 2*t*q^14 - 2*q^15 + 2*t^-1*q^16 + t^2*q^12 + 2*t*q^13 - 2*q^14 + t^-2*q^16 - t^2*q^11 + t*q^12 - 2*t^-1*q^14 - t^-2*q^15 + 2*q^12 + 2*t^-1*q^13 - t^-2*q^14 - 2*t*q^10 - 2*q^11 + t^-1*q^12 + t^2*q^8 + t*q^9 + t^-2*q^12 - 2*t^-1*q^10 - t^-2*q^11 + 2*q^8 + t^-1*q^9 - 2*t*q^6 + t^2*q^4 + t^-2*q^8 - 2*t^-1*q^6 + 2*q^4 - t*q^2 + t^-2*q^4 - t^-1*q^2 + 1
+        >>> K = Link('3_1')
+        >>> K.colored_links_gould_polynomial(2) # doctest: +NORMALIZE_WHITESPACE
+        -t^2*q^5 + t*q^6 + t^2*q^4 - t*q^5 + t*q^4 - 2*q^5 + t^-1*q^6 + t^2*q^2 
+        - 2*t*q^3 + 2*q^4 - t^-1*q^5 + t^-1*q^4 - t^-2*q^5 - t*q + 2*q^2 - 
+        2*t^-1*q^3 + t^-2*q^4 + 1 - t^-1*q + t^-2*q^2
+
+        >>> K.colored_links_gould_polynomial(3) # doctest: +NORMALIZE_WHITESPACE
+        -t*q^27 + t^2*q^24 + t*q^25 - t^-1*q^27 - t^2*q^22 + t*q^23 + 2*q^24 + 
+        t^-1*q^25 - t^2*q^20 - 2*t*q^21 - 2*q^22 + t^-1*q^23 + t^-2*q^24 + 
+        t^2*q^18 + 2*t*q^19 - 2*q^20 - 2*t^-1*q^21 - t^-2*q^22 - t^2*q^16 + 
+        t*q^17 + 2*q^18 + 2*t^-1*q^19 - t^-2*q^20 - 2*t*q^15 - 2*q^16 + t^-1*q^17
+        + t^-2*q^18 + t^2*q^12 + t*q^13 - 2*t^-1*q^15 - t^-2*q^16 + 2*q^12 + 
+        t^-1*q^13 - 2*t*q^9 + t^-2*q^12 + t^2*q^6 - 2*t^-1*q^9 + 2*q^6 - t*q^3 + 
+        t^-2*q^6 - t^-1*q^3 + 1
+
+        >>> K.colored_links_gould_polynomial(4) # doctest: +NORMALIZE_WHITESPACE
+        t*q^24 - t^2*q^22 - t*q^23 + t^2*q^21 - t*q^22 + t^-1*q^24 + t^2*q^20 -
+        2*q^22 - t^-1*q^23 + 2*t*q^20 + 2*q^21 - t^-1*q^22 - t^2*q^18 - t*q^19 + 
+        2*q^20 - t^-2*q^22 - 2*t*q^18 + 2*t^-1*q^20 + t^-2*q^21 + t^2*q^16 + 
+        t*q^17 - 2*q^18 - t^-1*q^19 + t^-2*q^20 - t^2*q^15 + 2*t*q^16 - 2*t^-1*q^18 
+        - t^2*q^14 + 2*q^16 + t^-1*q^17 - t^-2*q^18 - 2*t*q^14 - 2*q^15 + 2*t^-1*q^16 
+        + t^2*q^12 + 2*t*q^13 - 2*q^14 + t^-2*q^16 - t^2*q^11 + t*q^12 - 2*t^-1*q^14 
+        - t^-2*q^15 + 2*q^12 + 2*t^-1*q^13 - t^-2*q^14 - 2*t*q^10 - 2*q^11 + t^-1*q^12 
+        + t^2*q^8 + t*q^9 + t^-2*q^12 - 2*t^-1*q^10 - t^-2*q^11 + 2*q^8 + t^-1*q^9 - 
+        2*t*q^6 + t^2*q^4 + t^-2*q^8 - 2*t^-1*q^6 + 2*q^4 - t*q^2 + t^-2*q^4 - t^-1*q^2 
+        + 1
         """
         from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
 
@@ -403,12 +432,17 @@ class Link(links_base.Link):
                                  sage_polynomials=_within_sage,
                                  timed=False):
         """
-        Colored Jones polynomials are univariate, for whom sage's PuiseuxSeries
-        has highly optimized multiplications, hence we default to use sage whenever possible.
+        Computes the colored Jones polynomial of a link. 
+        The output is an instance of Sage's PuiseuxSeries if in sage,
+        otherwise a DictLaurentPolynomial.
 
         1-colored Jones polynomial is equal to the usual Jones polynomial.
         Here we follow the ordinary convention of variables for Jones polynomials,
         instead of the squared q in jones_polynomial()
+
+        Colored Jones polynomials are univariate, for whom sage's PuiseuxSeries
+        has highly optimized multiplications, hence we default to use sage 
+        during the procedure whenever possible.
 
         >>> Link('3_1').colored_jones_polynomial(1)
         -q^-4 + q^-3 + q^-1
@@ -421,10 +455,12 @@ class Link(links_base.Link):
 
         >>> Link('3_1').colored_jones_polynomial(2)
         q^-11 - q^-10 - q^-9 + q^-8 - q^-7 + q^-5 + q^-2
-        >>> Link('3_1').colored_jones_polynomial(3)
-        -q^-21 + q^-20 + q^-19 - q^-17 + q^-15 - q^-14 - q^-13 + q^-11 - q^-10 + q^-7 + q^-3
-        >>> Link('3_1').colored_jones_polynomial(4)
-        q^-34 - q^-33 - q^-32 + 2*q^-29 - q^-28 + 2*q^-24 - q^-23 - q^-22 + q^-19 - q^-18 - q^-17 + q^-14 - q^-13 + q^-9 + q^-4
+        >>> Link('3_1').colored_jones_polynomial(3) # doctest: +NORMALIZE_WHITESPACE
+        -q^-21 + q^-20 + q^-19 - q^-17 + q^-15 - q^-14 - q^-13 + q^-11 - q^-10 + q^-7 
+        + q^-3
+        >>> Link('3_1').colored_jones_polynomial(4) # doctest: +NORMALIZE_WHITESPACE
+        q^-34 - q^-33 - q^-32 + 2*q^-29 - q^-28 + 2*q^-24 - q^-23 - q^-22 + q^-19 - 
+        q^-18 - q^-17 + q^-14 - q^-13 + q^-9 + q^-4
         """
         from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
 

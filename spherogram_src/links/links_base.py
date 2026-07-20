@@ -893,7 +893,8 @@ class Link:
         """
         Reverse the orientation of components specified by component_index.
 
-        component_index: either a single index of component or a list of indices of components
+        component_index: either a single index of component 
+                         or a list of indices of components
 
         >>> L = Link([(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)])
         >>> L
@@ -1373,10 +1374,13 @@ class Link:
     
     def long_diagram(self, cut_at=None):
         """
-        Returns the long diagram of self obtained by cutting open the strand specified by cut_at.
+        Returns the long diagram of self obtained 
+        by cutting open the strand specified by cut_at.
 
-        cut_at should be a pair of integers (i, j) representing the j-th strand of the i-th crossing.
-        If not specified, the first strand of the first crossing will be chosen by default.
+        cut_at should be a pair of integers (i, j) 
+        representing the j-th strand of the i-th crossing.
+        If not specified, the first strand of the first 
+        crossing will be chosen by default.
 
         >>> T = Link('4_1').long_diagram()
         >>> T.PD_code()
