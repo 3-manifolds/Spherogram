@@ -337,7 +337,7 @@ class Link(links_base.Link):
                                        sage_polynomials=False, 
                                        timed=False):
         """
-        Computes the colored Links--Gould polynomial of a link. 
+        Computes the n-colored Links--Gould polynomial of a link. 
         The output is an instance of Sage's LaurentPolynomial if in sage,
         otherwise a DictLaurentPolynomial.
 
@@ -433,11 +433,11 @@ class Link(links_base.Link):
                                  sage_polynomials=_within_sage,
                                  timed=False):
         """
-        Computes the colored Jones polynomial of a link. 
+        Computes the n-colored Jones polynomial of a link. 
         The output is an instance of Sage's PuiseuxSeries if in sage,
         otherwise a DictLaurentPolynomial.
 
-        1-colored Jones polynomial is equal to the usual Jones polynomial.
+        The 1-colored Jones polynomial is equal to the usual Jones polynomial.
         Here we follow the ordinary convention of variables for Jones polynomials,
         instead of the squared q in jones_polynomial()
 
