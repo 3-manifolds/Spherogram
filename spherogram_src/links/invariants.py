@@ -334,7 +334,8 @@ class Link(links_base.Link):
     def colored_links_gould_polynomial(self, 
                                        n, 
                                        sage_output=_within_sage,
-                                       sage_polynomials=False, timed=False):
+                                       sage_polynomials=False, 
+                                       timed=False):
         """
         Computes the colored Links--Gould polynomial of a link. 
         The output is an instance of Sage's LaurentPolynomial if in sage,
