@@ -1371,7 +1371,7 @@ class Link:
 
         return type(self)(final_crossings, check_planarity=False)
     
-    def long_diagram(self, cut_at = None):
+    def long_diagram(self, cut_at=None):
         """
         Returns the long diagram of self obtained by cutting open the strand specified by cut_at.
 

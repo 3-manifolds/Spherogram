@@ -331,7 +331,10 @@ class Link(links_base.Link):
             return p.factor()
         return p
     
-    def colored_links_gould_polynomial(self, n, sage_output = _within_sage, sage_polynomials = False, timed = False):
+    def colored_links_gould_polynomial(self, 
+                                       n, 
+                                       sage_output=_within_sage,
+                                       sage_polynomials=False, timed=False):
         """
         Colored Links--Gould polynomials are bivariate, hence we default to
         using DictLaurentPolynomial to reduce RAM consumption. 
@@ -378,7 +381,7 @@ class Link(links_base.Link):
         """
         from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
 
-        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed=timed)
 
         if sage_output:
             if not sage_polynomials:
@@ -394,7 +397,11 @@ class Link(links_base.Link):
         else:
             return ans[0]
 
-    def colored_jones_polynomial(self, n, sage_output = _within_sage, sage_polynomials = _within_sage, timed = False):
+    def colored_jones_polynomial(self, 
+                                 n, 
+                                 sage_output=_within_sage,
+                                 sage_polynomials=_within_sage,
+                                 timed=False):
         """
         Colored Jones polynomials are univariate, for whom sage's PuiseuxSeries
         has highly optimized multiplications, hence we default to use sage whenever possible.
@@ -421,7 +428,7 @@ class Link(links_base.Link):
         """
         from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
 
-        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed = timed)
+        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed=timed)
         ans = (ans[0] * prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials), ans[1])
 
         if sage_output:

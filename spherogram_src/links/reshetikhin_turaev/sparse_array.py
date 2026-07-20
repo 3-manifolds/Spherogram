@@ -1,5 +1,6 @@
 from itertools import product as cartesian_product
 
+
 class SparseArray:
     """
     A sparse array supporting arbitrary-dimensional indexing via tuples.
@@ -7,7 +8,8 @@ class SparseArray:
     Internally stores only non-default entries in a dict keyed by index tuples.
     Indices can be integers or tuples of integers of any length.
     """
-    __slots__ = ('_data', '_default', '_rank', '_shape')
+
+    __slots__ = ("_data", "_default", "_rank", "_shape")
 
     def __init__(self, shape, data=None, default=0):
         self._data = {}
@@ -24,9 +26,11 @@ class SparseArray:
     def __eq__(self, other):
         if not isinstance(other, SparseArray):
             return False
-        return (self._shape == other._shape and
-                self._default == other._default and
-                self._data == other._data)
+        return (
+            self._shape == other._shape
+            and self._default == other._default
+            and self._data == other._data
+        )
 
     def _key(self, index):
         if isinstance(index, tuple):
@@ -43,11 +47,13 @@ class SparseArray:
         else:
             if len(key) != self._rank:
                 raise ValueError(
-                    f'key length {len(key)} does not match rank {self._rank}')
+                    f"key length {len(key)} does not match rank {self._rank}"
+                )
             for i, (idx, dim) in enumerate(zip(key, self._shape)):
                 if not (0 <= idx < dim):
                     raise ValueError(
-                        f'index {idx} at axis {i} is out of range [0, {dim})')
+                        f"index {idx} at axis {i} is out of range [0, {dim})"
+                    )
             self._data[key] = value
 
     def __delitem__(self, index):
@@ -66,7 +72,7 @@ class SparseArray:
         return iter(self._data)
 
     def __repr__(self):
-        return f'SparseArray({self._data!r}, default={self._default!r})'
+        return f"SparseArray({self._data!r}, default={self._default!r})"
 
     def keys(self):
         return self._data.keys()
@@ -96,7 +102,7 @@ class SparseArray:
     @property
     def shape(self):
         return self._shape
-    
+
     @property
     def default(self):
         return self._default
@@ -126,7 +132,7 @@ class SparseTensor(SparseArray):
     """
 
     def __repr__(self):
-        return f'SparseTensor({self._data!r}, default={self._default!r})'
+        return f"SparseTensor({self._data!r}, default={self._default!r})"
 
     def copy(self):
         return SparseTensor(self._shape, data=self._data.copy(), default=self._default)
@@ -149,7 +155,7 @@ class SparseTensor(SparseArray):
         else:
             self._data[key] = value
 
-    def contract(self, other: 'SparseTensor', pairs):
+    def contract(self, other: "SparseTensor", pairs):
         """
         Contract self with other over the specified index pairs, returning a
         new SparseTensor whose axes are the free axes of self followed by the
@@ -172,15 +178,17 @@ class SparseTensor(SparseArray):
         for ai, bj in pairs:
             if self._shape[ai] != other._shape[bj]:
                 raise ValueError(
-                    f'axis {ai} of self (size {self._shape[ai]}) is incompatible '
-                    f'with axis {bj} of other (size {other._shape[bj]})')
+                    f"axis {ai} of self (size {self._shape[ai]}) is incompatible "
+                    f"with axis {bj} of other (size {other._shape[bj]})"
+                )
 
-        self_contracted  = {ai for ai, _  in pairs}
-        other_contracted = {bj for _,  bj in pairs}
-        self_free  = [i for i in range(self.rank)  if i not in self_contracted]
+        self_contracted = {ai for ai, _ in pairs}
+        other_contracted = {bj for _, bj in pairs}
+        self_free = [i for i in range(self.rank) if i not in self_contracted]
         other_free = [i for i in range(other.rank) if i not in other_contracted]
-        result_shape = [self._shape[i] for i in self_free] + \
-                       [other._shape[i] for i in other_free]
+        result_shape = [self._shape[i] for i in self_free] + [
+            other._shape[i] for i in other_free
+        ]
 
         if not self._data or not other._data:
             return SparseTensor(result_shape, default=self._default)
@@ -190,7 +198,7 @@ class SparseTensor(SparseArray):
         self_groups = {}
         for key, val in self.items():
             c_key = tuple(key[ai] for ai, _ in pairs)
-            f_key = tuple(key[i]  for i in self_free)
+            f_key = tuple(key[i] for i in self_free)
             self_groups.setdefault(c_key, []).append((f_key, val))
 
         result = SparseTensor(result_shape, default=self._default)
@@ -203,8 +211,8 @@ class SparseTensor(SparseArray):
             for f_key_a, val_a in group:
                 result._accumulate(f_key_a + f_key_b, val_a * val_b)
         return result
-    
-    def decorated_contract(self, other: 'SparseTensor', pairs):
+
+    def decorated_contract(self, other: "SparseTensor", pairs):
         """
         An enhanced version of contract, where:
 
@@ -224,20 +232,23 @@ class SparseTensor(SparseArray):
             h_self, h_other = (0, 1) if side == 0 else (1, 0)
             if self._shape[ai] != h._shape[h_self]:
                 raise ValueError(
-                    f'self axis {ai} (size {self._shape[ai]}) is incompatible '
-                    f'with h axis {h_self} (size {h._shape[h_self]})')
+                    f"self axis {ai} (size {self._shape[ai]}) is incompatible "
+                    f"with h axis {h_self} (size {h._shape[h_self]})"
+                )
             if other._shape[bj] != h._shape[h_other]:
                 raise ValueError(
-                    f'other axis {bj} (size {other._shape[bj]}) is incompatible '
-                    f'with h axis {h_other} (size {h._shape[h_other]})')
+                    f"other axis {bj} (size {other._shape[bj]}) is incompatible "
+                    f"with h axis {h_other} (size {h._shape[h_other]})"
+                )
 
-        pair_list        = list(pairs.keys())
-        self_contracted  = {ai for ai, _ in pair_list}
+        pair_list = list(pairs.keys())
+        self_contracted = {ai for ai, _ in pair_list}
         other_contracted = {bj for _, bj in pair_list}
-        self_free  = [i for i in range(self.rank)  if i not in self_contracted]
+        self_free = [i for i in range(self.rank) if i not in self_contracted]
         other_free = [i for i in range(other.rank) if i not in other_contracted]
-        result_shape = [self._shape[i] for i in self_free] + \
-                       [other._shape[i] for i in other_free]
+        result_shape = [self._shape[i] for i in self_free] + [
+            other._shape[i] for i in other_free
+        ]
 
         if not self._data or not other._data:
             return SparseTensor(result_shape, default=self._default)
@@ -246,14 +257,14 @@ class SparseTensor(SparseArray):
         self_groups = {}
         for key, val in self._data.items():
             c_key = tuple(key[ai] for ai, _ in pair_list)
-            f_key = tuple(key[i]  for i in self_free)
+            f_key = tuple(key[i] for i in self_free)
             self_groups.setdefault(c_key, []).append((f_key, val))
 
         # For each pair m, precompute: given k (other's contracted value),
         # which j values in self are reachable and with what h weight?
         # h_lookup[m][k] = [(j, h_val), ...]
         h_lookups = []
-        for (ai, bj) in pair_list:
+        for ai, bj in pair_list:
             side, h = pairs[(ai, bj)]
             lookup = {}
             for hkey, hval in h._data.items():
@@ -315,7 +326,7 @@ class SparseTensor(SparseArray):
             free_key = tuple(v for idx, v in enumerate(key) if idx != i and idx != j)
             result._accumulate(free_key, value)
         return result
-    
+
     def decorated_trace(self, i, j, decoration):
         """
         Contract axes i and j of self with an edge tensor h inserted between
@@ -352,12 +363,14 @@ class SparseTensor(SparseArray):
             h_i, h_j = (0, 1) if side == 0 else (1, 0)
             if self._shape[i] != h._shape[h_i]:
                 raise ValueError(
-                    f'axis {i} of self (size {self._shape[i]}) is incompatible '
-                    f'with h axis {h_i} (size {h._shape[h_i]})')
+                    f"axis {i} of self (size {self._shape[i]}) is incompatible "
+                    f"with h axis {h_i} (size {h._shape[h_i]})"
+                )
             if self._shape[j] != h._shape[h_j]:
                 raise ValueError(
-                    f'axis {j} of self (size {self._shape[j]}) is incompatible '
-                    f'with h axis {h_j} (size {h._shape[h_j]})')
+                    f"axis {j} of self (size {self._shape[j]}) is incompatible "
+                    f"with h axis {h_j} (size {h._shape[h_j]})"
+                )
 
         free = [idx for idx in range(self.rank) if idx not in contracted]
         result_shape = [self._shape[idx] for idx in free]
@@ -395,7 +408,7 @@ class SparseTensor(SparseArray):
             free_key = tuple(v for idx, v in enumerate(key) if idx != i)
             result._data[free_key] = val
         return result
-    
+
     def permute(self, indices):
         """
         Reorder axes using pull-style indices: indices[i] is the axis of self

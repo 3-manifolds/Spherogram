@@ -108,7 +108,7 @@ class TangleComponents(list):
         return component
 
 class Tangle:
-    def __init__(self, boundary=2, crossings=None, entry_points=None, build = True, label=None, start_orientations = None, component_starts = None, check_planarity = True):
+    def __init__(self, boundary=2, crossings=None, entry_points=None, build=True, label=None, start_orientations=None, component_starts=None, check_planarity=True):
         """
         A tangle is a fragment of a Link with some number of boundary
         strands. Tangles can be composed in various ways along their boundary strands,
@@ -537,7 +537,7 @@ class Tangle:
         
         return crossings, component_starts, entry_strands
     
-    def PD_code(self, KnotTheory=False, min_strand_index = 0):
+    def PD_code(self, KnotTheory=False, min_strand_index=0):
         """
         The planar diagram code for the tangle. Unlike for links, it returns two extra fields,
         boundary and entry_info in addition to the PD code of crossings, in order to specify
@@ -1291,7 +1291,7 @@ class Tangle:
         
         return G
     
-    def split_tangle_diagram(self, destroy_original = False, check_planarity = False):
+    def split_tangle_diagram(self, destroy_original=False, check_planarity=False):
         """
         Split the tangle diagram into its connected components. Returns a list of Tangles.
         
@@ -1379,7 +1379,7 @@ class Tangle:
 
         return euler == 2 or v == 1
 
-    def simplify(self, mode = 'basic', type_III_limit = 100):
+    def simplify(self, mode='basic', type_III_limit=100):
         """
         Tries to simplify the tangle diagram. Returns whether it succeeded 
         in reducing the number of crossings. Modifies the tangle in place,
@@ -1432,7 +1432,8 @@ class Tangle:
             raise NotImplementedError()
 
     def is_planar_isotopic(self, other, root=None, over_or_under=False) -> bool:
-        return self.isosig(root = root, over_or_under=over_or_under) == other.isosig(root = root, over_or_under = over_or_under)
+        return self.isosig(root=root, over_or_under=over_or_under) == \
+                other.isosig(root=root, over_or_under=over_or_under)
 
     def __repr__(self):
         return "<Tangle: %s: %d comp; %d cross; (%d, %d) boundary>" % (self.label, len(self.components), len(self.crossings), self.boundary[0], self.boundary[1])
@@ -1493,7 +1494,7 @@ def ComponentTangle(component_idx):
     ValueError: Two Strand objects in different components have the same component_idx values
     """
     s = Strand(component_idx=component_idx)
-    return Tangle((1, 1), [s], [(s, 0), (s, 1)], label = f'ComponentTangle({component_idx})')
+    return Tangle((1, 1), [s], [(s, 0), (s, 1)], label=f'ComponentTangle({component_idx})')
 
 
 def CapTangle():
@@ -1616,7 +1617,7 @@ class RationalTangle(Tangle):
         Tangle.__init__(self, 2, 
                         crossings,
                         T.adjacent,
-                        label = f"RationalTangle({a}, {b})")
+                        label=f"RationalTangle({a}, {b})")
 
 # ---------------------------------------------------
 #
@@ -1646,7 +1647,7 @@ def IdentityBraid(n):
         raise ValueError("Expecting non-negative int")
     entry_points = 2* [i for i in range(n)] 
     return Tangle(n, [], entry_points,
-                  label = f"IdentityBraid({n})")
+                  label=f"IdentityBraid({n})")
 
 
 def BraidTangle(gens, n=None):

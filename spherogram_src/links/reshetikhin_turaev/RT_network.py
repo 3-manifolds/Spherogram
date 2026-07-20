@@ -1,38 +1,47 @@
 class DirectedEdge:
-    __slots__ = ['label', 'index', 'sign', 'reversed_edge']
+    __slots__ = ["label", "index", "sign", "reversed_edge"]
 
-    def __init__(self, label, reversed_edge = None):
+    def __init__(self, label, reversed_edge=None):
         self.label = label
         self.index = max(label, ~label)
         self.sign = 1 if label == self.index else -1
 
-        if reversed_edge is None: 
-            reversed_edge = DirectedEdge(~self.label, self)    
+        if reversed_edge is None:
+            reversed_edge = DirectedEdge(~self.label, self)
         self.reversed_edge = reversed_edge
 
     def __str__(self):
-        return ('' if self.sign == 1 else '~') + str(self.index)
+        return ("" if self.sign == 1 else "~") + str(self.index)
 
     def __repr__(self):
         return str(self)
-    
+
     def __hash__(self):
         return hash(self.label)
-    
+
     def __eq__(self, other):
         return self.label == other.label
-    
+
     def __invert__(self):
         return self.reversed_edge
 
+
 class RTNetwork:
-    
-    def __init__(self, tensors, T = None, network = None, rot_num = None, boundary = None, boundary_labels = None):
+
+    def __init__(
+        self,
+        tensors,
+        T=None,
+        network=None,
+        rot_num=None,
+        boundary=None,
+        boundary_labels=None,
+    ):
         """
-        Represent the tensor network obtained by applying 
-        the Reshetikhin--Turaev functor determined by the 
+        Represent the tensor network obtained by applying
+        the Reshetikhin--Turaev functor determined by the
         given RMatrix tensors to the tangle T.
-    
+
         The network is represented as a list of pairs (tensor, legs)
 
         Requires numpy and opt_einsum modules for finding out the optimal contraction sequences
@@ -40,7 +49,9 @@ class RTNetwork:
         self.tensors = tensors
 
         if T is not None:
-            assert T.is_upward(), 'Tangle should be upward for the Reshetikhin--Turaev functor to apply'
+            assert (
+                T.is_upward()
+            ), "Tangle should be upward for the Reshetikhin--Turaev functor to apply"
             self.rot_num = T.rot_num()
             self.tangle = T.copy()
 
@@ -57,31 +68,37 @@ class RTNetwork:
                 for lab in labels:
                     if lab not in edge.keys():
                         edge[lab] = DirectedEdge(lab)
-                        
+
                 if c.sign == 1:
-                    key = (~edge[labels[3]], 
-                           ~edge[labels[0]], 
-                            edge[labels[2]], 
-                            edge[labels[1]])
+                    key = (
+                        ~edge[labels[3]],
+                        ~edge[labels[0]],
+                        edge[labels[2]],
+                        edge[labels[1]],
+                    )
                 else:
-                    assert c.sign == -1, f'Crossing {c} is not oriented'
-                    key = (~edge[labels[0]], 
-                           ~edge[labels[1]], 
-                            edge[labels[3]], 
-                            edge[labels[2]])
+                    assert c.sign == -1, f"Crossing {c} is not oriented"
+                    key = (
+                        ~edge[labels[0]],
+                        ~edge[labels[1]],
+                        edge[labels[3]],
+                        edge[labels[2]],
+                    )
 
                 if tensors is not None:
                     tensor = tensors.R(c.sign)
                     for i, e in enumerate(list(key[:2])):
                         if e.index in self.idle_labels and self.rot_num[e.index] != 0:
                             perm = list(range(i)) + [3] + list(range(i, 3))
-                            tensor = tensor.decorated_contract(tensors.h(0), {(i, 1): (1, tensors.h(self.rot_num[e.index]))})
+                            tensor = tensor.decorated_contract(
+                                tensors.h(0),
+                                {(i, 1): (1, tensors.h(self.rot_num[e.index]))},
+                            )
                             tensor = tensor.permute(perm)
 
                     network.append((tensor, key))
                 else:
                     network.append((None, key))
-
 
             for arc in self.idle_labels:
                 if arc not in edge.keys():
@@ -92,7 +109,10 @@ class RTNetwork:
                     else:
                         network.append((None, (~edge[arc], edge[arc])))
         else:
-            assert all(item is not None for item in (network, rot_num, boundary, boundary_labels))
+            assert all(
+                item is not None
+                for item in (network, rot_num, boundary, boundary_labels)
+            )
             self.network = network
             self.rot_num = rot_num
             self.boundary = boundary
@@ -107,7 +127,9 @@ class RTNetwork:
 
     def __eq__(self, other):
         if len(self.network) != 1 or len(other.network) != 1:
-            raise NotImplementedError('Equality is only implemented for contracted networks')
+            raise NotImplementedError(
+                "Equality is only implemented for contracted networks"
+            )
         else:
             return self.network[0][0] == other.network[0][0]
 
@@ -115,10 +137,13 @@ class RTNetwork:
         try:
             import opt_einsum as oe
         except ImportError:
-            raise ModuleNotFoundError('Module opt_einsum is required for computing the optimal contraction sequences')
+            raise ModuleNotFoundError(
+                "Module opt_einsum is required for computing the optimal contraction sequences"
+            )
 
         class _ShapeOnly:
-            __slots__ = ['shape']
+            __slots__ = ["shape"]
+
             def __init__(self, shape):
                 self.shape = shape
 
@@ -129,7 +154,7 @@ class RTNetwork:
                 try:
                     idle.remove(key[0].index)
                 except:
-                    raise ValueError(f'key {key[0].index} not found in {idle}')
+                    raise ValueError(f"key {key[0].index} not found in {idle}")
             else:
                 shape = tensor.shape if tensor is not None else tuple(8 for _ in key)
                 oe_network.append(_ShapeOnly(shape))
@@ -158,11 +183,14 @@ class RTNetwork:
 
         if idx1 == idx2:
             contracted_all = contracted1 | contracted2
-            new_key = tuple(e for pos, e in enumerate(key1) if pos not in contracted_all)
+            new_key = tuple(
+                e for pos, e in enumerate(key1) if pos not in contracted_all
+            )
             ans.pop(idx1)
         else:
-            new_key = (tuple(e for pos, e in enumerate(key1) if pos not in contracted1) +
-                       tuple(e for pos, e in enumerate(key2) if pos not in contracted2))
+            new_key = tuple(
+                e for pos, e in enumerate(key1) if pos not in contracted1
+            ) + tuple(e for pos, e in enumerate(key2) if pos not in contracted2)
             hi, lo = max(idx1, idx2), min(idx1, idx2)
             ans.pop(hi)
             ans.pop(lo)
@@ -176,9 +204,11 @@ class RTNetwork:
 
         w = 0
         m = 0
-        
+
         for indices in seq:
-            local_width, abstract_network = RTNetwork.local_contraction_width(abstract_network, indices)
+            local_width, abstract_network = RTNetwork.local_contraction_width(
+                abstract_network, indices
+            )
 
             if local_width > w:
                 w = local_width
@@ -187,8 +217,8 @@ class RTNetwork:
                 m += 1
 
         return (w, m), abstract_network
-    
-    def contraction_width(self, omit_idle_arcs = True):
+
+    def contraction_width(self, omit_idle_arcs=True):
         abstract_network = []
         for _, key in self.network:
             if omit_idle_arcs:
@@ -197,11 +227,13 @@ class RTNetwork:
             else:
                 abstract_network.append((None, key))
 
-        abstract_copy = RTNetwork(None, 
-                                    network = abstract_network,
-                                    rot_num = self.rot_num,
-                                    boundary = (0,0) if omit_idle_arcs else self.boundary,
-                                    boundary_labels = [] if omit_idle_arcs else self.boundary_labels)
+        abstract_copy = RTNetwork(
+            None,
+            network=abstract_network,
+            rot_num=self.rot_num,
+            boundary=(0, 0) if omit_idle_arcs else self.boundary,
+            boundary_labels=[] if omit_idle_arcs else self.boundary_labels,
+        )
 
         loops = abstract_copy._resolve_self_loops()
         if loops:
@@ -212,11 +244,12 @@ class RTNetwork:
         else:
             width = (0, 0)
 
-
-        seq_width, ans = abstract_copy.seq_contraction_width(abstract_copy.optimal_contraction_sequence())
+        seq_width, ans = abstract_copy.seq_contraction_width(
+            abstract_copy.optimal_contraction_sequence()
+        )
 
         return max(width, seq_width), ans
-    
+
     @staticmethod
     def local_contraction_seq(abstract_network, indices):
         idx1, idx2 = indices
@@ -238,11 +271,14 @@ class RTNetwork:
 
         if idx1 == idx2:
             contracted_all = contracted1 | contracted2
-            new_key = tuple(e for pos, e in enumerate(key1) if pos not in contracted_all)
+            new_key = tuple(
+                e for pos, e in enumerate(key1) if pos not in contracted_all
+            )
             ans.pop(idx1)
         else:
-            new_key = (tuple(e for pos, e in enumerate(key1) if pos not in contracted1) +
-                       tuple(e for pos, e in enumerate(key2) if pos not in contracted2))
+            new_key = tuple(
+                e for pos, e in enumerate(key1) if pos not in contracted1
+            ) + tuple(e for pos, e in enumerate(key2) if pos not in contracted2)
             hi, lo = max(idx1, idx2), min(idx1, idx2)
             ans.pop(hi)
             ans.pop(lo)
@@ -255,15 +291,17 @@ class RTNetwork:
         abstract_network = [key for _, key in self.network]
 
         ans = []
-        
+
         for indices in seq:
-            contracted_indices, abstract_network = RTNetwork.local_contraction_seq(abstract_network, indices)
+            contracted_indices, abstract_network = RTNetwork.local_contraction_seq(
+                abstract_network, indices
+            )
 
             ans.append(contracted_indices)
 
         return ans, abstract_network
 
-    def contraction_sequence(self, omit_idle_arcs = True):
+    def contraction_sequence(self, omit_idle_arcs=True):
         abstract_network = []
         for _, key in self.network:
             if omit_idle_arcs:
@@ -272,21 +310,25 @@ class RTNetwork:
             else:
                 abstract_network.append((None, key))
 
-        abstract_copy = RTNetwork(None, 
-                                    network = abstract_network,
-                                    rot_num = self.rot_num,
-                                    boundary = (0,0) if omit_idle_arcs else self.boundary,
-                                    boundary_labels = [] if omit_idle_arcs else self.boundary_labels)
+        abstract_copy = RTNetwork(
+            None,
+            network=abstract_network,
+            rot_num=self.rot_num,
+            boundary=(0, 0) if omit_idle_arcs else self.boundary,
+            boundary_labels=[] if omit_idle_arcs else self.boundary_labels,
+        )
 
         loops = abstract_copy._resolve_self_loops()
 
-        contraction_seq, ans = abstract_copy.seq_contraction_seq(abstract_copy.optimal_contraction_sequence())
+        contraction_seq, ans = abstract_copy.seq_contraction_seq(
+            abstract_copy.optimal_contraction_sequence()
+        )
 
         return loops + contraction_seq, ans
 
     def contract_nodes(self, indices):
         """
-        This modifies self to avoid holding duplicate data in memory. 
+        This modifies self to avoid holding duplicate data in memory.
         """
         idx1, idx2 = indices
         tensor1, key1 = self.network[idx1]
@@ -297,7 +339,10 @@ class RTNetwork:
             for pos_j, ej in enumerate(key2):
                 if ei.index == ej.index and ei.sign * ej.sign == -1:
                     side = 0 if ei.sign == 1 else 1
-                    pairs[(pos_i, pos_j)] = (side, self.tensors.h(self.rot_num[ei.index]))
+                    pairs[(pos_i, pos_j)] = (
+                        side,
+                        self.tensors.h(self.rot_num[ei.index]),
+                    )
 
         if tensor1 is not None:
             result_tensor = tensor1.decorated_contract(tensor2, pairs)
@@ -309,11 +354,14 @@ class RTNetwork:
 
         if idx1 == idx2:
             contracted_all = contracted1 | contracted2
-            new_key = tuple(e for pos, e in enumerate(key1) if pos not in contracted_all)
+            new_key = tuple(
+                e for pos, e in enumerate(key1) if pos not in contracted_all
+            )
             self.network.pop(idx1)
         else:
-            new_key = (tuple(e for pos, e in enumerate(key1) if pos not in contracted1) +
-                       tuple(e for pos, e in enumerate(key2) if pos not in contracted2))
+            new_key = tuple(
+                e for pos, e in enumerate(key1) if pos not in contracted1
+            ) + tuple(e for pos, e in enumerate(key2) if pos not in contracted2)
             hi, lo = max(idx1, idx2), min(idx1, idx2)
             self.network.pop(hi)
             self.network.pop(lo)
@@ -337,7 +385,7 @@ class RTNetwork:
         if edge_indices:
             self.contract_nodes((idx, idx))
         return edge_indices
-    
+
     def _resolve_self_loops(self):
         ans = []
         for i in range(len(self.network)):
@@ -346,27 +394,28 @@ class RTNetwork:
                 ans.append(loop)
         return ans
 
-    def contract_sequence(self, seq, timed = False):
+    def contract_sequence(self, seq, timed=False):
         if timed:
             import time
+
             start_time = time.time()
 
         for indices in seq:
             self.contract_nodes(indices)
-        
+
         if timed:
             time_cost = time.time() - start_time
 
             return time_cost
 
-    def contract_all(self, timed = False):
+    def contract_all(self, timed=False):
         """
         Perform all possible contractions on self.
 
         Return modified self and time (None if not timed).
         """
         self._resolve_self_loops()
-        time = self.contract_sequence(self.optimal_contraction_sequence(), timed = timed)
+        time = self.contract_sequence(self.optimal_contraction_sequence(), timed=timed)
 
         assert len(self.network) == 1
 
@@ -375,7 +424,9 @@ class RTNetwork:
             for i in range(self.boundary[0]):
                 desired_order.append(~self.edge[self.boundary_labels[i]])
             for i in range(self.boundary[1]):
-                desired_order.append(self.edge[self.boundary_labels[self.boundary[0] + i]])
+                desired_order.append(
+                    self.edge[self.boundary_labels[self.boundary[0] + i]]
+                )
 
             _, key = self.network[0]
             key_pos = {e: i for i, e in enumerate(key)}
@@ -386,12 +437,12 @@ class RTNetwork:
 
         return (self, time)
 
-    def evaluate(self, timed = False):
+    def evaluate(self, timed=False):
         """
         Fixate all idle labels at value 0, obtaining a new RTNework with (0,0) boundary (without modifying self),
         contract_all on the new RTNetwork and return the product of all values of the resulting tensors.
         """
-        assert self.boundary == (1,1)
+        assert self.boundary == (1, 1)
 
         new_network = []
         prefactor = 1
@@ -399,7 +450,7 @@ class RTNetwork:
         for tensor, key in self.network:
             idle_positions = sorted(
                 [pos for pos, e in enumerate(key) if e.index in self.idle_labels],
-                reverse=True
+                reverse=True,
             )
             non_idle_key = tuple(e for e in key if e.index not in self.idle_labels)
             t = tensor
@@ -415,9 +466,9 @@ class RTNetwork:
             network=new_network,
             rot_num=self.rot_num,
             boundary=(0, 0),
-            boundary_labels=[]
+            boundary_labels=[],
         )
-        time = reduced.contract_all(timed = timed)[1]
+        time = reduced.contract_all(timed=timed)[1]
 
         result = prefactor
         for tensor, _ in reduced.network:
