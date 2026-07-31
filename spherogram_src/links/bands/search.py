@@ -227,7 +227,8 @@ def ribbon_concordant_links(link_or_manifold,
         new_links = []
         for L0, E0 in old_links:
             log_progress(f'  starting {L0}\n{L0.PD_code()}\n')
-            for L, spec in banded_links(L0, max_twists, max_band_len, paths):
+            for L, spec in banded_links(L0, max_twists, max_band_len, paths,
+                                        split_component=True, linking_zero=True):
                 # Skip links with the wrong linking numbers
                 if filter_for_plausibly_slice and not linking_nums_all_zero(L):
                     continue
