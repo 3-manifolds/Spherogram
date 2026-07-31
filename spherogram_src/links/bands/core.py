@@ -681,7 +681,7 @@ def min_len_bands(link, max_twists=None, max_band_len=None,
 
     >>> L = Link('L8n1')
     >>> len(min_len_bands(L, max_twists=1, max_band_len=2))
-    18
+    10
 
     """
     if linking_zero and not split_component:
@@ -743,7 +743,7 @@ def min_len_bands(link, max_twists=None, max_band_len=None,
     return ans
 
 
-def simple_bands(link, max_twists=2, max_band_len=None,
+def simple_bands(link, max_twists=None, max_band_len=None,
                  split_component=True, linking_zero=True):
     """
     Produces bands on the input link where the band must start and end
@@ -779,7 +779,7 @@ def simple_bands(link, max_twists=2, max_band_len=None,
 
     >>> L = Link('L8n1')
     >>> len(simple_bands(L, max_twists=1, max_band_len=2))
-    18
+    10
 
     """
     # dual.vertices is a set of Face objects, which are list of
@@ -851,7 +851,7 @@ def simple_bands(link, max_twists=2, max_band_len=None,
 
 
 
-def banded_links(link, max_twists=2, max_band_len=None, paths='shortest',
+def banded_links(link, max_twists=None, max_band_len=None, paths='shortest',
                  split_component=True, linking_zero=True):
     """
     Produces bands on the input link where the band must start and end
