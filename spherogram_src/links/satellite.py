@@ -190,11 +190,21 @@ def cable(knot: Link, p: int, q: int) -> Link:
     """
     if len(knot.link_components) + knot.unlinked_unknot_components != 1:
         raise ValueError("Only defined for knots, this does not have one component")
+    if p == 0:
+        raise ValueError("p = 0 is an invalid cabling parameter")
+
+    p_is_negative = p < 0
+    if p_is_negative:
+        p, q = -p, -q
+
     if knot.unlinked_unknot_components == 1:
-        return type(knot)(f"T({p},{q})")
+        return satellite(knot, _pq_braid(p, q))
 
     tangle = _blackboard_cable_tangle(knot, p) * _pq_braid(p, q - p * knot.writhe())
     tangle.make_upward()
+    if p_is_negative:
+        tangle.reverse_orientation(list(range(p)))
+
     for i in range(p):
         join_strands(tangle.adjacent[i], tangle.adjacent[p + i])
 
