@@ -1,7 +1,6 @@
 from typing import Literal
 
-from .invariants import Link
-from .links_base import Crossing, CrossingStrand
+from .links_base import Crossing, CrossingStrand, Link
 from .tangles import Tangle, IdentityBraid, BraidTangle, RationalTangle, join_strands
 
 
@@ -101,7 +100,7 @@ def satellite(knot: Link, pattern: Tangle, twists: int = 0) -> Link:
         for i in range(width):
             join_strands(pattern.adjacent[i], pattern.adjacent[width + i])
 
-        satellite_link = Link(pattern.crossings + pattern.boundary_strands)
+        satellite_link = type(knot)(pattern.crossings + pattern.boundary_strands)
         satellite_link._rebuild(same_components_and_orientations=True)
         return satellite_link
 
@@ -179,7 +178,7 @@ def satellite(knot: Link, pattern: Tangle, twists: int = 0) -> Link:
 
     intermediate_link._orient_crossings(closed_start_orns + open_start_orns)
 
-    return Link(intermediate_link.crossings)
+    return type(knot)(intermediate_link.crossings)
 
 
 def cable(knot: Link, p: int, q: int) -> Link:
@@ -189,17 +188,17 @@ def cable(knot: Link, p: int, q: int) -> Link:
     If `p` and `q` are coprime, the result is a knot. Otherwise, it may be a link
     of more than one component.
     """
-    if len(knot.link_components) + knot.unlinked_unknot_components > 1:
-        raise ValueError("Only defined for knots, this has more components")
+    if len(knot.link_components) + knot.unlinked_unknot_components != 1:
+        raise ValueError("Only defined for knots, this does not have one component")
     if knot.unlinked_unknot_components == 1:
-        return _pq_braid(p, q).denominator_closure()
+        return type(knot)(f"T({p},{q})")
 
     tangle = _blackboard_cable_tangle(knot, p) * _pq_braid(p, q - p * knot.writhe())
     tangle.make_upward()
     for i in range(p):
         join_strands(tangle.adjacent[i], tangle.adjacent[p + i])
 
-    return Link(tangle.crossings + tangle.boundary_strands)
+    return type(knot)(tangle.crossings + tangle.boundary_strands)
 
 
 def whitehead_double(

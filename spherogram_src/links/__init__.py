@@ -6,7 +6,6 @@ from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, I
 from . import orthogonal
 from .random_links import random_link
 from . import bands
-from .satellite import cable, satellite, whitehead_double
 
 Link.view = orthogonal.orthogonal_draw
 
