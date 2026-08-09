@@ -1857,29 +1857,32 @@ class Link:
 
     def satellite(self, pattern, twists: int = 0):
         """
-        Returns the satellite of this knot by `pattern` with the specified number of
-        full twists.
+        Returns the satellite of this knot by ``pattern`` with the
+        specified number of full twists.
 
-        >>> K = Link("K6a2")
+        >>> K = Link('K6a2')
         >>> from . import BraidTangle, IdentityBraid
         >>> P = BraidTangle([1, -2, 1, -2], 3) + IdentityBraid(1)  # P.boundary = (2, 2)
         >>> K.satellite(P)
         <Link: 1 comp; 32 cross>
 
-        The above example has 4 crossings from each of the 6 crossings of `K`, 4
-        crossings in the 2 negative twists accounting for writhe, and 4 crossings from
-        `P`, totaling 32.
+        The above example has 4 crossings from each of the 6 crossings
+        of ``K``, 4 crossings in the 2 negative twists accounting for
+        writhe, and 4 crossings from ``P``, totaling 32.
 
-        The pattern is specified by a `Tangle` with the same number of top and bottom
-        boundary strands. Identifying the top and bottom strands gives the pattern knot
-        in the solid torus. The resulting knot inherits its orientation from `pattern`,
-        so that satelliting by a tangle with one strand oriented upwards gives back the
-        companion. If the tangle does not have coherent orientations, so that the sign
-        on the bottom strand is the opposite of the corresponding top strand, no
-        orientation behavior is guaranteed.
+        The pattern is specified by a ``Tangle`` with the same number
+        of top and bottom boundary strands. Identifying the top and
+        bottom strands gives the pattern knot in the solid torus. The
+        resulting knot inherits its orientation from ``pattern``, so
+        that satelliting by a tangle with one strand oriented upwards
+        gives back the companion. If the tangle does not have coherent
+        orientations, so that the sign on the bottom strand is the
+        opposite of the corresponding top strand, no orientation
+        behavior is guaranteed.
 
-        The denominator closure of `pattern` may be a link of more than one component.
-        If so, satelliting by `pattern` gives a link of the same number of components.
+        The denominator closure of ``pattern`` may be a link of more
+        than one component.  If so, satelliting by ``pattern`` gives a
+        link of the same number of components.
 
         >>> Q = IdentityBraid(2)
         >>> len(K.satellite(Q).components)
@@ -1897,16 +1900,16 @@ class Link:
 
     def cable(self, p: int, q: int):
         """
-        Returns the (`p`, `q`)-cable of this knot.
+        Returns the (``p``, ``q``)-cable of this knot.
 
-        If `p` and `q` are coprime, the result is a knot. Otherwise, it may be a link
-        of more than one component.
+        If ``p`` and ``q`` are coprime, the result is a knot.
+        Otherwise, it may be a link of more than one component.
 
         >>> from . import Link
-        >>> K = Link("K3a1")
+        >>> K = Link('K3a1')
         >>> len(K.cable(6, 15).components)
         3
-        >>> K.cable(3, 2).knot_floer_homology()["tau"]
+        >>> K.cable(3, 2).knot_floer_homology()['tau']
         4
         """
         from .satellite import cable
@@ -1914,21 +1917,21 @@ class Link:
 
     def whitehead_double(
             self,
-            clasp_sign: Literal["positive", "negative"] = "positive",
+            clasp_sign: Literal['positive', 'negative'] = 'positive',
             twists: int = 0
         ):
         """
         Returns the Whitehead double of this knot.
 
-        The sign of the clasp of the pattern can be specified as `"positive"` or
-        `"negative"`. You may add some number of full twists with the `twists`
-        parameter.
+        The sign of the clasp of the pattern can be specified as
+        ``'positive'`` or ``'negative'``. You may add some number of
+        full twists with the ``twists`` parameter.
 
         >>> from . import Link
-        >>> K = Link("K3a1")
-        >>> K.whitehead_double().knot_floer_homology()["tau"]
+        >>> K = Link('K3a1')
+        >>> K.whitehead_double().knot_floer_homology()['tau']
         1
-        >>> K.whitehead_double(clasp_sign="negative").knot_floer_homology()["tau"]
+        >>> K.whitehead_double(clasp_sign='negative').knot_floer_homology()['tau']
         0
         """
         from .satellite import whitehead_double
