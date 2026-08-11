@@ -234,9 +234,9 @@ class OrthogonalRep(Digraph):
 
     def __init__(self, horizonal_pairs=[], vertical_pairs=[]):
         Digraph.__init__(self)
-        for (a, b) in horizonal_pairs:
+        for a, b in horizonal_pairs:
             self.add_edge(a, b, 'horizontal')
-        for (a, b) in vertical_pairs:
+        for a, b in vertical_pairs:
             self.add_edge(a, b, 'vertical')
 
         self._build_faces()

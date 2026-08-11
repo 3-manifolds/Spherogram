@@ -224,7 +224,7 @@ def condense_term(monomial, poly, A, B, R, gd):
             matching_label = label
             break
     if found_matching_pair:
-        matched_indices = [i for (i, pair) in enumerate(var_labels) if matching_label in pair]
+        matched_indices = [i for i, pair in enumerate(var_labels) if matching_label in pair]
         p1, p2 = var_labels[matched_indices[0]], var_labels[matched_indices[1]]
         v1, v2 = variables[matched_indices[0]], variables[matched_indices[1]]
         l1 = p1[ 1 - p1.index(matching_label) ]
