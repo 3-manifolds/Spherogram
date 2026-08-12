@@ -14,7 +14,53 @@ from .ordered_set import OrderedSet
 from .. import graphs
 import random
 import networkx as nx
+from .nx_helper import simple_cycles
 import collections
+
+
+class DualGraphOfFaces(graphs.Graph):
+    """
+    The dual graph to a link diagram D, whose vertices correspond to
+    complementary regions (faces) of D and whose edges are dual to the
+    edges of D.
+
+    This is class is no longer used in the simplify code, but is called
+    by Link.dual_graph.  It is the only place in this file that
+    graph.Graph is used.
+    """
+    def __init__(self, link):
+        graphs.Graph.__init__(self)
+        faces = [Face(face, i) for i, face in enumerate(link.faces())]
+        self.edge_to_face = to_face = {}
+        for face in faces:
+            for edge in face:
+                to_face[edge] = face
+
+        for edge, face in to_face.items():
+            neighbor = to_face[edge.opposite()]
+            if face.label < neighbor.label:
+                dual_edge = self.add_edge(face, neighbor)
+                dual_edge.interface = (edge, edge.opposite())
+                dual_edge.label = len(self.edges) - 1
+
+        # assert self.is_planar()
+
+    def two_cycles(self):
+        """
+        Find all two cycles and yield them as a pair of
+        CrossingStrands which are dual to the edges in the cycle.
+
+        The crossing strands are oriented consistently with respect to
+        one of the faces which a vertex for the cycle.
+        """
+        for face0 in self.vertices:
+            for dual_edge0 in self.incident(face0):
+                face1 = dual_edge0(face0)
+                if face0.label < face1.label:
+                    for dual_edge1 in self.incident(face1):
+                        if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
+                            yield (common_element(face0, dual_edge0.interface),
+                                   common_element(face0, dual_edge1.interface))
 
 
 def remove_crossings(link, eliminate):
@@ -28,7 +74,7 @@ def remove_crossings(link, eliminate):
         for C in eliminate:
             link.crossings.remove(C)
         new_components = []
-        for component in link.link_components:
+        for component in link.components:
             for C in eliminate:
                 for cep in C.entry_points():
                     try:
@@ -37,9 +83,10 @@ def remove_crossings(link, eliminate):
                         pass
             if len(component):
                 new_components.append(component)
-        components_removed = len(link.link_components) - len(new_components)
+        components_removed = len(link.components) - len(new_components)
         link.unlinked_unknot_components += components_removed
-        link.link_components = new_components
+
+        link.components = new_components
 
 
 def reidemeister_I(link, C):
@@ -49,15 +96,18 @@ def reidemeister_I(link, C):
     Returns the pair: {crossings eliminated}, {crossings changed}
     """
     elim, changed = set(), set()
-    for i in range(4):
-        if C.adjacent[i] == (C, (i + 1) % 4):
-            (A, a), (B, b) = C.adjacent[i + 2], C.adjacent[i + 3]
-            elim = {C}
-            if C != A:
-                A[a] = B[b]
-                changed = {A, B}
 
-    remove_crossings(link, elim)
+    if isinstance(C, Crossing):
+        for i in range(4):
+            if C.adjacent[i] == (C, (i + 1) % 4):
+                (A, a), (B, b) = C.adjacent[i + 2], C.adjacent[i + 3]
+                elim = {C}
+                if C != A:
+                    A[a] = B[b]
+                    changed = {A, B}
+
+        remove_crossings(link, elim)
+
     return elim, changed
 
 
@@ -72,27 +122,46 @@ def reidemeister_I_and_II(link, A):
     if not eliminated:
         for a in range(4):
             (B, b), (C, c) = A.adjacent[a], A.adjacent[a + 1]
-            if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
-                eliminated, changed = reidemeister_I(link, B)
-                if eliminated:
-                    break
+            if all(isinstance(x, Crossing) for x in (B,C)):
+                if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
+                    eliminated, changed = reidemeister_I(link, B)
+                    if eliminated:
+                        break
+                    else:
+                        W, w = A.adjacent[a + 2]
+                        X, x = A.adjacent[a + 3]
+                        Y, y = B.adjacent[b + 1]
+                        Z, z = B.adjacent[b + 2]
+                        eliminated = {A, B}
+                        if W != B:
+                            W[w] = Z[z]
+                            changed.update({W, Z})
+                        if X != B:
+                            X[x] = Y[y]
+                            changed.update({X, Y})
+                        remove_crossings(link, eliminated)
+                        break
 
-                W, w = A.adjacent[a + 2]
-                X, x = A.adjacent[a + 3]
-                Y, y = B.adjacent[b + 1]
-                Z, z = B.adjacent[b + 2]
-                eliminated = {A, B}
-                if W != B:
-                    W[w] = Z[z]
-                    changed.update({W, Z})
-                if X != B:
-                    X[x] = Y[y]
-                    changed.update({X, Y})
-                remove_crossings(link, eliminated)
-                break
-
+    
+    changed = {x for x in changed if isinstance(x, Crossing)}
     return eliminated, changed
 
+
+def has_reidemeister_I_or_II(link):
+    """
+    Checks if a Reidemeister I or II move is available.
+    """
+    for A in link.crossings:
+        # Type I
+        if A in [B for B, i in A.adjacent]:
+            return True
+        # Type II
+        for a in range(4):
+            (B, b), (C, c) = A.adjacent[a], A.adjacent[a + 1]
+            if B == C and (b - 1) % 4 == c and (a + b) % 2 == 0:
+                return True
+    return False
+        
 
 def basic_simplify(link, build_components=True, to_visit=None,
                    force_build_components=False):
@@ -115,10 +184,15 @@ def basic_simplify(link, build_components=True, to_visit=None,
     # Redo the strand labels (used for DT codes)
     if (success and build_components) or force_build_components:
         component_starts = []
-        for component in link.link_components:
+
+        for component in link.components:
             assert len(component) > 0
             if len(component) > 1:
-                a, b = component[:2]
+                if isinstance(component[0].crossing, (Strand, Crossing)):
+                    a, b = component[:2]
+                else:
+                    assert len(component) > 3
+                    a, b = component[1:3]
             else:
                 a = component[0]
                 b = a.next()
@@ -219,49 +293,7 @@ class Face(tuple):
         return "<F%d>" % self.label
 
 
-class DualGraphOfFaces(graphs.Graph):
-    """
-    The dual graph to a link diagram D, whose vertices correspond to
-    complementary regions (faces) of D and whose edges are dual to the
-    edges of D.
-    """
-    def __init__(self, link):
-        graphs.Graph.__init__(self)
-        faces = [Face(face, i) for i, face in enumerate(link.faces())]
-        self.edge_to_face = to_face = {}
-        for face in faces:
-            for edge in face:
-                to_face[edge] = face
-
-        for edge, face in to_face.items():
-            neighbor = to_face[edge.opposite()]
-            if face.label < neighbor.label:
-                dual_edge = self.add_edge(face, neighbor)
-                dual_edge.interface = (edge, edge.opposite())
-                dual_edge.label = len(self.edges) - 1
-
-        # assert self.is_planar()
-
-    def two_cycles(self):
-        """
-        Find all two cycles and yield them as a pair of CrossingStrands which
-        are dual to the edges in the cycle.
-
-        The crossing strands are
-        oriented consistently with respect to one of the faces which a
-        vertex for the cycle.
-        """
-        for face0 in self.vertices:
-            for dual_edge0 in self.incident(face0):
-                face1 = dual_edge0(face0)
-                if face0.label < face1.label:
-                    for dual_edge1 in self.incident(face1):
-                        if dual_edge0.label < dual_edge1.label and dual_edge1(face1) == face0:
-                            yield (common_element(face0, dual_edge0.interface),
-                                   common_element(face0, dual_edge1.interface))
-
-
-def dual_graph_as_nx(link):
+def dual_graph_as_nx(link, graph_class=nx.Graph):
     corners = OrderedSet([CrossingStrand(c, i)
                           for c in link.crossings for i in range(4)])
     faces = []
@@ -280,7 +312,7 @@ def dual_graph_as_nx(link):
             corners.remove(next)
             face.append(next)
 
-    G = nx.Graph()
+    G = graph_class()
     to_face = {edge: faces[f] for edge, f in to_face_index.items()}
 
     for edge, face in to_face.items():
@@ -288,25 +320,100 @@ def dual_graph_as_nx(link):
         neighbor = to_face[opp_edge]
         if face.label < neighbor.label:
             G.add_edge(face.label, neighbor.label,
+                       label=G.number_of_edges(),
                        interface={face.label: edge, neighbor.label: opp_edge})
 
     G.edge_to_face = to_face_index
+    G.faces = faces
     return G
+
+
+def disjoint_deconnect_sum_once(link):
+    """
+    Warning: Destroys the original link.
+
+    If the diagram is an obvious connected sum, return a decomposition
+    of the link into nontrivial summands.  A summand may itself still
+    be a connected sum.
+
+    This is just a helper function for deconnect_sum.
+
+    Here is a connect sum of 3 trefoils, but we'll only pull off 1 at this
+    step.
+
+    >>> K = Link('DT: iaibiahcgefd.001010111')
+    >>> sorted(len(P) for P in disjoint_deconnect_sum_once(K))
+    [3, 6]
+    """
+    G = dual_graph_as_nx(link, nx.MultiGraph)
+    faces_used = set()
+    for path in simple_cycles(G, 2):
+        if len(path) == 2:
+            face0, face1 = path
+
+            # Ensure all cycles we use are disjoint.
+            if face0 in faces_used or face1 in faces_used:
+                continue
+            else:
+                faces_used.update(path)
+
+            # Identify where we need to change things.
+            edges = G[face0][face1]
+            cs0 = edges[0]['interface'][face0]
+            cs1 = edges[1]['interface'][face0]
+
+            # Now cut and reglue.
+            A, a = cs0.opposite()
+            B, b = cs0
+            C, c = cs1.opposite()
+            D, d = cs1
+            A[a] = D[d]
+            B[b] = C[c]
+    link._build_components()
+    return link.split_link_diagram(destroy_original=True)
 
 
 def deconnect_sum(link):
     """
     Warning: Destroys the original link.
+
+    >>> L = Link('K5a1')
+    >>> L = L.connected_sum(Link('K6a2'))
+    >>> L = L.connected_sum(Link('K6a3'))
+    >>> L = L.connected_sum(Link('K7a1'))
+    >>> len(L)
+    24
+    >>> sorted(len(P) for P in deconnect_sum(L))
+    [5, 6, 6, 7]
+
+    Here's 3 trefoils:
+    >>> K = Link('DT: iaibiahcgefd.001010111')
+    >>> sorted(len(P) for P in deconnect_sum(K))
+    [3, 3, 3]
+
     """
-    for cs0, cs1 in DualGraphOfFaces(link).two_cycles():
-        A, a = cs0.opposite()
-        B, b = cs0
-        C, c = cs1.opposite()
-        D, d = cs1
-        A[a] = D[d]
-        B[b] = C[c]
-    link._build_components()
-    return link.split_link_diagram(destroy_original=True)
+
+    # A diagrammatic connected sum corresponds to a path in the dual
+    # graph of length 2. The tricky case is when there are several
+    # such paths, as they may overlap or even cross.  We deal with
+    # this by doing several rounds of cutting along families of
+    # disjoint paths.
+
+    active = [link]
+    finished = []
+
+    while active:
+        work_remains = []
+        for A in active:
+            pieces = disjoint_deconnect_sum_once(A)
+            if len(pieces) == 1:
+                finished += pieces
+            else:
+                work_remains += pieces
+
+        active = work_remains
+
+    return finished
 
 
 def dual_edges(overstrand, graph):
@@ -724,7 +831,8 @@ def clear_orientations(link):
     """
     Resets the orientations on the crossings of a link to default values
     """
-    link.link_components = None
+    link.components = None
+
     for i in link.crossings:
         i.sign = 0
         i.directions.clear()

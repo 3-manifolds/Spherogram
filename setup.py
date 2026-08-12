@@ -32,10 +32,8 @@ try:
     import sage.libs
     ext_modules = []
 except ImportError:
-    planarity_dir = 'planarity_src/c/'
-    planarity_ui_sources = glob(planarity_dir + 'planarity*.c')
-    planarity_sources = [file for file in glob('planarity_src/c/*.c')
-                         if file not in planarity_ui_sources]
+    planarity_dir = 'planarity_src'
+    planarity_sources = glob('planarity_src/c/**/*.c', recursive=True)
 
     if sys.platform.startswith('win'):
         extra_compile_args = [
@@ -206,19 +204,22 @@ long_description = long_description.split('\nDeveloped')[0]
 install_requires = ['decorator',
                     'networkx',
                     'packaging',
-                    'snappy_manifolds>=1.1.2',
-                    'knot_floer_homology>=1.2.2']
+                    'snappy_manifolds>=1.4',
+                    'knot_floer_homology>=1.2.2',
+                    'opt_einsum>=3.4.0']
 
 setup( name = 'spherogram',
        version = version,
        install_requires = install_requires,
        python_requires = '>=3',
        dependency_links = [],
-       packages = ['spherogram', 'spherogram.links',
+       packages = ['spherogram', 'spherogram.links', 'spherogram.links.bands',
                    'spherogram.links.test', 'spherogram.codecs',
-                   'spherogram.dev', 'spherogram.dev.dev_jennet'],
+                   'spherogram.dev', 'spherogram.dev.dev_jennet',
+                   'spherogram.links.reshetikhin_turaev'],
        package_dir = {'spherogram' : 'spherogram_src', 'spherogram.dev':'dev'},
-       package_data = {'spherogram.links'  :  ['doc.pdf']},
+       package_data = {'spherogram.links'  :  ['doc.pdf'],
+                       'spherogram.links.reshetikhin_turaev': ['R_matrices/*/*']},
        ext_modules = ext_modules,
        cmdclass =  {'clean': SpherogramClean,
                     'test': SpherogramTest,

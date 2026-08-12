@@ -1,11 +1,7 @@
-from .graphs import *
 from .presentations import *
 from .links import *
 from .codecs import *
-# try:
-#     import snappy
-# except ImportError:
-#     pass
+from .links.reshetikhin_turaev import DictLaurentPolynomial, RMatrix, colored_links_gould_R_matrices, colored_jones_R_matrices, prefactor_colored_jones
 
 # Make the module version number easily accessible.
 from . import version as _version
@@ -22,10 +18,11 @@ __all__ = ['ABC', 'ClosedBraid', 'CyclicList', 'CyclicWord',
            'DTcodec', 'Digraph',
            'DirectedEdge', 'DirectedMultiEdge', 'Edge', 'FatEdge',
            'FatGraph', 'Graph',
-           'Link', 'MultiEdge', 'Poset', 'Presentation',
+           'Link', 'MultiEdge', 'Presentation',
            'Crossing', 'Strand', 'WhiteheadMove',
            'Word', 'random_link',
            # from spherogram.links.tangles:
            'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
            'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
-           'IdentityBraid', 'ComponentTangle', 'join_strands']
+           'IdentityBraid', 'BraidTangle', 'ComponentTangle', 'join_strands',
+           'DictLaurentPolynomial', 'RMatrix', 'colored_links_gould_R_matrices', 'colored_jones_R_matrices', 'prefactor_colored_jones']

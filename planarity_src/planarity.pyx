@@ -3,7 +3,7 @@
 Wrapper for Boyer's (C) planarity algorithm.
 """
 
-cdef extern from "c/graph.h":
+cdef extern from "c/graphLib.h":
 
     ctypedef struct vertexRec:
         int  link[2]

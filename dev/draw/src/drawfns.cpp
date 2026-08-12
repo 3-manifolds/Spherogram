@@ -707,7 +707,7 @@ if (draw_control::DEBUG >= draw_control::BASIC)
 
 		/* We write the crossing numbers in the order they appear in the immersion code 
 		   into perm together with their corresponding type.  Then we unravel 
-		   the permuatation writing the PERM and TYPE rows from INVERSE and LABEL.
+		   the permutation writing the PERM and TYPE rows from INVERSE and LABEL.
 		*/
 		
 		for (int i=0; i<num_crossings; i++)

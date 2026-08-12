@@ -34,8 +34,13 @@ for x, y in G.edges:
 
 where x and y will be the two endpoints of the edge (ordered as
 tail, head in the case of directed edges).
+
+IMPORTANT NOTE: New code should use the standard nextworkx module
+rather that the classes here.
+
 """
 from collections import deque
+from .presentations import CyclicList
 
 try:
     import sage.all
@@ -51,20 +56,6 @@ if not _within_sage:
     except ValueError:  # Allow importing from source directory
         pass
 
-
-class CyclicList(list):
-    def __getitem__(self, n):
-        if isinstance(n, int):
-            return list.__getitem__(self, n % len(self))
-        elif isinstance(n, slice):
-            # Python3 only: in python2, __getslice__ gets called instead.
-            return list.__getitem__(self, n)
-
-    def succ(self, x):
-        return self[(self.index(x) + 1) % len(self)]
-
-    def pred(self, x):
-        return self[(self.index(x) - 1) % len(self)]
 
 
 class BaseEdge(tuple):
@@ -394,112 +385,6 @@ class Graph:
         """
         return len(self.components(deleted_vertices)) <= 1
 
-    def one_min_cut(self, source, sink, capacity=None):
-        """
-        Find one minimal cut which separates source from sink, using
-        the classical Ford-Fulkerson algorithm.
-
-        Returns a dict containing the set of vertices on the source
-        side of the cut, the set of edges that cross the cut, a
-        maximal family of weighted edge-disjoint paths from source to
-        sink, the set of edges with non-zero residual, and the
-        associated maximum flow.
-
-        The edge capacities are supplied as a dictionary, with
-        edges as keys and the capacity of the edge as value.  If
-        no capacity dict is supplied, every edge is given capacity
-        1.  Edges omitted from the capacity dict have infinite
-        capacity.
-
-        When called as a Graph method, the flow is relative to the
-        implicit orientation of an undirected edge e from e[0] to
-        e[1].  (This is determined when the edge is first constructed
-        from a pair of vertices.) A negative flow value means the flow
-        direction is from e[1] to e[0].  When called as a DiGraph
-        method, paths are directed and flows go in the direction of
-        the directed edge.
-
-        >>> caps = {('s',0):3,('s',1):2,(0,1):2,(0,'t'):4,(1,'t'):1}
-        >>> G = Graph(caps.keys())
-        >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
-        >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges, key=str)]
-        [-1, 4, 1, 3, 2]
-        >>> G = Digraph(caps.keys())
-        >>> cap_dict = dict((e, caps[tuple(e)]) for e in G.edges)
-        >>> flow = G.one_min_cut('s', 't', cap_dict)['flow']
-        >>> [flow[e] for e in sorted(G.edges, key=str)]
-        [0, 3, 1, 3, 1]
-        """
-        if sink == source:
-            return None
-        if capacity is None:
-            residual = dict.fromkeys(self.edges, 1)
-        else:
-            residual = dict.copy(capacity)
-            for e in self.edges:
-                if e not in residual:
-                    residual[e] = float('inf')
-        full_edges = {e for e in self.edges if residual[e] == 0}
-        children = {}
-        for vertex in self.vertices:
-            children[vertex] = set()
-        cut_set = set()
-        path_list = []
-        while True:
-            # Try to find a new path from source to sink
-            parents, cut_set, reached_sink = {}, {source}, False
-            generator = self.breadth_first_edges(
-                source=source,
-                forbidden=full_edges,
-                for_flow=True)
-            for parent, vertex, child in generator:
-                parents[child] = (parent, vertex)
-                cut_set.add(child(vertex))
-                if child(vertex) == sink:
-                    reached_sink = True
-                    break
-            # If we did not get to the sink, we visited every vertex
-            # reachable from the source, thereby providing the cut
-            # set.
-            if not reached_sink:
-                break
-            # If we got to the sink, do the bookkeeping and continue.
-            path = deque()
-            flow = residual[child]
-            while True:
-                path.appendleft((vertex, child))
-                children[vertex].add(child)
-                if vertex == source:
-                    break
-                child = parent
-                parent, vertex = parents[child]
-                flow = min(flow, residual[child])
-            for vertex, edge in path:
-                residual[edge] -= flow
-                if residual[edge] == 0:
-                    full_edges.add(edge)
-            path_list.append((flow, path))
-        # Find the cut edges.
-        cut_edges = set()
-        for vertex in cut_set:
-            cut_edges |= {edge for edge in self.edges
-                             if vertex in edge
-                             and edge(vertex) not in cut_set}
-        # Find the unsaturated edges.
-        unsaturated = [e for e in self.edges if residual[e] > 0]
-        flow_dict = dict.fromkeys(self.edges, 0)
-        # Compute the flow.
-        for flow, edges in path_list:
-            for vertex, edge in edges:
-                if vertex == edge[0]:
-                    flow_dict[edge] += flow
-                else:
-                    flow_dict[edge] -= flow
-        return {'set': cut_set, 'edges': cut_edges, 'paths': path_list,
-                'residuals': residual, 'unsaturated': unsaturated,
-                'flow': flow_dict}
-
     def reduced(self):
         R = ReducedGraph()
         for e in self.edges:
@@ -551,9 +436,9 @@ class Graph:
 
     def to_networkx(self):
         """
-        Return a copy of the graph in the networkx format
+        Return a copy of the graph in the networkx format.
         """
-        G = nx.Graph()
+        G = nx.MultiGraph()
         G.add_nodes_from(self.vertices)
         G.add_edges_from(self.edges)
         return G
@@ -625,12 +510,6 @@ class ReducedGraph(Graph):
         if self.is_planar():
             return self._embedding
 
-    def one_min_cut(self, source, sink):
-        capacity = {e: e.multiplicity for e in self.edges}
-        cut = Graph.one_min_cut(self, source, sink, capacity)
-        cut['size'] = sum(e.multiplicity for e in cut['edges'])
-        return cut
-
     def cut_pairs(self):
         """
         Return a list of cut_pairs.  The graph is assumed to be
@@ -665,6 +544,16 @@ class ReducedGraph(Graph):
                         if M0 and M1:
                             pairs.append(pair)
         return pairs
+
+    def to_networkx(self):
+        """
+        Return a copy of the self in the networkx format
+        """
+        G = nx.Graph()
+        G.add_nodes_from(self.vertices)
+        for edge in self.edges:
+            G.add_edge(edge[0], edge[1], multiplicity=edge.multiplicity)
+        return G
 
 
 class FatGraph(Graph):
@@ -867,6 +756,15 @@ class Digraph(Graph):
         """
         return StrongConnector(self).DAG()
 
+    def to_networkx(self):
+        """
+        Return a copy of the graph in the networkx format.
+        """
+        G = nx.MultiDiGraph()
+        G.add_nodes_from(self.vertices)
+        G.add_edges_from(self.edges)
+        return G
+
 
 class StrongConnector:
     """
@@ -929,198 +827,6 @@ class StrongConnector:
             if dag_head != dag_tail:
                 edges.add((dag_tail, dag_head))
         return Digraph(edges, self.components)
-
-
-class Poset(set):
-    """
-    A partially ordered set, generated from a directed acyclic graph.
-
-    Instantiate with a Digraph. A :class:`ValueError` exception is raised
-    if the Digraph contains a cycle.
-    """
-    def __init__(self, digraph):
-        self.elements = set(digraph.vertices)
-        self.larger = {vertex: set() for vertex in self}
-        self.smaller = {vertex: set() for vertex in self}
-        self.successors = {vertex: set(digraph[vertex]) for vertex in self}
-        self.closed = set()
-        seen = set()
-        for vertex in self:
-            if vertex not in seen:
-                self.search(vertex, seen, digraph)
-
-    def __iter__(self):
-        return self.elements.__iter__()
-
-    def __len__(self):
-        return len(self.elements)
-
-    def search(self, vertex, seen, digraph):
-        seen.add(vertex)
-        for child in digraph.children(vertex):
-            if child in self.smaller[vertex]:
-                raise ValueError('Digraph is not acyclic.')
-            self.smaller[child].add(vertex)
-            self.smaller[child] |= self.smaller[vertex]
-            self.search(child, seen, digraph)
-            self.larger[vertex].add(child)
-            self.larger[vertex] |= self.larger[child]
-
-    def compare(self, x, y):
-        if x == y:
-            return 0
-        if x in self.smaller[y]:
-            return 1
-        if y in self.smaller[x]:
-            return -1
-        return None
-
-    def incomparable(self, x):
-        """
-        Return the elements which are not comparable to x.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> sorted(P.incomparable(3))
-        [1, 2]
-        """
-        return self.elements - self.smaller[x] - self.larger[x] - {x}
-
-    def smallest(self):
-        """
-        Return the subset of minimal elements.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> sorted(P.smallest())
-        [0]
-        """
-        return frozenset([x for x in self if not self.smaller[x]])
-
-    def largest(self):
-        """
-        Return the subset of maximal elements.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> sorted(P.largest())
-        [4]
-        """
-        return frozenset([x for x in self if not self.larger[x]])
-
-    def closure(self, A):
-        """
-        Return the smallest set X containing A which is is closed
-        under < , i.e. such that (x in X and y < x) => y in X.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> sorted(P.closure([1, 3]))
-        [0, 1, 3]
-        """
-        result = frozenset(A)
-        for a in A:
-            result |= self.smaller[a]
-        return result
-
-    def XXclosed_subsets(self, start=None):
-        """
-        Generator for all transitively closed subsets.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> len(list(P.XXclosed_subsets()))
-        7
-        """
-        if start is None:
-            if self.closed:
-                yield from self.closed
-                return
-            else:
-                start = self.smallest()
-        complement = self.elements - start
-        if start not in self.closed:
-            self.closed.add(start)
-            yield start
-        for element in complement:
-            extended = self.closure(start | {element})
-            yield from self.XXclosed_subsets(extended)
-
-    def XXXclosed_subsets(self, start=None):
-        """
-        Generator for all transitively closed subsets.  The subsets
-        are computed once, then cached for use in subsequent calls.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> len(list(P.XXXclosed_subsets()))
-        7
-        """
-        if start is None:
-            if self.closed:
-                yield from self.closed
-                return
-            else:
-                start = self.smallest()
-        if start not in self.closed:
-            self.closed.add(start)
-            yield start
-        children = set()
-        for element in start:
-            children.update(self.successors[element] - start)
-        for child in children:
-            extended = self.closure(start | {child})
-            yield from self.XXXclosed_subsets(extended)
-
-    def closed_subsets(self):
-        """
-        Generator for all nonempty transitively closed subsets.
-
-        >>> G = Digraph([(0,1),(1,2),(2,4),(0,3),(3,4)])
-        >>> P = Poset(G)
-        >>> len(list(P.closed_subsets()))
-        7
-        """
-        # A closed subset is the closure of its set of maximal
-        # elements, which is an arbitrary subset of pairwise
-        # incomparable elements.  For the empty relation, every subset
-        # is pairwise incomparable.  So, in general, this can easily
-        # generate exponentially many subsets.
-        #
-        # This is used for finding level transformations of group
-        # presentations.  We should think about taking advantage of
-        # the special features of that situation.  For now, though, we
-        # just iterate through all subsets and check each one.
-
-        for X in powerset(self.elements):
-            if not X:
-                continue
-            pairwise_incomparable = True
-            for x in X:
-                if any(y in self.smaller[x] or y in self.larger[x]
-                       for y in X):
-                    pairwise_incomparable = False
-                    break
-            if pairwise_incomparable:
-                yield self.closure(X)
-
-
-def powerset(S):
-    """
-    Recursive generator for all subsets of a set.
-
-    >>> [len(u) for u in powerset({2,3,5})]
-    [2, 2, 1, 2, 1, 1, 0]
-    """
-    X = S.copy()
-    while X:
-        for x in X:
-            break
-        X.remove(x)
-        singleton = {x}
-        for Y in powerset(X):
-            yield (singleton | Y)
-        yield X
 
 
 if _within_sage:

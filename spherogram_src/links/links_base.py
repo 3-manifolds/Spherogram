@@ -1,7 +1,3 @@
-import copy
-import re
-import snappy_manifolds
-from collections import OrderedDict, namedtuple
 """
 Links are made from Crossings.  The general model is that of
 a PD diagram as described in
@@ -11,6 +7,13 @@ a PD diagram as described in
 See the file "doc.pdf" for the conventions, and the file
 "test.py" for some examples of creating links.
 """
+
+import copy
+import re
+import snappy_manifolds
+import networkx as nx
+import random
+from collections import OrderedDict, namedtuple, defaultdict
 from .. import graphs
 from .ordered_set import OrderedSet
 
@@ -42,11 +45,16 @@ def is_iterable(obj):
 DT_tables = snappy_manifolds.get_DT_tables()
 
 try:
-    import snappy_15_knots
+    import snappy_16_knots
     non_HT = [T for T in DT_tables if not T.name.startswith('HTLinkDTcodes')]
-    DT_tables = non_HT + snappy_15_knots.get_DT_tables()
+    DT_tables = non_HT + snappy_16_knots.get_DT_tables()
 except ImportError:
-    pass
+    try:
+        import snappy_15_knots
+        non_HT = [T for T in DT_tables if not T.name.startswith('HTLinkDTcodes')]
+        DT_tables = non_HT + snappy_15_knots.get_DT_tables()
+    except ImportError:
+        pass
 
 
 def lookup_DT_code_by_name(name):
@@ -112,6 +120,16 @@ class Crossing:
         "a+2".
         """
         b = (a, (a + 2) % 4)
+        if (b[1], b[0]) in self.directions:
+            raise ValueError("Can only orient a strand once.")
+        self.directions.add(b)
+
+    def make_head(self, a):
+        """
+        Orients the strand joining input "a" to input" a+2" to start at "a" and end at
+        "a+2".
+        """
+        b = ((a + 2) % 4, a)
         if (b[1], b[0]) in self.directions:
             raise ValueError("Can only orient a strand once.")
         self.directions.add(b)
@@ -243,7 +261,10 @@ class CrossingStrand(BasicCrossingStrand):
         return self.opposite().rotate(-1)
 
     def strand_label(self):
-        return self.crossing.strand_labels[self.strand_index]
+        if isinstance(self.crossing, Strand):
+            return self.crossing.strand_label
+        else:
+            return self.crossing.strand_labels[self.strand_index]
 
     def oriented(self):
         """
@@ -258,25 +279,35 @@ class CrossingStrand(BasicCrossingStrand):
     def __repr__(self):
         return "<CS %s, %s>" % (self.crossing, self.strand_index)
 
-
 class CrossingEntryPoint(CrossingStrand):
     """
     One of the two entry points of an oriented crossing
     """
 
     def next(self):
-        c, e = self.crossing, self.strand_index
-        s = c._adjacent_len // 2
-        return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
+        if isinstance(self.crossing, (Crossing, Strand)):
+            c, e = self.crossing, self.strand_index
+            s = c._adjacent_len // 2
+            return CrossingEntryPoint(*c.adjacent[(e + s) % (2 * s)])
+        else:
+            raise RuntimeError('This should not be reached')
 
     def previous(self):
-        s = self.crossing._adjacent_len // 2
-        return CrossingEntryPoint(*self.opposite().rotate(s))
+        d, j = self.opposite()
+
+        if isinstance(d, (Crossing, Strand)):
+            s = d._adjacent_len // 2
+            return CrossingEntryPoint(*self.opposite().rotate(s))
+        else: 
+            return CrossingEntryPoint(d, j)
 
     def other(self):
-        nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
-        other = nonzero_entry_point if self.strand_index == 0 else 0
-        return CrossingEntryPoint(self.crossing, other)
+        if isinstance(self.crossing, Crossing):
+            nonzero_entry_point = 1 if self.crossing.sign == -1 else 3
+            other = nonzero_entry_point if self.strand_index == 0 else 0
+            return CrossingEntryPoint(self.crossing, other)
+        else:
+            return None
 
     def is_under_crossing(self) -> bool:
         return self.strand_index == 0
@@ -286,11 +317,27 @@ class CrossingEntryPoint(CrossingStrand):
 
     def component(self):
         ans = [self]
+        
+        is_reversed = False
         while True:
-            next = ans[-1].next()
-            if next == self:
+            if is_reversed:
+                d = ans[0].previous()
+            else:
+                d = ans[-1].next()
+
+            if d == self:
                 break
-            ans.append(next)
+            else:
+                if is_reversed:
+                    ans.insert(0, d)
+                else:
+                    ans.append(d)
+                
+            if not isinstance(d.crossing, (Crossing, Strand)):
+                if is_reversed:
+                    break
+                else:
+                    is_reversed = True
 
         return ans
 
@@ -299,9 +346,15 @@ class CrossingEntryPoint(CrossingStrand):
 
     def label_crossing(self, comp, labels):
         c, e = self.crossing, self.strand_index
-        f = (e + 2) % 4
-        c.strand_labels[e], c.strand_components[e] = labels[self], comp
-        c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
+    
+        if isinstance(c, Crossing):
+            f = (e + 2) % 4
+            c.strand_labels[e], c.strand_components[e] = labels[self], comp
+            c.strand_labels[f], c.strand_components[f] = labels[self.next()], comp
+        elif isinstance(c, Strand):
+            c.strand_label, c.strand_component = labels[self], comp
+        else:
+            c.strand_labels[e], c.strand_components[e] = labels[self], comp
 
     def __repr__(self):
         return "<CEP %s, %s>" % (self.crossing, self.strand_index)
@@ -329,6 +382,7 @@ class Strand:
     def __init__(self, label=None, component_idx=None):
         self.label = label
         self.adjacent = [None, None]
+        self._clear()
         self._adjacent_len = 2
         self.component_idx = component_idx
 
@@ -359,14 +413,102 @@ class Strand:
               (self.label, [format_adjacent(a) for a in self.adjacent]))
 
     def is_loop(self):
-        return self == self.adjacent[0][0]
+        return self.adjacent[0] is not None and self == self.adjacent[0][0]
 
+    def _clear(self):
+        self.sign, self.direction = 0, None
+        self._clear_strand_info()
+
+    def _clear_strand_info(self):
+        self.strand_label = None
+        self.strand_component = None
+
+    def make_tail(self, a):
+        """
+        Orients the strand joining input "a" to input" a+1" to start at "a" and end at
+        "a+1".
+        """
+        b = (a, (a + 1) % 2)
+        if self.direction is not None and self.direction != b:
+            raise ValueError("Can only orient a strand once.")
+        self.direction = b
+
+    def make_head(self, a):
+        """
+        Orients the strand joining input "a" to input" a+1" to start at "a" and end at
+        "a+1".
+        """
+        b = ((a + 1) % 2, a)
+        if self.direction is not None and self.direction != b:
+            raise ValueError("Can only orient a strand once.")
+        self.direction = b
+
+    def rotate(self, s):
+        """
+        Rotate the incoming connections by 180*s degrees anticlockwise.
+        """
+        def rotate(v):
+            return (v + s) % 2
+        new_adjacent = [self.adjacent[rotate(i)] for i in range(2)]
+        for i, (o, j) in enumerate(new_adjacent):
+            if o != self:
+                o.adjacent[j] = (self, i)
+                self.adjacent[i] = (o, j)
+            else:
+                self.adjacent[i] = (self, (j - s) % 2)
+
+        a,b = self.direction
+        self.direction = (rotate(a), rotate(b))
+
+    def orient(self):
+        if self.direction == (1, 0):
+            self.rotate(1)
+            self.direction = (0,1)
+        
+        self.sign = 1
+
+    def entry_points(self):
+        assert self.sign == 1
+        return [CrossingEntryPoint(self, 0)]
 
 def enumerate_lists(lists, n=0, filter=lambda x: True):
     ans = []
     for L in lists:
         ans.append([n + i for i, x in enumerate(L) if filter(n + i)])
         n += len(L)
+    return ans
+
+
+def link_hash(link):
+    """
+    >>> len(link_hash(Link('K4a1')))
+    32
+    """
+    from .simplify import dual_graph_as_nx
+    dual = dual_graph_as_nx(link)
+    return nx.weisfeiler_lehman_graph_hash(dual)
+
+
+def order_diagrams(diagrams):
+    """
+    Sort diagrams by crossing number with diagrams of the same
+    crossing number shuffled randomly.
+    """
+    by_cross_num = defaultdict(list)
+    for D in diagrams:
+        by_cross_num[len(D.crossings)].append(D)
+
+    for some_diags in by_cross_num.values():
+        random.shuffle(some_diags)
+
+    cross_nums = sorted(by_cross_num.keys())
+
+    ans = []
+    while len(ans) < len(diagrams):
+        for c in cross_nums:
+            if by_cross_num[c]:
+                ans.append(by_cross_num[c].pop())
+
     return ans
 
 
@@ -473,7 +615,7 @@ class Link:
             if not all(isinstance(c, Crossing) for c, _ in s.adjacent):
                 raise ValueError("Strands with a component index must be in the same"
                                  " component as a crossing")
-        # Go through the component strands to construct component_starts
+        # Go through the component strands to construct component_spec
         if component_strands:
             component_spec = []
             for s in component_strands:
@@ -734,7 +876,8 @@ class Link:
             for comp in self.link_components:
                 for cs in comp:
                     if cs.crossing in self.crossings:
-                        start_css.append(cs)
+                        s = cs.crossing._adjacent_len // 2
+                        start_css.append(cs.rotate(s))
                         break
         self.link_components = None
         for c in self.crossings:
@@ -744,6 +887,54 @@ class Link:
                         component_starts=start_css)
         else:
             self._build()
+
+    def reverse_orientation(self, component_index):
+        """
+        Reverse the orientation of components specified by component_index.
+
+        component_index: either a single index of component 
+                         or a list of indices of components
+
+        >>> L = Link([(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)])
+        >>> L
+        <Link: 2 comp; 4 cross>
+        >>> L.linking_number()
+        2
+        >>> L.reverse_orientation(0)
+        >>> L.linking_number()
+        -2
+        >>> L.reverse_orientation(1)
+        >>> L.linking_number()
+        2
+        >>> L.reverse_orientation([0,1])
+        >>> L.PD_code()
+        [(4, 0, 5, 3), (0, 6, 1, 5), (6, 2, 7, 1), (2, 4, 3, 7)]
+        """
+        if not isinstance(component_index, (set, list, tuple)):
+            component_index = [component_index]
+
+        org_entries = []
+        for comp in self.components:
+            for cs in comp:
+                if cs.crossing in self.crossings:
+                    org_entries.append(cs)
+                    break
+
+        new_starts = []
+        for i, cs in enumerate(org_entries):
+            if i not in component_index:
+                c, e = cs.crossing, cs.strand_index
+                s = c._adjacent_len // 2
+                reversed_cs = CrossingStrand(c, (e + s) % (2 * s))
+                new_starts.append(reversed_cs)
+            else:
+                new_starts.append(cs)
+                
+        self.link_components = None
+        for c in self.crossings:
+            c._clear()
+        self._build(start_orientations = new_starts,
+                    component_starts = new_starts)
 
     def _check_crossing_orientations(self):
         for C in self.crossings:
@@ -841,8 +1032,7 @@ class Link:
             # and turn them into CrossingEntryPoints
             component_starts = [cs.crossing.entry_points()[cs.strand_index % 2]
                                 for cs in component_starts]
-        remaining, components = OrderedSet(
-            self.crossing_entries()), LinkComponents()
+        remaining, components = OrderedSet(self.crossing_entries()), LinkComponents()
         other_crossing_entries = []
         self.labels = labels = Labels()
         for c in self.crossings:
@@ -896,6 +1086,17 @@ class Link:
             assert self._DT_convention_holds()
 
         self.link_components = components
+
+    @property
+    def components(self):
+        """
+        Synonym for link_components
+        """
+        return self.link_components
+    
+    @components.setter
+    def components(self, value):
+        self.link_components = value
 
     def digraph(self):
         """
@@ -983,11 +1184,11 @@ class Link:
 
     def faces(self):
         """
-        The faces are the complementary regions of the link diagram. Each face
-        is given as a list of corners of crossings as one goes around
-        *clockwise*.  These corners are recorded as CrossingStrands,
-        where CrossingStrand(c, j) denotes the corner of the face
-        abutting crossing c between strand j and j + 1.
+        The faces are the complementary regions of the link diagram.
+        Each face is given as a list of corners of crossings as one
+        goes around *clockwise*.  These corners are recorded as
+        CrossingStrands, where CrossingStrand(c, j) denotes the corner
+        of the face abutting crossing c between strand j and j + 1.
 
         Alternatively, the sequence of CrossingStrands can be regarded
         as the *heads* of the oriented edges of the face.
@@ -1168,6 +1369,57 @@ class Link:
                         A[a] = B[b]
 
         return type(self)(final_crossings, check_planarity=False)
+    
+    def long_diagram(self, cut_at=None):
+        """
+        Returns the long diagram of self obtained 
+        by cutting open the strand specified by cut_at.
+
+        cut_at should be a pair of integers (i, j) 
+        representing the j-th strand of the i-th crossing.
+        If not specified, the first strand of the first 
+        crossing will be chosen by default.
+
+        >>> T = Link('4_1').long_diagram()
+        >>> T.PD_code()
+        ((1, 1), [(0, 5, 1, 6), (4, 1, 5, 2), (2, 8, 3, 7), (6, 4, 7, 3)], [0, 8])
+        """
+        from .tangles import Tangle
+        L = self.copy()
+        
+        if cut_at is None:
+            strand = L.crossings[0].crossing_strands()[0]
+        else:
+            i, j = cut_at
+            strand = L.crossings[i].crossing_strands()[j]
+            
+        open_strands = [strand, strand.opposite()]
+        
+        for c in L.crossings:
+            c._clear()
+        
+        return Tangle((1,1), L.crossings, open_strands)
+
+    def min_long_diagram(self):
+        """
+        Return the long diagram of self with the minimal contraction width
+        """
+
+        if not self.crossings:
+            return self.long_diagram()
+        
+        min_width = None
+
+        for i in range(len(self.crossings)):
+            entry_indices = [3, 0] if self.crossings[i].sign == 1 else [0, 1]
+            for j in entry_indices:
+                diagram = self.long_diagram(cut_at=(i,j))
+                width = diagram.contraction_width()[0]
+                if min_width is None or width < min_width:
+                    ans = diagram
+                    min_width = width
+
+        return ans  
 
     def __len__(self):
         return len(self.crossings)
@@ -1335,7 +1587,8 @@ class Link:
             for i, m in enumerate(tally):
                 if m == 1:
                     n += (self.crossings)[i].sign
-        return n / 4  # should it be n // 4 ?
+        n = n // 4
+        return n
 
     def _pieces(self):
         """
@@ -1524,6 +1777,81 @@ class Link:
         """
         from . import simplify
         return simplify.over_or_under_strands(self, 'over')
+
+    def many_diagrams(self, target=10, tries=100, method='backtrack'):
+        """
+        Try to generate ``target`` distinct diagrams of the given link,
+        each of which has been simplified with ``mode='global'``.
+
+        The two methods are:
+
+        * ``backtrack``: Does 100 random Reidemeister I, II, and III
+          moves and then simplifies.
+
+        * ``exterior``: Takes the exterior of the link and then applies
+          SnapPy's ``exterior_to_link`` to that triangulation to get a
+          new diagram.
+
+        Both methods involve much randomziation, and the ``tries``
+        argument is the maximum number of link diagrams considered in
+        hopes of finding ``target`` distinct ones.
+
+        The diagrams returned are moreover required to have
+        non-isomorphic :meth:`dual graphs <Link.dual_graph>`.  A copy
+        of the initial diagram is always included in the links
+        returned.
+
+        >>> K = Link('K8n1')
+        >>> len(K.many_diagrams(target=2))
+        2
+        """
+        if method not in ['backtrack', 'exterior']:
+            raise ValueError(f"Method {method} not in {'backtrack', 'exterior'}")
+
+        L = self.copy()
+        ans = {link_hash(L):L}
+        for i in range(tries):
+            if len(ans) >= target:
+                break
+
+            if method == 'backtrack':
+                L = self.copy()
+                L.backtrack(100)
+            else:
+                E = self.exterior()
+                L = E.exterior_to_link()
+            L.simplify('global')
+            its_hash = link_hash(L)
+            if its_hash not in ans:
+                ans[its_hash] = L
+
+        return order_diagrams(ans.values())
+
+    def add_band(self, band):
+        """
+
+        Adds the specified band to the link and returns the result,
+        which is ribbon concordant to the original.  The band must
+        connect one component of the link to itself in such a way that
+        the result has an additional component.  See Figure 7 of
+        `[Dunfield and Gong] <https://arXiv.org/abs/2512.21825>`_
+        for how the band is specified.  Typically, the user invokes
+        :meth:`Link.ribbon_concordant_links` rather than use this
+        method directly.
+
+        >>> K = Link('K6a3')
+        >>> band = ([(0, 0), (0, 1), (3, 0)], [True], 1)
+        >>> L = K.add_band(band)
+        >>> L.simplify('global')
+        True
+        >>> L
+        <Link K6a3+band: 0 comp; 0 cross>
+        """
+        # Note: ribbon_concordant_link is defined in invariants.py
+        from .bands.core import add_one_band
+        L = add_one_band(self, band)
+        return L
+
 
 # ---- building the link exterior if SnapPy is present --------
 

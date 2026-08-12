@@ -7,10 +7,10 @@ in their boundary.  The output of the triangulation is written in exactly
 the same form as that produced by the knotscape function triang.
 
 The triangulation is constructed from a set of distinct left and right turning
-cycles, that are in 1-1 correspondance with the components of the immersion's 
+cycles, that are in 1-1 correspondence with the components of the immersion's 
 complement in S^2.  These turning cycles must be calculated by the calling code 
 and are passed as a parameter to the function defined here.  A turning cycle is
-selected to bound the infinte region of the complement when it is considered 
+selected to bound the infinite region of the complement when it is considered 
 to be in R^2; that is, the choice of this cycle fixes the point at infinity.  
 Either the infinite region may be selected by the calling code or left for
 the triangulation to choose, in which case a turning cycle of maximal lngth will 
@@ -33,8 +33,8 @@ There are four types of vertex in the triangulation:
    by turning cycles of length greater than two and their corresponding 
    vertices are numbered based on the ordering of the turning cycles.
 
-4. There is a ring of vertices constructed in the infinte region in 1-1
-   correspondance with the edges in the turning cycle bounding the infinte
+4. There is a ring of vertices constructed in the infinite region in 1-1
+   correspondence with the edges in the turning cycle bounding the infinite
    region.  These vertices are placed radially outwards from the mid-point 
    of the edges in this turning cycle.  These vertices are numbered sequentially
    according to the vertex that corresponds to the mid-point of each edge 
@@ -456,7 +456,7 @@ if (draw_control::DEBUG >= draw_control::SUMMARY)
     
 
 	/* determine the neighbours of the type 1 vertices; i.e the immersion crossings.
-	   We start from the region in potition 0 and work anti-clockwise around the crossing,
+	   We start from the region in position 0 and work anti-clockwise around the crossing,
 	   only the infinite region contributes a neighbour, and each edge contributes
 	   its mid-point.
 	*/

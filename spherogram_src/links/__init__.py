@@ -2,9 +2,10 @@ import os
 import sys
 
 from .links import Crossing, Strand, Link, ClosedBraid
-from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, InfinityTangle, MinusOneTangle, OneTangle, IntegerTangle, IdentityBraid, ComponentTangle, join_strands
+from .tangles import Tangle, CapTangle, CupTangle, RationalTangle, ZeroTangle, InfinityTangle, MinusOneTangle, OneTangle, IntegerTangle, IdentityBraid, BraidTangle, ComponentTangle, join_strands
 from . import orthogonal
 from .random_links import random_link
+from . import bands
 
 Link.view = orthogonal.orthogonal_draw
 
@@ -24,5 +25,5 @@ def pdf_docs():
 __all__ = ['Crossing', 'Strand', 'Link', 'ClosedBraid',
            'Tangle', 'CapTangle', 'CupTangle', 'RationalTangle',
            'ZeroTangle', 'InfinityTangle', 'MinusOneTangle', 'OneTangle', 'IntegerTangle',
-           'IdentityBraid', 'join_strands',
-           'pdf_docs', 'random_link']
+           'IdentityBraid', 'BraidTangle', 'ComponentTangle','join_strands',
+           'pdf_docs', 'random_link', 'bands']

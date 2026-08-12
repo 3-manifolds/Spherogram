@@ -23,7 +23,8 @@ the associated network N(P) has A_V empty and A_F has no self-loops.
 import networkx
 import random
 from .links import Strand
-from ..graphs import CyclicList, Digraph
+from ..graphs import Digraph
+from ..presentations import CyclicList
 from collections import namedtuple, Counter
 
 try:

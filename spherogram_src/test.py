@@ -6,7 +6,14 @@ import spherogram.links.simplify
 import spherogram.links.morse
 import spherogram.links.seifert
 import spherogram.links.exhaust
+import spherogram.links.alexander
 import spherogram.links.bridge_bound
+import spherogram.links.bands
+import spherogram.links.bands.merge_links
+import spherogram.links.bands.core
+import spherogram.links.bands.search
+import spherogram.links.bands.regression
+
 
 import spherogram.test_helper as test_helper
 import getopt
@@ -17,6 +24,7 @@ modules = [spherogram.codecs.DT,
            spherogram.codecs.Base64LikeDT,
            spherogram.graphs,
            spherogram.presentations,
+           spherogram.links.nx_helper,
            spherogram.links.links,
            spherogram.links.links_base,
            spherogram.links.tangles,
@@ -25,10 +33,19 @@ modules = [spherogram.codecs.DT,
            spherogram.links.random_links,
            spherogram.links.orthogonal,
            spherogram.links.simplify,
+           spherogram.links.alexander,
            spherogram.links.bridge_bound,
            spherogram.links.invariants,
            spherogram.links.morse,
-           spherogram.links.seifert]
+           spherogram.links.seifert,
+           spherogram.links.bands,
+           spherogram.links.bands.merge_links,
+           spherogram.links.bands.core,
+           spherogram.links.bands.search,
+           spherogram.links.bands.regression,
+           spherogram.links.reshetikhin_turaev.dict_laurent_polynomial
+           ]
+
 
 # Apply the monkey-patches that snappy applies when it is imported.
 if test_helper._have_snappy:
