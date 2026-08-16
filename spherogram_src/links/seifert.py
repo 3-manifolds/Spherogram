@@ -134,8 +134,8 @@ def remove_admissible_move(link):
                 reverse_type_II(link, cs1, cs2, label1, label2)
                 link._rebuild(same_components_and_orientations=True)
                 break
-            else:
-                found_move = False
+
+            found_move = False
     return found_move
 
 

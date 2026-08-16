@@ -6,7 +6,7 @@ reasonable collections of bands and the resulting banded links.
 """
 
 import networkx as nx
-from itertools import product, combinations
+from itertools import product, combinations, chain
 from ..links_base import CrossingStrand, CrossingEntryPoint, Strand, Crossing
 from ..links import Link
 from ..simplify import dual_graph_as_nx, Face
@@ -239,7 +239,7 @@ class Band:
       "arc_is_under" refers the strand of the link, not the band, so
       this parameter could also have been called "band_is_over".
 
-    * num_twists: the number of twists to put in the band.
+    * num_twist: the number of twists to put in the band.
 
     Both cs_along_top and arc_is_under can be encoded as hex strings
     for brevity, and arc_is_under can also be an integer encoding the
@@ -277,8 +277,11 @@ class Band:
 
         self.cs_along_top =  cs_along_top
         self.arc_is_under = arc_is_under
+        self.set_num_twist(num_twist)
+
+    def set_num_twist(self, num_twist):
         self.num_twist = num_twist
-        self._spec = (cs_along_top, arc_is_under, num_twist)
+        self._spec = (self.cs_along_top, self.arc_is_under, num_twist)
 
     def compressed_spec(self):
         return compress_band_spec(*self._spec)
@@ -346,6 +349,72 @@ class Band:
                         return True
 
         return False
+
+
+def to_cross_entry_point(link, crossing_index, strand_index):
+    """
+    Produce the CrossingEntryPoint associated to the input describing a
+    CrossingStrand. Specifically, take the junction point P between
+    two crossings specified by the CrossingStrand and then take the
+    CrossingEntryPoint that *starts* at P.  Thus return value may be a
+    crossing that is *adjacent* to that specified by
+    ``crossing_index`` rather than that crossing.
+    """
+    C = link.crossings[crossing_index]
+    cs = CrossingStrand(C, strand_index)
+    if cs == cs.oriented():
+        sign = 1
+    else:
+        cs = cs.opposite()
+        sign = -1
+    return sign, CrossingEntryPoint(*cs)
+
+
+def extend_strand_until(cep_start, cep_end):
+    """
+    Return the CrossingEntryPoints gotten by following the link from
+    ``cep_start`` to ``cep_end``. The list includes ``cep_start`` but
+    not ``cep_end``.
+    """
+    ans = []
+    curr = cep_start
+    while curr != cep_end:
+        ans.append(curr)
+        curr = curr.next()
+    return ans
+
+
+def twists_for_linking_zero(link, band):
+    """
+    Assuming the data specifies a band with both ends on the same link
+    component, computes the number of twists needed split that
+    component into two that have linking number 0
+
+    >>> L = Link('K8n1')
+    >>> band = Band([(4,2), (0, 2), (0, 3), (5, 1)], [False, True])
+    >>> twists_for_linking_zero(L, band)
+    -4
+    >>> band = Band([(0, 1), (0, 2), (7, 0), (7, 1)], [False, False])
+    >>> twists_for_linking_zero(L, band)
+    0
+    """
+
+    sign0, cep0 = to_cross_entry_point(link, *band.cs_along_top[0])
+    sign1, cep1 = to_cross_entry_point(link, *band.cs_along_top[-1])
+    strand0 = extend_strand_until(cep0, cep1)
+    strand1 = extend_strand_until(cep1, cep0)
+    cross0 = {cep.crossing for cep in strand0}
+    cross1 = {cep.crossing for cep in strand1}
+    twists = sum(c.sign for c in cross0 & cross1)
+    for arc_is_under, cs in zip(band.arc_is_under,
+                                band.cs_along_top[1:-1]):
+        extra = 1 if arc_is_under else -1
+        sign, cep = to_cross_entry_point(link, *cs)
+        if cep in strand0:
+            twists += sign * extra
+        if cep in strand1:
+            twists += -sign * extra
+    return twists
 
 
 def add_one_band(link, band):
@@ -511,29 +580,100 @@ def add_one_band(link, band):
     return L
 
 
-def min_len_bands(link, max_twists=2, max_band_len=None):
+def strand_label_pairs(link, split_component):
     """
-    Produces bands on the input link where the band must start and end
-    on the same link component with its ends oriented so that the
-    result of banding has one more component than the original. As the
-    name suggests, it only considers minimal length paths in the dual
-    graph to the projection.
+    All pairs of strand_labels that are oriented compatibly with the
+    knot.  When split_component==True, the output is restricted to
+    pairs that are on the same component of the link.
+    """
+    if split_component:
+        component_pairs = []
+        for component in link.link_components:
+            strands = [cs.strand_label() for cs in component]
+            component_pairs.append(combinations(strands, 2))
+        return chain(*component_pairs)
+    else:
+        strands = [cep.strand_label() for cep in link.crossing_entries()]
+        return combinations(strands, 2)
+
+
+def crossing_strand_pairs(link, split_component):
+    """
+    All pairs of CrossingStrands that are oriented compatibly with the
+    knot.  When split_component==True, the output is restricted to
+    pairs that are on the same component of the link.
+    """
+    if split_component:
+        component_pairs = []
+        for component in link.link_components:
+            component_pairs.append(combinations(component, 2))
+        return chain(*component_pairs)
+    else:
+        strands = [CrossingStrand(*cep) for cep in link.crossing_entries()]
+        return combinations(strands, 2)
+
+
+def bands_with_useful_twists(L, along_top, correct_parity, max_twists,
+                             split_component, linking_zero):
+    ans = []
+    num_arcs = len(along_top) - 2
+    if linking_zero:
+        # arc_is_under is used here to iterate over bitstrings
+        for arc_is_under in range(2**num_arcs):
+            band = Band(along_top, arc_is_under)
+            n = twists_for_linking_zero(L, band)
+            if max_twists is None or abs(n) <= max_twists:
+                band.set_num_twist(n)
+                if not band.is_nonminimal(L):
+                    ans.append(band)
+    else:
+        if split_component:
+            good_twists = [twist for twist in range(-max_twists, max_twists + 1)
+                           if twist % 2 == correct_parity]
+        else:
+            good_twists = range(-max_twists, max_twists + 1)
+        for num_twist in good_twists:
+            for arc_is_under in range(2**num_arcs):
+                band = Band(along_top, arc_is_under, num_twist)
+                if not band.is_nonminimal(L):
+                    ans.append(band)
+
+    return ans
+
+
+def min_len_bands(link, max_twists=None, max_band_len=None,
+                  split_component=True, linking_zero=True):
+    """
+    Produces bands on the input link. As the name suggests, it only
+    considers minimal length paths in the dual graph to the
+    projection.
+
+    If ``split_component`` is ``True``, both ends of the band must be
+    on the same component and doing the banding must split that
+    component into two.  If additionally ``linking_zero`` is set,the
+    linking number of the two new components must be 0.
 
     Does not modify the input link.
 
     >>> L = Link('K6a3')
     >>> len(min_len_bands(L))
+    54
+    >>> len(min_len_bands(L, max_twists=2, split_component=True, linking_zero=False))
     138
+    >>> len(min_len_bands(L, max_twists=2, split_component=False, linking_zero=False))
+    270
     >>> L = Link('K8n1')
     >>> some_bands = min_len_bands(L)
     >>> len(some_bands)
-    315
+    121
     >>> some_bands[0]
-    Band([(0, 0), (1, 1)], [], -2)
+    Band([(0, 0), (1, 1)], [], 0)
     >>> some_bands[-1].compressed_spec()
-    '15030212_2_2'
+    '15030212_2_-4'
     >>> L = Link('L5a1')
     >>> len(min_len_bands(L))
+    19
+    >>> len(min_len_bands(L, max_twists=2, split_component=True, linking_zero=False))
     54
 
     Can also specify a maximum length for the band, as measured in the
@@ -541,9 +681,14 @@ def min_len_bands(link, max_twists=2, max_band_len=None):
 
     >>> L = Link('L8n1')
     >>> len(min_len_bands(L, max_twists=1, max_band_len=2))
-    28
+    10
 
     """
+    if linking_zero and not split_component:
+        raise ValueError('The option linking_zero=True requires split_component=True')
+    if not linking_zero and max_twists is None:
+        raise ValueError('Need to set max_twists when linking_zero=0')
+
     # dual.vertices is a set of Face objects, which are list of
     # CrossingStrand objects dual.edges is a set of Edges, each edge e
     # has e[0] and e[1] which are faces
@@ -565,50 +710,41 @@ def min_len_bands(link, max_twists=2, max_band_len=None):
 
     # Now iterate over each pair of arcs in the diagram that we can
     # band together.
-
     ans = []
-    for component in L.link_components:
-        strands = [cs.strand_label() for cs in component]
-        for arc1, arc2 in combinations(strands, 2):
-            # First, determine the shortest path from arc1 to arc2,
-            # there are two faces adjacent to each, so four
-            # possibilities.
-            faces_poss = list(product(edges[arc1], edges[arc2]))
-            num_arcs = min(dist[x] for x in faces_poss)
-            if max_band_len != None and num_arcs > max_band_len - 2:
-                continue
-            # There can be more than one minimum length path. Based on
-            # K13a2084, it pays to try them all.
-            for mini, minj in [x for x in faces_poss if dist[x] == num_arcs]:
-                X = edge_and_face_to_cs[arc1, mini].opposite()
-                Z = edge_and_face_to_cs[arc2, minj]
-                A = []
-                i = mini
-                while dist[i, minj] > 0:
-                    next_edge = edges[nxt[i, minj]]
-                    A.append(edge_and_face_to_cs[next_edge.label, i])
-                    i = opposite(next_edge, i)
+    for arc1, arc2 in strand_label_pairs(L, split_component):
+        # First, determine the shortest path from arc1 to arc2,
+        # there are two faces adjacent to each, so four
+        # possibilities.
+        faces_poss = list(product(edges[arc1], edges[arc2]))
+        num_arcs = min(dist[x] for x in faces_poss)
+        if max_band_len != None and num_arcs > max_band_len - 2:
+            continue
+        # There can be more than one minimum length path. Based on
+        # K13a2084, it pays to try them all.
+        for mini, minj in [x for x in faces_poss if dist[x] == num_arcs]:
+            X = edge_and_face_to_cs[arc1, mini].opposite()
+            Z = edge_and_face_to_cs[arc2, minj]
+            A = []
+            i = mini
+            while dist[i, minj] > 0:
+                next_edge = edges[nxt[i, minj]]
+                A.append(edge_and_face_to_cs[next_edge.label, i])
+                i = opposite(next_edge, i)
 
-                along_top = [X] + A + [Z]
-                along_top = [(cs.crossing.label, cs.strand_index) for cs in along_top]
+            along_top = [X] + A + [Z]
+            along_top = [(cs.crossing.label, cs.strand_index) for cs in along_top]
+            X_orient = (X == X.oriented())
+            Z_orient = (Z == Z.oriented())
+            correct_parity = 1 if X_orient == Z_orient else 0
+            ans += bands_with_useful_twists(L, along_top, correct_parity,
+                                            max_twists, split_component, linking_zero)
 
-                X_orient = (X == X.oriented())
-                Z_orient = (Z == Z.oriented())
-                correct_parity = 1 if X_orient == Z_orient else 0
-                good_twists = [twist for twist in range(-max_twists, max_twists + 1)
-                               if twist % 2 == correct_parity]
-
-                for num_twist in good_twists:
-                    # arc_is_under is used here to iterate over bitstrings
-                    for arc_is_under in range(2**num_arcs):
-                        band = Band(along_top, arc_is_under, num_twist)
-                        if not band.is_nonminimal(L):
-                            ans.append(band)
     ans.sort()
     return ans
 
 
-def simple_bands(link, max_twists=2, max_band_len=None):
+def simple_bands(link, max_twists=None, max_band_len=None,
+                 split_component=True, linking_zero=True):
     """
     Produces bands on the input link where the band must start and end
     on the same link component with its ends oriented so that the
@@ -622,24 +758,28 @@ def simple_bands(link, max_twists=2, max_band_len=None):
 
     >>> L = Link('K6a3')
     >>> len(simple_bands(L, max_band_len=3))
-    138
+    54
     >>> L = Link('K8n1')
     >>> some_bands = simple_bands(L, max_band_len=2)
     >>> len(some_bands)
-    106
+    40
     >>> L = Link('L5a1')
     >>> some_bands = simple_bands(L)
     >>> len(some_bands)
-    393
+    158
     >>> some_bands[-1].compressed_spec()
     '0a0504111013_e_1'
+    >>> len(simple_bands(L, max_twists=2, split_component=True, linking_zero=False))
+    393
+    >>> len(simple_bands(L, max_twists=1, split_component=False, linking_zero=False))
+    720
 
     Can also specify a maximum length for the band, as measured in the
     length of the cs_along_top (so every band has length at least two).
 
     >>> L = Link('L8n1')
     >>> len(simple_bands(L, max_twists=1, max_band_len=2))
-    28
+    10
 
     """
     # dual.vertices is a set of Face objects, which are list of
@@ -666,58 +806,53 @@ def simple_bands(link, max_twists=2, max_band_len=None):
     # Now iterate over each pair of arcs in the diagram that we can
     # band together.
     ans = []
-    for component in L.link_components:
-        for cs0, cs1 in combinations(component, 2):
-            # There are two faces adjacent to each, so four
-            # possibilities.
+    for cs0, cs1 in crossing_strand_pairs(L, split_component):
+        # There are two faces adjacent to each, so four
+        # possibilities.
 
-            faces0 = [cs_to_face[cs0], cs_to_face[cs0.opposite()]]
-            faces1 = [cs_to_face[cs1], cs_to_face[cs1.opposite()]]
+        faces0 = [cs_to_face[cs0], cs_to_face[cs0.opposite()]]
+        faces1 = [cs_to_face[cs1], cs_to_face[cs1.opposite()]]
 
-            for F0, F1 in product(faces0, faces1):
-                if F0 == F1:
-                    paths = [[F0]]
-                else:
-                    paths = nx.all_simple_paths(dual, F0, F1, cutoff=cutoff)
-                for path in paths:
-                    # First augment the path to include the dual edges
-                    # corresponding to cs0 and cs1.
-                    P0 = [F for F in faces0 if F != F0][0]
-                    P1 = [F for F in faces1 if F != F1][0]
-                    path = [P0] + path + [P1]
-                    if not nx.is_simple_path(dual, path):
-                        continue
-                    # Extract the crossing strands along the top.
-                    # Code looks complicated because this is a
-                    # MultiGraph.
-                    along_top = []
-                    for A, B in zip(path, path[1:]):
-                        for edge, info in dual[A][B].items():
-                            if B in info['interface']:
-                                along_top.append(info['interface'][B])
-                                break
-                    assert len(along_top) >= 2
-                    X, Z = along_top[0], along_top[-1]
-                    along_top = [(cs.crossing.label, cs.strand_index) for cs in along_top]
+        for F0, F1 in product(faces0, faces1):
+            if F0 == F1:
+                paths = [[F0]]
+            else:
+                paths = nx.all_simple_paths(dual, F0, F1, cutoff=cutoff)
+            for path in paths:
+                # First augment the path to include the dual edges
+                # corresponding to cs0 and cs1.
+                P0 = [F for F in faces0 if F != F0][0]
+                P1 = [F for F in faces1 if F != F1][0]
+                path = [P0] + path + [P1]
+                if not nx.is_simple_path(dual, path):
+                    continue
+                # Extract the crossing strands along the top.
+                # Code looks complicated because this is a
+                # MultiGraph.
+                along_top = []
+                for A, B in zip(path, path[1:]):
+                    for edge, info in dual[A][B].items():
+                        if B in info['interface']:
+                            along_top.append(info['interface'][B])
+                            break
+                assert len(along_top) >= 2
+                X, Z = along_top[0], along_top[-1]
+                along_top = [(cs.crossing.label, cs.strand_index) for cs in along_top]
 
-                    X_orient = (X == X.oriented())
-                    Z_orient = (Z == Z.oriented())
-                    correct_parity = 1 if X_orient == Z_orient else 0
-                    good_twists = [twist for twist in range(-max_twists, max_twists + 1)
-                                   if twist % 2 == correct_parity]
-                    for num_twist in good_twists:
-                        # arc_is_under is used here to iterate over bitstrings
-                        num_arcs = len(along_top) - 2
-                        for arc_is_under in range(2**num_arcs):
-                            band = Band(along_top, arc_is_under, num_twist)
-                            if not band.is_nonminimal(L):
-                                ans.append(band)
+                X_orient = (X == X.oriented())
+                Z_orient = (Z == Z.oriented())
+                correct_parity = 1 if X_orient == Z_orient else 0
+                correct_parity = 1 if X_orient == Z_orient else 0
+                ans += bands_with_useful_twists(L, along_top, correct_parity,
+                                                max_twists, split_component, linking_zero)
+
     ans.sort()
     return ans
 
 
 
-def banded_links(link, max_twists=2, max_band_len=None, paths='shortest'):
+def banded_links(link, max_twists=None, max_band_len=None, paths='shortest',
+                 split_component=True, linking_zero=True):
     """
     Produces bands on the input link where the band must start and end
     on the same link component with its ends oriented so that the
@@ -727,25 +862,26 @@ def banded_links(link, max_twists=2, max_band_len=None, paths='shortest'):
     by ``min_len_bands`` or ``simple_bands`` according to the
     ``paths`` argument.
 
-
     >>> L = Link('K6a3')
     >>> len(list(banded_links(L)))
-    138
+    54
     >>> L = Link('K8n1')
     >>> len(list(banded_links(L)))
-    315
+    121
     >>> L = Link('L5a1')
     >>> len(list(banded_links(L, paths='simple')))
-    393
+    158
     """
     if not crossing_labels_are_normalized(link):
         link = link.copy()
         normalize_crossing_labels(link)
 
     if paths == 'shortest':
-        paths = min_len_bands(link, max_twists, max_band_len)
+        paths = min_len_bands(link, max_twists, max_band_len,
+                              split_component, linking_zero)
     elif paths == 'simple':
-        paths = simple_bands(link, max_twists, max_band_len)
+        paths = simple_bands(link, max_twists, max_band_len,
+                             split_component, linking_zero)
     else:
         raise ValueError("Path type can be either 'shortest' or 'simple'")
 

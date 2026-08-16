@@ -3,7 +3,7 @@
 Only the test for K8n1 is run as part of the doctest suite.  To test
 them all, do::
 
-  python -m spherogram.links.bands.regsession
+  python -m spherogram.links.bands.regression
 
 You should see::
 
@@ -67,7 +67,9 @@ def hyperbolize(L):
 
 def regression_links_only(L):
     ans = dict()
-    for data in banded_links(L, max_twists=2, max_band_len=None, paths='shortest'):
+    for data in banded_links(L, max_twists=2, max_band_len=None,
+                             paths='shortest', split_component=True,
+                             linking_zero=False):
         E = hyperbolize(data[0])
         if E is not None:
             ident = snappy.HTLinkExteriors.identify(E, extends_to_link=True)

@@ -7,6 +7,7 @@ and Jennet Dickinson.
 from . import links_base, alexander
 from .links_base import CrossingStrand, Crossing
 from ..sage_helper import _within_sage, sage_method, sage_pd_clockwise
+from typing import Literal
 
 deprecation_warnings_issued = set()
 
@@ -58,15 +59,14 @@ def normalize_alex_poly(p, t):
         p = p * (ti**(-min_exp))
 
     R = p.parent()
-    p = R.polynomial_ring()(p)
-    return p
+    return R.polynomial_ring()(p)
 
 
 def sage_braid_as_int_word(braid):
     """
     Convert a Sage Braid to a word.
     """
-    # Could simplify using braid.Tietze().
+    # TODO : Could simplify using braid.Tietze().
 
     G = braid.parent()
     gen_idx = {g: i + 1 for i, g in enumerate(G.gens())}
@@ -87,7 +87,6 @@ extra_docstring = """
     You can also convert to and from SageMath braid and link types,
     see the documentation for the "sage_link" method for details.
 """
-
 
 class Link(links_base.Link):
     __doc__ = links_base.Link.__doc__ + extra_docstring
@@ -143,10 +142,10 @@ class Link(links_base.Link):
 
         Returns a finitely presented group::
 
-           sage: K = Link('3_1')
-           sage: G = K.knot_group()
-           sage: type(G)
-           <class 'sage.groups.finitely_presented.FinitelyPresentedGroup_with_category'>
+            sage: K = Link('3_1')
+            sage: G = K.knot_group()
+            sage: type(G)
+            <class 'sage.groups.finitely_presented.FinitelyPresentedGroup_with_category'>
         """
         n = len(self.crossings)
         F = FreeGroup(n)
@@ -267,9 +266,35 @@ class Link(links_base.Link):
                 raise RuntimeError('the method "snappy" for '
                                    'alexander_polynomial requires SnapPy')
 
+        # We do any available Type I and II Reidemeister moves as the
+        # functions we call assume that none are available.
+
+        from . import simplify
+        if simplify.has_reidemeister_I_or_II(self):
+            L = self.copy()
+            L.simplify('basic')
+            return L.alexander_polynomial(multivar=multivar, v=v, method=method,
+                                          norm=norm, factored=factored)
+
+        # We have to deal with the special case of unknotted and
+        # unlinked components.
+
         comp = len(self.link_components)
-        if comp < 2:
+        nugatory = self.unlinked_unknot_components
+        if comp + nugatory < 2:
             multivar = False
+
+        if multivar:
+            L = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp + nugatory)])
+            t = list(L.gens())
+        else:
+            L = LaurentPolynomialRing(QQ, 't')
+            t = [L.gen()]
+        R = L.polynomial_ring() if norm else L
+
+        if nugatory > 0:
+            p = 1 if comp + nugatory == 1 else 0
+            return R(p)
 
         # If single variable, use the super-fast method of Bar-Natan.
         if comp == 1 and method == 'default' and norm:
@@ -277,13 +302,6 @@ class Link(links_base.Link):
         else:  # Use a simple method based on the Wirtinger presentation.
             if method not in ['default', 'wirtinger']:
                 raise ValueError("Available methods are 'default' and 'wirtinger'")
-
-            if multivar:
-                L = LaurentPolynomialRing(QQ, [f't{i+1}' for i in range(comp)])
-                t = list(L.gens())
-            else:
-                L = LaurentPolynomialRing(QQ, 't')
-                t = [L.gen()]
 
             M = self.alexander_matrix(mv=multivar)
             C = M[0]
@@ -297,7 +315,7 @@ class Link(links_base.Link):
             subMatrix = C[0: k, 0: k]
             p = subMatrix.determinant()
             if p == 0:
-                return 0
+                return R(0)
             if multivar:
                 t_i = M[1][-1]
                 p = (p.factor()) / (t_i - 1)
@@ -312,6 +330,157 @@ class Link(links_base.Link):
         if multivar and factored:  # it's easier to view this way
             return p.factor()
         return p
+    
+    def colored_links_gould_polynomial(self, 
+                                       n, 
+                                       sage_output=_within_sage,
+                                       sage_polynomials=False, 
+                                       timed=False):
+        """
+        Computes the n-colored Links--Gould polynomial of a link. 
+        The output is an instance of Sage's LaurentPolynomial if in sage,
+        otherwise a DictLaurentPolynomial.
+
+        Colored Links--Gould polynomials are bivariate, for which we default to
+        using DictLaurentPolynomial during the procedure to reduce RAM consumption. 
+
+        >>> Link('3_1').colored_links_gould_polynomial(1)
+        t^2*q^2 - t*q^3 - t*q + 2*q^2 - t^-1*q^3 + 1 - t^-1*q + t^-2*q^2
+        >>> Link('4_1').colored_links_gould_polynomial(1)
+        t^2 - 3*t*q + 2*q^2 - 3*t*q^-1 + 7 - 3*t^-1*q + 2*q^-2 - 3*t^-1*q^-1 + t^-2
+
+        Mirror image is equal to substituting q with q^-1:
+
+        >>> mtref = Link('3_1').mirror()
+        >>> mtref_LG = mtref.colored_links_gould_polynomial(1, sage_output=False)
+        >>> mtref_LG.change_vars({'q': 'q^-1'})
+        t^2*q^2 - t*q^3 - t*q + 2*q^2 - t^-1*q^3 + 1 - t^-1*q + t^-2*q^2
+
+        The colored Links--Gould polynomial specializes to the square of 
+        the Alexander polynomial:
+
+        >>> tref_LG = Link('3_1').colored_links_gould_polynomial(1, sage_output=False)
+        >>> tref_LG.change_vars({'q': '1'})
+        t^2 - 2*t + 3 - 2*t^-1 + t^-2
+        >>> fig8_LG = Link('4_1').colored_links_gould_polynomial(1, sage_output=False)
+        >>> fig8_LG.change_vars({'q': '1'})
+        t^2 - 6*t + 11 - 6*t^-1 + t^-2
+
+        1-colored Links--Gould polynomial is invariant under mutation:
+
+        >>> conway_LG = Link('11n34').colored_links_gould_polynomial(1)
+        >>> KT_LG = Link('11n42').colored_links_gould_polynomial(1)
+        >>> conway_LG == KT_LG
+        True
+
+        A mutation pair with the same 2-colored Links--Gould polynomial:
+        
+        >>> K1 = Link('12n364')
+        >>> K2 = Link('12n365').mirror()
+        >>> K1.colored_links_gould_polynomial(2) == K2.colored_links_gould_polynomial(2)
+        True
+
+        Some higher colored values for the trefoil:
+
+        >>> K = Link('3_1')
+        >>> K.colored_links_gould_polynomial(2) # doctest: +NORMALIZE_WHITESPACE
+        -t^2*q^5 + t*q^6 + t^2*q^4 - t*q^5 + t*q^4 - 2*q^5 + t^-1*q^6 + t^2*q^2 
+        - 2*t*q^3 + 2*q^4 - t^-1*q^5 + t^-1*q^4 - t^-2*q^5 - t*q + 2*q^2 - 
+        2*t^-1*q^3 + t^-2*q^4 + 1 - t^-1*q + t^-2*q^2
+
+        >>> K.colored_links_gould_polynomial(3) # doctest: +NORMALIZE_WHITESPACE
+        -t*q^27 + t^2*q^24 + t*q^25 - t^-1*q^27 - t^2*q^22 + t*q^23 + 2*q^24 + 
+        t^-1*q^25 - t^2*q^20 - 2*t*q^21 - 2*q^22 + t^-1*q^23 + t^-2*q^24 + 
+        t^2*q^18 + 2*t*q^19 - 2*q^20 - 2*t^-1*q^21 - t^-2*q^22 - t^2*q^16 + 
+        t*q^17 + 2*q^18 + 2*t^-1*q^19 - t^-2*q^20 - 2*t*q^15 - 2*q^16 + t^-1*q^17
+        + t^-2*q^18 + t^2*q^12 + t*q^13 - 2*t^-1*q^15 - t^-2*q^16 + 2*q^12 + 
+        t^-1*q^13 - 2*t*q^9 + t^-2*q^12 + t^2*q^6 - 2*t^-1*q^9 + 2*q^6 - t*q^3 + 
+        t^-2*q^6 - t^-1*q^3 + 1
+
+        >>> K.colored_links_gould_polynomial(4) # doctest: +NORMALIZE_WHITESPACE
+        t*q^24 - t^2*q^22 - t*q^23 + t^2*q^21 - t*q^22 + t^-1*q^24 + t^2*q^20 -
+        2*q^22 - t^-1*q^23 + 2*t*q^20 + 2*q^21 - t^-1*q^22 - t^2*q^18 - t*q^19 + 
+        2*q^20 - t^-2*q^22 - 2*t*q^18 + 2*t^-1*q^20 + t^-2*q^21 + t^2*q^16 + 
+        t*q^17 - 2*q^18 - t^-1*q^19 + t^-2*q^20 - t^2*q^15 + 2*t*q^16 - 2*t^-1*q^18 
+        - t^2*q^14 + 2*q^16 + t^-1*q^17 - t^-2*q^18 - 2*t*q^14 - 2*q^15 + 2*t^-1*q^16 
+        + t^2*q^12 + 2*t*q^13 - 2*q^14 + t^-2*q^16 - t^2*q^11 + t*q^12 - 2*t^-1*q^14 
+        - t^-2*q^15 + 2*q^12 + 2*t^-1*q^13 - t^-2*q^14 - 2*t*q^10 - 2*q^11 + t^-1*q^12 
+        + t^2*q^8 + t*q^9 + t^-2*q^12 - 2*t^-1*q^10 - t^-2*q^11 + 2*q^8 + t^-1*q^9 - 
+        2*t*q^6 + t^2*q^4 + t^-2*q^8 - 2*t^-1*q^6 + 2*q^4 - t*q^2 + t^-2*q^4 - t^-1*q^2 
+        + 1
+        """
+        from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
+
+        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed=timed)
+
+        if sage_output:
+            if not sage_polynomials:
+                ans = (ans[0].to_sage(), ans[1])
+        else:
+            if sage_polynomials:
+                ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+            else:
+                ans = (ans[0].to_checked(), ans[1])
+
+        if timed:
+            return ans
+        else:
+            return ans[0]
+
+    def colored_jones_polynomial(self, 
+                                 n, 
+                                 sage_output=_within_sage,
+                                 sage_polynomials=_within_sage,
+                                 timed=False):
+        """
+        Computes the n-colored Jones polynomial of a link. 
+        The output is an instance of Sage's PuiseuxSeries if in sage,
+        otherwise a DictLaurentPolynomial.
+
+        The 1-colored Jones polynomial is equal to the usual Jones polynomial.
+        Here we follow the ordinary convention of variables for Jones polynomials,
+        instead of the squared q in jones_polynomial()
+
+        Colored Jones polynomials are univariate, for whom sage's PuiseuxSeries
+        has highly optimized multiplications, hence we default to use sage 
+        during the procedure whenever possible.
+
+        >>> Link('3_1').colored_jones_polynomial(1)
+        -q^-4 + q^-3 + q^-1
+        >>> Link('4_1').colored_jones_polynomial(1)
+        q^-2 - q^-1 + 1 - q + q^2
+        >>> Link('L2a1').colored_jones_polynomial(1)
+        q^(-5/2) + q^(-1/2)
+
+        Some values of higher colored Jones polynomials for the trefoil:
+
+        >>> Link('3_1').colored_jones_polynomial(2)
+        q^-11 - q^-10 - q^-9 + q^-8 - q^-7 + q^-5 + q^-2
+        >>> Link('3_1').colored_jones_polynomial(3) # doctest: +NORMALIZE_WHITESPACE
+        -q^-21 + q^-20 + q^-19 - q^-17 + q^-15 - q^-14 - q^-13 + q^-11 - q^-10 + q^-7 
+        + q^-3
+        >>> Link('3_1').colored_jones_polynomial(4) # doctest: +NORMALIZE_WHITESPACE
+        q^-34 - q^-33 - q^-32 + 2*q^-29 - q^-28 + 2*q^-24 - q^-23 - q^-22 + q^-19 - 
+        q^-18 - q^-17 + q^-14 - q^-13 + q^-9 + q^-4
+        """
+        from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
+
+        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed=timed)
+        ans = (ans[0] * prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials), ans[1])
+
+        if sage_output:
+            if not sage_polynomials:
+                ans = (ans[0].to_sage(), ans[1])
+        else:
+            if sage_polynomials:
+                ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+            else:
+                ans = (ans[0].to_checked(), ans[1])
+
+        if timed:
+            return ans
+        else:
+            return ans[0]
 
     def knot_floer_homology(self, prime=2, complex=False):
         """
@@ -540,6 +709,9 @@ class Link(links_base.Link):
           sage: L.signature(new_convention=False)
           2
         """
+        if not self.digraph().is_weakly_connected():
+            return sum([L.signature() for L in self.split_link_diagram()])
+
         m, G = self.goeritz_matrix(return_graph=True)
         correction = sum(e['sign'] for _, _, e in G.edges(sort=False)
                          if e['sign'] == e['crossing'].sign)
@@ -879,7 +1051,7 @@ class Link(links_base.Link):
           sage: cert['unknot'][-1]                                            #doctest: +SNAPPY
           'ribbon_2_10_7ecd0dc0'
 
-        See Section 2 of `[Dunfield and Gong] <https://arXiv.org/abs/FILLIN>`_
+        See Section 2 of `[Dunfield and Gong] <https://arXiv.org/abs/2512.21825>`_
         for more details.
         """
         from .bands.search import ribbon_concordant_links
@@ -894,6 +1066,85 @@ class Link(links_base.Link):
                                        print_progress=print_progress,
                                        stop_at_unlink=filter_for_plausibly_slice,
                                        use_ribbon_link_cache=filter_for_plausibly_slice)
+
+    def satellite(self, pattern, twists: int = 0):
+        """
+        Returns the satellite of this knot by ``pattern`` with the
+        specified number of full twists.
+
+        >>> K = Link('K6a2')
+        >>> P = BraidTangle([1, -2, 1, -2], 3) + IdentityBraid(1)  # P.boundary = (2, 2)
+        >>> K.satellite(P)
+        <Link: 1 comp; 32 cross>
+
+        The above example has 4 crossings from each of the 6 crossings
+        of ``K``, 4 crossings in the 2 negative twists accounting for
+        writhe, and 4 crossings from ``P``, totaling 32.
+
+        The pattern is specified by a ``Tangle`` with the same number
+        of top and bottom boundary strands. Identifying the top and
+        bottom strands gives the pattern knot in the solid torus. The
+        resulting knot inherits its orientation from ``pattern``, so
+        that satelliting by a tangle with one strand oriented upwards
+        gives back the companion. If the tangle does not have coherent
+        orientations, so that the sign on the bottom strand is the
+        opposite of the corresponding top strand, no orientation
+        behavior is guaranteed.
+
+        The denominator closure of ``pattern`` may be a link of more
+        than one component.  If so, satelliting by ``pattern`` gives a
+        link of the same number of components.
+
+        >>> Q = IdentityBraid(2)
+        >>> len(K.satellite(Q).components)
+        2
+        >>> K.satellite(Q).linking_number()
+        0
+        >>> K.satellite(Q, twists=3).linking_number()
+        3
+        >>> Q.reverse_orientation(0) # reverse one of the strands
+        >>> K.satellite(Q, twists=3).linking_number()
+        -3
+        """
+        from .satellite import satellite
+        return satellite(self, pattern, twists)
+
+    def cable(self, p: int, q: int):
+        """
+        Returns the (``p``, ``q``)-cable of this knot.
+
+        If ``p`` and ``q`` are coprime, the result is a knot.
+        Otherwise, it may be a link of more than one component.
+
+        >>> K = Link('K3a1')
+        >>> len(K.cable(6, 15).components)
+        3
+        >>> K.cable(3, 2).knot_floer_homology()['tau']
+        4
+        """
+        from .satellite import cable
+        return cable(self, p, q)
+
+    def whitehead_double(
+            self,
+            clasp_sign: Literal['positive', 'negative'] = 'positive',
+            twists: int = 0
+        ):
+        """
+        Returns the Whitehead double of this knot.
+
+        The sign of the clasp of the pattern can be specified as
+        ``'positive'`` or ``'negative'``. You may add some number of
+        full twists with the ``twists`` parameter.
+
+        >>> K = Link('K3a1')
+        >>> K.whitehead_double().knot_floer_homology()['tau']
+        1
+        >>> K.whitehead_double(clasp_sign='negative').knot_floer_homology()['tau']
+        0
+        """
+        from .satellite import whitehead_double
+        return whitehead_double(self, clasp_sign, twists)
 
 
 class ClosedBraid(Link):
@@ -924,3 +1175,14 @@ class ClosedBraid(Link):
 
     def __repr__(self):
         return 'ClosedBraid%s' % str(self.braid_word)
+
+
+# doctest hack for satellite to avoid circular imports.
+
+def BraidTangle(*args):
+    from . import tangles
+    return tangles.BraidTangle(*args)
+
+def IdentityBraid(*args):
+    from . import tangles
+    return tangles.IdentityBraid(*args)

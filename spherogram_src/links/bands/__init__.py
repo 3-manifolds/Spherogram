@@ -5,7 +5,7 @@ search for ribbon disks.  Code originally developed by Nathan Dunfield
 and Sherry Gong for their paper::
 
   Ribbon concordances and slice obstructions: experiments and examples
-  https://arXiv.org/abs/FILLIN
+  https://arXiv.org/abs/2512.21825
 
 """
 

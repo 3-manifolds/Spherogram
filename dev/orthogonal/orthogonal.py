@@ -17,8 +17,9 @@ A more concise summary of the algorithm is contained in
 Hashemi and Tahmasbi, A better heuristic for area-compaction of orthogonal
 representations.  http://dx.doi.org/10.1016/j.amc.2005.03.007
 
-As all vertices (=crossings) of the underlying graph are 4-valent, things simpify;
-the associated network N(P) has A_V empty and A_F has no self-loops.
+As all vertices (=crossings) of the underlying graph are 4-valent,
+things simplify; the associated network N(P) has A_V empty
+and A_F has no self-loops.
 """
 
 import snappy
@@ -214,7 +215,7 @@ def saturate_face( face_info ):
     for i in range(len(face_info) - 2):
         x, y, z = face_info[i:i+3]
         if x.turn == -1 and y.turn == z.turn == 1:
-            a,b = (x, z) if  x.kind == 'sink' else (z, x)
+            a, b = (x, z) if x.kind == 'sink' else (z, x)
             remaining = face_info[:i] + [LabeledFaceVertex(z.index, z.kind, 1)] + face_info[i+3:]
             return [ (a.index, b.index)  ] + saturate_face(remaining)
     return []
@@ -306,7 +307,7 @@ class OrthogonalRep(Digraph):
         D = Digraph(singles=maximal_chains)
         for e in [e for e in self.edges if e.kind != kind]:
             d = D.add_edge(vertex_to_chain[e.tail],
-                       vertex_to_chain[e.head])
+                           vertex_to_chain[e.head])
             d.dummy = e in self.dummy
 
         for u, v in self.saturation_edges(False):
@@ -458,7 +459,7 @@ class OrthogonalLinkDiagram(list):
         self.orient_edges()
         self.edges = sum([F for F in self], [])
         strands = {e.crossing for e in self.edges
-                      if isinstance(e.crossing, Strand)}
+                   if isinstance(e.crossing, Strand)}
         self.strand_CEPs = [CrossingEntryPoint(s, 0) for s in strands]
         for i, c in enumerate(link.crossings):
             c.label = i
@@ -609,13 +610,14 @@ class OrthogonalLinkDiagram(list):
         return size, vertex_positions, arrows, crossings
 
 
-#---------------------------------------------------
+# ---------------------------------------------------
 #
 #  Opening in plink.
 #
-#---------------------------------------------------
+# ---------------------------------------------------
 
 from plink import Vertex, Arrow, Crossing
+
 
 def load_from_spherogram(self, link, spacing=None, adjust_plink_size=True):
     width = self.window.winfo_width()
@@ -738,4 +740,4 @@ if __name__ == '__main__':
     face = OrthogonalFace(BOR5, (BOR5.outgoing(0).pop(), 0) )
     spec = [[(3, 5), (2, 'b'), ('j', 'd'), (5, 2), ('i', 'n'), ('h', 'f'), ('k', 0), ('m', 'g'), ('a', 3), (4, 'e'), (0, 1), (6, 4), ('l', 6), (1, 'c')], [('b', 'g'), (5, 'j'), (2, 'd'), ('n', 4), ('i', 6), ('a', 'h'), (0, 3), ('l', 'k'), (3, 'm'), ('e', 'f'), (1, 5), (4, 1), (6, 0), ('c', 2)]]
 
-    #big_test()
+    # big_test()
