@@ -308,10 +308,9 @@ def dual_graph_as_nx(link, graph_class=nx.Graph):
             if next == face[0]:
                 faces.append(Face(face, count))
                 break
-            else:
-                to_face_index[next] = count
-                corners.remove(next)
-                face.append(next)
+            to_face_index[next] = count
+            corners.remove(next)
+            face.append(next)
 
     G = graph_class()
     to_face = {edge: faces[f] for edge, f in to_face_index.items()}

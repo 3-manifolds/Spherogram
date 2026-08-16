@@ -309,10 +309,10 @@ class CrossingEntryPoint(CrossingStrand):
         else:
             return None
 
-    def is_under_crossing(self):
+    def is_under_crossing(self) -> bool:
         return self.strand_index == 0
 
-    def is_over_crossing(self):
+    def is_over_crossing(self) -> bool:
         return self.strand_index != 0
 
     def component(self):
@@ -647,16 +647,15 @@ class Link:
                                 # This is a second Strand in the same component
                                 # with the same component_idx, which is OK
                                 break
-                            elif component_perm[idx] is None:
+                            if component_perm[idx] is None:
                                 if i not in unused_comps:
                                     raise ValueError("Two Strand objects in the same component"
                                                      " have different component_idx values")
                                 component_perm[idx] = i
                                 unused_comps.remove(i)
                                 break
-                            else:
-                                raise ValueError("Two Strand objects in different components"
-                                                 " have the same component_idx values")
+                            raise ValueError("Two Strand objects in different components"
+                                             " have the same component_idx values")
                     else:
                         raise Exception()  # This should not happen
                 for i in range(len(self.link_components)):
@@ -1208,9 +1207,8 @@ class Link:
                 if next == cs0:
                     faces.append(face)
                     break
-                else:
-                    corners.remove(next)
-                    face.append(next)
+                corners.remove(next)
+                face.append(next)
 
         return faces
 
