@@ -94,8 +94,6 @@ def _handle_polynomial_type(ans, sage_output, sage_polynomials, timed):
     else:
         if sage_polynomials:
             ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
-        else:
-            ans = (ans[0].to_checked(), ans[1])
 
     return ans if timed else ans[0]
 
@@ -452,6 +450,23 @@ class Link(links_base.Link):
 
         R_matrices = colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)
         ans = self.RT_polynomial(R_matrices, timed=timed)
+
+        return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
+
+    def FK3_polynomial(self,
+                       sage_output=_within_sage,
+                       sage_polynomials=_within_sage,
+                       timed=False):
+        """
+        Computes the FK3 polynomial as defined in https://arxiv.org/abs/2609.01506v1
+        
+        """
+        from .reshetikhin_turaev import FK3_R_matrices, prefactor_FK3
+
+        R_matrices = FK3_R_matrices(sage_polynomials=sage_polynomials)
+        prefactor = prefactor_FK3(self.writhe(), sage_polynomial=sage_polynomials)
+
+        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed)
 
         return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
     

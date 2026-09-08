@@ -1,4 +1,4 @@
-from .dict_laurent_polynomial import FastDictLaurentPolynomial, LaurentVariable
+from .dict_laurent_polynomial import FastDictLaurentPolynomial, LaurentVariable, DictLaurentPolynomial
 
 from .sparse_array import SparseTensor
 
@@ -118,17 +118,17 @@ class RMatrix:
             Rn.csv: the R tensor for a negative crossing
             hp.csv: the h tensor for a positive rotation number
             hn.csv: the h tensor for a negative rotation number
-        stored under `dir_path`. See Example 2.4 in 
+        stored under `dir_path`. See Example 2.4 in
         `[Li26] <https://arxiv.org/abs/2606.29662>`_ for the conventions.
 
-        If `compressed` is True, the files are expected to be compressed with 
+        If `compressed` is True, the files are expected to be compressed with
         bzip2 and have a ".bz2" suffix.
 
-        The CSV files should be of two columns: the first column is a tuple of 
-        integers representing the exponent tuple of a tensor entry, and the 
-        second column is a string representation of a Laurent polynomial in the 
-        variables `vars`. The CSV files should have a header row with the 
-        shape of the tensor and the coefficient ring (currently only "ZZ" is 
+        The CSV files should be of two columns: the first column is a tuple of
+        integers representing the exponent tuple of a tensor entry, and the
+        second column is a string representation of a Laurent polynomial in the
+        variables `vars`. The CSV files should have a header row with the
+        shape of the tensor and the coefficient ring (currently only "ZZ" is
         supported). For example, the following is the content of hp.csv for the
         1-colored Links--Gould polynomial::
 
@@ -140,8 +140,8 @@ class RMatrix:
 
         vars: variable names, in the order the exponent tuples use them.
 
-        If `sage_polynomials` is True, the entries of RMatrix would be Sage's 
-        LaurentPolynomials or PuiseuxSeries instead of 
+        If `sage_polynomials` is True, the entries of RMatrix would be Sage's
+        LaurentPolynomials or PuiseuxSeries instead of
         FastDictLaurentPolynomial values.  The latter is the default because it
         uses much less RAM.
         """
@@ -162,6 +162,32 @@ class RMatrix:
 
         return RMatrix(*tensors)
 
+
+def FK3_R_matrices(sage_polynomials=False):
+    key = (f"FK3", sage_polynomials)
+    if key in _cache.keys():
+        return _cache[key]
+    else:
+        _cache[key] = RMatrix.from_directory(
+            dir_path=os.path.join(dir_path, f"R_matrices/FK3/"),
+            vars=["t"],
+            compressed=False,
+            sage_polynomials=sage_polynomials,
+        )
+        return _cache[key]
+
+
+def _t_pow(e):
+    ans = DictLaurentPolynomial.from_str("t", ["t"]) ** e
+
+    return ans
+
+
+def prefactor_FK3(writhe, sage_polynomial=False):
+    if not sage_polynomial:
+        return _t_pow(-2 * writhe)
+    else:
+        return _t_pow(-2 * writhe).to_sage()
 
 def colored_links_gould_R_matrices(n, sage_polynomials=False):
     if 0 < n <= 4:
@@ -204,7 +230,7 @@ def _q_pow(e):
     """
     DictLaurentPolynomial representing q^(e/2). e must be an integer.
     """
-    return FastDictLaurentPolynomial._make((LaurentVariable("q", 4),), {(e,): 1})
+    return DictLaurentPolynomial._make((LaurentVariable("q", 4),), {(e,): 1})
 
 
 def colored_jones_R_matrices(n, sage_polynomials=False):
