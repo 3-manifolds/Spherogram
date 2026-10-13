@@ -351,7 +351,8 @@ class Link(links_base.Link):
         ):
         """
         Computes the Reshetikhin-Turaev polynomial of a link, given the
-        R-matrices and an optional prefactor. 
+        R-matrices and an optional prefactor, using the algorithm in 
+        `[Li] <https://arxiv.org/abs/2606.29662>`_ .
 
         It is left to the user to ensure that the entries in R-matrices are 
         compatible with the prefactor, if any.
@@ -374,7 +375,13 @@ class Link(links_base.Link):
                                        sage_polynomials=False, 
                                        timed=False):
         """
-        Computes the n-colored Links--Gould polynomial of a link. 
+        Computes the n-colored Links--Gould polynomial of a link, defined in 
+        `[GK] <https://arxiv.org/abs/2311.11528>`_
+        and discussed in 
+        `[GL] <https://arxiv.org/abs/2409.03557>`_
+        and
+        `[GHK+] <https://arxiv.org/abs/2509.10911>`_ .
+
         The output is an instance of Sage's LaurentPolynomial if in sage,
         otherwise a DictLaurentPolynomial.
 
@@ -458,8 +465,15 @@ class Link(links_base.Link):
                        sage_polynomials=_within_sage,
                        timed=False):
         """
-        Computes the FK3 polynomial as defined in https://arxiv.org/abs/2609.01506v1
-        
+        Computes the FK3 polynomial as defined in 
+        `[GL] <https://arxiv.org/abs/2609.01506v1>`_ ::
+
+        >>> Link('3_1').FK3_polynomial()
+        t^-4 - 3*t^-3 + 7*t^-2 - 9*t^-1 + 9 - 9*t + 7*t^2 - 3*t^3 + t^4
+        >>> Link('4_1').FK3_polynomial()
+        t^-4 - 9*t^-3 + 33*t^-2 - 69*t^-1 + 89 - 69*t + 33*t^2 - 9*t^3 + t^4
+        >>> Link('5_2').FK3_polynomial()
+        10*t^-4 - 48*t^-3 + 120*t^-2 - 192*t^-1 + 221 - 192*t + 120*t^2 - 48*t^3 + 10*t^4
         """
         from .reshetikhin_turaev import FK3_R_matrices, prefactor_FK3
 
@@ -505,6 +519,9 @@ class Link(links_base.Link):
         >>> Link('3_1').colored_jones_polynomial(4) # doctest: +NORMALIZE_WHITESPACE
         q^-34 - q^-33 - q^-32 + 2*q^-29 - q^-28 + 2*q^-24 - q^-23 - q^-22 + q^-19 - 
         q^-18 - q^-17 + q^-14 - q^-13 + q^-9 + q^-4
+
+        The R-matrices used for the computation is extracted from, for example,
+        Colored Alexander invariants and cone-manifolds by J. Murakami.
         """
         from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones
     
