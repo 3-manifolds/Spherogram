@@ -82,6 +82,21 @@ def sage_braid_as_int_word(braid):
         ans += [n, -n]
     return ans
 
+def _handle_polynomial_type(ans, sage_output, sage_polynomials, timed):
+    from .reshetikhin_turaev import DictLaurentPolynomial
+
+    if not timed:
+        ans = (ans, None)
+            
+    if sage_output:
+        if not sage_polynomials:
+            ans = (ans[0].to_sage(), ans[1])
+    else:
+        if sage_polynomials:
+            ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
+
+    return ans if timed else ans[0]
+
 
 extra_docstring = """
     You can also convert to and from SageMath braid and link types,
@@ -330,6 +345,29 @@ class Link(links_base.Link):
         if multivar and factored:  # it's easier to view this way
             return p.factor()
         return p
+
+    def RT_polynomial(
+            self, R_matrices, prefactor=None, timed=False
+        ):
+        """
+        Computes the Reshetikhin-Turaev polynomial of a link, given the
+        R-matrices and an optional prefactor, using the algorithm in 
+        `[Li] <https://arxiv.org/abs/2606.29662>`_ .
+
+        It is left to the user to ensure that the entries in R-matrices are 
+        compatible with the prefactor, if any.
+        """
+        diagram = self.min_long_diagram()
+        network = diagram.reshetikhin_turaev_network(R_matrices)
+
+        ans = network.evaluate(timed=timed)
+        if prefactor is not None:
+            ans = (ans[0] * prefactor, ans[1])
+
+        if timed:
+            return ans
+        else:
+            return ans[0]
     
     def colored_links_gould_polynomial(self, 
                                        n, 
@@ -337,7 +375,13 @@ class Link(links_base.Link):
                                        sage_polynomials=False, 
                                        timed=False):
         """
-        Computes the n-colored Links--Gould polynomial of a link. 
+        Computes the n-colored Links--Gould polynomial of a link, defined in 
+        `[GK] <https://arxiv.org/abs/2311.11528>`_
+        and discussed in 
+        `[GL] <https://arxiv.org/abs/2409.03557>`_
+        and
+        `[GHK+] <https://arxiv.org/abs/2509.10911>`_ .
+
         The output is an instance of Sage's LaurentPolynomial if in sage,
         otherwise a DictLaurentPolynomial.
 
@@ -409,24 +453,37 @@ class Link(links_base.Link):
         2*t*q^6 + t^2*q^4 + t^-2*q^8 - 2*t^-1*q^6 + 2*q^4 - t*q^2 + t^-2*q^4 - t^-1*q^2 
         + 1
         """
-        from .reshetikhin_turaev import colored_links_gould_R_matrices, DictLaurentPolynomial
+        from .reshetikhin_turaev import colored_links_gould_R_matrices
 
-        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed=timed)
+        R_matrices = colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)
+        ans = self.RT_polynomial(R_matrices, timed=timed)
 
-        if sage_output:
-            if not sage_polynomials:
-                ans = (ans[0].to_sage(), ans[1])
-        else:
-            if sage_polynomials:
-                ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
-            else:
-                ans = (ans[0].to_checked(), ans[1])
+        return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
 
-        if timed:
-            return ans
-        else:
-            return ans[0]
+    def FK3_polynomial(self,
+                       sage_output=_within_sage,
+                       sage_polynomials=_within_sage,
+                       timed=False):
+        """
+        Computes the FK3 polynomial as defined in 
+        `[GL] <https://arxiv.org/abs/2609.01506v1>`_ ::
 
+        >>> Link('3_1').FK3_polynomial()
+        t^-4 - 3*t^-3 + 7*t^-2 - 9*t^-1 + 9 - 9*t + 7*t^2 - 3*t^3 + t^4
+        >>> Link('4_1').FK3_polynomial()
+        t^-4 - 9*t^-3 + 33*t^-2 - 69*t^-1 + 89 - 69*t + 33*t^2 - 9*t^3 + t^4
+        >>> Link('5_2').FK3_polynomial()
+        10*t^-4 - 48*t^-3 + 120*t^-2 - 192*t^-1 + 221 - 192*t + 120*t^2 - 48*t^3 + 10*t^4
+        """
+        from .reshetikhin_turaev import FK3_R_matrices, prefactor_FK3
+
+        R_matrices = FK3_R_matrices(sage_polynomials=sage_polynomials)
+        prefactor = prefactor_FK3(self.writhe(), sage_polynomial=sage_polynomials)
+
+        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed)
+
+        return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
+    
     def colored_jones_polynomial(self, 
                                  n, 
                                  sage_output=_within_sage,
@@ -462,25 +519,18 @@ class Link(links_base.Link):
         >>> Link('3_1').colored_jones_polynomial(4) # doctest: +NORMALIZE_WHITESPACE
         q^-34 - q^-33 - q^-32 + 2*q^-29 - q^-28 + 2*q^-24 - q^-23 - q^-22 + q^-19 - 
         q^-18 - q^-17 + q^-14 - q^-13 + q^-9 + q^-4
+
+        The R-matrices used for the computation is extracted from, for example,
+        Colored Alexander invariants and cone-manifolds by J. Murakami.
         """
-        from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones, DictLaurentPolynomial
+        from .reshetikhin_turaev import colored_jones_R_matrices, prefactor_colored_jones
+    
+        R_matrices = colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)
+        prefactor = prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials)
 
-        ans = self.min_long_diagram().reshetikhin_turaev_network(colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)).evaluate(timed=timed)
-        ans = (ans[0] * prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials), ans[1])
+        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed)
 
-        if sage_output:
-            if not sage_polynomials:
-                ans = (ans[0].to_sage(), ans[1])
-        else:
-            if sage_polynomials:
-                ans = (DictLaurentPolynomial.from_sage(ans[0]), ans[1])
-            else:
-                ans = (ans[0].to_checked(), ans[1])
-
-        if timed:
-            return ans
-        else:
-            return ans[0]
+        return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
 
     def knot_floer_homology(self, prime=2, complex=False):
         """
