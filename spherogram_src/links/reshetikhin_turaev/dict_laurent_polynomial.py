@@ -68,6 +68,25 @@ class LaurentVariable:
             return f"^{num}"
         return f"^({num}/{den})"
 
+    def latex_exp(self, k):
+        """Format exponent k as a LaTeX superscript, or None if k == 0.
+
+        >>> q = LaurentVariable('q', 2)
+        >>> [q.latex_exp(k) for k in (0, 2, 4, -2, 1, -3)]
+        [None, '', '^{2}', '^{-1}', '^{\\\\frac{1}{2}}', '^{-\\\\frac{3}{2}}']
+        """
+        if k == 0:
+            return None
+        num, den = k, self.denominator
+        g = _gcd(abs(num), den)
+        num, den = num // g, den // g
+        if den == 1:
+            if num == 1:
+                return ""
+            return f"^{{{num}}}"
+        sign = "-" if num < 0 else ""
+        return f"^{{{sign}\\frac{{{abs(num)}}}{{{den}}}}}"
+
 
 def _gcd(a, b):
     while b:
@@ -351,6 +370,13 @@ class FastDictLaurentPolynomial:
                 len(self.poly_dict) == 1
                 and self.poly_dict.get((0,) * len(self.vars), 0) == 1
             )
+
+        if isinstance(other, int):
+            return (
+                len(self.poly_dict) == 1
+                and self.poly_dict.get((0,) * len(self.vars), 0) == other
+            )
+        
         return NotImplemented
 
     __hash__ = None
@@ -1079,10 +1105,13 @@ class FastDictLaurentPolynomial:
             n >>= 1
         return result
 
-    def __repr__(self):
-        if not self.poly_dict:
-            return "0"
-        # Sort by total degree descending (exact rational arithmetic), then lex descending.
+    def _sorted_terms(self):
+        """Return (exponent, coefficient) pairs in display order.
+
+        Univariate polynomials are sorted by ascending degree (matching
+        PuiseuxSeries); multivariate ones by descending total degree, then
+        lex descending.  Degrees are compared exactly as rationals.
+        """
         L = 1
         for var in self.vars:
             L = L * var.denominator // _gcd(L, var.denominator)
@@ -1095,8 +1124,13 @@ class FastDictLaurentPolynomial:
                 return total  # ascending for univariate (matches PuiseuxSeries)
             return (-total, tuple(-k for k in exp))  # descending for multivariate
 
+        return sorted(self.poly_dict.items(), key=_sort_key)
+
+    def __repr__(self):
+        if not self.poly_dict:
+            return "0"
         terms = []
-        for exp, coef in sorted(self.poly_dict.items(), key=_sort_key):
+        for exp, coef in self._sorted_terms():
             parts = []
             for var, k in zip(self.vars, exp):
                 fmt = var.fmt_exp(k)
@@ -1228,3 +1262,85 @@ class DictLaurentPolynomial(FastDictLaurentPolynomial):
             for key, coeff in self.poly_dict.items()
         }
         return DictLaurentPolynomial._make(new_vars, new_dict, _interned=True)
+
+    def coefficients(self, var):
+        """
+        Return a dict mapping each exponent key of `var` to its coefficient,
+        a DictLaurentPolynomial in the remaining variables (in their original
+        order).  As elsewhere, key k means var^(k / var.denominator).  Keys
+        are sorted in increasing order and only nonzero coefficients appear.
+
+        >>> p = DictLaurentPolynomial.from_str('q^2 + 1', ['q'])
+        >>> p.coefficients('q')
+        {0: 1, 2: 1}
+        >>> p = DictLaurentPolynomial.from_str('q^2*t + q*t^2 + 3', ['q', 't'])
+        >>> p.coefficients('q')
+        {0: 3, 1: t^2, 2: t}
+        >>> p.coefficients('t')
+        {0: 3, 1: q^2, 2: q}
+        >>> p.coefficients('t')[1].vars
+        (q,)
+        >>> r = DictLaurentPolynomial.from_str('q^(1/2)*t - q^(-1/2) + t', ['q', 't'])
+        >>> r.coefficients('q')
+        {-1: -1, 0: t, 1: t}
+        >>> r.coefficients(LaurentVariable('t'))
+        {0: -q^(-1/2), 1: 1 + q^(1/2)}
+        >>> p.coefficients('s')
+        Traceback (most recent call last):
+            ...
+        ValueError: coefficients: variable 's' not found
+        """
+        if isinstance(var, str):
+            names = [v.name for v in self.vars]
+            if var not in names:
+                raise ValueError(f"coefficients: variable {var!r} not found")
+            idx = names.index(var)
+        elif var in self.vars:
+            idx = self.vars.index(var)
+        else:
+            raise ValueError(f"coefficients: variable {var!r} not found")
+        rest_vars = _intern_vars(self.vars[:idx] + self.vars[idx + 1 :])
+        grouped = {}
+        for key, coeff in self.poly_dict.items():
+            rest_key = _intern_exponent(key[:idx] + key[idx + 1 :])
+            grouped.setdefault(key[idx], {})[rest_key] = coeff
+        return {
+            exp: DictLaurentPolynomial._make(rest_vars, grouped[exp], _interned=True)
+            for exp in sorted(grouped)
+        }
+
+    def latex(self):
+        """
+        Return a LaTeX string for the polynomial, with terms in the same
+        order as repr().
+
+        >>> p = DictLaurentPolynomial.from_str('q^2 + 1', ['q'])
+        >>> p.latex()
+        '1 + q^{2}'
+        >>> r = DictLaurentPolynomial.from_str('q^(1/2)*t - q^(-1/2) + t', ['q', 't'])
+        >>> r.latex()
+        'q^{\\\\frac{1}{2}} t + t - q^{-\\\\frac{1}{2}}'
+        >>> DictLaurentPolynomial.from_str('-3*q^-2*t^3 + 2 - q', ['q', 't']).latex()
+        '-q - 3 q^{-2} t^{3} + 2'
+        >>> DictLaurentPolynomial.from_str('q - q', ['q']).latex()
+        '0'
+        """
+        if not self.poly_dict:
+            return "0"
+        terms = []
+        for exp, coef in self._sorted_terms():
+            parts = []
+            for var, k in zip(self.vars, exp):
+                fmt = var.latex_exp(k)
+                if fmt is not None:
+                    parts.append(f"{var.name}{fmt}")
+            monomial = " ".join(parts)
+            if not monomial:
+                terms.append(str(coef))
+            elif coef == 1:
+                terms.append(monomial)
+            elif coef == -1:
+                terms.append(f"-{monomial}")
+            else:
+                terms.append(f"{coef} {monomial}")
+        return " + ".join(terms).replace("+ -", "- ")
