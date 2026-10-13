@@ -765,11 +765,13 @@ class Tangle:
         """
         return RTNetwork(tensors, T = self)
     
-    def contraction_width(self, omit_idle_arcs = True):
-        return RTNetwork(None, T = self).contraction_width(omit_idle_arcs = omit_idle_arcs)
+    def contraction_width(self, omit_idle_arcs=True, method='auto'):
+        return RTNetwork(None, T=self).contraction_width(omit_idle_arcs=omit_idle_arcs,
+                                                         method=method)
 
-    def contraction_sequence(self, omit_idle_arcs = True):
-        return RTNetwork(None, T = self).contraction_sequence(omit_idle_arcs = omit_idle_arcs)
+    def contraction_sequence(self, omit_idle_arcs=True, method='auto'):
+        return RTNetwork(None, T=self).contraction_sequence(omit_idle_arcs=omit_idle_arcs,
+                                                            method=method)
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
         """

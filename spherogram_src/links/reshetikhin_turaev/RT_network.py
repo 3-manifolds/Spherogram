@@ -151,7 +151,7 @@ class RTNetwork:
         else:
             return self.network[0][0] == other.network[0][0]
 
-    def optimal_contraction_sequence(self):
+    def optimal_contraction_sequence(self, method="auto"):
         try:
             import opt_einsum as oe
         except ImportError:
@@ -172,7 +172,7 @@ class RTNetwork:
                 oe_network.append(_ShapeOnly(shape))
                 oe_network.append([edge.index for edge in key])
 
-        return oe.contract_path(*oe_network, idle)[0]
+        return oe.contract_path(*oe_network, idle, optimize=method)[0]
 
     @staticmethod
     def local_contraction_width(abstract_network, indices):
@@ -230,7 +230,7 @@ class RTNetwork:
 
         return (w, m), abstract_network
 
-    def contraction_width(self, omit_idle_arcs=True):
+    def contraction_width(self, omit_idle_arcs=True, method="auto"):
         abstract_network = []
         for _, key in self.network:
             if omit_idle_arcs:
@@ -257,7 +257,7 @@ class RTNetwork:
             width = (0, 0)
 
         seq_width, ans = abstract_copy.seq_contraction_width(
-            abstract_copy.optimal_contraction_sequence()
+            abstract_copy.optimal_contraction_sequence(method=method)
         )
 
         return max(width, seq_width), ans
@@ -313,7 +313,7 @@ class RTNetwork:
 
         return ans, abstract_network
 
-    def contraction_sequence(self, omit_idle_arcs=True):
+    def contraction_sequence(self, omit_idle_arcs=True, method='auto'):
         abstract_network = []
         for _, key in self.network:
             if omit_idle_arcs:
@@ -333,7 +333,7 @@ class RTNetwork:
         loops = abstract_copy._resolve_self_loops()
 
         contraction_seq, ans = abstract_copy.seq_contraction_seq(
-            abstract_copy.optimal_contraction_sequence()
+            abstract_copy.optimal_contraction_sequence(method=method)
         )
 
         return loops + contraction_seq, ans
@@ -460,14 +460,16 @@ class RTNetwork:
             (tensor.permute(reshape_indices, consume=True), tuple(desired_order))
         )
 
-    def contract_all(self, timed=False):
+    def contract_all(self, timed=False, method="auto"):
         """
         Perform all possible contractions on self.
 
         Return modified self and time (None if not timed).
         """
         self._resolve_self_loops()
-        time = self.contract_sequence(self.optimal_contraction_sequence(), timed=timed)
+        time = self.contract_sequence(
+            self.optimal_contraction_sequence(method=method), timed=timed
+        )
 
         assert len(self.network) == 1
 
@@ -475,7 +477,7 @@ class RTNetwork:
 
         return (self, time)
 
-    def evaluate(self, timed=False):
+    def evaluate(self, timed=False, method="auto"):
         """
         Fixate all idle labels at value 0, obtaining a new RTNework with (0,0) boundary (without modifying self),
         contract_all on the new RTNetwork and return the product of all values of the resulting tensors.
@@ -506,7 +508,7 @@ class RTNetwork:
             boundary=(0, 0),
             boundary_labels=[],
         )
-        time = reduced.contract_all(timed=timed)[1]
+        time = reduced.contract_all(timed=timed, method=method)[1]
 
         result = prefactor
         for tensor, _ in reduced.network:
