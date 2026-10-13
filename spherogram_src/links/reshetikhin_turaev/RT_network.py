@@ -1,3 +1,15 @@
+from .dict_laurent_polynomial import FastDictLaurentPolynomial, DictLaurentPolynomial
+
+
+class _ShapeOnly:
+    """Stand-in for a tensor when only its shape matters (opt_einsum input)."""
+
+    __slots__ = ["shape"]
+
+    def __init__(self, shape):
+        self.shape = shape
+
+
 class DirectedEdge:
     __slots__ = ["label", "index", "sign", "reversed_edge"]
 
@@ -48,6 +60,9 @@ class RTNetwork:
         """
         self.tensors = tensors
 
+        # Whether the edge tensors of this network are diagonal.
+        self.diagonal_h = tensors.diagonal_h if tensors is not None else False
+
         if T is not None:
             assert (
                 T.is_upward()
@@ -90,9 +105,12 @@ class RTNetwork:
                     for i, e in enumerate(list(key[:2])):
                         if e.index in self.idle_labels and self.rot_num[e.index] != 0:
                             perm = list(range(i)) + [3] + list(range(i, 3))
+                            # h_ref tensors are shared, so this contraction must
+                            # not consume them.
                             tensor = tensor.decorated_contract(
-                                tensors.h(0),
-                                {(i, 1): (1, tensors.h(self.rot_num[e.index]))},
+                                tensors.h_ref(0),
+                                {(i, 1): (1, tensors.h_ref(self.rot_num[e.index]))},
+                                diagonal=self.diagonal_h,
                             )
                             tensor = tensor.permute(perm)
 
@@ -133,19 +151,13 @@ class RTNetwork:
         else:
             return self.network[0][0] == other.network[0][0]
 
-    def optimal_contraction_sequence(self):
+    def optimal_contraction_sequence(self, method="auto"):
         try:
             import opt_einsum as oe
         except ImportError:
             raise ModuleNotFoundError(
                 "Module opt_einsum is required for computing the optimal contraction sequences"
             )
-
-        class _ShapeOnly:
-            __slots__ = ["shape"]
-
-            def __init__(self, shape):
-                self.shape = shape
 
         oe_network = []
         idle = set(self.idle_labels)
@@ -160,7 +172,7 @@ class RTNetwork:
                 oe_network.append(_ShapeOnly(shape))
                 oe_network.append([edge.index for edge in key])
 
-        return oe.contract_path(*oe_network, idle)[0]
+        return oe.contract_path(*oe_network, idle, optimize=method)[0]
 
     @staticmethod
     def local_contraction_width(abstract_network, indices):
@@ -218,7 +230,7 @@ class RTNetwork:
 
         return (w, m), abstract_network
 
-    def contraction_width(self, omit_idle_arcs=True):
+    def contraction_width(self, omit_idle_arcs=True, method="auto"):
         abstract_network = []
         for _, key in self.network:
             if omit_idle_arcs:
@@ -245,7 +257,7 @@ class RTNetwork:
             width = (0, 0)
 
         seq_width, ans = abstract_copy.seq_contraction_width(
-            abstract_copy.optimal_contraction_sequence()
+            abstract_copy.optimal_contraction_sequence(method=method)
         )
 
         return max(width, seq_width), ans
@@ -301,7 +313,7 @@ class RTNetwork:
 
         return ans, abstract_network
 
-    def contraction_sequence(self, omit_idle_arcs=True):
+    def contraction_sequence(self, omit_idle_arcs=True, method='auto'):
         abstract_network = []
         for _, key in self.network:
             if omit_idle_arcs:
@@ -321,7 +333,7 @@ class RTNetwork:
         loops = abstract_copy._resolve_self_loops()
 
         contraction_seq, ans = abstract_copy.seq_contraction_seq(
-            abstract_copy.optimal_contraction_sequence()
+            abstract_copy.optimal_contraction_sequence(method=method)
         )
 
         return loops + contraction_seq, ans
@@ -339,13 +351,21 @@ class RTNetwork:
             for pos_j, ej in enumerate(key2):
                 if ei.index == ej.index and ei.sign * ej.sign == -1:
                     side = 0 if ei.sign == 1 else 1
-                    pairs[(pos_i, pos_j)] = (
-                        side,
-                        self.tensors.h(self.rot_num[ei.index]),
+                    decoration = (
+                        self.tensors.h_ref(self.rot_num[ei.index])
+                        if self.tensors is not None
+                        else None
                     )
+                    pairs[(pos_i, pos_j)] = (side, decoration)
 
         if tensor1 is not None:
-            result_tensor = tensor1.decorated_contract(tensor2, pairs)
+            # Both operands leave the network below, so let the contraction
+            # cannibalise whichever one it streams.  Whether the decorations
+            # are diagonal is a property of the R matrices, so it is settled
+            # once for the network rather than examined at every contraction.
+            result_tensor = tensor1.decorated_contract(
+                tensor2, pairs, consume=True, diagonal=self.diagonal_h
+            )
         else:
             result_tensor = None
 
@@ -388,10 +408,17 @@ class RTNetwork:
 
     def _resolve_self_loops(self):
         ans = []
-        for i in range(len(self.network)):
+        i = 0
+        # Resolving a loop at i removes that node and appends its contraction
+        # at the end, so the next node shifts into slot i and must be examined
+        # before advancing.  A node may also carry more than one self-loop,
+        # since _resolve_self_loop_at resolves a single one per call.
+        while i < len(self.network):
             loop = self._resolve_self_loop_at(i)
             if loop:
                 ans.append(loop)
+            else:
+                i += 1
         return ans
 
     def contract_sequence(self, seq, timed=False):
@@ -408,36 +435,49 @@ class RTNetwork:
 
             return time_cost
 
-    def contract_all(self, timed=False):
+    def _reorder_boundary(self):
+        """
+        Permute the single remaining tensor into the canonical boundary order.
+
+        No-op for a network without boundary labels.
+        """
+        if not self.boundary_labels:
+            return
+
+        desired_order = []
+        for i in range(self.boundary[0]):
+            desired_order.append(~self.edge[self.boundary_labels[i]])
+        for i in range(self.boundary[1]):
+            desired_order.append(self.edge[self.boundary_labels[self.boundary[0] + i]])
+
+        # Drop the network's reference first so the permuted copy and the
+        # original never both hold the whole tensor.
+        tensor, key = self.network.pop()
+        key_pos = {e: i for i, e in enumerate(key)}
+        reshape_indices = [key_pos[e] for e in desired_order]
+
+        self.network.append(
+            (tensor.permute(reshape_indices, consume=True), tuple(desired_order))
+        )
+
+    def contract_all(self, timed=False, method="auto"):
         """
         Perform all possible contractions on self.
 
         Return modified self and time (None if not timed).
         """
         self._resolve_self_loops()
-        time = self.contract_sequence(self.optimal_contraction_sequence(), timed=timed)
+        time = self.contract_sequence(
+            self.optimal_contraction_sequence(method=method), timed=timed
+        )
 
         assert len(self.network) == 1
 
-        if self.boundary_labels:
-            desired_order = []
-            for i in range(self.boundary[0]):
-                desired_order.append(~self.edge[self.boundary_labels[i]])
-            for i in range(self.boundary[1]):
-                desired_order.append(
-                    self.edge[self.boundary_labels[self.boundary[0] + i]]
-                )
-
-            _, key = self.network[0]
-            key_pos = {e: i for i, e in enumerate(key)}
-            reshape_indices = [key_pos[e] for e in desired_order]
-
-            reshape_tensor = self.network[0][0].permute(reshape_indices)
-            self.network[0] = (reshape_tensor, tuple(desired_order))
+        self._reorder_boundary()
 
         return (self, time)
 
-    def evaluate(self, timed=False):
+    def evaluate(self, timed=False, method="auto"):
         """
         Fixate all idle labels at value 0, obtaining a new RTNework with (0,0) boundary (without modifying self),
         contract_all on the new RTNetwork and return the product of all values of the resulting tensors.
@@ -468,9 +508,14 @@ class RTNetwork:
             boundary=(0, 0),
             boundary_labels=[],
         )
-        time = reduced.contract_all(timed=timed)[1]
+        time = reduced.contract_all(timed=timed, method=method)[1]
 
         result = prefactor
         for tensor, _ in reduced.network:
             result *= tensor[()]
+
+        if isinstance(result, FastDictLaurentPolynomial) and not isinstance(
+            result, DictLaurentPolynomial
+        ):
+            result = result.to_checked().simplify_variables()
         return (result, time)

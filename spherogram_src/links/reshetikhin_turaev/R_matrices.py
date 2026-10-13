@@ -1,4 +1,4 @@
-from .dict_laurent_polynomial import FastDictLaurentPolynomial, LaurentVariable
+from .dict_laurent_polynomial import FastDictLaurentPolynomial, LaurentVariable, DictLaurentPolynomial
 
 from .sparse_array import SparseTensor
 
@@ -59,7 +59,7 @@ def laurent_sparse_tensor_from_path(
 
 
 class RMatrix:
-    __slots__ = ["_R", "_h", "_id"]
+    __slots__ = ["_R", "_h", "_id", "_diagonal_h"]
 
     def __init__(self, Rp, Rm, hp, hm):
         self._R = (Rp, Rm)
@@ -67,7 +67,21 @@ class RMatrix:
 
         self._id = SparseTensor(hp.shape, data={(i, i): 1 for i in range(hp.shape[0])})
 
+        self._diagonal_h = all(i == j for h in (hp, hm) for i, j in h.keys())
+
+    @property
+    def diagonal_h(self):
+        """
+        Whether both h tensors are diagonal.
+
+        When they are, an edge of a Reshetikhin--Turaev network effectively
+        carries a single summation index rather than a pair, since only the
+        terms with equal indices contribute.
+        """
+        return self._diagonal_h
+
     def R(self, sign):
+        """A private copy of the R tensor for `sign`, safe to modify or consume."""
         if sign == 1:
             return self._R[0].copy()
         else:
@@ -75,10 +89,21 @@ class RMatrix:
             return self._R[1].copy()
 
     def h(self, sign):
+        """A private copy of the h tensor for `sign`, safe to modify or consume."""
+        return self.h_ref(sign).copy()
+
+    def h_ref(self, sign):
+        """
+        The shared h tensor for `sign`.
+
+        Read-only: callers must not modify it, place it in a network that
+        will consume it, or pass it as a consumable contraction operand.
+        Use h() for that.
+        """
         if sign == 1:
-            return self._h[0].copy()
+            return self._h[0]
         elif sign == -1:
-            return self._h[1].copy()
+            return self._h[1]
         else:
             assert sign == 0
             return self._id
@@ -87,6 +112,39 @@ class RMatrix:
     def from_directory(
         dir_path, vars=["t", "q"], compressed=False, sage_polynomials=False
     ):
+        """
+        Build an RMatrix from four CSV files:
+            Rp.csv: the R tensor for a positive crossing
+            Rn.csv: the R tensor for a negative crossing
+            hp.csv: the h tensor for a positive rotation number
+            hn.csv: the h tensor for a negative rotation number
+        stored under `dir_path`. See Example 2.4 in
+        `[Li26] <https://arxiv.org/abs/2606.29662>`_ for the conventions.
+
+        If `compressed` is True, the files are expected to be compressed with
+        bzip2 and have a ".bz2" suffix.
+
+        The CSV files should be of two columns: the first column is a tuple of
+        integers representing the exponent tuple of a tensor entry, and the
+        second column is a string representation of a Laurent polynomial in the
+        variables `vars`. The CSV files should have a header row with the
+        shape of the tensor and the coefficient ring (currently only "ZZ" is
+        supported). For example, the following is the content of hp.csv for the
+        1-colored Links--Gould polynomial::
+
+            "(4,4)","ZZ"
+            "(0,0)","1"
+            "(1,1)","-1"
+            "(2,2)","-1"
+            "(3,3)","1"
+
+        vars: variable names, in the order the exponent tuples use them.
+
+        If `sage_polynomials` is True, the entries of RMatrix would be Sage's
+        LaurentPolynomials or PuiseuxSeries instead of
+        FastDictLaurentPolynomial values.  The latter is the default because it
+        uses much less RAM.
+        """
         names = [
             name + ".csv" + (".bz2" if compressed else "")
             for name in ["Rp", "Rn", "hp", "hn"]
@@ -104,6 +162,32 @@ class RMatrix:
 
         return RMatrix(*tensors)
 
+
+def FK3_R_matrices(sage_polynomials=False):
+    key = (f"FK3", sage_polynomials)
+    if key in _cache.keys():
+        return _cache[key]
+    else:
+        _cache[key] = RMatrix.from_directory(
+            dir_path=os.path.join(dir_path, f"R_matrices/FK3/"),
+            vars=["t"],
+            compressed=False,
+            sage_polynomials=sage_polynomials,
+        )
+        return _cache[key]
+
+
+def _t_pow(e):
+    ans = DictLaurentPolynomial.from_str("t", ["t"]) ** e
+
+    return ans
+
+
+def prefactor_FK3(writhe, sage_polynomial=False):
+    if not sage_polynomial:
+        return _t_pow(-2 * writhe)
+    else:
+        return _t_pow(-2 * writhe).to_sage()
 
 def colored_links_gould_R_matrices(n, sage_polynomials=False):
     if 0 < n <= 4:
@@ -146,7 +230,7 @@ def _q_pow(e):
     """
     DictLaurentPolynomial representing q^(e/2). e must be an integer.
     """
-    return FastDictLaurentPolynomial._make((LaurentVariable("q", 4),), {(e,): 1})
+    return DictLaurentPolynomial._make((LaurentVariable("q", 4),), {(e,): 1})
 
 
 def colored_jones_R_matrices(n, sage_polynomials=False):

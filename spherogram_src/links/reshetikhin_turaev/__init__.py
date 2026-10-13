@@ -3,6 +3,8 @@ from .dict_laurent_polynomial import DictLaurentPolynomial
 from .R_matrices import (
     RMatrix,
     colored_links_gould_R_matrices,
+    FK3_R_matrices,
+    prefactor_FK3,
     colored_jones_R_matrices,
     prefactor_colored_jones,
 )
@@ -15,6 +17,8 @@ __all__ = [
     "SparseArray",
     "SparseTensor",
     "colored_links_gould_R_matrices",
+    "FK3_R_matrices",
+    "prefactor_FK3",
     "colored_jones_R_matrices",
     "prefactor_colored_jones",
 ]
