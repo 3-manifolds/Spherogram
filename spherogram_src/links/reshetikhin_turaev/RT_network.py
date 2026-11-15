@@ -151,7 +151,9 @@ class RTNetwork:
         else:
             return self.network[0][0] == other.network[0][0]
 
-    def optimal_contraction_sequence(self, method="auto"):
+    def optimal_contraction_sequence(
+        self, method="auto", uniform_shape=True, uniform_dim=8
+    ):
         try:
             import opt_einsum as oe
         except ImportError:
@@ -168,7 +170,13 @@ class RTNetwork:
                 except:
                     raise ValueError(f"key {key[0].index} not found in {idle}")
             else:
-                shape = tensor.shape if tensor is not None else tuple(8 for _ in key)
+                if uniform_shape:
+                    shape = tuple(uniform_dim for _ in key)
+                else:
+                    assert (
+                        tensor is not None
+                    ), "tensor must be provided if uniform_shape is False"
+                    shape = tensor.shape
                 oe_network.append(_ShapeOnly(shape))
                 oe_network.append([edge.index for edge in key])
 

@@ -1404,10 +1404,6 @@ class Link:
         """
         Return the long diagram of self with the minimal contraction width
         """
-
-        if not self.crossings:
-            return self.long_diagram()
-        
         min_width = None
 
         if cap is None:
