@@ -59,13 +59,15 @@ def laurent_sparse_tensor_from_path(
 
 
 class RMatrix:
-    __slots__ = ["_R", "_h", "_id", "_diagonal_h"]
+    __slots__ = ["_R", "_h", "_id", "_diagonal_h", "dim"]
 
     def __init__(self, Rp, Rm, hp, hm):
         self._R = (Rp, Rm)
         self._h = (hp, hm)
 
-        self._id = SparseTensor(hp.shape, data={(i, i): 1 for i in range(hp.shape[0])})
+        self.dim = hp.shape[0]
+
+        self._id = SparseTensor(hp.shape, data={(i, i): 1 for i in range(self.dim)})
 
         self._diagonal_h = all(i == j for h in (hp, hm) for i, j in h.keys())
 

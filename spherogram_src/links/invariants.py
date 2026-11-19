@@ -365,7 +365,7 @@ class Link(links_base.Link):
         if verbose:
             print("Finding long diagram minimizing contraction width...")
 
-        diagram = self.min_long_diagram(cap=min_long_cap)
+        diagram = self.min_long_diagram(vac_dim=R_matrices.dim, cap=min_long_cap)
         if verbose:
             print("Minimal long diagram found.")
 

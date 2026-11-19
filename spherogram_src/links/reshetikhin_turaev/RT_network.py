@@ -48,6 +48,7 @@ class RTNetwork:
         rot_num=None,
         boundary=None,
         boundary_labels=None,
+        vac_dim=None,
     ):
         """
         Represent the tensor network obtained by applying
@@ -59,6 +60,7 @@ class RTNetwork:
         Requires numpy and opt_einsum modules for finding out the optimal contraction sequences
         """
         self.tensors = tensors
+        self.vac_dim = vac_dim
 
         # Whether the edge tensors of this network are diagonal.
         self.diagonal_h = tensors.diagonal_h if tensors is not None else False
@@ -151,9 +153,7 @@ class RTNetwork:
         else:
             return self.network[0][0] == other.network[0][0]
 
-    def optimal_contraction_sequence(
-        self, method="auto", uniform_shape=True, uniform_dim=8
-    ):
+    def optimal_contraction_sequence(self, method="auto"):
         try:
             import opt_einsum as oe
         except ImportError:
@@ -170,13 +170,14 @@ class RTNetwork:
                 except:
                     raise ValueError(f"key {key[0].index} not found in {idle}")
             else:
-                if uniform_shape:
-                    shape = tuple(uniform_dim for _ in key)
+                if tensor is not None:
+                    shape = tensor.shape
                 else:
                     assert (
-                        tensor is not None
-                    ), "tensor must be provided if uniform_shape is False"
-                    shape = tensor.shape
+                        self.vac_dim is not None,
+                    ), "vac_dim must be provided if tensors are None"
+                    shape = tuple(self.vac_dim for _ in key)
+
                 oe_network.append(_ShapeOnly(shape))
                 oe_network.append([edge.index for edge in key])
 
