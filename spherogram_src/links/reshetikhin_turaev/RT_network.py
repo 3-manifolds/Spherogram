@@ -153,6 +153,24 @@ class RTNetwork:
         else:
             return self.network[0][0] == other.network[0][0]
 
+    def abstract_copy(self, omit_idle_arcs=True):
+        abstract_network = []
+        for _, key in self.network:
+            if omit_idle_arcs:
+                non_idle_key = tuple(e for e in key if e.index not in self.idle_labels)
+                abstract_network.append((None, non_idle_key))
+            else:
+                abstract_network.append((None, key))
+
+        return RTNetwork(
+            None,
+            network=abstract_network,
+            rot_num=self.rot_num,
+            boundary=(0, 0) if omit_idle_arcs else self.boundary,
+            boundary_labels=[] if omit_idle_arcs else self.boundary_labels,
+            vac_dim=self.vac_dim,
+        )
+
     def optimal_contraction_sequence(self, method="auto"):
         try:
             import opt_einsum as oe
@@ -240,23 +258,9 @@ class RTNetwork:
         return (w, m), abstract_network
 
     def contraction_width(self, omit_idle_arcs=True, method="auto"):
-        abstract_network = []
-        for _, key in self.network:
-            if omit_idle_arcs:
-                non_idle_key = tuple(e for e in key if e.index not in self.idle_labels)
-                abstract_network.append((None, non_idle_key))
-            else:
-                abstract_network.append((None, key))
+        abst_copy = self.abstract_copy(omit_idle_arcs=omit_idle_arcs)
 
-        abstract_copy = RTNetwork(
-            None,
-            network=abstract_network,
-            rot_num=self.rot_num,
-            boundary=(0, 0) if omit_idle_arcs else self.boundary,
-            boundary_labels=[] if omit_idle_arcs else self.boundary_labels,
-        )
-
-        loops = abstract_copy._resolve_self_loops()
+        loops = abst_copy._resolve_self_loops()
         if loops:
             if all(len(loop) > 1 for loop in loops):
                 width = (2, len(loops))
@@ -265,8 +269,8 @@ class RTNetwork:
         else:
             width = (0, 0)
 
-        seq_width, ans = abstract_copy.seq_contraction_width(
-            abstract_copy.optimal_contraction_sequence(method=method)
+        seq_width, ans = abst_copy.seq_contraction_width(
+            abst_copy.optimal_contraction_sequence(method=method)
         )
 
         return max(width, seq_width), ans
@@ -327,26 +331,12 @@ class RTNetwork:
         Method for debugging purpose. Returns the contraction sequence found by
         optimal_contraction_sequence in terms of indices contracted at each step.
         """
-        abstract_network = []
-        for _, key in self.network:
-            if omit_idle_arcs:
-                non_idle_key = tuple(e for e in key if e.index not in self.idle_labels)
-                abstract_network.append((None, non_idle_key))
-            else:
-                abstract_network.append((None, key))
+        abst_copy = self.abstract_copy(omit_idle_arcs=omit_idle_arcs)
 
-        abstract_copy = RTNetwork(
-            None,
-            network=abstract_network,
-            rot_num=self.rot_num,
-            boundary=(0, 0) if omit_idle_arcs else self.boundary,
-            boundary_labels=[] if omit_idle_arcs else self.boundary_labels,
-        )
+        loops = abst_copy._resolve_self_loops()
 
-        loops = abstract_copy._resolve_self_loops()
-
-        contraction_seq, ans = abstract_copy.seq_contraction_seq(
-            abstract_copy.optimal_contraction_sequence(method=method)
+        contraction_seq, ans = abst_copy.seq_contraction_seq(
+            abst_copy.optimal_contraction_sequence(method=method)
         )
 
         return loops + contraction_seq, ans
@@ -535,6 +525,7 @@ class RTNetwork:
             rot_num=self.rot_num,
             boundary=(0, 0),
             boundary_labels=[],
+            vac_dim=self.vac_dim,
         )
         time = reduced.contract_all(timed=timed, method=method, verbose=verbose)[1]
 
