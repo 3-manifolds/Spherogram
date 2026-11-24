@@ -844,13 +844,23 @@ class Tangle:
 
                     starts.append(direction)
 
-            # Component start recorded. Erase the rest of the component 
-            # by traversing along it and remove the labels
+            # Component start recorded. Erase the rest of the component
+            # by traversing along it both ways and remove the labels, 
+            # so that the next iteration selects the correct start.
+            is_reversed = False
             while next_label != m:
                 labels.remove(next_label)
                 g = gluings[next_label]
                 if len(g) == 1:
-                    break
+                    if is_reversed or len(gluings[m]) == 1:
+                        # Hit the boundary of the tangle from both sides,
+                        # done with this component
+                        break
+                    # Hit the boundary of the tangle, now go back and
+                    # traverse reversely from m to erase the other half
+                    is_reversed = True
+                    c, j = starts[-1]
+                    g, direction = gluings[m], (c, (j + 2) % 4)
                 other_direction = g[1 - g.index(direction)]
                 direction = (other_direction[0], (other_direction[1] + 2) % 4)
                 next_label = code[direction[0]][direction[1]]
