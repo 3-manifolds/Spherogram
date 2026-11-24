@@ -347,7 +347,12 @@ class Link(links_base.Link):
         return p
 
     def RT_polynomial(
-            self, R_matrices, prefactor=None, timed=False
+            self, 
+            R_matrices, 
+            prefactor=None, 
+            timed=False, 
+            verbose=False, 
+            min_long_cap=None
         ):
         """
         Computes the Reshetikhin-Turaev polynomial of a link, given the
@@ -357,10 +362,16 @@ class Link(links_base.Link):
         It is left to the user to ensure that the entries in R-matrices are 
         compatible with the prefactor, if any.
         """
-        diagram = self.min_long_diagram()
+        if verbose:
+            print("Finding long diagram minimizing contraction width...")
+
+        diagram = self.min_long_diagram(vac_dim=R_matrices.dim, cap=min_long_cap)
+        if verbose:
+            print("Minimal long diagram found.")
+
         network = diagram.reshetikhin_turaev_network(R_matrices)
 
-        ans = network.evaluate(timed=timed)
+        ans = network.evaluate(timed=timed, verbose=verbose)
         if prefactor is not None:
             ans = (ans[0] * prefactor, ans[1])
 
@@ -373,7 +384,9 @@ class Link(links_base.Link):
                                        n, 
                                        sage_output=_within_sage,
                                        sage_polynomials=False, 
-                                       timed=False):
+                                       timed=False,
+                                       verbose=False,
+                                       min_long_cap=None):
         """
         Computes the n-colored Links--Gould polynomial of a link, defined in 
         `[GK] <https://arxiv.org/abs/2311.11528>`_
@@ -456,14 +469,16 @@ class Link(links_base.Link):
         from .reshetikhin_turaev import colored_links_gould_R_matrices
 
         R_matrices = colored_links_gould_R_matrices(n, sage_polynomials=sage_polynomials)
-        ans = self.RT_polynomial(R_matrices, timed=timed)
+        ans = self.RT_polynomial(R_matrices, timed=timed, verbose=verbose, min_long_cap=min_long_cap)
 
         return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
 
     def FK3_polynomial(self,
                        sage_output=_within_sage,
                        sage_polynomials=_within_sage,
-                       timed=False):
+                       timed=False,
+                       verbose=False,
+                       min_long_cap=None):
         """
         Computes the FK3 polynomial as defined in 
         `[GL] <https://arxiv.org/abs/2609.01506v1>`_ ::
@@ -480,7 +495,7 @@ class Link(links_base.Link):
         R_matrices = FK3_R_matrices(sage_polynomials=sage_polynomials)
         prefactor = prefactor_FK3(self.writhe(), sage_polynomial=sage_polynomials)
 
-        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed)
+        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed, verbose=verbose, min_long_cap=min_long_cap)
 
         return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
     
@@ -488,7 +503,9 @@ class Link(links_base.Link):
                                  n, 
                                  sage_output=_within_sage,
                                  sage_polynomials=_within_sage,
-                                 timed=False):
+                                 timed=False,
+                                 verbose=False,
+                                 min_long_cap=None):
         """
         Computes the n-colored Jones polynomial of a link. 
         The output is an instance of Sage's PuiseuxSeries if in sage,
@@ -528,7 +545,7 @@ class Link(links_base.Link):
         R_matrices = colored_jones_R_matrices(n, sage_polynomials=sage_polynomials)
         prefactor = prefactor_colored_jones(n, self.writhe(), sage_polynomial=sage_polynomials)
 
-        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed)
+        ans = self.RT_polynomial(R_matrices, prefactor=prefactor, timed=timed, verbose=verbose, min_long_cap=min_long_cap)
 
         return _handle_polynomial_type(ans, sage_output, sage_polynomials, timed)
 

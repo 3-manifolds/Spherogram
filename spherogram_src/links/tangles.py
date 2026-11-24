@@ -19,7 +19,7 @@ http://homepages.math.uic.edu/~kauffman/VegasAMS.pdf
 
 See doc.pdf for conventions.
 """
-import pickle
+import copy
 
 from collections import OrderedDict, Counter
 from .ordered_set import OrderedSet
@@ -765,12 +765,12 @@ class Tangle:
         """
         return RTNetwork(tensors, T = self)
     
-    def contraction_width(self, omit_idle_arcs=True, method='auto'):
-        return RTNetwork(None, T=self).contraction_width(omit_idle_arcs=omit_idle_arcs,
+    def contraction_width(self, vac_dim=8, omit_idle_arcs=True, method='auto'):
+        return RTNetwork(None, T=self, vac_dim=vac_dim).contraction_width(omit_idle_arcs=omit_idle_arcs,
                                                          method=method)
 
-    def contraction_sequence(self, omit_idle_arcs=True, method='auto'):
-        return RTNetwork(None, T=self).contraction_sequence(omit_idle_arcs=omit_idle_arcs,
+    def contraction_sequence(self, vac_dim=8, omit_idle_arcs=True, method='auto'):
+        return RTNetwork(None, T=self, vac_dim=vac_dim).contraction_sequence(omit_idle_arcs=omit_idle_arcs,
                                                             method=method)
 
     def _component_starts_from_PD(self, code, labels, gluings, entry_dict):
@@ -844,13 +844,23 @@ class Tangle:
 
                     starts.append(direction)
 
-            # Component start recorded. Erase the rest of the component 
-            # by traversing along it and remove the labels
+            # Component start recorded. Erase the rest of the component
+            # by traversing along it both ways and remove the labels, 
+            # so that the next iteration selects the correct start.
+            is_reversed = False
             while next_label != m:
                 labels.remove(next_label)
                 g = gluings[next_label]
                 if len(g) == 1:
-                    break
+                    if is_reversed or len(gluings[m]) == 1:
+                        # Hit the boundary of the tangle from both sides,
+                        # done with this component
+                        break
+                    # Hit the boundary of the tangle, now go back and
+                    # traverse reversely from m to erase the other half
+                    is_reversed = True
+                    c, j = starts[-1]
+                    g, direction = gluings[m], (c, (j + 2) % 4)
                 other_direction = g[1 - g.index(direction)]
                 direction = (other_direction[0], (other_direction[1] + 2) % 4)
                 next_label = code[direction[0]][direction[1]]
@@ -978,7 +988,19 @@ class Tangle:
                       component_starts=start_css)
 
     def copy(self):
-        return pickle.loads(pickle.dumps(self))
+        # Pickling or deep-copying naively recurses along the chain of
+        # adjacent crossings, which overflows the stack for large tangles.
+        # Instead, preallocate copies of the tangle, its crossings and its
+        # boundary strands in the deepcopy memo, so that copying each one's
+        # attributes never follows references into the others.
+        memo = {}
+        nodes = {id(obj): obj for obj in
+                 [self, *self.crossings, *self.boundary_strands]}
+        for i, obj in nodes.items():
+            memo[i] = obj.__class__.__new__(obj.__class__)
+        for i, obj in nodes.items():
+            memo[i].__dict__.update(copy.deepcopy(obj.__dict__, memo))
+        return memo[id(self)]
 
     def rotate(self, s):
         """

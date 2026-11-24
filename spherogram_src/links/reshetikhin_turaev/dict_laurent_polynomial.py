@@ -376,7 +376,7 @@ class FastDictLaurentPolynomial:
                 len(self.poly_dict) == 1
                 and self.poly_dict.get((0,) * len(self.vars), 0) == other
             )
-        
+
         return NotImplemented
 
     __hash__ = None
@@ -1309,7 +1309,7 @@ class DictLaurentPolynomial(FastDictLaurentPolynomial):
             for exp in sorted(grouped)
         }
 
-    def latex(self):
+    def latex(self, line_break=None):
         """
         Return a LaTeX string for the polynomial, with terms in the same
         order as repr().
@@ -1343,4 +1343,15 @@ class DictLaurentPolynomial(FastDictLaurentPolynomial):
                 terms.append(f"-{monomial}")
             else:
                 terms.append(f"{coef} {monomial}")
-        return " + ".join(terms).replace("+ -", "- ")
+
+        if line_break is not None:
+            ans = "& " + terms[0]
+            for i, term in enumerate(terms[1:]):
+                if (i + 1) % line_break == 0:
+                    ans += " \\\\\n& "
+                
+                ans += " + " + term
+
+            return ans.replace("+ -", "- ")
+        else:
+            return " + ".join(terms).replace("+ -", "- ")
